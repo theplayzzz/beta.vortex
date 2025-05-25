@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "rules": [],
+  "templates": {
+    "code-review": {
+      "id": "code-review",
+      "name": "Code Review",
+      "description": "A comprehensive code review prompt for AI assistants",
+      "category": "review",
+      "path": "code-review.md",
+      "installedAt": "2025-05-25T20:16:09.765Z",
+      "customized": false
+    },
+    "code-generation": {
+      "id": "code-generation",
+      "name": "Code Generation",
+      "description": "A template for generating code with clear requirements and constraints",
+      "category": "generation",
+      "path": "code-generation.md",
+      "installedAt": "2025-05-25T20:16:09.772Z",
+      "customized": false
+    },
+    "documentation": {
+      "id": "documentation",
+      "name": "Documentation Generator",
+      "description": "A template for generating comprehensive documentation for code",
+      "category": "documentation",
+      "path": "documentation.md",
+      "installedAt": "2025-05-25T20:16:09.778Z",
+      "customized": false
+    }
+  },
+  "config": {
+    "defaultCategory": "guidelines"
+  }
+}

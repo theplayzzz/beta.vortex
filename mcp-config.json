@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "ai-guards": {
+      "command": "node",
+      "args": ["./dist/ai-guards/mcp/server.mjs"],
+      "cwd": "/root/Vortex/precedent"
+    }
+  }
+} 

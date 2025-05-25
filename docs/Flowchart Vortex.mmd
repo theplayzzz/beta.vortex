@@ -1,0 +1,511 @@
+---
+config:
+  theme: base
+  themeVariables:
+    primaryColor: '#4C78DB'
+    primaryTextColor: '#fff'
+    primaryBorderColor: '#3267D1'
+    lineColor: '#4C78DB'
+    secondaryColor: '#FAA613'
+    tertiaryColor: '#40C057'
+    fontSize: '12px'
+    fontFamily: 'Inter, system-ui, sans-serif'
+---
+flowchart TD
+    %% ========== INÍCIO ==========
+    START([🚪 USUÁRIO ACESSA<br/>VORTEX VOULT]):::startNode
+    
+    %% ========== AUTENTICAÇÃO VIA CLERK ==========
+    subgraph Auth[" 🔐 AUTENTICAÇÃO & SEGURANÇA (Clerk) "]
+        direction TB
+        SESSION_CHECK{{"🔍 Sessão Ativa<br/>(Clerk)?"}}:::decision
+        LOGIN_FORM["🔑 TELA LOGIN/REGISTRO<br/>━━━━━━━━━━━━━━━━━━━━<br/>📧 Email/Senha<br/>🔗 Login Social (Google, LinkedIn)<br/>✏️ Registro de novos usuários<br/>🛡️ Autenticação via Clerk"]:::authStep
+        MFA_CHECK{{"🛡️ 2FA<br/>Habilitado?"}}:::decision
+        MFA_VERIFY["🔐 VERIFICAÇÃO 2FA<br/>━━━━━━━━━━━━━━━━<br/>📱 App autenticador<br/>📧 Código por email"]:::authStep
+        ADMIN_APPROVAL{{"👨‍💼 Conta<br/>Aprovada?"}}:::decision
+        WAIT_APPROVAL["⏳ AGUARDANDO APROVAÇÃO<br/>━━━━━━━━━━━━━━━━━━━━━<br/>📧 Email de confirmação<br/>🔔 Notificação para admin<br/>📊 Dashboard de aprovações"]:::waitStep
+        PASSWORD_RESET["🔑 RECUPERAÇÃO SENHA<br/>━━━━━━━━━━━━━━━━━━<br/>📧 Link seguro por email<br/>🔒 Reset via Clerk<br/>⏰ Token temporário"]:::authStep
+        FIRST_LOGIN{{"🌟 Primeiro<br/>Login?"}}:::decision
+        ONBOARDING["🎓 ONBOARDING INTERATIVO<br/>━━━━━━━━━━━━━━━━━━━━━━━<br/>👋 Boas-vindas<br/>🎯 Tour pelas funcionalidades<br/>💳 Créditos iniciais (INITIAL_GRANT)<br/>📋 Configuração inicial<br/>⏭️ Skip opcional"]:::onboardStep
+    end
+
+    %% ========== DASHBOARD PRINCIPAL ==========
+    subgraph Dashboard[" 🏠 DASHBOARD PRINCIPAL - SISTEMA CENTRAL "]
+        direction TB
+        
+        MAIN_DASH["🎛️ PAINEL DE CONTROLE<br/>━━━━━━━━━━━━━━━━━━━━━━━<br/>📊 Widgets personalizáveis<br/>📈 Métricas em tempo real<br/>🎯 Ações rápidas<br/>💡 Insights da IA<br/>📌 Itens fixados"]:::mainDash
+        
+        subgraph DashHeader[" 🔝 HEADER INTELIGENTE "]
+            HEADER_BAR["📱 BARRA SUPERIOR<br/>━━━━━━━━━━━━━━━━━<br/>💳 Saldo Créditos (creditBalance)<br/>🔔 Notificações tempo real<br/>👤 Avatar usuário<br/>🔍 Busca global"]:::headerComp
+            
+            NOTIFICATIONS["🔔 SISTEMA NOTIFICAÇÕES<br/>━━━━━━━━━━━━━━━━━━━━━━<br/>⚡ Tempo real (WebSockets)<br/>👥 Menções em comentários<br/>✅ Atribuições de tarefas<br/>📋 Updates de planejamentos<br/>💳 Alertas créditos<br/>📊 Status de processos IA"]:::notifComp
+            
+            GLOBAL_SEARCH["🔍 BUSCA GLOBAL UNIFICADA<br/>━━━━━━━━━━━━━━━━━━━━━━━━<br/>🧠 Busca semântica<br/>👥 Clientes por nome/industry<br/>📋 Planejamentos por título<br/>💬 Chats IA por conteúdo<br/>✅ Tarefas por descrição<br/>💼 Propostas por status<br/>📎 Anexos por nome<br/>🏷️ Tags e categorias"]:::searchComp
+        end
+        
+        subgraph DashWidgets[" 📊 WIDGETS CONFIGURÁVEIS "]
+            WIDGET_PLANNING["📋 PLANEJAMENTOS ATIVOS<br/>━━━━━━━━━━━━━━━━━━━━<br/>📊 Status: DRAFT/ACTIVE/COMPLETED<br/>👥 Por cliente<br/>📈 Progresso geral<br/>⏰ Próximos marcos"]:::widgetComp
+            
+            WIDGET_TASKS["✅ TAREFAS PENDENTES<br/>━━━━━━━━━━━━━━━━━━<br/>🏆 Por prioridade (LOW/MEDIUM/HIGH/URGENT)<br/>👤 Minhas tarefas (ownerId/assigneeId)<br/>⏰ Próximos prazos<br/>🚫 Tarefas bloqueadas"]:::widgetComp
+            
+            WIDGET_CHATS["💬 CHATS IA RECENTES<br/>━━━━━━━━━━━━━━━━━━━<br/>🤖 Últimas interações<br/>👥 Por cliente<br/>💳 Consumo de créditos<br/>⭐ Chats favoritos"]:::widgetComp
+            
+            WIDGET_CREDITS["💳 GESTÃO DE CRÉDITOS<br/>━━━━━━━━━━━━━━━━━━━<br/>💰 Saldo atual<br/>📊 Histórico consumo<br/>⚠️ Alertas saldo baixo<br/>🔄 Status recarga automática<br/>📈 Projeção de uso"]:::widgetComp
+        end
+        
+        QUICK_CREATE_BTN["⚡ BOTÃO CRIAR +<br/>━━━━━━━━━━━━━━<br/>🎯 Modal criação universal<br/>⌨️ Atalho de teclado (Ctrl+N)<br/>🔥 Ações mais usadas"]:::actionComp
+    end
+
+    %% ========== MODAL CRIAÇÃO UNIVERSAL ==========
+    subgraph QuickCreate[" ⚡ HUB DE CRIAÇÃO RÁPIDA "]
+        direction LR
+        CREATE_MODAL["🎯 MODAL UNIVERSAL<br/>━━━━━━━━━━━━━━━━<br/>Acesso rápido a todas<br/>as funcionalidades"]:::modal
+        
+        CREATE_OPTIONS[/"📋 Novo Planejamento Estratégico<br/>💬 Iniciar Chat com IA<br/>✅ Criar Tarefa<br/>💼 Nova Proposta Comercial<br/>👤 Cadastrar Cliente<br/>📝 Argumento de Vendas"/]:::options
+    end
+
+    %% ========== FLUXO COMUM: CLIENTE ==========
+    subgraph ClientFlow[" 👥 FLUXO INTELIGENTE: GESTÃO DE CLIENTE "]
+        direction TB
+        CLIENT_TRIGGER["🎯 AÇÃO REQUER CLIENTE<br/>━━━━━━━━━━━━━━━━━━━━<br/>Planejamento, Chat IA,<br/>Proposta, etc."]:::trigger
+        CLIENT_CONTEXT_CHECK{{"❓ Cliente já<br/>definido no<br/>contexto?"}}:::decision
+        
+        CLIENT_MODAL["🔍 MODAL SELEÇÃO CLIENTE<br/>━━━━━━━━━━━━━━━━━━━━━━<br/>📋 Lista clientes existentes<br/>🔍 Busca por nome/industry<br/>📊 Indicador riqueza visível<br/>➕ Opção criar novo<br/>⭐ Clientes recentes/favoritos"]:::selection
+        
+        CLIENT_QUICK_POPUP["⚡ POP-UP CRIAÇÃO RÁPIDA<br/>━━━━━━━━━━━━━━━━━━━━━━━━<br/>📝 Nome empresa* (name)<br/>🏢 Ramo atuação (industry)<br/>💼 Serviço/Produto (serviceOrProduct)<br/>🎯 Objetivo inicial (initialObjective)<br/>💾 Auto-save localStorage<br/>🔄 richnessScore = 0"]:::popup
+        
+        CLIENT_BASIC_SAVED["✅ CLIENTE BÁSICO SALVO<br/>━━━━━━━━━━━━━━━━━━━━━<br/>🆔 ID gerado (cuid)<br/>👤 Vinculado ao usuário<br/>📊 Score inicial baixo<br/>🎯 Pronto para enriquecimento"]:::basicSaved
+        
+        CLIENT_CONTEXT_READY["🚀 CONTEXTO CLIENTE PRONTO<br/>━━━━━━━━━━━━━━━━━━━━━━━━<br/>📊 Dados carregados para IA<br/>🎯 Funcionalidade pode prosseguir<br/>💡 Recomendações personalizadas"]:::ready
+    end
+
+    %% ========== GESTÃO COMPLETA DE CLIENTES ==========
+    subgraph Clients[" 👤 CENTRAL DE CLIENTES - GESTÃO AVANÇADA "]
+        direction TB
+        CLIENT_MENU_ACCESS["📊 ACESSO GESTÃO CLIENTES<br/>━━━━━━━━━━━━━━━━━━━━━━<br/>📋 Via menu principal<br/>🔍 Via busca global<br/>📊 Via dashboard widgets"]:::menuAccess
+        
+        CLIENT_LIST_PAGE["📋 LISTA DE CLIENTES<br/>━━━━━━━━━━━━━━━━━━<br/>📊 Grid/Lista configurável<br/>🔍 Filtros: industry, richnessScore<br/>📈 Ordenação por data, score<br/>🏷️ Tags personalizadas<br/>⭐ Clientes favoritos<br/>📊 Métricas por cliente"]:::clientList
+        
+        subgraph ClientDetail[" 📄 PERFIL COMPLETO DO CLIENTE "]
+            CLIENT_PROFILE_PAGE["🎯 PÁGINA PERFIL CLIENTE<br/>━━━━━━━━━━━━━━━━━━━━━━<br/>📊 Header com richnessScore<br/>🎨 Indicador visual motivador<br/>📝 Informações consolidadas<br/>⚡ Ações rápidas"]:::profilePage
+            
+            CLIENT_RICHNESS_INDICATOR["📊 INDICADOR DE RIQUEZA<br/>━━━━━━━━━━━━━━━━━━━━━━━<br/>🎯 Score 0-100 (richnessScore)<br/>🔄 Atualização automática<br/>💡 Incentivo ao preenchimento<br/>🏆 Níveis/Selos de qualidade<br/>💳 Impacto no uso de créditos"]:::richnessInd
+            
+            CLIENT_ENRICHMENT["🔄 ENRIQUECIMENTO PROGRESSIVO<br/>━━━━━━━━━━━━━━━━━━━━━━━━━━━<br/>📞 Contato: email, phone, website, address<br/>🏢 Negócio: businessDetails, setor<br/>🎯 Público: targetAudience, personas<br/>💰 Marketing: marketingObjectives<br/>📈 Histórico: historyAndStrategies<br/>⚔️ Desafios: challengesOpportunities<br/>🥊 Concorrência: competitors<br/>💳 Recursos: resourcesBudget<br/>🎨 Identidade: toneOfVoice<br/>🚫 Restrições: preferencesRestrictions"]:::enrichment
+            
+            CLIENT_NOTES_ATTACHMENTS["📚 NOTAS E ANEXOS<br/>━━━━━━━━━━━━━━━━━━<br/>📝 ClientNote: rich text editor<br/>📎 ClientAttachment: files<br/>👤 Criado por usuário<br/>⏰ Histórico temporal<br/>🔍 Pesquisável"]:::notesAttach
+            
+            CLIENT_LINKED_CONTENT["🔗 CONTEÚDO VINCULADO<br/>━━━━━━━━━━━━━━━━━━━━<br/>📋 StrategicPlanning[]<br/>💬 AgentInteraction[]<br/>✅ PlanningTask[] (clientId)<br/>💼 CommercialProposal[]<br/>📊 Métricas consolidadas"]:::linkedContent
+        end
+    end
+
+    %% ========== PLANEJAMENTO ESTRATÉGICO COM IA ==========
+    subgraph Planning[" 📋 PLANEJAMENTO ESTRATÉGICO - IA POWERED "]
+        direction TB
+        PLAN_HUB["🎯 CENTRAL DE PLANEJAMENTOS<br/>━━━━━━━━━━━━━━━━━━━━━━━<br/>📊 Dashboard estratégias<br/>📈 Status tracking (DRAFT/ACTIVE/COMPLETED/ARCHIVED)<br/>👥 Filtros por cliente<br/>📅 Timeline de projetos<br/>🎯 Metas e objetivos"]:::planHub
+        
+        subgraph PlanCreation[" ⚙️ CRIAÇÃO ASSISTIDA POR IA "]
+            PLAN_CLIENT_SELECT["👤 VINCULAR CLIENTE<br/>━━━━━━━━━━━━━━━━━<br/>🔄 Usa ClientFlow<br/>📊 Score riqueza visível<br/>✅ Obrigatório"]:::planClient
+            
+            PLAN_FORM["📝 FORMULÁRIO INTELIGENTE<br/>━━━━━━━━━━━━━━━━━━━━━━━<br/>📄 title, description<br/>🎯 specificObjectives<br/>📏 scope<br/>📊 successMetrics<br/>💰 budget<br/>🎨 toneOfVoice<br/>💾 Auto-save contínuo"]:::planForm
+            
+            AI_STRUCTURE_GEN["🧠 IA GERA ESTRUTURA INICIAL<br/>━━━━━━━━━━━━━━━━━━━━━━━━━━<br/>🏗️ Framework estratégico<br/>📋 Fases principais<br/>🎯 Marcos importantes<br/>🔄 Baseado no contexto cliente<br/>💳 Consome créditos (CONSUMPTION_PLANNING_INITIAL)"]:::aiStructure
+            
+            STRUCTURE_REVIEW["👁️ REVISÃO HUMANA<br/>━━━━━━━━━━━━━━━━━<br/>✏️ Editor colaborativo<br/>➕ Adicionar fases<br/>❌ Remover irrelevantes<br/>🔄 Reorganizar sequência<br/>💡 Sugestões IA"]:::review
+            
+            AI_DETAILED_GEN["🎯 IA GERA BACKLOG DETALHADO<br/>━━━━━━━━━━━━━━━━━━━━━━━━━━━<br/>📋 PlanningTask[] acionáveis<br/>⏰ Estimativas (effortEstimate)<br/>🏆 Prioridades (LOW/MEDIUM/HIGH/URGENT)<br/>👥 Responsáveis sugeridos<br/>📅 Datas estimadas<br/>🔗 Dependências mapeadas<br/>💳 Consome créditos (CONSUMPTION_PLANNING_DETAILED)"]:::aiDetailed
+            
+            PLAN_BACKLOG["📊 BACKLOG GERADO<br/>━━━━━━━━━━━━━━━━<br/>✅ Tarefas vinculadas ao planejamento<br/>🎯 Status TODO inicial<br/>👤 Owner = criador<br/>🔄 Status = DRAFT → ACTIVE"]:::planBacklog
+        end
+    end
+
+    %% ========== AGENTE IA CONTEXTUALIZADO ==========
+    subgraph Chat[" 🤖 AGENTE IA - CONVERSAÇÃO INTELIGENTE "]
+        direction TB
+        CHAT_HUB["💬 CENTRAL DE CONVERSAS<br/>━━━━━━━━━━━━━━━━━━━━<br/>📋 Lista AgentInteraction[]<br/>🔍 Busca em conversas<br/>⭐ Chats favoritos<br/>🏷️ Organização por cliente<br/>📊 Métricas de uso"]:::chatHub
+        
+        subgraph ChatInterface[" 💬 INTERFACE INTELIGENTE "]
+            CHAT_CLIENT_REQ["👤 REQUER CLIENTE<br/>━━━━━━━━━━━━━━━━<br/>🔄 Usa ClientFlow<br/>📊 Score riqueza visível<br/>✅ Obrigatório para contexto"]:::chatClientReq
+            
+            CHAT_SCREEN["🎯 ÁREA DE CONVERSAÇÃO<br/>━━━━━━━━━━━━━━━━━━━━━<br/>👤 Contexto cliente carregado<br/>📊 Indicador riqueza visível<br/>💡 Sugestões prompts contextuais<br/>⚡ Interface tempo real<br/>📝 Campo entrada rich text<br/>🔄 title editável"]:::chatScreen
+            
+            AI_PROCESSING["🧠 PROCESSAMENTO IA<br/>━━━━━━━━━━━━━━━━━━━<br/>🎯 Análise contexto cliente<br/>📊 Uso dados enriquecidos<br/>💡 Personalização profunda<br/>📝 Geração contextualizada<br/>⚡ Resposta streaming<br/>💳 Consome créditos (CONSUMPTION_AGENT_IA_MESSAGE)"]:::aiProcess
+            
+            CHAT_CAPABILITIES["🛠️ CAPACIDADES DO AGENTE<br/>━━━━━━━━━━━━━━━━━━━━━━━━<br/>❓ Perguntas sobre cliente<br/>📝 Redação personalizada (emails, posts, copys)<br/>💡 Brainstorming campanhas<br/>📊 Resumos de informações<br/>✅ Assistência em tarefas<br/>🎯 Sugestões onboarding<br/>📋 Análise de planejamentos"]:::chatCapabilities
+            
+            CHAT_HISTORY["📚 HISTÓRICO PERSISTENTE<br/>━━━━━━━━━━━━━━━━━━━━━<br/>💾 AgentMessage[] automático<br/>🔍 Busca em mensagens<br/>🏷️ Nomeação de chats<br/>⭐ Marcação favoritos<br/>📊 Analytics de uso<br/>🔄 Sincronização tempo real"]:::chatHistory
+        end
+    end
+
+    %% ========== GESTÃO AVANÇADA DE TAREFAS ==========
+    subgraph Tasks[" ✅ GESTÃO AVANÇADA DE TAREFAS "]
+        direction TB
+        TASK_HUB["📊 CENTRAL DE TAREFAS<br/>━━━━━━━━━━━━━━━━━━<br/>📋 Todas PlanningTask[] unificadas<br/>🔍 Filtros multi-critério<br/>📈 Analytics produtividade<br/>👥 Por assigneeId/ownerId<br/>📅 Timeline integrada"]:::taskHub
+        
+        subgraph TaskViews[" 👁️ VISUALIZAÇÕES MÚLTIPLAS "]
+            TASK_LIST["📋 LISTA DETALHADA<br/>━━━━━━━━━━━━━━━━<br/>📊 Tabela completa<br/>🔍 Busca e filtros<br/>⚡ Ações em lote<br/>📊 Colunas customizáveis"]:::taskList
+            
+            TASK_KANBAN["📊 KANBAN INTERATIVO<br/>━━━━━━━━━━━━━━━━━━<br/>🎯 Por status (TODO/IN_PROGRESS/REVIEW/DONE/BLOCKED)<br/>↔️ Drag & drop<br/>🏆 Swimlanes por prioridade<br/>👥 Filtro por responsável"]:::taskKanban
+            
+            TASK_CALENDAR["📅 CALENDÁRIO VISUAL<br/>━━━━━━━━━━━━━━━━━━━<br/>📅 Por endDate<br/>⚡ Scheduling drag-drop<br/>🔔 Alertas deadline<br/>📊 Capacidade equipe"]:::taskCalendar
+        end
+        
+        subgraph TaskCreation[" ⚙️ CRIAÇÃO E GESTÃO "]
+            TASK_SOURCES["🎯 ORIGENS MÚLTIPLAS<br/>━━━━━━━━━━━━━━━━━<br/>🤖 Auto-geradas (strategicPlanningId)<br/>✋ Criação manual<br/>🧠 Assistidas por IA<br/>📋 Templates reutilizáveis<br/>🔄 Conversão de ideias"]:::taskSources
+            
+            TASK_FORM["📝 FORMULÁRIO COMPLETO<br/>━━━━━━━━━━━━━━━━━━━━━<br/>📝 title, description (rich text)<br/>🏆 status, priority<br/>👥 ownerId, assigneeId<br/>📅 startDate, endDate<br/>⏱️ effortEstimate<br/>👤 clientId (opcional)<br/>🔗 parentId (subtarefas)<br/>🏷️ Tags customizadas<br/>💾 Auto-save contínuo"]:::taskForm
+            
+            TASK_COLLABORATION["👥 COLABORAÇÃO<br/>━━━━━━━━━━━━━━━<br/>💬 TaskComment[] (menções)<br/>📎 TaskAttachment[]<br/>🔔 Notificações automáticas<br/>👁️ Watchers/Seguidores<br/>📊 Log de atividades"]:::taskCollab
+            
+            TASK_DEPENDENCIES["🔗 DEPENDÊNCIAS<br/>━━━━━━━━━━━━━━━━<br/>⛓️ Relações entre tarefas<br/>🚫 Bloqueios automáticos<br/>📊 Gráfico de dependências<br/>⚠️ Alertas de impacto"]:::taskDeps
+        end
+    end
+
+    %% ========== MÓDULO AVANÇADO DE VENDAS ==========
+    subgraph Sales[" 💼 MÓDULO AVANÇADO DE VENDAS "]
+        direction TB
+        SALES_HUB["📊 CENTRAL DE VENDAS<br/>━━━━━━━━━━━━━━━━━<br/>📈 Pipeline comercial<br/>💰 Métricas conversão<br/>🎯 Metas e objetivos<br/>📊 ROI por cliente"]:::salesHub
+        
+        subgraph Proposals[" 📄 PROPOSTAS INTELIGENTES "]
+            PROPOSAL_LIST["📋 GESTÃO DE PROPOSTAS<br/>━━━━━━━━━━━━━━━━━━━━━<br/>📊 CommercialProposal[]<br/>🔍 Filtros por status/cliente<br/>📈 Pipeline commercial<br/>💰 Valores consolidados"]:::proposalList
+            
+            PROPOSAL_CREATOR["🎯 CRIAÇÃO COM IA<br/>━━━━━━━━━━━━━━━━━━<br/>👤 clientId opcional<br/>🤖 Geração contextualizada<br/>📋 Templates profissionais<br/>🎨 Personalização automática<br/>💳 Consome créditos (CONSUMPTION_PROPOSAL_GENERATION)"]:::proposalCreator
+            
+            PROPOSAL_EDITOR["✏️ EDITOR AVANÇADO<br/>━━━━━━━━━━━━━━━━━━<br/>📝 generatedContent (rich text)<br/>🔄 Versionamento (version)<br/>📊 Status tracking (DRAFT/SENT/VIEWED/ACCEPTED/REJECTED/NEGOTIATION)<br/>💾 Auto-save contínuo<br/>📄 Exportação (PDF, DOCX)"]:::proposalEditor
+            
+            PROPOSAL_TRACKING["📊 ACOMPANHAMENTO<br/>━━━━━━━━━━━━━━━━━━<br/>👁️ Visualizações pelo cliente<br/>📧 Histórico de envios<br/>📈 Métricas engagement<br/>🔔 Alertas de atividade<br/>💬 Feedback integrado"]:::proposalTrack
+        end
+        
+        subgraph SalesTools[" 🛠️ FERRAMENTAS DE VENDAS "]
+            SALES_ARGUMENTS["📝 ARGUMENTOS & SCRIPTS<br/>━━━━━━━━━━━━━━━━━━━━━━<br/>📋 SalesArgument[]<br/>🎭 Scripts por categoria<br/>🛡️ objectionsHandled (JSON)<br/>🧠 Geração IA contextual<br/>💳 Consome créditos (CONSUMPTION_SALES_ARGUMENT_IA)<br/>📚 Biblioteca pesquisável"]:::salesArgs
+            
+            SALES_INSIGHTS_FUTURE["📊 INSIGHTS AVANÇADOS (FUTURO)<br/>━━━━━━━━━━━━━━━━━━━━━━━━━━━━<br/>📹 Análise reuniões (CONSUMPTION_MEETING_INSIGHTS_IA)<br/>🎯 Aprimoramento pitch (CONSUMPTION_PITCH_ANALYSIS_IA)<br/>📈 Previsão fechamento<br/>💡 Recomendações IA<br/>🎯 Scoring de leads"]:::salesInsights
+        end
+    end
+
+    %% ========== SISTEMA TRANSPARENTE DE CRÉDITOS ==========
+    subgraph Credits[" 💳 SISTEMA TRANSPARENTE DE CRÉDITOS "]
+        direction TB
+        CREDIT_DASHBOARD["💰 PAINEL DE CRÉDITOS<br/>━━━━━━━━━━━━━━━━━━━━<br/>💳 creditBalance em destaque<br/>📊 CreditTransaction[] histórico<br/>📈 Análise de consumo<br/>⚡ Estimativas de uso<br/>📋 Projeção mensal"]:::creditDash
+        
+        subgraph CreditManagement[" ⚙️ GESTÃO FINANCEIRA "]
+            CREDIT_PURCHASE["🛒 COMPRA VIA CLERK<br/>━━━━━━━━━━━━━━━━━━━<br/>💳 Gateway seguro<br/>📦 Pacotes escalonados<br/>💰 Preços dinâmicos<br/>🎁 Ofertas promocionais<br/>📊 type: PURCHASE"]:::creditPurchase
+            
+            CREDIT_AUTOMATION["🎛️ AUTOMAÇÃO<br/>━━━━━━━━━━━━━━━<br/>🔄 Recarga automática<br/>🔔 Alertas saldo baixo<br/>📊 Limite de gastos<br/>📈 Relatórios consumo<br/>⚠️ Proteção orçamento"]:::creditAuto
+            
+            CREDIT_TRACKING["👁️ RASTREAMENTO DETALHADO<br/>━━━━━━━━━━━━━━━━━━━━━━━━<br/>📊 Por funcionalidade<br/>🔗 relatedEntityId/Type<br/>💡 Custo pré-visualização<br/>⏱️ Histórico temporal<br/>📈 ROI por investimento<br/>🎯 Otimização de uso"]:::creditTrack
+        end
+    end
+
+    %% ========== PERFIL & CONFIGURAÇÕES ==========
+    subgraph Profile[" 👤 PERFIL & CONFIGURAÇÕES AVANÇADAS "]
+        direction TB
+        PROFILE_HUB["⚙️ CENTRAL CONFIGURAÇÕES<br/>━━━━━━━━━━━━━━━━━━━━━━<br/>👤 Dados usuário (Clerk sync)<br/>🔐 Segurança avançada<br/>🎨 Personalização UI<br/>📊 Preferências sistema"]:::profileHub
+        
+        subgraph ProfileSections[" 📚 SEÇÕES DETALHADAS "]
+            USER_MANAGEMENT["👤 GESTÃO PESSOAL<br/>━━━━━━━━━━━━━━━━━<br/>📝 firstName, lastName<br/>📸 profileImageUrl<br/>📧 Email (único)<br/>🆔 clerkId sync<br/>⏰ Timestamps automáticos"]:::userMgmt
+            
+            PREFERENCES["🎛️ PREFERÊNCIAS<br/>━━━━━━━━━━━━━━━━<br/>🔔 Sistema notificações<br/>🎨 Tema claro/escuro<br/>⌨️ Atalhos personalizados<br/>🌐 Localização<br/>📊 Dashboard layout"]:::preferences
+            
+            SECURITY_SETTINGS["🔐 SEGURANÇA AVANÇADA<br/>━━━━━━━━━━━━━━━━━━━━<br/>🛡️ 2FA via Clerk<br/>🔑 Gestão senhas<br/>📱 Dispositivos conectados<br/>🔒 Sessões ativas<br/>📊 Log atividades<br/>⚠️ Alertas segurança"]:::security
+        end
+    end
+
+    %% ========== ADMINISTRAÇÃO GLOBAL ==========
+    subgraph Admin[" ⚙️ ADMINISTRAÇÃO DA PLATAFORMA "]
+        direction TB
+        ADMIN_ACCESS["👨‍💼 ACESSO ADMINISTRATIVO<br/>━━━━━━━━━━━━━━━━━━━━━━━<br/>🔐 Permissões especiais<br/>📊 Dashboard analytics<br/>⚙️ Configurações globais"]:::adminAccess
+        
+        USER_MANAGEMENT_ADMIN["👥 GESTÃO DE USUÁRIOS<br/>━━━━━━━━━━━━━━━━━━━━<br/>✅ Aprovações pendentes<br/>👁️ Visualização perfis<br/>🚫 Bloqueio/Desbloqueio<br/>🏷️ Papéis e permissões<br/>📊 Métricas de uso"]:::userAdmin
+        
+        SYSTEM_MONITORING["📊 MONITORAMENTO SISTEMA<br/>━━━━━━━━━━━━━━━━━━━━━━━<br/>📈 Estatísticas uso<br/>🤖 Consumo APIs IA<br/>💳 Gestão créditos/promoções<br/>⚙️ Configurações APIs<br/>📧 Configurações email<br/>🚨 Alertas sistema"]:::systemMon
+    end
+
+    %% ========== SISTEMA DE PROTEÇÃO ==========
+    subgraph AutoSave[" 💾 SISTEMA DE PROTEÇÃO DE DADOS "]
+        direction LR
+        AUTO_SAVE_ENGINE["⚡ ENGINE AUTO-SAVE<br/>━━━━━━━━━━━━━━━━━━━━<br/>💾 Backup contínuo (5-10s)<br/>🔄 Sincronização tempo real<br/>🛡️ Proteção perda dados<br/>📊 Todos formulários<br/>✨ Indicador visual 'salvando'"]:::autoSave
+        
+        LOCAL_STORAGE_SYS["🗄️ ARMAZENAMENTO LOCAL<br/>━━━━━━━━━━━━━━━━━━━━━━━<br/>💻 localStorage/IndexedDB<br/>⚡ Acesso offline<br/>🔄 Sync pós-conexão<br/>🧹 Limpeza pós-submit<br/>⚠️ Limitações de quota"]:::localStorage
+        
+        DATA_RECOVERY_SYS["🚑 RECUPERAÇÃO INTELIGENTE<br/>━━━━━━━━━━━━━━━━━━━━━━━━━<br/>🔄 Restauração automática<br/>📊 Versionamento local<br/>⏰ Histórico alterações<br/>💡 Sugestões recuperação<br/>🎯 Recovery contextual"]:::dataRecovery
+    end
+
+    %% ========== CONEXÕES PRINCIPAIS ==========
+    
+    %% Fluxo de Autenticação
+    START --> SESSION_CHECK
+    SESSION_CHECK -->|❌ Não| LOGIN_FORM
+    SESSION_CHECK -->|✅ Sim| ADMIN_APPROVAL
+    LOGIN_FORM --> MFA_CHECK
+    LOGIN_FORM -->|🔑 Esqueceu?| PASSWORD_RESET
+    PASSWORD_RESET --> LOGIN_FORM
+    MFA_CHECK -->|✅ Sim| MFA_VERIFY
+    MFA_CHECK -->|❌ Não| ADMIN_APPROVAL
+    MFA_VERIFY --> ADMIN_APPROVAL
+    
+    ADMIN_APPROVAL -->|❌ Não| WAIT_APPROVAL
+    ADMIN_APPROVAL -->|✅ Sim| FIRST_LOGIN
+    WAIT_APPROVAL -.-> LOGIN_FORM
+    
+    FIRST_LOGIN -->|✅ Sim| ONBOARDING
+    FIRST_LOGIN -->|❌ Não| MAIN_DASH
+    ONBOARDING --> MAIN_DASH
+
+    %% Dashboard Principal
+    MAIN_DASH --> HEADER_BAR
+    MAIN_DASH --> WIDGET_PLANNING
+    MAIN_DASH --> WIDGET_TASKS
+    MAIN_DASH --> WIDGET_CHATS
+    MAIN_DASH --> WIDGET_CREDITS
+    MAIN_DASH --> QUICK_CREATE_BTN
+    
+    %% Sistema de Busca
+    HEADER_BAR --> GLOBAL_SEARCH
+    GLOBAL_SEARCH --> CLIENT_LIST_PAGE
+    GLOBAL_SEARCH --> PLAN_HUB
+    GLOBAL_SEARCH --> CHAT_HUB
+    GLOBAL_SEARCH --> TASK_HUB
+    
+    %% Notificações
+    HEADER_BAR --> NOTIFICATIONS
+    
+    %% Modal de Criação Universal
+    QUICK_CREATE_BTN --> CREATE_MODAL
+    CREATE_MODAL --> CREATE_OPTIONS
+    CREATE_OPTIONS --> CLIENT_TRIGGER
+    CREATE_OPTIONS --> PLAN_CLIENT_SELECT
+    CREATE_OPTIONS --> CHAT_CLIENT_REQ
+    CREATE_OPTIONS --> TASK_SOURCES
+    CREATE_OPTIONS --> PROPOSAL_CREATOR
+    CREATE_OPTIONS --> SALES_ARGUMENTS
+
+    %% Fluxo Comum de Cliente (Reutilizável)
+    CLIENT_TRIGGER --> CLIENT_CONTEXT_CHECK
+    CLIENT_CONTEXT_CHECK -->|✅ Sim| CLIENT_CONTEXT_READY
+    CLIENT_CONTEXT_CHECK -->|❌ Não| CLIENT_MODAL
+    CLIENT_MODAL -->|👤 Existente| CLIENT_CONTEXT_READY
+    CLIENT_MODAL -->|➕ Novo| CLIENT_QUICK_POPUP
+    CLIENT_QUICK_POPUP --> CLIENT_BASIC_SAVED
+    CLIENT_BASIC_SAVED --> CLIENT_CONTEXT_READY
+
+    %% Navegação Principal
+    MAIN_DASH -.-> CLIENT_MENU_ACCESS
+    MAIN_DASH -.-> PLAN_HUB
+    MAIN_DASH -.-> CHAT_HUB
+    MAIN_DASH -.-> TASK_HUB
+    MAIN_DASH -.-> SALES_HUB
+    MAIN_DASH -.-> CREDIT_DASHBOARD
+    MAIN_DASH -.-> PROFILE_HUB
+    MAIN_DASH -.-> ADMIN_ACCESS
+
+    %% Gestão de Clientes
+    CLIENT_MENU_ACCESS --> CLIENT_LIST_PAGE
+    CLIENT_LIST_PAGE --> CLIENT_PROFILE_PAGE
+    CLIENT_LIST_PAGE --> CLIENT_QUICK_POPUP
+    CLIENT_PROFILE_PAGE --> CLIENT_RICHNESS_INDICATOR
+    CLIENT_PROFILE_PAGE --> CLIENT_ENRICHMENT
+    CLIENT_PROFILE_PAGE --> CLIENT_NOTES_ATTACHMENTS
+    CLIENT_PROFILE_PAGE --> CLIENT_LINKED_CONTENT
+
+    %% Planejamento Estratégico
+    PLAN_HUB --> PLAN_CLIENT_SELECT
+    PLAN_CLIENT_SELECT --> CLIENT_TRIGGER
+    CLIENT_CONTEXT_READY --> PLAN_FORM
+    PLAN_FORM --> AI_STRUCTURE_GEN
+    AI_STRUCTURE_GEN --> STRUCTURE_REVIEW
+    STRUCTURE_REVIEW --> AI_DETAILED_GEN
+    AI_DETAILED_GEN --> PLAN_BACKLOG
+    PLAN_BACKLOG --> TASK_HUB
+
+    %% Agente IA
+    CHAT_HUB --> CHAT_CLIENT_REQ
+    CHAT_CLIENT_REQ --> CLIENT_TRIGGER
+    CLIENT_CONTEXT_READY --> CHAT_SCREEN
+    CHAT_SCREEN --> CHAT_CAPABILITIES
+    CHAT_SCREEN --> AI_PROCESSING
+    AI_PROCESSING --> CHAT_HISTORY
+
+    %% Gestão de Tarefas
+    TASK_HUB --> TASK_LIST
+    TASK_HUB --> TASK_KANBAN
+    TASK_HUB --> TASK_CALENDAR
+    TASK_SOURCES --> TASK_FORM
+    TASK_FORM --> TASK_COLLABORATION
+    TASK_FORM --> TASK_DEPENDENCIES
+
+    %% Módulo de Vendas
+    SALES_HUB --> PROPOSAL_LIST
+    SALES_HUB --> SALES_ARGUMENTS
+    SALES_HUB --> SALES_INSIGHTS_FUTURE
+    PROPOSAL_LIST --> PROPOSAL_CREATOR
+    PROPOSAL_CREATOR --> CLIENT_TRIGGER
+    CLIENT_CONTEXT_READY --> PROPOSAL_EDITOR
+    PROPOSAL_EDITOR --> PROPOSAL_TRACKING
+
+    %% Sistema de Créditos
+    CREDIT_DASHBOARD --> CREDIT_PURCHASE
+    CREDIT_DASHBOARD --> CREDIT_AUTOMATION
+    CREDIT_DASHBOARD --> CREDIT_TRACKING
+
+    %% Perfil do Usuário
+    PROFILE_HUB --> USER_MANAGEMENT
+    PROFILE_HUB --> PREFERENCES
+    PROFILE_HUB --> SECURITY_SETTINGS
+
+    %% Administração
+    ADMIN_ACCESS --> USER_MANAGEMENT_ADMIN
+    ADMIN_ACCESS --> SYSTEM_MONITORING
+
+    %% Auto-save (Transversal - linhas pontilhadas)
+    CLIENT_QUICK_POPUP -.-> AUTO_SAVE_ENGINE
+    PLAN_FORM -.-> AUTO_SAVE_ENGINE
+    TASK_FORM -.-> AUTO_SAVE_ENGINE
+    PROPOSAL_EDITOR -.-> AUTO_SAVE_ENGINE
+    AUTO_SAVE_ENGINE --> LOCAL_STORAGE_SYS
+    LOCAL_STORAGE_SYS --> DATA_RECOVERY_SYS
+
+    %% Consumo de Créditos (linhas duplas especiais)
+    AI_STRUCTURE_GEN ==> CREDIT_TRACKING
+    AI_DETAILED_GEN ==> CREDIT_TRACKING
+    AI_PROCESSING ==> CREDIT_TRACKING
+    PROPOSAL_CREATOR ==> CREDIT_TRACKING
+    SALES_ARGUMENTS ==> CREDIT_TRACKING
+
+    %% ========== ESTILOS AVANÇADOS ==========
+    classDef startNode fill:#FF6B6B,stroke:#E63946,color:#fff,stroke-width:4px,font-weight:bold
+    classDef decision fill:#4ECDC4,stroke:#26A69A,color:#fff,stroke-width:3px,font-weight:bold
+    classDef authStep fill:#4C78DB,stroke:#3267D1,color:#fff,stroke-width:2px
+    classDef waitStep fill:#FFB84D,stroke:#FF9F1C,color:#333,stroke-width:2px
+    classDef onboardStep fill:#A8E6CF,stroke:#81C784,color:#333,stroke-width:2px,font-weight:bold
+    classDef mainDash fill:#2F3349,stroke:#1A1D2E,color:#fff,stroke-width:4px,font-weight:bold
+    classDef headerComp fill:#5F6B7C,stroke:#495057,color:#fff,stroke-width:2px
+    classDef notifComp fill:#DC3545,stroke:#C82333,color:#fff,stroke-width:2px
+    classDef searchComp fill:#6F73D2,stroke:#5A5FCD,color:#fff,stroke-width:2px
+    classDef widgetComp fill:#45B7D1,stroke:#2980B9,color:#fff,stroke-width:2px
+    classDef actionComp fill:#20BF6B,stroke:#0FB95A,color:#fff,stroke-width:2px
+    classDef modal fill:#8E44AD,stroke:#732D91,color:#fff,stroke-width:3px,font-weight:bold
+    classDef options fill:#F39C12,stroke:#E67E22,color:#fff,stroke-width:2px
+    classDef trigger fill:#E74C3C,stroke:#C0392B,color:#fff,stroke-width:3px,font-weight:bold
+    classDef selection fill:#3498DB,stroke:#2980B9,color:#fff,stroke-width:2px
+    classDef popup fill:#9B59B6,stroke:#8E44AD,color:#fff,stroke-width:2px
+    classDef basicSaved fill:#28A745,stroke:#218838,color:#fff,stroke-width:2px
+    classDef ready fill:#27AE60,stroke:#229954,color:#fff,stroke-width:3px,font-weight:bold
+    classDef menuAccess fill:#17A2B8,stroke:#138496,color:#fff,stroke-width:2px
+    classDef clientList fill:#20C997,stroke:#0CA678,color:#fff,stroke-width:2px
+    classDef profilePage fill:#6610F2,stroke:#520DC2,color:#fff,stroke-width:2px
+    classDef richnessInd fill:#FD7E14,stroke:#E8590C,color:#fff,stroke-width:3px,font-weight:bold
+    classDef enrichment fill:#28A745,stroke:#218838,color:#fff,stroke-width:2px
+    classDef notesAttach fill:#6C757D,stroke:#545B62,color:#fff,stroke-width:2px
+    classDef linkedContent fill:#007BFF,stroke:#0056B3,color:#fff,stroke-width:2px
+    classDef planHub fill:#FAA613,stroke:#E09400,color:#333,stroke-width:2px
+    classDef planClient fill:#FD7E14,stroke:#E8590C,color:#fff,stroke-width:2px
+    classDef planForm fill:#FFE066,stroke:#FFDB1A,color:#333,stroke-width:2px
+    classDef aiStructure fill:#FF9F1C,stroke:#FF8500,color:#333,stroke-width:3px,font-weight:bold
+    classDef review fill:#FFB84D,stroke:#FF9F1C,color:#333,stroke-width:2px
+    classDef aiDetailed fill:#FF8500,stroke:#FF6B00,color:#fff,stroke-width:3px,font-weight:bold
+    classDef planBacklog fill:#28A745,stroke:#218838,color:#fff,stroke-width:2px
+    classDef chatHub fill:#FFD700,stroke:#B8860B,color:#333,stroke-width:2px
+    classDef chatClientReq fill:#FFC107,stroke:#FF8F00,color:#333,stroke-width:2px
+    classDef chatScreen fill:#FFED4A,stroke:#F7DC00,color:#333,stroke-width:2px
+    classDef aiProcess fill:#FF6F00,stroke:#E65100,color:#fff,stroke-width:3px,font-weight:bold
+    classDef chatCapabilities fill:#795548,stroke:#5D4037,color:#fff,stroke-width:2px
+    classDef chatHistory fill:#9E9E9E,stroke:#757575,color:#fff,stroke-width:2px
+    classDef taskHub fill:#40C057,stroke:#2EA043,color:#fff,stroke-width:2px
+    classDef taskList fill:#51CF66,stroke:#37B24D,color:#fff,stroke-width:2px
+    classDef taskKanban fill:#69DB7C,stroke:#51CF66,color:#333,stroke-width:2px
+    classDef taskCalendar fill:#8CE99A,stroke:#69DB7C,color:#333,stroke-width:2px
+    classDef taskSources fill:#20C997,stroke:#0CA678,color:#fff,stroke-width:2px
+    classDef taskForm fill:#12B886,stroke:#087F5B,color:#fff,stroke-width:2px
+    classDef taskCollab fill:#6610F2,stroke:#520DC2,color:#fff,stroke-width:2px
+    classDef taskDeps fill:#E83E8C,stroke:#D91A72,color:#fff,stroke-width:2px
+    classDef salesHub fill:#F06543,stroke:#E04F32,color:#fff,stroke-width:2px
+    classDef proposalList fill:#FF6B6B,stroke:#E63946,color:#fff,stroke-width:2px
+    classDef proposalCreator fill:#FF8787,stroke:#FF6B6B,color:#fff,stroke-width:2px
+    classDef proposalEditor fill:#FFA8A8,stroke:#FF8787,color:#333,stroke-width:2px
+    classDef proposalTrack fill:#FFC9C9,stroke:#FFA8A8,color:#333,stroke-width:2px
+    classDef salesArgs fill:#DC3545,stroke:#C82333,color:#fff,stroke-width:2px
+    classDef salesInsights fill:#6C757D,stroke:#545B62,color:#fff,stroke-width:2px
+    classDef creditDash fill:#7952B3,stroke:#603D93,color:#fff,stroke-width:3px,font-weight:bold
+    classDef creditPurchase fill:#9775FA,stroke:#7950F2,color:#fff,stroke-width:2px
+    classDef creditAuto fill:#B197FC,stroke:#9775FA,color:#333,stroke-width:2px
+    classDef creditTrack fill:#D0BFFF,stroke:#B197FC,color:#333,stroke-width:2px
+    classDef profileHub fill:#4DABF7,stroke:#339AF0,color:#fff,stroke-width:2px
+    classDef userMgmt fill:#74C0FC,stroke:#4DABF7,color:#fff,stroke-width:2px
+    classDef preferences fill:#A5D8FF,stroke:#74C0FC,color:#333,stroke-width:2px
+    classDef security fill:#D0EBFF,stroke:#A5D8FF,color:#333,stroke-width:2px
+    classDef adminAccess fill:#495057,stroke:#343A40,color:#fff,stroke-width:3px,font-weight:bold
+    classDef userAdmin fill:#6C757D,stroke:#545B62,color:#fff,stroke-width:2px
+    classDef systemMon fill:#ADB5BD,stroke:#6C757D,color:#333,stroke-width:2px
+    classDef autoSave fill:#E5E5E5,stroke:#999,color:#333,stroke-width:2px
+    classDef localStorage fill:#F8F9FA,stroke:#DEE2E6,color:#333,stroke-width:2px
+    classDef dataRecovery fill:#FFFFFF,stroke:#CED4DA,color:#333,stroke-width:2px
+
+    %% ========== APLICAÇÃO DOS ESTILOS ==========
+    class START startNode
+    class SESSION_CHECK,MFA_CHECK,ADMIN_APPROVAL,FIRST_LOGIN,CLIENT_CONTEXT_CHECK decision
+    class LOGIN_FORM,MFA_VERIFY,PASSWORD_RESET authStep
+    class WAIT_APPROVAL waitStep
+    class ONBOARDING onboardStep
+    class MAIN_DASH mainDash
+    class HEADER_BAR headerComp
+    class NOTIFICATIONS notifComp
+    class GLOBAL_SEARCH searchComp
+    class WIDGET_PLANNING,WIDGET_TASKS,WIDGET_CHATS,WIDGET_CREDITS widgetComp
+    class QUICK_CREATE_BTN actionComp
+    class CREATE_MODAL modal
+    class CREATE_OPTIONS options
+    class CLIENT_TRIGGER trigger
+    class CLIENT_MODAL selection
+    class CLIENT_QUICK_POPUP popup
+    class CLIENT_BASIC_SAVED basicSaved
+    class CLIENT_CONTEXT_READY ready
+    class CLIENT_MENU_ACCESS menuAccess
+    class CLIENT_LIST_PAGE clientList
+    class CLIENT_PROFILE_PAGE profilePage
+    class CLIENT_RICHNESS_INDICATOR richnessInd
+    class CLIENT_ENRICHMENT enrichment
+    class CLIENT_NOTES_ATTACHMENTS notesAttach
+    class CLIENT_LINKED_CONTENT linkedContent
+    class PLAN_HUB planHub
+    class PLAN_CLIENT_SELECT planClient
+    class PLAN_FORM planForm
+    class AI_STRUCTURE_GEN aiStructure
+    class STRUCTURE_REVIEW review
+    class AI_DETAILED_GEN aiDetailed
+    class PLAN_BACKLOG planBacklog
+    class CHAT_HUB chatHub
+    class CHAT_CLIENT_REQ chatClientReq
+    class CHAT_SCREEN chatScreen
+    class AI_PROCESSING aiProcess
+    class CHAT_CAPABILITIES chatCapabilities
+    class CHAT_HISTORY chatHistory
+    class TASK_HUB taskHub
+    class TASK_LIST taskList
+    class TASK_KANBAN taskKanban
+    class TASK_CALENDAR taskCalendar
+    class TASK_SOURCES taskSources
+    class TASK_FORM taskForm
+    class TASK_COLLABORATION taskCollab
+    class TASK_DEPENDENCIES taskDeps
+    class SALES_HUB salesHub
+    class PROPOSAL_LIST proposalList
+    class PROPOSAL_CREATOR proposalCreator
+    class PROPOSAL_EDITOR proposalEditor
+    class PROPOSAL_TRACKING proposalTrack
+    class SALES_ARGUMENTS salesArgs
+    class SALES_INSIGHTS_FUTURE salesInsights
+    class CREDIT_DASHBOARD creditDash
+    class CREDIT_PURCHASE creditPurchase
+    class CREDIT_AUTOMATION creditAuto
+    class CREDIT_TRACKING creditTrack
+    class PROFILE_HUB profileHub
+    class USER_MANAGEMENT userMgmt
+    class PREFERENCES preferences
+    class SECURITY_SETTINGS security
+    class ADMIN_ACCESS adminAccess
+    class USER_MANAGEMENT_ADMIN userAdmin
+    class SYSTEM_MONITORING systemMon
+    class AUTO_SAVE_ENGINE autoSave
+    class LOCAL_STORAGE_SYS localStorage
+    class DATA_RECOVERY_SYS dataRecovery
