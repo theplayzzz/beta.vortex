@@ -1,0 +1,193 @@
+2025-05-25 23:50:29 +00:00: 
+2025-05-25 23:50:29 +00:00: > precedent@0.1.0 dev /root/Vortex/precedent
+2025-05-25 23:50:29 +00:00: > next dev
+2025-05-25 23:50:29 +00:00: 
+2025-05-25 23:50:30 +00:00:  ⨯ Failed to start server
+2025-05-25 23:50:30 +00:00: Error: listen EADDRINUSE: address already in use :::3000
+2025-05-25 23:50:30 +00:00:     at Server.setupListenHandle [as _listen2] (node:net:1811:16)
+2025-05-25 23:50:30 +00:00:     at listenInCluster (node:net:1859:12)
+2025-05-25 23:50:30 +00:00:     at Server.listen (node:net:1947:7)
+2025-05-25 23:50:30 +00:00:     at /root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:281:16
+2025-05-25 23:50:30 +00:00:     at new Promise (<anonymous>)
+2025-05-25 23:50:30 +00:00:     at startServer (/root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:191:11)
+2025-05-25 23:50:30 +00:00:     at /root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:311:52
+2025-05-25 23:50:30 +00:00:     at Span.traceAsyncFn (/root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/trace/trace.js:157:26)
+2025-05-25 23:50:30 +00:00:     at process.<anonymous> (/root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:311:35)
+2025-05-25 23:50:30 +00:00:     at process.emit (node:events:517:28) {
+2025-05-25 23:50:30 +00:00:   code: 'EADDRINUSE',
+2025-05-25 23:50:30 +00:00:   errno: -98,
+2025-05-25 23:50:30 +00:00:   syscall: 'listen',
+2025-05-25 23:50:30 +00:00:   address: '::',
+2025-05-25 23:50:30 +00:00:   port: 3000
+2025-05-25 23:50:30 +00:00: }
+2025-05-25 23:50:30 +00:00: [?25h
+2025-05-25 23:50:30 +00:00: 
+2025-05-25 23:50:32 +00:00: 
+2025-05-25 23:50:32 +00:00: > precedent@0.1.0 dev /root/Vortex/precedent
+2025-05-25 23:50:32 +00:00: > next dev
+2025-05-25 23:50:32 +00:00: 
+2025-05-25 23:50:32 +00:00:  ⨯ Failed to start server
+2025-05-25 23:50:32 +00:00: Error: listen EADDRINUSE: address already in use :::3000
+2025-05-25 23:50:32 +00:00:     at Server.setupListenHandle [as _listen2] (node:net:1811:16)
+2025-05-25 23:50:32 +00:00:     at listenInCluster (node:net:1859:12)
+2025-05-25 23:50:32 +00:00:     at Server.listen (node:net:1947:7)
+2025-05-25 23:50:32 +00:00:     at /root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:281:16
+2025-05-25 23:50:32 +00:00:     at new Promise (<anonymous>)
+2025-05-25 23:50:32 +00:00:     at startServer (/root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:191:11)
+2025-05-25 23:50:32 +00:00:     at /root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:311:52
+2025-05-25 23:50:32 +00:00:     at Span.traceAsyncFn (/root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/trace/trace.js:157:26)
+2025-05-25 23:50:32 +00:00:     at process.<anonymous> (/root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:311:35)
+2025-05-25 23:50:32 +00:00:     at process.emit (node:events:517:28) {
+2025-05-25 23:50:32 +00:00:   code: 'EADDRINUSE',
+2025-05-25 23:50:32 +00:00:   errno: -98,
+2025-05-25 23:50:32 +00:00:   syscall: 'listen',
+2025-05-25 23:50:32 +00:00:   address: '::',
+2025-05-25 23:50:32 +00:00:   port: 3000
+2025-05-25 23:50:32 +00:00: }
+2025-05-25 23:50:32 +00:00: [?25h
+2025-05-25 23:50:32 +00:00: 
+2025-05-25 23:50:34 +00:00: 
+2025-05-25 23:50:34 +00:00: > precedent@0.1.0 dev /root/Vortex/precedent
+2025-05-25 23:50:34 +00:00: > next dev
+2025-05-25 23:50:34 +00:00: 
+2025-05-25 23:50:35 +00:00:  ⨯ Failed to start server
+2025-05-25 23:50:35 +00:00: Error: listen EADDRINUSE: address already in use :::3000
+2025-05-25 23:50:35 +00:00:     at Server.setupListenHandle [as _listen2] (node:net:1811:16)
+2025-05-25 23:50:35 +00:00:     at listenInCluster (node:net:1859:12)
+2025-05-25 23:50:35 +00:00:     at Server.listen (node:net:1947:7)
+2025-05-25 23:50:35 +00:00:     at /root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:281:16
+2025-05-25 23:50:35 +00:00:     at new Promise (<anonymous>)
+2025-05-25 23:50:35 +00:00:     at startServer (/root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:191:11)
+2025-05-25 23:50:35 +00:00:     at /root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:311:52
+2025-05-25 23:50:35 +00:00:     at Span.traceAsyncFn (/root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/trace/trace.js:157:26)
+2025-05-25 23:50:35 +00:00:     at process.<anonymous> (/root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:311:35)
+2025-05-25 23:50:35 +00:00:     at process.emit (node:events:517:28) {
+2025-05-25 23:50:35 +00:00:   code: 'EADDRINUSE',
+2025-05-25 23:50:35 +00:00:   errno: -98,
+2025-05-25 23:50:35 +00:00:   syscall: 'listen',
+2025-05-25 23:50:35 +00:00:   address: '::',
+2025-05-25 23:50:35 +00:00:   port: 3000
+2025-05-25 23:50:35 +00:00: }
+2025-05-25 23:50:35 +00:00: [?25h
+2025-05-25 23:50:36 +00:00: 
+2025-05-25 23:50:36 +00:00: > precedent@0.1.0 dev /root/Vortex/precedent
+2025-05-25 23:50:36 +00:00: > next dev
+2025-05-25 23:50:36 +00:00: 
+2025-05-25 23:50:37 +00:00:  ⨯ Failed to start server
+2025-05-25 23:50:37 +00:00: Error: listen EADDRINUSE: address already in use :::3000
+2025-05-25 23:50:37 +00:00:     at Server.setupListenHandle [as _listen2] (node:net:1811:16)
+2025-05-25 23:50:37 +00:00:     at listenInCluster (node:net:1859:12)
+2025-05-25 23:50:37 +00:00:     at Server.listen (node:net:1947:7)
+2025-05-25 23:50:37 +00:00:     at /root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:281:16
+2025-05-25 23:50:37 +00:00:     at new Promise (<anonymous>)
+2025-05-25 23:50:37 +00:00:     at startServer (/root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:191:11)
+2025-05-25 23:50:37 +00:00:     at /root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:311:52
+2025-05-25 23:50:37 +00:00:     at Span.traceAsyncFn (/root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/trace/trace.js:157:26)
+2025-05-25 23:50:37 +00:00:     at process.<anonymous> (/root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:311:35)
+2025-05-25 23:50:37 +00:00:     at process.emit (node:events:517:28) {
+2025-05-25 23:50:37 +00:00:   code: 'EADDRINUSE',
+2025-05-25 23:50:37 +00:00:   errno: -98,
+2025-05-25 23:50:37 +00:00:   syscall: 'listen',
+2025-05-25 23:50:37 +00:00:   address: '::',
+2025-05-25 23:50:37 +00:00:   port: 3000
+2025-05-25 23:50:37 +00:00: }
+2025-05-25 23:50:37 +00:00: [?25h
+2025-05-25 23:50:37 +00:00: 
+2025-05-25 23:50:38 +00:00: 
+2025-05-25 23:50:38 +00:00: > precedent@0.1.0 dev /root/Vortex/precedent
+2025-05-25 23:50:38 +00:00: > next dev
+2025-05-25 23:50:38 +00:00: 
+2025-05-25 23:50:39 +00:00:  ⨯ Failed to start server
+2025-05-25 23:50:39 +00:00: Error: listen EADDRINUSE: address already in use :::3000
+2025-05-25 23:50:39 +00:00:     at Server.setupListenHandle [as _listen2] (node:net:1811:16)
+2025-05-25 23:50:39 +00:00:     at listenInCluster (node:net:1859:12)
+2025-05-25 23:50:39 +00:00:     at Server.listen (node:net:1947:7)
+2025-05-25 23:50:39 +00:00:     at /root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:281:16
+2025-05-25 23:50:39 +00:00:     at new Promise (<anonymous>)
+2025-05-25 23:50:39 +00:00:     at startServer (/root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:191:11)
+2025-05-25 23:50:39 +00:00:     at /root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:311:52
+2025-05-25 23:50:39 +00:00:     at Span.traceAsyncFn (/root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/trace/trace.js:157:26)
+2025-05-25 23:50:39 +00:00:     at process.<anonymous> (/root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:311:35)
+2025-05-25 23:50:39 +00:00:     at process.emit (node:events:517:28) {
+2025-05-25 23:50:39 +00:00:   code: 'EADDRINUSE',
+2025-05-25 23:50:39 +00:00:   errno: -98,
+2025-05-25 23:50:39 +00:00:   syscall: 'listen',
+2025-05-25 23:50:39 +00:00:   address: '::',
+2025-05-25 23:50:39 +00:00:   port: 3000
+2025-05-25 23:50:39 +00:00: }
+2025-05-25 23:50:39 +00:00: [?25h
+2025-05-25 23:50:39 +00:00: 
+2025-05-25 23:52:55 +00:00: 
+2025-05-25 23:52:55 +00:00: > precedent@0.1.0 dev /root/Vortex/precedent
+2025-05-25 23:52:55 +00:00: > next dev
+2025-05-25 23:52:55 +00:00: 
+2025-05-25 23:52:56 +00:00:   ▲ Next.js 14.3.0-canary.57
+2025-05-25 23:52:56 +00:00:   - Local:        http://localhost:3000
+2025-05-25 23:52:56 +00:00:   - Environments: .env
+2025-05-25 23:52:56 +00:00: 
+2025-05-25 23:52:56 +00:00:  ✓ Starting...
+2025-05-25 23:52:59 +00:00:  ✓ Ready in 3.2s
+2025-05-25 23:53:26 +00:00:  ○ Compiling / ...
+2025-05-25 23:53:27 +00:00: Browserslist: caniuse-lite is outdated. Please run:
+2025-05-25 23:53:27 +00:00:   npx update-browserslist-db@latest
+2025-05-25 23:53:27 +00:00:   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+2025-05-25 23:53:37 +00:00:  ✓ Compiled / in 12.1s (2065 modules)
+2025-05-25 23:53:38 +00:00: Warning: Accessing element.ref was removed in React 19. ref is now a regular prop. It will be removed from the JSX Element type in a future release.
+2025-05-25 23:53:38 +00:00:     at eval (webpack-internal:///(ssr)/./node_modules/.pnpm/@radix-ui+react-slot@1.0.2_@types+react@18.2.24_react@18.3.1/node_modules/@radix-ui/react-slot/dist/index.mjs:46:23)
+2025-05-25 23:53:38 +00:00:     at eval (webpack-internal:///(ssr)/./node_modules/.pnpm/@radix-ui+react-slot@1.0.2_@types+react@18.2.24_react@18.3.1/node_modules/@radix-ui/react-slot/dist/index.mjs:20:23)
+2025-05-25 23:53:38 +00:00:     at eval (webpack-internal:///(ssr)/./node_modules/.pnpm/@radix-ui+react-primitive@1.0.3_@types+react-dom@18.2.8_@types+react@18.2.24_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-primitive/dist/index.mjs:44:26)
+2025-05-25 23:53:38 +00:00:     at eval (webpack-internal:///(ssr)/./node_modules/.pnpm/@radix-ui+react-popper@1.1.3_@types+react-dom@18.2.8_@types+react@18.2.24_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-popper/dist/index.mjs:80:28)
+2025-05-25 23:53:38 +00:00:     at eval (webpack-internal:///(ssr)/./node_modules/.pnpm/@radix-ui+react-popover@1.0.7_@types+react-dom@18.2.8_@types+react@18.2.24_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-popover/dist/index.mjs:139:29)
+2025-05-25 23:53:38 +00:00:     at Provider (webpack-internal:///(ssr)/./node_modules/.pnpm/@radix-ui+react-context@1.0.1_@types+react@18.2.24_react@18.3.1/node_modules/@radix-ui/react-context/dist/index.mjs:47:28)
+2025-05-25 23:53:38 +00:00:     at Provider (webpack-internal:///(ssr)/./node_modules/.pnpm/@radix-ui+react-context@1.0.1_@types+react@18.2.24_react@18.3.1/node_modules/@radix-ui/react-context/dist/index.mjs:47:28)
+2025-05-25 23:53:38 +00:00:     at $cf1ac5d9fe0e8206$export$badac9ada3a0bdf9 (webpack-internal:///(ssr)/./node_modules/.pnpm/@radix-ui+react-popper@1.1.3_@types+react-dom@18.2.8_@types+react@18.2.24_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-popper/dist/index.mjs:65:28)
+2025-05-25 23:53:38 +00:00:     at $cb5cc270b50c6fcd$export$5b6b19405a83ff9d (webpack-internal:///(ssr)/./node_modules/.pnpm/@radix-ui+react-popover@1.0.7_@types+react-dom@18.2.8_@types+react@18.2.24_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@radix-ui/react-popover/dist/index.mjs:81:29)
+2025-05-25 23:53:38 +00:00:     at Popover (webpack-internal:///(ssr)/./components/shared/popover.tsx:14:20)
+2025-05-25 23:53:38 +00:00:     at div
+2025-05-25 23:53:38 +00:00:     at ComponentGrid (webpack-internal:///(ssr)/./components/home/component-grid.tsx:20:118)
+2025-05-25 23:53:38 +00:00:     at Lazy
+2025-05-25 23:53:38 +00:00:     at div
+2025-05-25 23:53:38 +00:00:     at div
+2025-05-25 23:53:38 +00:00:     at div
+2025-05-25 23:53:38 +00:00:     at InnerLayoutRouter (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/layout-router.js:246:11)
+2025-05-25 23:53:38 +00:00:     at RedirectErrorBoundary (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/redirect-boundary.js:73:9)
+2025-05-25 23:53:38 +00:00:     at RedirectBoundary (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/redirect-boundary.js:81:11)
+2025-05-25 23:53:38 +00:00:     at NotFoundErrorBoundary (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/not-found-boundary.js:76:9)
+2025-05-25 23:53:38 +00:00:     at NotFoundBoundary (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/not-found-boundary.js:84:11)
+2025-05-25 23:53:38 +00:00:     at LoadingBoundary (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/layout-router.js:350:11)
+2025-05-25 23:53:38 +00:00:     at ErrorBoundary (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/error-boundary.js:158:11)
+2025-05-25 23:53:38 +00:00:     at InnerScrollAndFocusHandler (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/layout-router.js:157:9)
+2025-05-25 23:53:38 +00:00:     at ScrollAndFocusHandler (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/layout-router.js:232:11)
+2025-05-25 23:53:38 +00:00:     at RenderFromTemplateContext (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/render-from-template-context.js:16:44)
+2025-05-25 23:53:38 +00:00:     at Lazy
+2025-05-25 23:53:38 +00:00:     at OuterLayoutRouter (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/layout-router.js:370:11)
+2025-05-25 23:53:38 +00:00:     at Lazy
+2025-05-25 23:53:38 +00:00:     at main
+2025-05-25 23:53:38 +00:00:     at body
+2025-05-25 23:53:38 +00:00:     at html
+2025-05-25 23:53:38 +00:00:     at SWRConfig (webpack-internal:///(ssr)/./node_modules/.pnpm/swr@2.2.5_react@18.3.1/node_modules/swr/dist/_internal/index.mjs:571:13)
+2025-05-25 23:53:38 +00:00:     at OrganizationProvider (webpack-internal:///(ssr)/./node_modules/.pnpm/@clerk+shared@2.8.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@clerk/shared/dist/react/index.mjs:91:3)
+2025-05-25 23:53:38 +00:00:     at ClerkContextProvider (webpack-internal:///(ssr)/./node_modules/.pnpm/@clerk+clerk-react@5.9.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@clerk/clerk-react/dist/index.mjs:1730:11)
+2025-05-25 23:53:38 +00:00:     at ClerkProviderBase (webpack-internal:///(ssr)/./node_modules/.pnpm/@clerk+clerk-react@5.9.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@clerk/clerk-react/dist/index.mjs:1805:11)
+2025-05-25 23:53:38 +00:00:     at Hoc (webpack-internal:///(ssr)/./node_modules/.pnpm/@clerk+clerk-react@5.9.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@clerk/clerk-react/dist/index.mjs:113:5)
+2025-05-25 23:53:38 +00:00:     at ClerkNextOptionsProvider (webpack-internal:///(ssr)/./node_modules/.pnpm/@clerk+nextjs@5.6.2_next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__r_bhtaqgkw4rjjk6duoqvkadkshe/node_modules/@clerk/nextjs/dist/esm/client-boundary/NextOptionsContext.js:16:11)
+2025-05-25 23:53:38 +00:00:     at ClientClerkProvider (webpack-internal:///(ssr)/./node_modules/.pnpm/@clerk+nextjs@5.6.2_next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__r_bhtaqgkw4rjjk6duoqvkadkshe/node_modules/@clerk/nextjs/dist/esm/app-router/client/ClerkProvider.js:49:13)
+2025-05-25 23:53:38 +00:00:     at Lazy
+2025-05-25 23:53:38 +00:00:     at RedirectErrorBoundary (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/redirect-boundary.js:73:9)
+2025-05-25 23:53:38 +00:00:     at RedirectBoundary (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/redirect-boundary.js:81:11)
+2025-05-25 23:53:38 +00:00:     at ReactDevOverlay (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/app/ReactDevOverlay.js:87:9)
+2025-05-25 23:53:38 +00:00:     at HotReload (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/react-dev-overlay/app/hot-reloader-client.js:322:11)
+2025-05-25 23:53:38 +00:00:     at Router (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/app-router.js:202:11)
+2025-05-25 23:53:38 +00:00:     at ErrorBoundaryHandler (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/error-boundary.js:112:9)
+2025-05-25 23:53:38 +00:00:     at ErrorBoundary (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/error-boundary.js:158:11)
+2025-05-25 23:53:38 +00:00:     at AppRouter (webpack-internal:///(ssr)/./node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/client/components/app-router.js:573:13)
+2025-05-25 23:53:38 +00:00:     at Lazy
+2025-05-25 23:53:38 +00:00:     at r6 (/root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:19931)
+2025-05-25 23:53:38 +00:00:     at ServerInsertedHTMLProvider (/root/Vortex/precedent/node_modules/.pnpm/next@14.3.0-canary.57_@babel+core@7.27.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:25694)
+2025-05-25 23:53:38 +00:00:  GET / 200 in 12907ms
+2025-05-25 23:55:50 +00:00:  GET / 200 in 147ms
+2025-05-25 23:55:50 +00:00:  ⚠ The "images.domains" configuration is deprecated. Please use "images.remotePatterns" configuration instead.
+2025-05-25 23:56:25 +00:00:  POST / 200 in 85ms
+2025-05-25 23:56:26 +00:00:  GET / 200 in 29ms
+2025-05-25 23:56:26 +00:00:  GET / 200 in 36ms
+2025-05-25 23:56:44 +00:00:  GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18yeFlmdlUzNHZtQTZsNktxTU1ydzZJeUdxVUMiLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTYW1lU2l0ZT1MYXgiLCJfX2NsaWVudF91YXQ9MTc0ODIxNzQwMjsgUGF0aD0vOyBEb21haW49NS4xNjEuNjQuMTM3OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2FtZVNpdGU9TGF4IiwiX19zZXNzaW9uPWV5SmhiR2NpT2lKU1V6STFOaUlzSW1OaGRDSTZJbU5zWDBJM1pEUlFSREV4TVVGQlFTSXNJbXRwWkNJNkltbHVjMTh5ZUZsbWRsVXpOSFp0UVRac05rdHhUVTF5ZHpaSmVVZHhWVU1pTENKMGVYQWlPaUpLVjFRaWZRLmV5SmhlbkFpT2lKb2RIUndPaTh2TlM0eE5qRXVOalF1TVRNM09qTXdNREFpTENKbGVIQWlPakUzTkRneU1UYzBOaklzSW1aMllTSTZXekFzTFRGZExDSnBZWFFpT2pFM05EZ3lNVGMwTURJc0ltbHpjeUk2SW1oMGRIQnpPaTh2YzNWd1pYSXRjRzl6YzNWdExUY3hMbU5zWlhKckxtRmpZMjkxYm5SekxtUmxkaUlzSW01aVppSTZNVGMwT0RJeE56TTVNaXdpYzJsa0lqb2ljMlZ6YzE4eWVHSnlNakJOWVRCdmFUSTVkbVZyVm1WVVFYTnFRMlJ1WTNNaUxDSnpkV0lpT2lKMWMyVnlYeko0WWtWdU1qVlplbkJJVkUxalZXUlFOMnQwVUhJelYxZEVUQ0lzSW5ZaU9qSjkuVktBMnhBQnNlMmRLeDQzbnZvcC04T1NraHZLTE5qUWl1YUQ0WHJ5eGRnaDdreGRPTU4zWEpHcjRjOUE1STI5ZHN2ZDVOTl8tcVlwRHNaTE55OS1ZSVhLeWhoVnJBbUZvUVhEZWVDeEN4TE9rZWVBRU84VXpuTTFHcVlrRWJDdm83RzFvdm1DZEw1NnBkY09YYlZfWndndF9PLTdvRzZTN3ZjS2J5QVVwd0pnZTNYSkp4QldZbWhUWUM2WVNBeUJIekxfOHc2V01RcW02YWZmaWlnZXk0TS02Nlg4ZThpem0tUnE4amZvclBMRXdwVm1hTG9lYWd2SUJ3ZG50ZEF6R1ZBcHU3aDBmV3FxS1Zyc3hTdlQyWW1sdHpyeWtuOWVXYjF0RE9XY0VDUm9QQnJQbnc1ZEticTJ3TjB3OWVCY3c2ZWRwdi1hU2xmUW02d2VLQnRTNVF3OyBQYXRoPS87IEV4cGlyZXM9TW9uLCAyNSBNYXkgMjAyNiAyMzo1Njo0MiBHTVQ7IFNhbWVTaXRlPUxheCIsIl9fcmVmcmVzaF9YdFRUbTZmTz1ETXBFYkY1Qmx0eE9YMUhLODA4WDsgUGF0aD0vOyBFeHBpcmVzPU1vbiwgMjUgTWF5IDIwMjYgMjM6NTY6NDIgR01UOyBIdHRwT25seTsgU2FtZVNpdGU9TGF4Il19.azhh0AfZeo_Q5qcGKGuRcE58UnyhonVHr7m0hEAxmYgj42vomm3PucJjdBY2fsrF-4Hw6uPnhz7htia3FDL_orClzVzSo4BZhEGmqpna1NqIon62zTvuWY8cuuv4X8f81WmIipblHLMIPkIAZWg7-nd6ApGxxJixHqVvoKSDRwDAgaKiCPS3LcOyskrPogGFknNjKryd_AdRVRvNtcc0TaZzqDQi9OfpkTHxxjF5aX0OBdNhmxvDlv-3dUS7JmrBWnICA8ChCSxcwQkHx2hgngbRxGotEq3zlma4QKDQ7wJo0BXxqwn6caJNN9DzmMzJVVePcKDzQhkEnz-60E3kFQ 200 in 57ms
