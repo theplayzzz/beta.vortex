@@ -3,9 +3,9 @@ import FeatureCard from './feature-card';
 
 export default function PromoSection() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 flex flex-col justify-center h-full">
       {/* Título e subtítulo */}
-      <div className="text-center lg:text-left">
+      <div className="text-center">
         <h1 className="text-4xl font-bold text-seasalt mb-4">
           Gerencie suas tarefas e projetos
         </h1>
