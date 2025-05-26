@@ -16,10 +16,32 @@
   transform: translateY(-1px) !important;
 }
 
+/* Card do Clerk - sempre transparente e menor que o container */
 .cl-card {
-  background-color: #171818 !important;
-  border: 1px solid rgba(249, 251, 252, 0.1) !important;
-  box-shadow: 0 8px 25px rgba(14, 15, 15, 0.4) !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin: 1.5rem auto !important;
+  width: calc(100% - 3rem) !important;
+  max-width: calc(100% - 3rem) !important;
+  padding: 0 !important;
+}
+
+/* Centralização responsiva do componente Clerk */
+.cl-rootBox {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+.cl-main {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
 }
 
 .cl-headerTitle {
@@ -81,4 +103,76 @@
 
 .cl-identityPreviewEditButton:hover {
   color: rgba(207, 198, 254, 0.8) !important;
+}
+
+/* Botões sociais lado a lado */
+.cl-socialButtons {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 0.75rem !important;
+}
+
+.cl-socialButtonsBlockButton {
+  flex: 1 !important;
+  justify-content: center !important;
+  display: flex !important;
+  align-items: center !important;
+  min-height: 44px !important;
+}
+
+.cl-form {
+  width: 100% !important;
+}
+
+.cl-formField {
+  width: 100% !important;
+}
+
+.cl-formFieldInput {
+  width: 100% !important;
+  min-height: 44px !important;
+}
+
+/* Responsividade para telas pequenas */
+@media (max-width: 640px) {
+  .cl-card {
+    margin: 1rem auto !important;
+    width: calc(100% - 2rem) !important;
+    max-width: calc(100% - 2rem) !important;
+  }
+  
+  .cl-socialButtonsBlockButton {
+    min-height: 48px !important;
+    font-size: 0.875rem !important;
+  }
+  
+  .cl-formFieldInput {
+    min-height: 48px !important;
+    font-size: 1rem !important;
+  }
+  
+  .cl-formButtonPrimary {
+    min-height: 48px !important;
+    font-size: 1rem !important;
+  }
+}
+
+/* Melhorias para centralização vertical em mobile */
+@media (max-width: 1024px) {
+  .cl-rootBox {
+    min-height: auto !important;
+    padding: 1rem 0 !important;
+  }
+}
+
+/* Garantir que o conteúdo não transborde */
+.cl-socialButtonsBlockButton,
+.cl-formFieldInput,
+.cl-formButtonPrimary {
+  box-sizing: border-box !important;
+}
+
+.cl-formField + .cl-formField {
+  margin-top: 1rem !important;
 }

@@ -18,20 +18,24 @@ export default function SignInPage() {
       fontFamily: 'inherit',
     },
     elements: {
-      rootBox: 'mx-auto',
-      card: 'bg-eerie-black border border-seasalt/10 shadow-xl rounded-3xl',
-      headerTitle: 'text-seasalt',
-      headerSubtitle: 'text-periwinkle',
-      socialButtonsBlockButton: 'bg-night border-seasalt/20 text-seasalt hover:bg-seasalt/10',
+      rootBox: 'mx-auto flex flex-col items-center justify-center w-full',
+      card: 'w-full mx-auto',
+      main: 'w-full flex flex-col items-center',
+      headerTitle: 'text-seasalt text-center',
+      headerSubtitle: 'text-periwinkle text-center',
+      socialButtonsBlockButton: 'bg-night border-seasalt/20 text-seasalt hover:bg-seasalt/10 flex-1 justify-center',
       socialButtonsBlockButtonText: 'text-seasalt',
+      socialButtons: 'w-full flex flex-row gap-3',
       dividerLine: 'bg-seasalt/20',
       dividerText: 'text-periwinkle',
       formFieldLabel: 'text-seasalt',
-      formFieldInput: 'bg-night border-seasalt/20 text-seasalt focus:border-sgbus-green',
-      formButtonPrimary: 'bg-sgbus-green hover:bg-sgbus-green/90 text-night font-semibold rounded-xl',
+      formFieldInput: 'bg-night border-seasalt/20 text-seasalt focus:border-sgbus-green w-full',
+      formButtonPrimary: 'bg-sgbus-green hover:bg-sgbus-green/90 text-night font-semibold rounded-xl w-full',
       footerActionLink: 'text-periwinkle hover:text-periwinkle/80',
       identityPreviewText: 'text-seasalt',
       identityPreviewEditButton: 'text-periwinkle hover:text-periwinkle/80',
+      form: 'w-full',
+      formField: 'w-full',
     },
   };
 
@@ -39,8 +43,8 @@ export default function SignInPage() {
     <div className="min-h-screen bg-night">
       <div className="container mx-auto lg:flex lg:min-h-screen">
         {/* Lado Esquerdo - Formulário */}
-        <div className="lg:w-2/5 flex items-center justify-center p-8">
-          <div className="w-full max-w-md">
+        <div className="lg:w-2/5 flex flex-col justify-center p-8">
+          <div className="w-full max-w-md mx-auto">
             {/* Header com logo */}
             <div className="mb-8 text-center">
               <div className="w-16 h-16 bg-sgbus-green rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -67,10 +71,31 @@ export default function SignInPage() {
           </div>
         </div>
         
-        {/* Lado Direito - Seção Promocional */}
-        <div className="lg:w-3/5 flex items-center justify-center p-8 lg:block hidden">
-          <PromoSection />
+        {/* Lado Direito - Seção Promocional (Desktop) */}
+        <div className="hidden lg:flex lg:w-3/5 p-8">
+          <div className="w-full max-w-4xl mx-auto">
+            {/* Espaçamento invisível para alinhar com o header do formulário */}
+            <div className="mb-8 text-center opacity-0 pointer-events-none">
+              <div className="w-16 h-16 mx-auto mb-4"></div>
+              <h1 className="text-2xl mb-2">Placeholder</h1>
+              <p>Placeholder</p>
+            </div>
+            
+            {/* Espaçamento invisível para alinhar exatamente com os tabs */}
+            <div className="flex space-x-1 bg-eerie-black/50 p-1 rounded-2xl mb-8 opacity-0 pointer-events-none">
+              <div className="flex-1 py-3 px-6"></div>
+              <div className="flex-1 py-3 px-6"></div>
+            </div>
+            
+            {/* Conteúdo promocional alinhado com os tabs */}
+            <PromoSection />
+          </div>
         </div>
+      </div>
+      
+      {/* Seção Promocional Mobile - Visível apenas em telas pequenas */}
+      <div className="lg:hidden p-8 border-t border-seasalt/10">
+        <PromoSection />
       </div>
     </div>
   );
