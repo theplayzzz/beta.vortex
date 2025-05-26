@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server'
 
 // Definir rotas públicas que não precisam de autenticação
 const isPublicRoute = createRouteMatcher([
-  '/',
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/webhooks(.*)',
@@ -13,9 +12,11 @@ const isPublicRoute = createRouteMatcher([
 export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth()
 
-  // Se a rota não é pública e o usuário não está autenticado, redirecionar para sign-in
+  // Se a rota não é pública e o usuário não está autenticado, redirecionar para nossa página de sign-in
   if (!isPublicRoute(req) && !userId) {
-    return auth().redirectToSignIn({ returnBackUrl: req.url })
+    const signInUrl = new URL('/sign-in', req.url)
+    signInUrl.searchParams.set('redirect_url', req.url)
+    return NextResponse.redirect(signInUrl)
   }
 
   // Se o usuário está autenticado, sincronizar com o banco de dados

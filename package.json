@@ -7,7 +7,7 @@
     "ai-guards-mcp": "./dist/ai-guards/mcp/server.mjs"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3003",
     "build": "next build && npm run build:ai-guards",
     "build:ai-guards": "tsc --project ai-guards/tsconfig.json && cp -r ai-guards/templates dist/ai-guards/",
     "format:write": "prettier --write \"**/*.{css,js,json,jsx,ts,tsx}\"",
@@ -22,11 +22,12 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^5.6.2",
+    "@clerk/themes": "^2.2.46",
     "@modelcontextprotocol/sdk": "^1.10.0",
     "@prisma/client": "^6.8.2",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-popover": "^1.0.7",
-    "@radix-ui/react-tooltip": "^1.0.7",
+    "@radix-ui/react-tooltip": "^1.2.7",
     "@supabase/supabase-js": "^2.49.8",
     "@tanstack/react-query": "^5.77.1",
     "@types/node": "18.11.18",
@@ -42,7 +43,7 @@
     "eslint": "8.31.0",
     "eslint-config-next": "^15.4.0-canary.51",
     "focus-trap-react": "^10.2.2",
-    "framer-motion": "^8.5.5",
+    "framer-motion": "^12.12.2",
     "fs-extra": "^11.3.0",
     "glob": "^11.0.1",
     "inquirer": "^12.5.2",

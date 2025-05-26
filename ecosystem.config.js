@@ -14,11 +14,11 @@ module.exports = {
       max_restarts: 5,
       env: {
         NODE_ENV: 'development',
-        PORT: 3000
+        PORT: 3003
       },
       env_production: {
         NODE_ENV: 'production',
-        PORT: 3000
+        PORT: 3003
       },
       log_file: './logs/vortex-app.log',
       out_file: './logs/vortex-app-out.log',
