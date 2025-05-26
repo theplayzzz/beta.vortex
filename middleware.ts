@@ -1,0 +1,44 @@
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { NextResponse } from 'next/server'
+
+// Definir rotas públicas que não precisam de autenticação
+const isPublicRoute = createRouteMatcher([
+  '/',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/api/webhooks(.*)',
+  '/api/health'
+])
+
+export default clerkMiddleware(async (auth, req) => {
+  const { userId } = await auth()
+
+  // Se a rota não é pública e o usuário não está autenticado, redirecionar para sign-in
+  if (!isPublicRoute(req) && !userId) {
+    return auth().redirectToSignIn({ returnBackUrl: req.url })
+  }
+
+  // Se o usuário está autenticado, sincronizar com o banco de dados
+  if (userId) {
+    // Adicionar header com userId para uso nas API routes
+    const requestHeaders = new Headers(req.headers)
+    requestHeaders.set('x-user-id', userId)
+
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
+  }
+
+  return NextResponse.next()
+})
+
+export const config = {
+  matcher: [
+    // Pular arquivos estáticos e internos do Next.js
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Sempre executar para rotas de API
+    '/(api|trpc)(.*)',
+  ],
+} 
