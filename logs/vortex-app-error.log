@@ -183,3 +183,43 @@
 2025-05-26 00:37:46 +00:00: [Error: Route "/" used `headers().get('Content-Security-Policy')`. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
 2025-05-26 00:43:40 +00:00: [Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
 2025-05-26 00:43:40 +00:00: [Error: Route "/" used `headers().get('Content-Security-Policy')`. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 01:06:01 +00:00:  ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+2025-05-26 01:06:01 +00:00:  ⨯ Error: Cannot find module 'next/dist/client/components/static-generation-async-storage.external.js'
+2025-05-26 01:06:01 +00:00: Require stack:
+2025-05-26 01:06:01 +00:00: - /root/Vortex/precedent/.next/server/app/page.js
+2025-05-26 01:06:01 +00:00: - /root/Vortex/precedent/node_modules/next/dist/server/require.js
+2025-05-26 01:06:01 +00:00: - /root/Vortex/precedent/node_modules/next/dist/server/load-components.js
+2025-05-26 01:06:01 +00:00: - /root/Vortex/precedent/node_modules/next/dist/build/utils.js
+2025-05-26 01:06:01 +00:00: - /root/Vortex/precedent/node_modules/next/dist/build/swc/options.js
+2025-05-26 01:06:01 +00:00: - /root/Vortex/precedent/node_modules/next/dist/build/swc/index.js
+2025-05-26 01:06:01 +00:00: - /root/Vortex/precedent/node_modules/next/dist/build/analysis/parse-module.js
+2025-05-26 01:06:01 +00:00: - /root/Vortex/precedent/node_modules/next/dist/build/analysis/get-page-static-info.js
+2025-05-26 01:06:01 +00:00: - /root/Vortex/precedent/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+2025-05-26 01:06:01 +00:00: - /root/Vortex/precedent/node_modules/next/dist/server/lib/router-server.js
+2025-05-26 01:06:01 +00:00: - /root/Vortex/precedent/node_modules/next/dist/server/lib/start-server.js
+2025-05-26 01:06:01 +00:00:     at ../../client/components/static-generation-async-storage.external (.next/server/app/page.js:55:18)
+2025-05-26 01:06:01 +00:00:     at __webpack_require__ (.next/server/webpack-runtime.js:33:43)
+2025-05-26 01:06:01 +00:00:     at __webpack_require__ (.next/server/webpack-runtime.js:33:43)
+2025-05-26 01:06:01 +00:00:     at __webpack_require__ (.next/server/webpack-runtime.js:33:43)
+2025-05-26 01:06:01 +00:00:     at __webpack_exec__ (.next/server/app/page.js:674:39)
+2025-05-26 01:06:01 +00:00:     at <unknown> (.next/server/app/page.js:675:3166)
+2025-05-26 01:06:01 +00:00:     at __webpack_require__.X (.next/server/webpack-runtime.js:183:21)
+2025-05-26 01:06:01 +00:00:     at <unknown> (.next/server/app/page.js:675:47)
+2025-05-26 01:06:01 +00:00:     at Object.<anonymous> (.next/server/app/page.js:678:3) {
+2025-05-26 01:06:01 +00:00:   code: 'MODULE_NOT_FOUND',
+2025-05-26 01:06:01 +00:00:   requireStack: [Array],
+2025-05-26 01:06:01 +00:00:   page: '/'
+2025-05-26 01:06:01 +00:00: }
+2025-05-26 01:06:05 +00:00: [Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 01:06:05 +00:00: [Error: Route "/" used `headers().get('Content-Security-Policy')`. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 01:06:05 +00:00: [Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 01:06:05 +00:00: [Error: Route "/" used `headers().get('Content-Security-Policy')`. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 02:03:38 +00:00: [Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 02:03:38 +00:00: [Error: Route "/" used `headers().get('Content-Security-Policy')`. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 02:12:39 +00:00: [Error: Route "/_not-found" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 02:12:39 +00:00: [Error: Route "/_not-found" used `headers().get('Content-Security-Policy')`. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 02:14:27 +00:00: [Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 02:14:27 +00:00: [Error: Route "/" used `headers().get('Content-Security-Policy')`. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 02:18:02 +00:00:  ⚠ Invalid next.config.js options detected: 
+2025-05-26 02:18:02 +00:00:  ⚠     Unrecognized key(s) in object: 'swcMinify'
+2025-05-26 02:18:02 +00:00:  ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
