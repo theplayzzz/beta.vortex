@@ -3,7 +3,7 @@ id: plan-001
 title: Upgrade Next.js para versão 15
 createdAt: 2025-05-26
 author: theplayzzz
-status: draft
+status: completed
 ---
 
 ## 🧩 Scope

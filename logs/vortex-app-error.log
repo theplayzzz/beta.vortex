@@ -166,3 +166,20 @@
 2025-05-26 00:32:43 +00:00:  ⚠ The "images.domains" configuration is deprecated. Please use "images.remotePatterns" configuration instead.
 2025-05-26 00:32:44 +00:00:  ⚠ Cross origin request detected from 5.161.64.137 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
 2025-05-26 00:32:44 +00:00: Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+2025-05-26 00:34:12 +00:00:  ⚠ Invalid next.config.js options detected: 
+2025-05-26 00:34:12 +00:00:  ⚠     Unrecognized key(s) in object: 'swcMinify'
+2025-05-26 00:34:12 +00:00:  ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+2025-05-26 00:35:19 +00:00:  ⚠ Cross origin request detected from 5.161.64.137 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+2025-05-26 00:35:19 +00:00: Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+2025-05-26 00:35:25 +00:00: [Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 00:35:25 +00:00: [Error: Route "/" used `headers().get('Content-Security-Policy')`. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 00:35:26 +00:00:  ⚠ The "images.domains" configuration is deprecated. Please use "images.remotePatterns" configuration instead.
+2025-05-26 00:37:07 +00:00: [Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 00:37:07 +00:00: [Error: Route "/" used `headers().get('Content-Security-Policy')`. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 00:37:08 +00:00:  ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+2025-05-26 00:37:08 +00:00: [Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 00:37:08 +00:00: [Error: Route "/" used `headers().get('Content-Security-Policy')`. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 00:37:46 +00:00: [Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 00:37:46 +00:00: [Error: Route "/" used `headers().get('Content-Security-Policy')`. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 00:43:40 +00:00: [Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+2025-05-26 00:43:40 +00:00: [Error: Route "/" used `headers().get('Content-Security-Policy')`. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
