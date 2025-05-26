@@ -39,7 +39,7 @@ export default function SignInPage() {
     <div className="min-h-screen bg-night">
       <div className="container mx-auto lg:flex lg:min-h-screen">
         {/* Lado Esquerdo - Formulário */}
-        <div className="lg:w-2/5 flex items-center justify-center p-8">
+        <div className="lg:w-2/5 flex items-center justify-center p-8 min-h-screen lg:min-h-full">
           <div className="w-full max-w-md">
             {/* Header com logo */}
             <div className="mb-8 text-center">
@@ -68,7 +68,7 @@ export default function SignInPage() {
         </div>
         
         {/* Lado Direito - Seção Promocional */}
-        <div className="lg:w-3/5 flex items-center justify-center p-8 lg:block hidden">
+        <div className="lg:w-3/5 hidden lg:flex items-center justify-center p-8 min-h-screen lg:min-h-full">
           <PromoSection />
         </div>
       </div>
