@@ -9,6 +9,7 @@ import {
   FileText, 
   CheckSquare, 
   BarChart2, 
+  Users,
   ChevronDown,
   Menu,
   X
@@ -31,6 +32,16 @@ const menuItems: MenuItem[] = [
     icon: Home,
     label: "Home",
     href: "/",
+  },
+  {
+    icon: Users,
+    label: "Clientes",
+    href: "/clientes",
+    submenu: [
+      { label: "Lista de Clientes", href: "/clientes" },
+      { label: "Novo Cliente", href: "/clientes/novo" },
+      { label: "Clientes Arquivados", href: "/clientes/arquivados" },
+    ],
   },
   {
     icon: FileText,

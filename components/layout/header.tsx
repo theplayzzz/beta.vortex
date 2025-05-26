@@ -1,21 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Bell } from "lucide-react";
+import { Bell } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
-import { useDebounce } from "@/lib/hooks/use-debounce";
+import GlobalSearch from "@/components/global-search";
 
 export default function Header() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearch = useDebounce(searchQuery, 300);
-
-  // TODO: Implementar lógica de busca quando necessário
-  // useEffect(() => {
-  //   if (debouncedSearch) {
-  //     // Executar busca
-  //   }
-  // }, [debouncedSearch]);
-
   return (
     <header className="h-16 bg-background border-b border-accent/20 z-20 flex items-center justify-between px-6">
       {/* Left Section - Empty for now */}
@@ -23,20 +12,9 @@ export default function Header() {
         {/* Breadcrumbs ou outros elementos podem ser adicionados aqui */}
       </div>
 
-      {/* Center Section - Search Bar */}
+      {/* Center Section - Global Search */}
       <div className="flex-1 flex justify-center">
-        <div className="relative w-[360px]">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-[#A39FAF]" />
-          </div>
-          <input
-            type="text"
-            placeholder="Buscar clientes, projetos, tarefas..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-[40px] bg-[#2A1B45] text-seasalt placeholder-[#A39FAF] pl-12 pr-4 rounded-full border-none outline-none focus:ring-2 focus:ring-sgbus-green/50 transition-all"
-          />
-        </div>
+        <GlobalSearch className="w-[360px]" />
       </div>
 
       {/* Right Section - Notifications & User Menu */}
