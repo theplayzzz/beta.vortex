@@ -1,17 +1,16 @@
 import "./globals.css";
 import cx from "classnames";
 import { sfPro, inter } from "./fonts";
-import Footer from "@/components/layout/footer";
-import { Suspense } from "react";
-import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
-import Navbar from "@/components/layout/navbar";
 import { ClerkProvider } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
+import Sidebar from "@/components/layout/sidebar";
+import Header from "@/components/layout/header";
 
 export const metadata = {
-  title: "Precedent - Building blocks for your Next.js project",
+  title: "Vortex Vault - Sistema de Planejamento e Gestão com IA",
   description:
-    "Precedent is the all-in-one solution for your Next.js project. It includes a design system, authentication, analytics, and more.",
-  metadataBase: new URL("https://precedent.dev"),
+    "Plataforma integrada para criar, gerenciar e otimizar planejamentos estratégicos com inteligência artificial.",
+  metadataBase: new URL("https://vortex-vault.com"),
 };
 
 export default async function RootLayout({
@@ -19,19 +18,32 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { userId } = await auth();
+
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <body className={cx(sfPro.variable, inter.variable)}>
-          <div className="fixed h-screen w-full bg-gradient-to-br from-indigo-50 via-white to-cyan-100" />
-          <Suspense fallback="...">
-            <Navbar />
-          </Suspense>
-          <main className="flex min-h-screen w-full flex-col items-center justify-center py-32">
-            {children}
-          </main>
-          <Footer />
-          <VercelAnalytics />
+    <ClerkProvider
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      afterSignInUrl="/"
+      afterSignUpUrl="/"
+    >
+      <html lang="pt-BR">
+        <body className={cx(sfPro.variable, inter.variable, "bg-night text-seasalt")}>
+          {userId ? (
+            // Layout do Dashboard para usuários autenticados
+            <div className="flex h-screen overflow-hidden bg-background">
+              <Sidebar />
+              <main className="flex-1 flex flex-col">
+                <Header />
+                <div className="flex-1 overflow-auto">
+                  {children}
+                </div>
+              </main>
+            </div>
+          ) : (
+            // Layout simples para páginas de autenticação
+            children
+          )}
         </body>
       </html>
     </ClerkProvider>
