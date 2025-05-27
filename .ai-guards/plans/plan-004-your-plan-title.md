@@ -174,68 +174,197 @@ Otimizar a performance da API `/api/clients` que está apresentando lentidão si
     - ✅ **Padrão**: `queryClient.invalidateQueries({ queryKey: queryKeys.clients.all })`
     - ✅ **Cache Strategy**: Invalidação inteligente por tipo de operação
 
-### **Fase 3: Implementação de Mutations**
+### **Fase 3: Implementação de Mutations (✅ COMPLETA)**
 
 11. **Implementar mutations para operações CRUD**
-    - Criar mutations para criar, atualizar e deletar clientes usando [useMutation](https://tanstack.com/query/latest/docs/framework/react/reference/useMutation)
-    - Implementar callbacks `onSuccess`, `onError`, `onSettled` conforme [guia de mutations](https://tanstack.com/query/latest/docs/framework/react/guides/mutations)
-    - Arquivo: `lib/query/hooks/use-client-mutations.ts` (novo)
-    - **Padrão**: 
-      ```tsx
-      useMutation({
-        mutationFn: createClient,
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['clients'] })
-        }
-      })
-      ```
-    - **Teste**: Verificar se mutations funcionam e invalidam cache
+   - ✅ Criadas mutations para criar, atualizar, deletar e restaurar clientes usando `useMutation` do TanStack Query.
+   - ✅ Implementados callbacks `onSuccess`, `onError`, `onSettled` para cada operação, seguindo o guia oficial.
+   - ✅ Arquivo: `lib/query/hooks/use-client-mutations.ts` (novo)
+   - ✅ Hooks criados: `useCreateClient`, `useUpdateClient`, `useDeleteClient`, `useRestoreClient`
+   - ✅ Invalidação automática de cache após cada mutation.
+   - ✅ Criado hook `useInvalidateClients` para invalidação manual.
+   - ✅ Testes realizados: mutations funcionam e invalidam cache corretamente.
 
 12. **Implementar optimistic updates**
-    - Usar `onMutate` para updates otimistas conforme [documentação de optimistic updates](https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates)
-    - Implementar rollback em caso de erro usando `onError`
-    - **Padrão**:
-      ```tsx
-      onMutate: async (newClient) => {
-        await queryClient.cancelQueries({ queryKey: ['clients'] })
-        const previousClients = queryClient.getQueryData(['clients'])
-        queryClient.setQueryData(['clients'], (old) => [...old, newClient])
-        return { previousClients }
-      }
-      ```
+   - ✅ Todos os mutations implementam updates otimistas com `onMutate`, rollback com `onError` e atualização final com `onSettled`.
+   - ✅ `useCreateClient`: Adiciona cliente ao cache de forma otimista, com rollback em caso de erro.
+   - ✅ `useUpdateClient`: Atualiza cliente no cache de forma otimista, com rollback em caso de erro.
+   - ✅ `useDeleteClient`: Remove cliente do cache e atualiza contador de forma otimista, com rollback em caso de erro.
+   - ✅ `useRestoreClient`: Atualiza contador de clientes de forma otimista ao restaurar.
+   - ✅ Todos os mutations usam snapshots para rollback seguro.
+   - ✅ Testes realizados: updates otimistas funcionam e são revertidos corretamente em caso de erro.
+
+**Recursos Avançados Adicionais Implementados:**
+- ✅ Criado hook `useClientDetail` para gerenciamento individual de cliente com mutations.
+- ✅ Criado hook `useErrorHandling` para tratamento centralizado de erros (network, validação, autorização, server, unknown).
+- ✅ Criado hook `useLoadingStates` para estados de loading granulares.
+- ✅ Criado hook `useNotifications` com sistema de toast notifications.
+- ✅ Criado hook `useClientUX` que combina todos os recursos de UX e helper `handleOperation`.
+- ✅ Criado hook `useBulkClientOperations` para operações em lote com updates otimistas.
+- ✅ Criado hook unificado `useClientOperations` para todas as operações CRUD com estados combinados.
+- ✅ Exemplo prático em `lib/query/examples/client-operations-example.tsx`.
+- ✅ Documentação detalhada em `lib/query/README.md`.
+- ✅ Todos os erros de lint/TypeScript corrigidos.
+
+**Arquivos criados/alterados na Fase 3:**
+- `lib/query/hooks/use-client-mutations.ts` (novo)
+- `lib/query/hooks/useClientDetail.ts` (novo)
+- `lib/query/hooks/useErrorHandling.ts` (novo)
+- `lib/query/hooks/useLoadingStates.ts` (novo)
+- `lib/query/hooks/useNotifications.ts` (novo)
+- `lib/query/hooks/useClientUX.ts` (novo)
+- `lib/query/hooks/useBulkClientOperations.ts` (novo)
+- `lib/query/hooks/useClientOperations.ts` (novo)
+- `lib/query/examples/client-operations-example.tsx` (novo)
+- `lib/query/README.md` (novo)
+- `lib/query/hooks/index.ts` (atualizado para exportar todos os hooks)
+
+**Resumo:**  
+A Fase 3 está 100% concluída, com mutations CRUD, updates otimistas, rollback seguro, hooks avançados de UX, documentação e exemplos práticos, e todos os testes e validações realizados com sucesso.
 
 ### **Fase 4: Otimização de Banco (Alto Risco - Requer Cuidado)**
 
-13. **Preparar migração de índices**
+⚠️ **ATENÇÃO**: Esta fase requer **backup completo** e **janela de manutenção**
+
+#### **Pré-Requisitos Obrigatórios:**
+- [ ] Backup completo do banco de dados
+- [ ] Verificar espaço em disco (mínimo 50% livre)
+- [ ] Executar em horário de baixo tráfego (madrugada/fim de semana)
+- [ ] Testar em ambiente de staging primeiro
+- [ ] Preparar script de rollback
+
+13. **🔍 Análise Pré-Migração (OBRIGATÓRIO)**
+    - Verificar tamanho atual da tabela Client
+    - Estimar tempo de criação dos índices
+    - Confirmar espaço em disco disponível
+    - Arquivo: `scripts/pre-migration-analysis.sql` (novo)
+    - **Comandos**:
+      ```bash
+      # Verificar tamanho da tabela
+      psql $DATABASE_URL -c "SELECT pg_size_pretty(pg_total_relation_size('Client'));"
+      
+      # Verificar espaço em disco
+      df -h
+      
+      # Backup completo
+      pg_dump $DATABASE_URL > backup_pre_indexes_$(date +%Y%m%d_%H%M%S).sql
+      ```
+
+14. **📝 Criar Migração de Índices**
     - Consultar documentação Prisma via MCP Context7 sobre índices compostos
     - Criar migração SQL manual para controle total
-    - Arquivo: `prisma/migrations/[timestamp]_optimize_client_indexes/migration.sql`
-    - **Conteúdo**:
+    - Arquivo: `prisma/migrations/[timestamp]_optimize_client_indexes/migration.sql` (novo)
+    - Arquivo: `scripts/create-indexes.sql` (novo - script standalone)
+    - Arquivo: `scripts/rollback-indexes.sql` (novo - script de rollback)
+    - **Conteúdo da Migração**:
       ```sql
-      -- Índice principal para queries mais comuns
-      CREATE INDEX CONCURRENTLY "Client_userId_deletedAt_createdAt_idx" 
+      -- Migration: Optimize Client table indexes
+      -- Created: [timestamp]
+      -- Purpose: Improve query performance for client operations
+      
+      -- Índice principal para queries mais comuns (listagem ordenada)
+      -- Otimiza: SELECT * FROM Client WHERE userId = ? AND deletedAt IS NULL ORDER BY createdAt DESC
+      CREATE INDEX CONCURRENTLY IF NOT EXISTS "Client_userId_deletedAt_createdAt_idx" 
       ON "Client"("userId", "deletedAt", "createdAt" DESC);
       
       -- Índice para busca por nome
-      CREATE INDEX CONCURRENTLY "Client_userId_name_idx" 
+      -- Otimiza: SELECT * FROM Client WHERE userId = ? AND name ILIKE '%search%'
+      CREATE INDEX CONCURRENTLY IF NOT EXISTS "Client_userId_name_idx" 
       ON "Client"("userId", "name");
       
       -- Índice para filtros avançados
-      CREATE INDEX CONCURRENTLY "Client_userId_industry_richnessScore_idx" 
+      -- Otimiza: SELECT * FROM Client WHERE userId = ? AND industry = ? AND richnessScore > ?
+      CREATE INDEX CONCURRENTLY IF NOT EXISTS "Client_userId_industry_richnessScore_idx" 
       ON "Client"("userId", "industry", "richnessScore");
       ```
 
-14. **Executar migração de índices (Horário de baixo tráfego)**
+15. **🚀 Executar Migração (Horário de Baixo Tráfego)**
+    - **TIMING**: Executar entre 2h-5h da madrugada ou fim de semana
+    - **MONITORAMENTO**: Acompanhar logs e performance em tempo real
     - Usar `CREATE INDEX CONCURRENTLY` para não bloquear tabela
-    - Monitorar performance durante criação
-    - Executar: `npx prisma db push` ou `npx prisma migrate deploy`
-    - **Teste**: Verificar se índices foram criados corretamente
+    - Executar índices um por vez para controle granular
+    - **Comandos de Execução**:
+      ```bash
+      # Método 1: Via migração Prisma (recomendado)
+      npx prisma migrate dev --name optimize_client_indexes
+      
+      # Método 2: Execução manual (maior controle)
+      psql $DATABASE_URL -f scripts/create-indexes.sql
+      
+      # Verificar criação dos índices
+      psql $DATABASE_URL -c "\d+ Client"
+      ```
+    - **Monitoramento Durante Execução**:
+      ```sql
+      -- Verificar progresso
+      SELECT schemaname, tablename, indexname, indexdef 
+      FROM pg_indexes WHERE tablename = 'Client';
+      
+      -- Monitorar locks
+      SELECT * FROM pg_locks WHERE relation = 'Client'::regclass;
+      
+      -- Verificar tamanho dos índices
+      SELECT indexname, pg_size_pretty(pg_relation_size(indexname::regclass))
+      FROM pg_indexes WHERE tablename = 'Client';
+      ```
 
-15. **Atualizar schema Prisma**
-    - Adicionar novos índices ao `schema.prisma`
-    - Executar `npx prisma db pull` para sincronizar
+16. **✅ Validação e Atualização do Schema**
+    - Verificar se todos os índices foram criados corretamente
+    - Testar performance das queries principais
+    - Atualizar `schema.prisma` com os novos índices
     - Arquivo: `prisma/schema.prisma` (atualizar)
-    - **Teste**: Verificar se schema está consistente
+    - Arquivo: `scripts/performance-test.sql` (novo)
+    - **Validações**:
+      ```bash
+      # Sincronizar schema
+      npx prisma db pull
+      
+      # Gerar client atualizado
+      npx prisma generate
+      
+      # Testar aplicação
+      npm run build
+      npm run test
+      ```
+    - **Testes de Performance**:
+      ```sql
+      -- Testar query principal (deve usar Client_userId_deletedAt_createdAt_idx)
+      EXPLAIN ANALYZE SELECT * FROM "Client" 
+      WHERE "userId" = 'test-user-id' AND "deletedAt" IS NULL 
+      ORDER BY "createdAt" DESC LIMIT 12;
+      
+      -- Testar busca por nome (deve usar Client_userId_name_idx)
+      EXPLAIN ANALYZE SELECT * FROM "Client" 
+      WHERE "userId" = 'test-user-id' AND "name" ILIKE '%test%';
+      
+      -- Testar filtros (deve usar Client_userId_industry_richnessScore_idx)
+      EXPLAIN ANALYZE SELECT * FROM "Client" 
+      WHERE "userId" = 'test-user-id' AND "industry" = 'Technology' AND "richnessScore" > 50;
+      ```
+
+#### **🛡️ Estratégia de Rollback**
+- **Critérios de Rollback**:
+  - ❌ Criação de índice falha após 1 hora
+  - ❌ Performance pior que antes da migração
+  - ❌ Espaço em disco < 20%
+  - ❌ Aplicação com erros > 5%
+  - ❌ Queries falhando > 2%
+
+- **Script de Rollback**:
+  ```bash
+  # Executar rollback imediato
+  psql $DATABASE_URL -f scripts/rollback-indexes.sql
+  
+  # Restaurar backup se necessário
+  psql $DATABASE_URL < backup_pre_indexes_[timestamp].sql
+  ```
+
+#### **📊 Métricas de Sucesso**
+- ✅ Todos os 3 índices criados sem erros
+- ✅ Redução de 50%+ no tempo de resposta das queries principais
+- ✅ Planos de execução usando os novos índices
+- ✅ Aplicação funcionando normalmente
+- ✅ Zero downtime durante a migração
 
 ### **Fase 5: Melhorias Avançadas (Opcional)**
 
@@ -278,8 +407,13 @@ Otimizar a performance da API `/api/clients` que está apresentando lentidão si
 - Componentes que fazem operações CRUD - Migrar para mutations
 
 #### **Fase 4 - Banco de Dados:**
-- `prisma/migrations/[timestamp]_optimize_client_indexes/migration.sql` (novo)
-- `prisma/schema.prisma` - Adicionar índices
+- `scripts/pre-migration-analysis.sql` (novo) - Análise pré-migração
+- `scripts/create-indexes.sql` (novo) - Script standalone para criação de índices
+- `scripts/rollback-indexes.sql` (novo) - Script de rollback
+- `scripts/performance-test.sql` (novo) - Testes de performance
+- `prisma/migrations/[timestamp]_optimize_client_indexes/migration.sql` (novo) - Migração oficial
+- `prisma/schema.prisma` (atualizar) - Adicionar definições dos novos índices
+- `docs/phase4-execution-log.md` (novo) - Log de execução da Fase 4
 
 #### **Fase 5 - Avançado:**
 - `lib/cache/redis.ts` (novo) - Cache Redis opcional
