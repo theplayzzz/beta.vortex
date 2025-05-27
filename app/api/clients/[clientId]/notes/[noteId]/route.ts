@@ -45,7 +45,7 @@ export async function PUT(
         updatedAt: new Date(),
       },
       include: {
-        user: {
+        User: {
           select: {
             firstName: true,
             lastName: true,

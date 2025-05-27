@@ -68,6 +68,7 @@ export async function getCurrentUserOrCreate(): Promise<User | null> {
           lastName: clerkUser.lastName,
           profileImageUrl: clerkUser.imageUrl,
           creditBalance: 100, // Saldo inicial
+          updatedAt: new Date(),
         },
       })
 

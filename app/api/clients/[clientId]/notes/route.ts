@@ -40,7 +40,7 @@ export async function GET(
         createdAt: 'desc',
       },
       include: {
-        user: {
+        User: {
           select: {
             firstName: true,
             lastName: true,
@@ -99,9 +99,10 @@ export async function POST(
         content: validatedData.content,
         clientId: validatedData.clientId,
         userId: userId,
+        updatedAt: new Date(),
       },
       include: {
-        user: {
+        User: {
           select: {
             firstName: true,
             lastName: true,
