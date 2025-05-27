@@ -129,8 +129,8 @@ export async function GET(request: NextRequest) {
           updatedAt: true,
           _count: {
             select: {
-              notes: true,
-              attachments: true,
+              ClientNote: true,
+              ClientAttachment: true,
             },
           },
         },
@@ -237,14 +237,20 @@ export async function POST(request: NextRequest) {
     // Validar dados
     const validatedData = CreateClientSchema.parse(body)
 
-    // Calcular richnessScore inicial
-    const fields = ['industry', 'serviceOrProduct', 'initialObjective']
-    const filledFields = fields.filter(field => {
+    // Calcular richnessScore inicial (baseado em todos os 16 campos possíveis)
+    const allFields = [
+      'industry', 'serviceOrProduct', 'initialObjective', 'contactEmail', 
+      'contactPhone', 'website', 'address', 'businessDetails', 'targetAudience',
+      'marketingObjectives', 'historyAndStrategies', 'challengesOpportunities',
+      'competitors', 'resourcesBudget', 'toneOfVoice', 'preferencesRestrictions'
+    ]
+    
+    const filledFields = allFields.filter(field => {
       const value = validatedData[field as keyof typeof validatedData]
       return value && value.toString().trim().length > 0
     })
 
-    const initialRichnessScore = Math.round((filledFields.length / fields.length) * 100)
+    const initialRichnessScore = Math.round((filledFields.length / allFields.length) * 100)
 
     // Criar cliente
     const client = await prisma.client.create({
@@ -259,10 +265,10 @@ export async function POST(request: NextRequest) {
       include: {
         _count: {
           select: {
-            notes: true,
-            attachments: true,
-            strategicPlannings: true,
-            tasks: true,
+            ClientNote: true,
+            ClientAttachment: true,
+            StrategicPlanning: true,
+            PlanningTask: true,
           },
         },
       },

@@ -25,10 +25,10 @@ interface ArchivedClient {
   updatedAt: string;
   deletedAt: string;
   _count: {
-    notes: number;
-    attachments: number;
-    strategicPlannings: number;
-    tasks: number;
+    ClientNote: number;
+    ClientAttachment: number;
+    StrategicPlanning: number;
+    PlanningTask: number;
   };
 }
 
@@ -231,12 +231,12 @@ export default function ArchivedClientsList() {
                   {/* Estatísticas */}
                   <div className="grid grid-cols-2 gap-4 mb-4 text-xs text-periwinkle">
                     <div>
-                      <span className="block">Notas: {client._count.notes}</span>
-                      <span className="block">Anexos: {client._count.attachments}</span>
+                      <span className="block">Notas: {client._count.ClientNote}</span>
+                      <span className="block">Anexos: {client._count.ClientAttachment}</span>
                     </div>
                     <div>
-                      <span className="block">Tarefas: {client._count.tasks}</span>
-                      <span className="block">Planos: {client._count.strategicPlannings}</span>
+                      <span className="block">Tarefas: {client._count.PlanningTask}</span>
+                      <span className="block">Planos: {client._count.StrategicPlanning}</span>
                     </div>
                   </div>
 

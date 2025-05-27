@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { getUserIdFromClerk } from '@/lib/auth/auth-wrapper'
 import { prisma } from '@/lib/prisma/client'
 
 // POST /api/clients/[clientId]/restore - Restaurar cliente deletado
@@ -8,7 +8,7 @@ export async function POST(
   { params }: { params: Promise<{ clientId: string }> }
 ) {
   try {
-    const { userId } = await auth()
+    const userId = await getUserIdFromClerk()
     
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -45,10 +45,10 @@ export async function POST(
       include: {
         _count: {
           select: {
-            notes: true,
-            attachments: true,
-            strategicPlannings: true,
-            tasks: true,
+            ClientNote: true,
+            ClientAttachment: true,
+            StrategicPlanning: true,
+            PlanningTask: true,
           },
         },
       },

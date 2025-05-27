@@ -56,10 +56,10 @@ export async function GET(
       include: {
         _count: {
           select: {
-            notes: true,
-            attachments: true,
-            strategicPlannings: true,
-            tasks: true,
+            ClientNote: true,
+            ClientAttachment: true,
+            StrategicPlanning: true,
+            PlanningTask: true,
           },
         },
       },
@@ -148,10 +148,10 @@ export async function PUT(
       include: {
         _count: {
           select: {
-            notes: true,
-            attachments: true,
-            strategicPlannings: true,
-            tasks: true,
+            ClientNote: true,
+            ClientAttachment: true,
+            StrategicPlanning: true,
+            PlanningTask: true,
           },
         },
       },

@@ -8,30 +8,35 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model User {
-  id                  String               @id @default(cuid())
-  clerkId             String               @unique
-  email               String               @unique
-  firstName           String?
-  lastName            String?
-  profileImageUrl     String?
-  creditBalance       Int                  @default(0)
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  agentInteractions   AgentInteraction[]
-  clients             Client[]
-  clientAttachments   ClientAttachment[]
-  clientNotes         ClientNote[]
-  commercialProposals CommercialProposal[]
-  creditTransactions  CreditTransaction[]
-  tasksAssigned       PlanningTask[]       @relation("AssignedTasks")
-  tasksOwned          PlanningTask[]       @relation("OwnedTasks")
-  salesArguments      SalesArgument[]
-  strategicPlannings  StrategicPlanning[]
-  taskAttachments     TaskAttachment[]
-  taskComments        TaskComment[]
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model AgentInteraction {
+  id           String         @id @default(cuid())
+  title        String?
+  clientId     String
+  userId       String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime
+  Client       Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  User         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  AgentMessage AgentMessage[]
+
+  @@index([clientId])
+  @@index([userId])
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model AgentMessage {
+  id                 String           @id @default(cuid())
+  content            String
+  role               MessageRole
+  agentInteractionId String
+  createdAt          DateTime         @default(now())
+  AgentInteraction   AgentInteraction @relation(fields: [agentInteractionId], references: [id], onDelete: Cascade)
+
+  @@index([agentInteractionId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Client {
   id                      String               @id @default(cuid())
   name                    String
@@ -57,32 +62,22 @@ model Client {
   updatedAt               DateTime             @updatedAt
   deletedAt               DateTime?
   isViewed                Boolean              @default(false)
-  agentInteractions       AgentInteraction[]
-  user                    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  attachments             ClientAttachment[]
-  notes                   ClientNote[]
-  commercialProposals     CommercialProposal[]
-  tasks                   PlanningTask[]
-  strategicPlannings      StrategicPlanning[]
+  AgentInteraction        AgentInteraction[]
+  User                    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ClientAttachment        ClientAttachment[]
+  ClientNote              ClientNote[]
+  CommercialProposal      CommercialProposal[]
+  PlanningTask            PlanningTask[]
+  StrategicPlanning       StrategicPlanning[]
 
-  @@index([userId])
   @@index([deletedAt])
-}
-
-model ClientNote {
-  id        String   @id @default(cuid())
-  content   String
-  clientId  String
-  userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([clientId])
   @@index([userId])
+  @@index([userId, deletedAt, createdAt(sort: Desc)], name: "Client_userId_deletedAt_createdAt_idx")
+  @@index([userId, name], name: "Client_userId_name_idx")
+  @@index([userId, industry, richnessScore], name: "Client_userId_industry_richnessScore_idx")
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model ClientAttachment {
   id        String   @id @default(cuid())
   fileName  String
@@ -92,13 +87,112 @@ model ClientAttachment {
   clientId  String
   userId    String
   createdAt DateTime @default(now())
-  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([userId])
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ClientNote {
+  id        String   @id @default(cuid())
+  content   String
+  clientId  String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([userId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model CommercialProposal {
+  id               String         @id @default(cuid())
+  title            String
+  generatedContent String?
+  status           ProposalStatus @default(DRAFT)
+  version          Int            @default(1)
+  clientId         String?
+  userId           String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime
+  Client           Client?        @relation(fields: [clientId], references: [id])
+  User             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([userId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model CreditTransaction {
+  id                String                @id @default(cuid())
+  amount            Int
+  type              CreditTransactionType
+  description       String?
+  userId            String
+  relatedEntityId   String?
+  relatedEntityType String?
+  createdAt         DateTime              @default(now())
+  User              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([type])
+  @@index([userId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model PlanningTask {
+  id                                 String             @id @default(cuid())
+  title                              String
+  description                        String?
+  status                             TaskStatus         @default(TODO)
+  priority                           TaskPriority       @default(MEDIUM)
+  startDate                          DateTime?
+  endDate                            DateTime?
+  effortEstimate                     String?
+  strategicPlanningId                String?
+  clientId                           String?
+  ownerId                            String
+  assigneeId                         String?
+  parentId                           String?
+  createdAt                          DateTime           @default(now())
+  updatedAt                          DateTime
+  User_PlanningTask_assigneeIdToUser User?              @relation("PlanningTask_assigneeIdToUser", fields: [assigneeId], references: [id])
+  Client                             Client?            @relation(fields: [clientId], references: [id])
+  User_PlanningTask_ownerIdToUser    User               @relation("PlanningTask_ownerIdToUser", fields: [ownerId], references: [id], onDelete: Cascade)
+  PlanningTask                       PlanningTask?      @relation("PlanningTaskToPlanningTask", fields: [parentId], references: [id])
+  other_PlanningTask                 PlanningTask[]     @relation("PlanningTaskToPlanningTask")
+  StrategicPlanning                  StrategicPlanning? @relation(fields: [strategicPlanningId], references: [id])
+  TaskAttachment                     TaskAttachment[]
+  TaskComment                        TaskComment[]
+
+  @@index([assigneeId])
+  @@index([clientId])
+  @@index([ownerId])
+  @@index([parentId])
+  @@index([strategicPlanningId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model SalesArgument {
+  id                String   @id @default(cuid())
+  title             String
+  script            String?
+  objectionsHandled Json?
+  category          String?
+  userId            String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime
+  User              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([category])
+  @@index([userId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model StrategicPlanning {
   id                 String         @id @default(cuid())
   title              String
@@ -112,185 +206,70 @@ model StrategicPlanning {
   clientId           String
   userId             String
   createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-  planningTasks      PlanningTask[]
-  client             Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt          DateTime
+  PlanningTask       PlanningTask[]
+  Client             Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  User               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([userId])
 }
 
-model PlanningTask {
-  id                  String             @id @default(cuid())
-  title               String
-  description         String?
-  status              TaskStatus         @default(TODO)
-  priority            TaskPriority       @default(MEDIUM)
-  startDate           DateTime?
-  endDate             DateTime?
-  effortEstimate      String?
-  strategicPlanningId String?
-  clientId            String?
-  ownerId             String
-  assigneeId          String?
-  parentId            String?
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
-  assignee            User?              @relation("AssignedTasks", fields: [assigneeId], references: [id])
-  client              Client?            @relation(fields: [clientId], references: [id])
-  owner               User               @relation("OwnedTasks", fields: [ownerId], references: [id], onDelete: Cascade)
-  parentTask          PlanningTask?      @relation("SubTasks", fields: [parentId], references: [id])
-  subTasks            PlanningTask[]     @relation("SubTasks")
-  strategicPlanning   StrategicPlanning? @relation(fields: [strategicPlanningId], references: [id])
-  attachments         TaskAttachment[]
-  comments            TaskComment[]
-
-  @@index([strategicPlanningId])
-  @@index([clientId])
-  @@index([ownerId])
-  @@index([assigneeId])
-  @@index([parentId])
-}
-
-model TaskComment {
-  id        String       @id @default(cuid())
-  content   String
-  taskId    String
-  userId    String
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  task      PlanningTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([taskId])
-  @@index([userId])
-}
-
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model TaskAttachment {
-  id        String       @id @default(cuid())
-  fileName  String
-  fileUrl   String
-  fileType  String
-  sizeBytes Int?
-  taskId    String
-  userId    String
-  createdAt DateTime     @default(now())
-  task      PlanningTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String       @id @default(cuid())
+  fileName     String
+  fileUrl      String
+  fileType     String
+  sizeBytes    Int?
+  taskId       String
+  userId       String
+  createdAt    DateTime     @default(now())
+  PlanningTask PlanningTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  User         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
   @@index([userId])
 }
 
-model AgentInteraction {
-  id        String         @id @default(cuid())
-  title     String?
-  clientId  String
-  userId    String
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  client    Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages  AgentMessage[]
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model TaskComment {
+  id           String       @id @default(cuid())
+  content      String
+  taskId       String
+  userId       String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime
+  PlanningTask PlanningTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  User         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([clientId])
+  @@index([taskId])
   @@index([userId])
 }
 
-model AgentMessage {
-  id                 String           @id @default(cuid())
-  content            String
-  role               MessageRole
-  agentInteractionId String
-  createdAt          DateTime         @default(now())
-  agentInteraction   AgentInteraction @relation(fields: [agentInteractionId], references: [id], onDelete: Cascade)
-
-  @@index([agentInteractionId])
-}
-
-model CommercialProposal {
-  id               String         @id @default(cuid())
-  title            String
-  generatedContent String?
-  status           ProposalStatus @default(DRAFT)
-  version          Int            @default(1)
-  clientId         String?
-  userId           String
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  client           Client?        @relation(fields: [clientId], references: [id])
-  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([clientId])
-  @@index([userId])
-}
-
-model SalesArgument {
-  id                String   @id @default(cuid())
-  title             String
-  script            String?
-  objectionsHandled Json?
-  category          String?
-  userId            String
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([category])
-}
-
-model CreditTransaction {
-  id                String                @id @default(cuid())
-  amount            Int
-  type              CreditTransactionType
-  description       String?
-  userId            String
-  relatedEntityId   String?
-  relatedEntityType String?
-  createdAt         DateTime              @default(now())
-  user              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([type])
-}
-
-enum PlanningStatus {
-  DRAFT
-  ACTIVE
-  COMPLETED
-  ARCHIVED
-}
-
-enum TaskStatus {
-  TODO
-  IN_PROGRESS
-  REVIEW
-  DONE
-  BLOCKED
-}
-
-enum TaskPriority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
-}
-
-enum MessageRole {
-  USER
-  AI
-}
-
-enum ProposalStatus {
-  DRAFT
-  SENT
-  VIEWED
-  ACCEPTED
-  REJECTED
-  NEGOTIATION
-  ARCHIVED
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model User {
+  id                                         String               @id @default(cuid())
+  clerkId                                    String               @unique
+  email                                      String               @unique
+  firstName                                  String?
+  lastName                                   String?
+  profileImageUrl                            String?
+  creditBalance                              Int                  @default(0)
+  createdAt                                  DateTime             @default(now())
+  updatedAt                                  DateTime
+  AgentInteraction                           AgentInteraction[]
+  Client                                     Client[]
+  ClientAttachment                           ClientAttachment[]
+  ClientNote                                 ClientNote[]
+  CommercialProposal                         CommercialProposal[]
+  CreditTransaction                          CreditTransaction[]
+  PlanningTask_PlanningTask_assigneeIdToUser PlanningTask[]       @relation("PlanningTask_assigneeIdToUser")
+  PlanningTask_PlanningTask_ownerIdToUser    PlanningTask[]       @relation("PlanningTask_ownerIdToUser")
+  SalesArgument                              SalesArgument[]
+  StrategicPlanning                          StrategicPlanning[]
+  TaskAttachment                             TaskAttachment[]
+  TaskComment                                TaskComment[]
 }
 
 enum CreditTransactionType {
@@ -305,4 +284,41 @@ enum CreditTransactionType {
   CONSUMPTION_PITCH_ANALYSIS_IA
   ADJUSTMENT_ADMIN
   INITIAL_GRANT
+}
+
+enum MessageRole {
+  USER
+  AI
+}
+
+enum PlanningStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum ProposalStatus {
+  DRAFT
+  SENT
+  VIEWED
+  ACCEPTED
+  REJECTED
+  NEGOTIATION
+  ARCHIVED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  DONE
+  BLOCKED
 }
