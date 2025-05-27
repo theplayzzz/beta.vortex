@@ -8,8 +8,9 @@
   },
   "scripts": {
     "dev": "next dev -p 3003",
-    "build": "next build && npm run build:ai-guards",
+    "build": "prisma generate && next build && npm run build:ai-guards",
     "build:ai-guards": "tsc --project ai-guards/tsconfig.json && cp -r ai-guards/templates dist/ai-guards/",
+    "postinstall": "prisma generate",
     "format:write": "prettier --write \"**/*.{css,js,json,jsx,ts,tsx}\"",
     "format": "prettier \"**/*.{css,js,json,jsx,ts,tsx}\"",
     "start": "next start",
