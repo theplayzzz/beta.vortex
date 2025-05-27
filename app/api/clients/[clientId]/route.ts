@@ -69,6 +69,15 @@ export async function GET(
       return NextResponse.json({ error: 'Cliente não encontrado' }, { status: 404 })
     }
 
+    // Marcar como visualizado se ainda não foi
+    if (!client.isViewed) {
+      await prisma.client.update({
+        where: { id: clientId },
+        data: { isViewed: true }
+      })
+      client.isViewed = true
+    }
+
     return NextResponse.json({ client })
   } catch (error) {
     console.error('Erro ao buscar cliente:', error)

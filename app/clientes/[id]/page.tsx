@@ -134,40 +134,28 @@ export default function ClientProfilePage() {
   const [showActions, setShowActions] = useState(false);
   const [archiving, setArchiving] = useState(false);
 
-  // Simular carregamento de dados do cliente
+  // Carregar dados do cliente da API
   useEffect(() => {
     const loadClientData = async () => {
-      setIsLoading(true);
-      // Simular delay de API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock data baseado no ID
-      const mockClient: ClientData = {
-        id: clientId,
-        name: `Cliente ${clientId}`,
-        industry: 'Tecnologia',
-        serviceOrProduct: 'Desenvolvimento de software',
-        initialObjective: 'Aumentar presença digital e gerar mais leads',
-        contactEmail: 'contato@cliente.com',
-        contactPhone: '(11) 99999-9999',
-        website: 'https://www.cliente.com',
-        address: '',
-        businessDetails: '',
-        targetAudience: '',
-        marketingObjectives: '',
-        historyAndStrategies: '',
-        challengesOpportunities: '',
-        competitors: '',
-        resourcesBudget: '',
-        toneOfVoice: '',
-        preferencesRestrictions: '',
-        richnessScore: 0,
-        createdAt: new Date('2024-01-15'),
-        updatedAt: new Date()
-      };
-
-      setClientData(mockClient);
-      setIsLoading(false);
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/clients/${clientId}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setClientData({
+            ...data.client,
+            createdAt: new Date(data.client.createdAt),
+            updatedAt: new Date(data.client.updatedAt)
+          });
+        } else {
+          console.error('Erro ao carregar cliente:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar cliente:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadClientData();
@@ -205,15 +193,30 @@ export default function ClientProfilePage() {
     if (!clientData || isLoading) return;
 
     const timeoutId = setTimeout(async () => {
-      setIsSaving(true);
-      // Simular salvamento
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setLastSaved(new Date());
-      setIsSaving(false);
+      try {
+        setIsSaving(true);
+        const response = await fetch(`/api/clients/${clientId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(clientData),
+        });
+
+        if (response.ok) {
+          setLastSaved(new Date());
+        } else {
+          console.error('Erro ao salvar cliente:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Erro ao salvar cliente:', error);
+      } finally {
+        setIsSaving(false);
+      }
     }, 1000);
 
     return () => clearTimeout(timeoutId);
-  }, [clientData, isLoading]);
+  }, [clientData, isLoading, clientId]);
 
   const handleFieldChange = (field: keyof ClientData, value: string) => {
     setClientData(prev => prev ? { ...prev, [field]: value } : null);

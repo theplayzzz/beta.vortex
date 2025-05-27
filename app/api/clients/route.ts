@@ -110,6 +110,7 @@ export async function GET(request: NextRequest) {
           initialObjective: true,
           contactEmail: true,
           richnessScore: true,
+          isViewed: true,
           createdAt: true,
           updatedAt: true,
           _count: {

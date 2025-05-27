@@ -39,7 +39,6 @@ const menuItems: MenuItem[] = [
     href: "/clientes",
     submenu: [
       { label: "Lista de Clientes", href: "/clientes" },
-      { label: "Novo Cliente", href: "/clientes/novo" },
       { label: "Clientes Arquivados", href: "/clientes/arquivados" },
     ],
   },
