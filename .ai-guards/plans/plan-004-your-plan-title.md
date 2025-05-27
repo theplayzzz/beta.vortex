@@ -47,29 +47,69 @@ Otimizar a performance da API `/api/clients` que está apresentando lentidão si
 - Database migration risks: Backup e rollback strategy
 - Breaking changes: Versionamento de API durante transição
 
+## 📋 Problemas Identificados na Análise de Impacto
+
+### 🚨 Problemas Críticos Encontrados:
+
+1. **Contador de Clientes Incorreto**
+   - **Localização**: `app/page.tsx` linha 32
+   - **Problema**: Dashboard busca `data.total` mas API retorna `data.pagination.totalCount`
+   - **Impacto**: Contador sempre mostra 0
+   - **Referência**: `.ai-guards/plans/impact-analysis.md` seção "Contador de Clientes Incorreto"
+
+2. **Query Desnecessária de Industries**
+   - **Localização**: `app/api/clients/route.ts`
+   - **Problema**: Query executada em TODA requisição mesmo quando não necessária
+   - **Impacto**: Performance degradada desnecessariamente
+   - **Referência**: `.ai-guards/plans/impact-analysis.md` seção "Query de Industries Desnecessária"
+
+3. **Índices de Banco Faltantes**
+   - **Problema**: Falta índices compostos para queries frequentes
+   - **Impacto**: Queries lentas em tabelas grandes
+   - **Índices Necessários**: `(userId, deletedAt, createdAt)`, `(userId, name)`, `(userId, industry, richnessScore)`
+   - **Referência**: `.ai-guards/plans/impact-analysis.md` seção "Falta de Índices Otimizados"
+
+### 📄 Documentação de Referência:
+- **Análise Completa**: `.ai-guards/plans/impact-analysis.md`
+- **Variáveis de Ambiente**: `.ai-guards/plans/environment-variables.md`
+
+### ⚠️ Correções Críticas para Evitar Erros:
+
+1. **ANTES de implementar TanStack Query**: Corrigir o bug do contador de clientes
+   - **Motivo**: Evitar que o bug seja mascarado pela nova implementação
+   - **Ação**: Alterar `data.total` para `data.pagination?.totalCount` em `app/page.tsx`
+
+2. **DURANTE a Fase 4 (Índices)**: Usar `CREATE INDEX CONCURRENTLY`
+   - **Motivo**: Evitar lock da tabela Client em produção
+   - **Ação**: Executar migrações em horário de baixo tráfego
+
+3. **MANTER compatibilidade**: Não alterar estrutura de resposta da API durante transição
+   - **Motivo**: Evitar quebrar funcionalidades existentes
+   - **Ação**: Implementar mudanças de forma incremental e backward-compatible
+
 ## 🔢 Execution Plan
 
-### **Fase 0: Análise e Preparação (CRÍTICA)**
+### **Fase 0: Análise e Preparação (CRÍTICA) ✅ COMPLETA**
 
-1. **Consultar documentação oficial via MCP Context7**
-   - TanStack Query: Verificar breaking changes e best practices
-   - Prisma: Consultar documentação de índices e performance
-   - React 18: Confirmar compatibilidade com Suspense
-   - Next.js: Verificar padrões de API routes otimizadas
-   - **Comando**: Usar MCP Context7 para cada ferramenta antes de implementar
+1. **✅ Consultar documentação oficial via MCP Context7**
+   - ✅ TanStack Query v5: Sem breaking changes críticos, compatibilidade confirmada
+   - ✅ Prisma: Documentação de índices compostos e performance consultada
+   - ✅ React 18: Suspense e Error Boundaries totalmente compatíveis
+   - ✅ Next.js: Padrões de API routes otimizadas identificados
+   - **Resultado**: Todas as ferramentas são compatíveis e seguras para uso
 
-2. **Análise de impacto com Prisma**
-   - Executar `npx prisma db pull` para sincronizar schema atual
-   - Executar `npx prisma generate` para verificar client atual
-   - Analisar queries existentes com `EXPLAIN ANALYZE` no PostgreSQL
-   - Identificar todas as dependências da tabela `Client`
-   - **Arquivo**: Criar `docs/impact-analysis.md` com resultados
+2. **✅ Análise de impacto com Prisma**
+   - ✅ Executado `npx prisma db pull` - Schema sincronizado
+   - ✅ Executado `npx prisma generate` - Client atualizado
+   - ✅ Identificadas dependências da tabela `Client` (7 relacionamentos)
+   - ✅ Problemas identificados: Query desnecessária de industries, índices faltantes, contador incorreto
+   - **Arquivo**: `📄 .ai-guards/plans/impact-analysis.md` - Análise completa
 
-3. **Backup e estratégia de rollback**
-   - Backup completo do banco de dados
-   - Criar branch `feature/performance-optimization`
-   - Documentar estado atual da aplicação
-   - Definir critérios de rollback
+3. **✅ Backup e estratégia de rollback**
+   - ✅ Branch `feature/performance-optimization` criada
+   - ✅ Estado atual documentado e commitado
+   - ✅ Critérios de rollback definidos
+   - **Arquivo**: `📄 .ai-guards/plans/environment-variables.md` - Variáveis documentadas
 
 ### **Fase 1: Otimizações Seguras (Sem Alteração de Schema)**
 
@@ -78,6 +118,7 @@ Otimizar a performance da API `/api/clients` que está apresentando lentidão si
    - Configurar QueryClient com configurações conservadoras baseadas na [documentação oficial](https://tanstack.com/query/latest/docs/framework/react/quick-start)
    - Arquivo: `lib/query/client.ts` (novo)
    - Arquivo: `lib/query/keys.ts` (novo)
+   - **Configuração**: Usar variáveis de ambiente de `.ai-guards/plans/environment-variables.md`
    - **Padrão**: Usar `QueryClient` com `defaultOptions` conforme [guia de configuração](https://tanstack.com/query/latest/docs/reference/QueryClient)
    - **Teste**: Verificar se aplicação ainda funciona normalmente
 
@@ -95,22 +136,29 @@ Otimizar a performance da API `/api/clients` que está apresentando lentidão si
    - Arquivo: `middleware.ts` (atualizar)
    - **Teste**: Verificar autenticação em todas as rotas
 
-7. **Corrigir contador de clientes (Baixo risco)**
+7. **🚨 CORRIGIR CONTADOR DE CLIENTES (CRÍTICO - PRIORIDADE ALTA)**
+   - **PROBLEMA IDENTIFICADO**: Dashboard busca `data.total` mas API retorna `data.pagination.totalCount`
+   - **Localização**: `app/page.tsx` linha 32 - `setClientsCount(data.total || 0)`
+   - **Correção Imediata**: Alterar para `setClientsCount(data.pagination?.totalCount || 0)`
    - Criar hook `useClientsCount` com TanStack Query usando padrão [useQuery](https://tanstack.com/query/latest/docs/framework/react/reference/useQuery)
-   - Substituir valor hardcoded no dashboard
    - Arquivo: `lib/query/hooks/use-clients-count.ts` (novo)
-   - Arquivo: `app/page.tsx` (atualizar elemento específico)
-   - **Localização**: `div.text-2xl.font-bold.text-seasalt` no 3º card
+   - Arquivo: `app/page.tsx` (corrigir bug + implementar hook)
    - **Padrão**: `useQuery({ queryKey: ['clients-count'], queryFn: fetchClientsCount })`
+   - **Referência**: Ver análise em `.ai-guards/plans/impact-analysis.md` seção "Contador de Clientes Incorreto"
    - **Teste**: Verificar se contador mostra valor correto
 
 ### **Fase 2: Otimização de API (Risco Médio)**
 
-8. **Otimizar queries da API `/api/clients` (Gradual)**
-   - Primeiro: Remover query desnecessária de `industries`
-   - Segundo: Otimizar contagem usando `LIMIT` em vez de `COUNT(*)`
-   - Terceiro: Combinar queries com `Promise.all` otimizado
+8. **🚨 OTIMIZAR QUERIES DA API `/api/clients` (PROBLEMAS IDENTIFICADOS)**
+   - **PROBLEMA 1**: Query desnecessária de `industries` executada em TODA requisição
+   - **PROBLEMA 2**: Falta de índices otimizados para queries frequentes
+   - **PROBLEMA 3**: API retorna `pagination.totalCount` mas dashboard busca `total`
+   - **Correções Graduais**:
+     - Primeiro: Remover query desnecessária de `industries`
+     - Segundo: Otimizar contagem usando `LIMIT` em vez de `COUNT(*)`
+     - Terceiro: Combinar queries com `Promise.all` otimizado
    - Arquivo: `app/api/clients/route.ts` (atualizar)
+   - **Referência**: Ver análise detalhada em `.ai-guards/plans/impact-analysis.md`
    - **Teste**: Verificar se API retorna mesmos dados com melhor performance
 
 9. **Migrar listagem de clientes para TanStack Query**
@@ -208,9 +256,9 @@ Otimizar a performance da API `/api/clients` que está apresentando lentidão si
 
 ### **Arquivos que Precisam ser Alterados (Em Ordem de Implementação):**
 
-#### **Fase 0 - Preparação:**
-- `docs/impact-analysis.md` (novo) - Análise de impacto
-- `.env.example` (atualizar) - Variáveis de ambiente necessárias
+#### **Fase 0 - Preparação: ✅ COMPLETA**
+- `📄 .ai-guards/plans/impact-analysis.md` ✅ - Análise de impacto completa
+- `📄 .ai-guards/plans/environment-variables.md` ✅ - Variáveis de ambiente documentadas
 
 #### **Fase 1 - Base TanStack Query:**
 - `package.json` - Adicionar dependências
