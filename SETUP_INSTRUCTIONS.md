@@ -27,7 +27,7 @@ A FASE 1 está **85% concluída**. Todas as configurações de código foram imp
 2. Vá para **Webhooks** no menu lateral
 3. Clique em **Add Endpoint**
 4. Configure:
-   - **Endpoint URL**: `http://5.161.64.137:3001/api/webhooks/clerk`
+   - **Endpoint URL**: `http://5.161.64.137:3003/api/webhooks/clerk`
    - **Events**: Selecione `user.created`, `user.updated`, `user.deleted`
 5. Copie o **Signing Secret** gerado
 6. Atualize o arquivo `.env`:

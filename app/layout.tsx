@@ -2,7 +2,7 @@ import "./globals.css";
 import cx from "classnames";
 import { sfPro, inter } from "./fonts";
 import { ClerkProvider } from "@clerk/nextjs";
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/lib/auth/auth-wrapper";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 

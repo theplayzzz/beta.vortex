@@ -1,4 +1,5 @@
-import { auth, currentUser as clerkCurrentUser } from '@clerk/nextjs/server'
+import { auth } from '@/lib/auth/auth-wrapper'
+import { currentUser as clerkCurrentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma/client'
 import type { User } from '@prisma/client'
 

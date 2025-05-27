@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { getUserIdFromClerk } from '@/lib/auth/auth-wrapper'
 import { prisma } from '@/lib/prisma/client'
 import { z } from 'zod'
+
+// Schema para criação de cliente
+const CreateClientSchema = z.object({
+  name: z.string().min(1, 'Nome é obrigatório'),
+  industry: z.string().optional(),
+  serviceOrProduct: z.string().optional(),
+  initialObjective: z.string().optional(),
+})
 
 // Schema para validação dos filtros
 const ClientFiltersSchema = z.object({
@@ -19,7 +27,7 @@ const ClientFiltersSchema = z.object({
 // GET /api/clients - Listar clientes com filtros
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth()
+    const userId = await getUserIdFromClerk()
     
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -163,6 +171,68 @@ export async function GET(request: NextRequest) {
     }
 
     console.error('Erro ao buscar clientes:', error)
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    )
+  }
+}
+
+// POST /api/clients - Criar novo cliente
+export async function POST(request: NextRequest) {
+  try {
+    const userId = await getUserIdFromClerk()
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    const body = await request.json()
+
+    // Validar dados
+    const validatedData = CreateClientSchema.parse(body)
+
+    // Calcular richnessScore inicial
+    const fields = ['industry', 'serviceOrProduct', 'initialObjective']
+    const filledFields = fields.filter(field => {
+      const value = validatedData[field as keyof typeof validatedData]
+      return value && value.toString().trim().length > 0
+    })
+
+    const initialRichnessScore = Math.round((filledFields.length / fields.length) * 100)
+
+    // Criar cliente
+    const client = await prisma.client.create({
+      data: {
+        name: validatedData.name,
+        industry: validatedData.industry || null,
+        serviceOrProduct: validatedData.serviceOrProduct || null,
+        initialObjective: validatedData.initialObjective || null,
+        richnessScore: initialRichnessScore,
+        userId: userId,
+      },
+      include: {
+        _count: {
+          select: {
+            notes: true,
+            attachments: true,
+            strategicPlannings: true,
+            tasks: true,
+          },
+        },
+      },
+    })
+
+    return NextResponse.json({ client }, { status: 201 })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Dados inválidos', details: error.errors },
+        { status: 400 }
+      )
+    }
+
+    console.error('Erro ao criar cliente:', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
