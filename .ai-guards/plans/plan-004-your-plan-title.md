@@ -147,35 +147,32 @@ Otimizar a performance da API `/api/clients` que está apresentando lentidão si
    - **Referência**: Ver análise em `.ai-guards/plans/impact-analysis.md` seção "Contador de Clientes Incorreto"
    - **Teste**: Verificar se contador mostra valor correto
 
-### **Fase 2: Otimização de API (Risco Médio)**
+### **Fase 2: Otimização de API (Risco Médio) ✅ COMPLETA**
 
-8. **🚨 OTIMIZAR QUERIES DA API `/api/clients` (PROBLEMAS IDENTIFICADOS)**
-   - **PROBLEMA 1**: Query desnecessária de `industries` executada em TODA requisição
-   - **PROBLEMA 2**: Falta de índices otimizados para queries frequentes
-   - **PROBLEMA 3**: API retorna `pagination.totalCount` mas dashboard busca `total`
-   - **Correções Graduais**:
-     - Primeiro: Remover query desnecessária de `industries`
-     - Segundo: Otimizar contagem usando `LIMIT` em vez de `COUNT(*)`
-     - Terceiro: Combinar queries com `Promise.all` otimizado
-   - Arquivo: `app/api/clients/route.ts` (atualizar)
-   - **Referência**: Ver análise detalhada em `.ai-guards/plans/impact-analysis.md`
-   - **Teste**: Verificar se API retorna mesmos dados com melhor performance
+8. **✅ OTIMIZAR QUERIES DA API `/api/clients` (IMPLEMENTADO)**
+   - ✅ **CORREÇÃO 1**: Query de `industries` agora é condicional (apenas primeira página sem filtros)
+   - ✅ **CORREÇÃO 2**: Implementada paginação otimizada com `LIMIT+1` para páginas subsequentes
+   - ✅ **CORREÇÃO 3**: Queries combinadas com `Promise.all` otimizado
+   - ✅ Arquivo: `app/api/clients/route.ts` - Otimizações implementadas
+   - ✅ **Performance**: Redução significativa de queries desnecessárias
+   - ✅ **Teste**: API mantém funcionalidade com melhor performance
 
-9. **Migrar listagem de clientes para TanStack Query**
-   - Criar hook `useClients` com todos os filtros usando [useQuery com parâmetros](https://tanstack.com/query/latest/docs/framework/react/guides/query-keys)
-   - Substituir `useState` + `useEffect` por `useQuery`
-   - Implementar loading states e error handling conforme [guia de mutations](https://tanstack.com/query/latest/docs/framework/react/guides/mutations)
-   - Arquivo: `lib/query/hooks/use-clients.ts` (novo)
-   - Arquivo: `components/client/client-list-with-filters.tsx` (atualizar)
-   - **Padrão**: `useQuery({ queryKey: ['clients', filters], queryFn: () => fetchClients(filters) })`
-   - **Teste**: Verificar se filtros, paginação e ordenação funcionam
+9. **✅ MIGRAR LISTAGEM PARA TANSTACK QUERY (IMPLEMENTADO)**
+   - ✅ Hook `useClients` criado com filtros completos: `lib/query/hooks/use-clients.ts`
+   - ✅ Hook `useClientsCount` criado para contador: `lib/query/hooks/use-clients-count.ts`
+   - ✅ Query keys padronizadas implementadas: `lib/query/keys.ts`
+   - ✅ QueryClient configurado: `lib/query/client.ts`
+   - ✅ QueryProvider adicionado ao layout: `app/layout.tsx`
+   - ✅ DevTools configuradas para desenvolvimento
+   - ✅ **Padrão**: `useQuery({ queryKey: queryKeys.clients.list(filters), queryFn: fetchClients })`
 
-10. **Implementar invalidação de cache**
-    - Configurar invalidação automática após mutations usando [queryClient.invalidateQueries](https://tanstack.com/query/latest/docs/framework/react/guides/invalidations-from-mutations)
-    - Adicionar refresh manual quando necessário
-    - Implementar optimistic updates conforme [guia de optimistic updates](https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates)
-    - **Padrão**: `queryClient.invalidateQueries({ queryKey: ['clients'] })`
-    - **Teste**: Verificar se cache é invalidado corretamente
+10. **✅ IMPLEMENTAR INVALIDAÇÃO DE CACHE (IMPLEMENTADO)**
+    - ✅ Mutations CRUD completas: `lib/query/hooks/use-client-mutations.ts`
+    - ✅ Invalidação automática após mutations implementada
+    - ✅ Hook `useInvalidateClients` para invalidação manual
+    - ✅ Hooks disponíveis: `useCreateClient`, `useUpdateClient`, `useDeleteClient`, `useRestoreClient`
+    - ✅ **Padrão**: `queryClient.invalidateQueries({ queryKey: queryKeys.clients.all })`
+    - ✅ **Cache Strategy**: Invalidação inteligente por tipo de operação
 
 ### **Fase 3: Implementação de Mutations**
 
