@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { getUserIdFromClerk } from '@/lib/auth/auth-wrapper'
 import { prisma } from '@/lib/prisma/client'
 import { z } from 'zod'
 
@@ -30,7 +30,7 @@ export async function GET(
   { params }: { params: Promise<{ clientId: string }> }
 ) {
   try {
-    const { userId } = await auth()
+    const userId = await getUserIdFromClerk()
     
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -85,7 +85,7 @@ export async function PUT(
   { params }: { params: Promise<{ clientId: string }> }
 ) {
   try {
-    const { userId } = await auth()
+    const userId = await getUserIdFromClerk()
     
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -171,7 +171,7 @@ export async function DELETE(
   { params }: { params: Promise<{ clientId: string }> }
 ) {
   try {
-    const { userId } = await auth()
+    const userId = await getUserIdFromClerk()
     
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })

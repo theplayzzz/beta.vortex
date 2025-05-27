@@ -1,16 +1,16 @@
 # 🧪 TESTE FINAL - Ambiente VPN
 
 ## ✅ Status dos Serviços
-- ✅ **Aplicação Next.js**: `http://5.161.64.137:3001` (Status 200)
+- ✅ **Aplicação Next.js**: `http://5.161.64.137:3003` (Status 200)
 - ✅ **Prisma Studio**: `http://5.161.64.137:5555` (Status 200)
-- ✅ **Webhook Clerk**: `http://5.161.64.137:3001/api/webhooks/clerk` (Funcionando)
+- ✅ **Webhook Clerk**: `http://5.161.64.137:3003/api/webhooks/clerk` (Funcionando)
 
 ## 🎯 TESTE COMPLETO DE AUTENTICAÇÃO
 
 ### **1. Preparação**
 Abra duas abas no navegador:
 - **Aba 1**: `http://5.161.64.137:5555` (Prisma Studio)
-- **Aba 2**: `http://5.161.64.137:3001` (Aplicação)
+- **Aba 2**: `http://5.161.64.137:3003` (Aplicação)
 
 ### **2. Estado Inicial**
 No Prisma Studio:
@@ -20,7 +20,7 @@ No Prisma Studio:
 
 ### **3. Teste de Sign-up**
 Na aplicação:
-1. Acesse: `http://5.161.64.137:3001/sign-up`
+1. Acesse: `http://5.161.64.137:3003/sign-up`
 2. Crie uma conta nova com um email válido
 3. Complete todo o processo de verificação do Clerk
 4. Aguarde ser redirecionado para a aplicação
@@ -58,17 +58,17 @@ Se você criar um segundo usuário:
 ## 🔧 URLs de Configuração
 
 ### **Webhook no Clerk Dashboard:**
-- URL: `http://5.161.64.137:3001/api/webhooks/clerk`
+- URL: `http://5.161.64.137:3003/api/webhooks/clerk`
 - Events: `user.created`, `user.updated`, `user.deleted`
 
 ### **Verificação de Conectividade:**
 ```bash
 # Teste da aplicação
-curl -s -o /dev/null -w "%{http_code}" http://5.161.64.137:3001
+curl -s -o /dev/null -w "%{http_code}" http://5.161.64.137:3003
 # Deve retornar: 200
 
 # Teste do webhook
-curl -X POST http://5.161.64.137:3001/api/webhooks/clerk -H "Content-Type: application/json" -d '{}'
+curl -X POST http://5.161.64.137:3003/api/webhooks/clerk -H "Content-Type: application/json" -d '{}'
 # Deve retornar: "Error occured -- no svix headers" (comportamento correto)
 ```
 

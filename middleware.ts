@@ -10,7 +10,19 @@ const isPublicRoute = createRouteMatcher([
 ])
 
 export default clerkMiddleware(async (auth, req) => {
-  const { userId } = await auth()
+  // Usar try/catch para lidar com warnings de APIs dinâmicas
+  let userId = null
+  try {
+    const authResult = await auth()
+    userId = authResult.userId
+  } catch (error) {
+    // Se houver erro relacionado a APIs dinâmicas, continuar sem autenticação
+    if (error instanceof Error && error.message.includes('headers()')) {
+      console.warn('Warning: Dynamic API usage detected in middleware, continuing without auth')
+    } else {
+      throw error
+    }
+  }
 
   // Se a rota não é pública e o usuário não está autenticado, redirecionar para nossa página de sign-in
   if (!isPublicRoute(req) && !userId) {
