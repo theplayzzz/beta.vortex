@@ -1,82 +1,69 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql" // Supabase usa PostgreSQL
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
-// Modelo para Usuários, sincronizado com Clerk
 model User {
-  id              String  @id @default(cuid())
-  clerkId         String  @unique // ID do usuário no Clerk
-  email           String  @unique
-  firstName       String?
-  lastName        String?
-  profileImageUrl String?
-  creditBalance   Int     @default(0) // Saldo de créditos do usuário
-
-  clients             Client[]
-  strategicPlannings  StrategicPlanning[]
+  id                  String               @id @default(cuid())
+  clerkId             String               @unique
+  email               String               @unique
+  firstName           String?
+  lastName            String?
+  profileImageUrl     String?
+  creditBalance       Int                  @default(0)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
   agentInteractions   AgentInteraction[]
-  commercialProposals CommercialProposal[]
-  tasksOwned          PlanningTask[]      @relation("OwnedTasks")
-  tasksAssigned       PlanningTask[]      @relation("AssignedTasks")
-  salesArguments      SalesArgument[]
-  creditTransactions  CreditTransaction[]
-  clientNotes         ClientNote[]
+  clients             Client[]
   clientAttachments   ClientAttachment[]
-  taskComments        TaskComment[]
+  clientNotes         ClientNote[]
+  commercialProposals CommercialProposal[]
+  creditTransactions  CreditTransaction[]
+  tasksAssigned       PlanningTask[]       @relation("AssignedTasks")
+  tasksOwned          PlanningTask[]       @relation("OwnedTasks")
+  salesArguments      SalesArgument[]
+  strategicPlannings  StrategicPlanning[]
   taskAttachments     TaskAttachment[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  taskComments        TaskComment[]
 }
 
-// Modelo para Clientes
 model Client {
-  id                String  @id @default(cuid())
-  name              String
-  industry          String? // Ramo de Atuação
-  serviceOrProduct  String? // Breve descrição do Serviço/Produto
-  initialObjective  String? // Objetivo inicial (do pop-up)
-
-  // Informações detalhadas (enriquecimento progressivo)
+  id                      String               @id @default(cuid())
+  name                    String
+  industry                String?
+  serviceOrProduct        String?
+  initialObjective        String?
   contactEmail            String?
   contactPhone            String?
   website                 String?
   address                 String?
-  businessDetails         String? // TEXT no DB
-  targetAudience          String? // TEXT no DB
-  marketingObjectives     String? // TEXT no DB
-  historyAndStrategies    String? // TEXT no DB
-  challengesOpportunities String? // TEXT no DB
-  competitors             String? // TEXT no DB
-  resourcesBudget         String? // TEXT no DB
-  toneOfVoice             String? // TEXT no DB
-  preferencesRestrictions String? // TEXT no DB
-
-  richnessScore Int @default(0) // 0-100, calculado pela aplicação
-  isViewed      Boolean @default(false) // Para controlar highlight de clientes novos
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  strategicPlannings StrategicPlanning[]
-  agentInteractions  AgentInteraction[]
-  tasks              PlanningTask[]
-  commercialProposals CommercialProposal[]
-  notes              ClientNote[]
-  attachments        ClientAttachment[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime? // Para soft delete
+  businessDetails         String?
+  targetAudience          String?
+  marketingObjectives     String?
+  historyAndStrategies    String?
+  challengesOpportunities String?
+  competitors             String?
+  resourcesBudget         String?
+  toneOfVoice             String?
+  preferencesRestrictions String?
+  richnessScore           Int                  @default(0)
+  userId                  String
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  deletedAt               DateTime?
+  isViewed                Boolean              @default(false)
+  agentInteractions       AgentInteraction[]
+  user                    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attachments             ClientAttachment[]
+  notes                   ClientNote[]
+  commercialProposals     CommercialProposal[]
+  tasks                   PlanningTask[]
+  strategicPlannings      StrategicPlanning[]
 
   @@index([userId])
   @@index([deletedAt])
@@ -84,13 +71,13 @@ model Client {
 
 model ClientNote {
   id        String   @id @default(cuid())
-  content   String // TEXT no DB
+  content   String
   clientId  String
-  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  userId    String // Quem criou a nota
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([userId])
@@ -99,81 +86,65 @@ model ClientNote {
 model ClientAttachment {
   id        String   @id @default(cuid())
   fileName  String
-  fileUrl   String // URL para o arquivo no Supabase Storage ou similar
-  fileType  String // ex: 'application/pdf', 'image/png'
+  fileUrl   String
+  fileType  String
   sizeBytes Int?
   clientId  String
-  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  userId    String // Quem fez o upload
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
   createdAt DateTime @default(now())
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([userId])
 }
 
-// Modelo para Planejamentos Estratégicos (Backlogs)
 model StrategicPlanning {
-  id          String @id @default(cuid())
-  title       String
-  description String? // Descrição geral do planejamento
-
-  // Campos do formulário de informações adicionais
-  specificObjectives String? // TEXT no DB
-  scope              String? // TEXT no DB
-  successMetrics     String? // TEXT no DB
+  id                 String         @id @default(cuid())
+  title              String
+  description        String?
+  specificObjectives String?
+  scope              String?
+  successMetrics     String?
   budget             String?
   toneOfVoice        String?
-
-  status PlanningStatus @default(DRAFT)
-
-  clientId String
-  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  planningTasks PlanningTask[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status             PlanningStatus @default(DRAFT)
+  clientId           String
+  userId             String
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  planningTasks      PlanningTask[]
+  client             Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([userId])
 }
 
-// Modelo para Tarefas (dentro de um planejamento ou avulsas)
 model PlanningTask {
-  id          String  @id @default(cuid())
-  title       String
-  description String? // TEXT no DB
-
-  status        TaskStatus   @default(TODO)
-  priority      TaskPriority @default(MEDIUM)
-  startDate     DateTime?
-  endDate       DateTime?
-  effortEstimate String?      // ex: "2h", "1d", "5pts"
-
-  strategicPlanningId String? // Opcional: se a tarefa pertence a um planejamento
-  strategicPlanning   StrategicPlanning? @relation(fields: [strategicPlanningId], references: [id], onDelete: SetNull)
-
-  clientId String? // Opcional: para tarefas avulsas vinculadas a um cliente
-  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
-
-  ownerId    String // Quem criou/é dono da tarefa
-  owner      User   @relation("OwnedTasks", fields: [ownerId], references: [id], onDelete: Cascade)
-  assigneeId String? // Quem está designado para a tarefa
-  assignee   User?   @relation("AssignedTasks", fields: [assigneeId], references: [id], onDelete: SetNull)
-
-  parentId   String?
-  parentTask PlanningTask?  @relation("SubTasks", fields: [parentId], references: [id], onDelete: SetNull) // onDelete: SetNull para não apagar subtasks se a pai for apagada, ou Cascade se preferir
-  subTasks   PlanningTask[] @relation("SubTasks")
-
-  comments    TaskComment[]
-  attachments TaskAttachment[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                  String             @id @default(cuid())
+  title               String
+  description         String?
+  status              TaskStatus         @default(TODO)
+  priority            TaskPriority       @default(MEDIUM)
+  startDate           DateTime?
+  endDate             DateTime?
+  effortEstimate      String?
+  strategicPlanningId String?
+  clientId            String?
+  ownerId             String
+  assigneeId          String?
+  parentId            String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  assignee            User?              @relation("AssignedTasks", fields: [assigneeId], references: [id])
+  client              Client?            @relation(fields: [clientId], references: [id])
+  owner               User               @relation("OwnedTasks", fields: [ownerId], references: [id], onDelete: Cascade)
+  parentTask          PlanningTask?      @relation("SubTasks", fields: [parentId], references: [id])
+  subTasks            PlanningTask[]     @relation("SubTasks")
+  strategicPlanning   StrategicPlanning? @relation(fields: [strategicPlanningId], references: [id])
+  attachments         TaskAttachment[]
+  comments            TaskComment[]
 
   @@index([strategicPlanningId])
   @@index([clientId])
@@ -183,130 +154,107 @@ model PlanningTask {
 }
 
 model TaskComment {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   content   String
   taskId    String
-  task      PlanningTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  task      PlanningTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
   @@index([userId])
 }
 
 model TaskAttachment {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   fileName  String
   fileUrl   String
   fileType  String
   sizeBytes Int?
   taskId    String
-  task      PlanningTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  createdAt DateTime     @default(now())
+  task      PlanningTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
   @@index([userId])
 }
 
-// Modelo para Interações com o Agente IA (Sessões de Chat)
 model AgentInteraction {
-  id     String @id @default(cuid())
-  title  String? // Usuário pode nomear o chat
-
-  clientId String
-  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  messages AgentMessage[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String         @id @default(cuid())
+  title     String?
+  clientId  String
+  userId    String
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  client    Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  AgentMessage[]
 
   @@index([clientId])
   @@index([userId])
 }
 
-// Modelo para Mensagens dentro de uma Interação com Agente IA
 model AgentMessage {
-  id                 String      @id @default(cuid())
-  content            String // TEXT no DB
-  role               MessageRole // USER ou AI
+  id                 String           @id @default(cuid())
+  content            String
+  role               MessageRole
   agentInteractionId String
+  createdAt          DateTime         @default(now())
   agentInteraction   AgentInteraction @relation(fields: [agentInteractionId], references: [id], onDelete: Cascade)
-
-  // Poderia adicionar custo em créditos aqui se cada msg tiver um custo
-  // creditCost Int? 
-
-  createdAt DateTime @default(now())
 
   @@index([agentInteractionId])
 }
 
-// Modelo para Propostas Comerciais
 model CommercialProposal {
-  id               String           @id @default(cuid())
+  id               String         @id @default(cuid())
   title            String
-  generatedContent String?          // TEXT no DB, conteúdo gerado pela IA ou inserido
-  status           ProposalStatus   @default(DRAFT)
-  version          Int              @default(1)
-
-  clientId String? // Opcional: proposta pode não ser para um cliente específico inicialmente
-  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  generatedContent String?
+  status           ProposalStatus @default(DRAFT)
+  version          Int            @default(1)
+  clientId         String?
+  userId           String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  client           Client?        @relation(fields: [clientId], references: [id])
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([userId])
 }
 
-// Modelo para Argumentos de Vendas
 model SalesArgument {
-  id                 String   @id @default(cuid())
-  title              String
-  script             String? // TEXT no DB
-  objectionsHandled  Json?    // Lista de objeções e contra-argumentos
-  category           String?
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String   @id @default(cuid())
+  title             String
+  script            String?
+  objectionsHandled Json?
+  category          String?
+  userId            String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([category])
 }
 
-// Modelo para transações de crédito
 model CreditTransaction {
-  id          String            @id @default(cuid())
-  amount      Int // Positivo para compra, negativo para consumo
-  type        CreditTransactionType
-  description String?
-  userId      String
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Para rastrear a qual entidade o consumo está relacionado (opcional)
+  id                String                @id @default(cuid())
+  amount            Int
+  type              CreditTransactionType
+  description       String?
+  userId            String
   relatedEntityId   String?
-  relatedEntityType String? // Ex: "StrategicPlanning", "AgentInteraction", "CommercialProposal"
-
-  createdAt DateTime @default(now())
+  relatedEntityType String?
+  createdAt         DateTime              @default(now())
+  user              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([type])
 }
-
-// --- ENUMS ---
 
 enum PlanningStatus {
   DRAFT
@@ -353,8 +301,8 @@ enum CreditTransactionType {
   CONSUMPTION_PROPOSAL_GENERATION
   CONSUMPTION_TASK_IA_ASSIST
   CONSUMPTION_SALES_ARGUMENT_IA
-  CONSUMPTION_MEETING_INSIGHTS_IA // Futuro
-  CONSUMPTION_PITCH_ANALYSIS_IA   // Futuro
-  ADJUSTMENT_ADMIN // Para correções manuais
-  INITIAL_GRANT    // Créditos iniciais ao se registrar
-} 
+  CONSUMPTION_MEETING_INSIGHTS_IA
+  CONSUMPTION_PITCH_ANALYSIS_IA
+  ADJUSTMENT_ADMIN
+  INITIAL_GRANT
+}
