@@ -95,13 +95,27 @@ export async function GET(request: NextRequest) {
     // Calcular offset para paginação
     const offset = (validatedFilters.page - 1) * validatedFilters.limit
 
-    // Buscar clientes com contagem total
-    const [clients, totalCount] = await Promise.all([
+    // 🚀 OTIMIZAÇÃO 1: Verificar se precisa buscar industries (apenas na primeira página sem filtros)
+    const needsIndustries = validatedFilters.page === 1 && 
+                           !validatedFilters.search && 
+                           (!validatedFilters.industry || validatedFilters.industry.length === 0)
+
+    // 🚀 OTIMIZAÇÃO 2: Usar LIMIT+1 para verificar próxima página em vez de COUNT quando possível
+    const useOptimizedPagination = validatedFilters.page > 1 && !validatedFilters.search && 
+                                  (!validatedFilters.industry || validatedFilters.industry.length === 0)
+    
+    const limitPlusOne = validatedFilters.limit + 1
+
+    // 🚀 OTIMIZAÇÃO 3: Combinar queries com Promise.all otimizado
+    const queries = []
+
+    // Query principal de clientes
+    queries.push(
       prisma.client.findMany({
         where: whereConditions,
         orderBy: orderBy,
         skip: offset,
-        take: validatedFilters.limit,
+        take: useOptimizedPagination ? limitPlusOne : validatedFilters.limit,
         select: {
           id: true,
           name: true,
@@ -120,32 +134,62 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-      }),
-      prisma.client.count({
-        where: whereConditions,
-      }),
-    ])
+      })
+    )
 
-    // Buscar setores únicos para filtros
-    const industries = await prisma.client.findMany({
-      where: {
-        userId: userId,
-        industry: {
-          not: null,
-        },
-      },
-      select: {
-        industry: true,
-      },
-      distinct: ['industry'],
-      orderBy: {
-        industry: 'asc',
-      },
-    })
+    // Query de contagem (apenas quando necessário)
+    if (!useOptimizedPagination) {
+      queries.push(
+        prisma.client.count({
+          where: whereConditions,
+        })
+      )
+    } else {
+      queries.push(Promise.resolve(0)) // Placeholder
+    }
 
-    // Calcular metadados de paginação
-    const totalPages = Math.ceil(totalCount / validatedFilters.limit)
-    const hasNextPage = validatedFilters.page < totalPages
+    // Query de industries (apenas quando necessário)
+    if (needsIndustries) {
+      queries.push(
+        prisma.client.findMany({
+          where: {
+            userId: userId,
+            industry: {
+              not: null,
+            },
+          },
+          select: {
+            industry: true,
+          },
+          distinct: ['industry'],
+          orderBy: {
+            industry: 'asc',
+          },
+        })
+      )
+    } else {
+      queries.push(Promise.resolve([])) // Placeholder
+    }
+
+    // Executar todas as queries em paralelo
+    const results = await Promise.all(queries)
+    const clientsRaw = results[0] as any[]
+    const totalCount = results[1] as number
+    const industriesRaw = results[2] as { industry: string | null }[]
+
+    // Processar resultados da paginação otimizada
+    let clients, hasNextPage, totalPages
+
+    if (useOptimizedPagination) {
+      hasNextPage = clientsRaw.length > validatedFilters.limit
+      clients = hasNextPage ? clientsRaw.slice(0, validatedFilters.limit) : clientsRaw
+      totalPages = hasNextPage ? validatedFilters.page + 1 : validatedFilters.page
+    } else {
+      clients = clientsRaw
+      hasNextPage = validatedFilters.page < Math.ceil(totalCount / validatedFilters.limit)
+      totalPages = Math.ceil(totalCount / validatedFilters.limit)
+    }
+
     const hasPreviousPage = validatedFilters.page > 1
 
     return NextResponse.json({
@@ -153,13 +197,13 @@ export async function GET(request: NextRequest) {
       pagination: {
         page: validatedFilters.page,
         limit: validatedFilters.limit,
-        totalCount,
+        totalCount: useOptimizedPagination ? null : totalCount, // null quando não calculado
         totalPages,
         hasNextPage,
         hasPreviousPage,
       },
       filters: {
-        industries: industries.map(i => i.industry).filter(Boolean),
+        industries: needsIndustries ? industriesRaw.map(i => i.industry).filter(Boolean) : [],
         appliedFilters: validatedFilters,
       },
     })
