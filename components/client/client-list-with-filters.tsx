@@ -16,7 +16,9 @@ import {
   FileText,
   Paperclip,
   X,
-  Loader2
+  Loader2,
+  Star,
+  Clock
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -30,6 +32,7 @@ interface Client {
   initialObjective?: string;
   contactEmail?: string;
   richnessScore: number;
+  isViewed: boolean;
   createdAt: string;
   updatedAt: string;
   _count: {
@@ -49,16 +52,7 @@ interface Pagination {
 
 interface Filters {
   industries: string[];
-  appliedFilters: {
-    search?: string;
-    industry: string[];
-    richnessScoreMin?: number;
-    richnessScoreMax?: number;
-    sortBy: string;
-    sortOrder: string;
-    page: number;
-    limit: number;
-  };
+  appliedFilters: any;
 }
 
 interface ClientListResponse {
@@ -92,6 +86,11 @@ export default function ClientListWithFilters() {
   
   // Debounce da busca
   const [debouncedSearch] = useDebounce(searchTerm, 500);
+
+  // Função para verificar se cliente é novo (não visualizado ainda)
+  const isNewClient = (client: Client) => {
+    return !client.isViewed;
+  };
 
   // Construir URL com filtros
   const buildFilterUrl = useMemo(() => {
@@ -196,6 +195,11 @@ export default function ClientListWithFilters() {
     return count;
   }, [debouncedSearch, selectedIndustries, richnessScoreRange]);
 
+  // Contar clientes novos
+  const newClientsCount = useMemo(() => {
+    return clients.filter(client => isNewClient(client)).length;
+  }, [clients]);
+
   return (
     <div className="space-y-6">
       {/* Header com busca e filtros */}
@@ -255,6 +259,18 @@ export default function ClientListWithFilters() {
           </div>
         </div>
 
+        {/* Indicador de clientes novos */}
+        {newClientsCount > 0 && (
+          <div className="mt-4 p-3 bg-sgbus-green/10 border border-sgbus-green/20 rounded-lg flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Star className="w-4 h-4 text-sgbus-green animate-pulse" />
+              <span className="text-sgbus-green font-medium text-sm">
+                {newClientsCount} cliente{newClientsCount > 1 ? 's' : ''} novo{newClientsCount > 1 ? 's' : ''} aguardando visualização
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Painel de filtros */}
         <AnimatePresence>
           {showFilters && (
@@ -294,7 +310,7 @@ export default function ClientListWithFilters() {
                     </label>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-xs text-periwinkle mb-1">
+                        <label className="block text-xs text-periwinkle mb-2">
                           Mínimo: {richnessScoreRange.min}%
                         </label>
                         <input
@@ -302,15 +318,15 @@ export default function ClientListWithFilters() {
                           min="0"
                           max="100"
                           value={richnessScoreRange.min}
-                          onChange={(e) => setRichnessScoreRange(prev => ({
-                            ...prev,
-                            min: Number(e.target.value)
+                          onChange={(e) => setRichnessScoreRange(prev => ({ 
+                            ...prev, 
+                            min: Number(e.target.value) 
                           }))}
                           className="w-full h-2 bg-night rounded-lg appearance-none cursor-pointer slider"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-periwinkle mb-1">
+                        <label className="block text-xs text-periwinkle mb-2">
                           Máximo: {richnessScoreRange.max}%
                         </label>
                         <input
@@ -318,9 +334,9 @@ export default function ClientListWithFilters() {
                           min="0"
                           max="100"
                           value={richnessScoreRange.max}
-                          onChange={(e) => setRichnessScoreRange(prev => ({
-                            ...prev,
-                            max: Number(e.target.value)
+                          onChange={(e) => setRichnessScoreRange(prev => ({ 
+                            ...prev, 
+                            max: Number(e.target.value) 
                           }))}
                           className="w-full h-2 bg-night rounded-lg appearance-none cursor-pointer slider"
                         />
@@ -332,9 +348,8 @@ export default function ClientListWithFilters() {
                   <div className="flex flex-col justify-end">
                     <button
                       onClick={clearFilters}
-                      className="flex items-center justify-center gap-2 px-4 py-2 text-periwinkle hover:text-seasalt transition-colors"
+                      className="px-4 py-2 bg-seasalt/10 text-seasalt rounded-lg hover:bg-seasalt/20 transition-colors"
                     >
-                      <X className="w-4 h-4" />
                       Limpar Filtros
                     </button>
                   </div>
@@ -346,152 +361,195 @@ export default function ClientListWithFilters() {
       </div>
 
       {/* Resultados */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-sgbus-green" />
-        </div>
-      ) : (
-        <>
-          {/* Informações dos resultados */}
-          <div className="flex items-center justify-between text-sm text-periwinkle">
-            <span>
-              {pagination ? `${pagination.totalCount} cliente(s) encontrado(s)` : ''}
-            </span>
-            {pagination && pagination.totalPages > 1 && (
-              <span>
+      <div className="bg-eerie-black rounded-xl border border-seasalt/10 p-6">
+        {/* Header dos resultados */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-lg font-semibold text-seasalt">
+              {loading ? 'Carregando...' : `${pagination?.totalCount || 0} cliente${(pagination?.totalCount || 0) !== 1 ? 's' : ''} encontrado${(pagination?.totalCount || 0) !== 1 ? 's' : ''}`}
+            </h3>
+            {pagination && pagination.totalCount > 0 && (
+              <p className="text-sm text-periwinkle">
                 Página {pagination.page} de {pagination.totalPages}
-              </span>
+              </p>
             )}
           </div>
+        </div>
 
-          {/* Grid de clientes */}
-          {clients.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="w-12 h-12 text-periwinkle mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-seasalt mb-2">
-                Nenhum cliente encontrado
-              </h3>
-              <p className="text-periwinkle mb-6">
-                Tente ajustar os filtros ou criar um novo cliente.
-              </p>
-              <Link
-                href="/clientes/novo"
-                className="inline-flex items-center px-4 py-2 bg-sgbus-green text-night font-medium rounded-lg hover:bg-sgbus-green/90 transition-colors"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Novo Cliente
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              <AnimatePresence>
-                {clients.map((client) => (
-                  <motion.div
-                    key={client.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    whileHover={{ y: -5 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Link href={`/clientes/${client.id}`}>
-                      <div className="bg-eerie-black rounded-xl border border-seasalt/10 p-6 hover:border-sgbus-green/50 transition-colors cursor-pointer h-full">
-                        {/* Header do card */}
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-semibold text-seasalt truncate">
-                              {client.name}
-                            </h3>
-                            {client.industry && (
-                              <p className="text-sm text-periwinkle flex items-center mt-1">
-                                <Building className="w-3 h-3 mr-1" />
-                                {client.industry}
-                              </p>
+        {/* Loading */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 text-sgbus-green animate-spin" />
+            <span className="ml-3 text-periwinkle">Carregando clientes...</span>
+          </div>
+        ) : (
+          <>
+            {/* Lista de clientes */}
+            {clients.length === 0 ? (
+              <div className="text-center py-12">
+                <Users className="w-12 h-12 text-periwinkle mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-seasalt mb-2">
+                  Nenhum cliente encontrado
+                </h3>
+                <p className="text-periwinkle mb-6">
+                  Tente ajustar os filtros ou criar um novo cliente.
+                </p>
+                <Link
+                  href="/clientes/novo"
+                  className="inline-flex items-center px-4 py-2 bg-sgbus-green text-night font-medium rounded-lg hover:bg-sgbus-green/90 transition-colors"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Novo Cliente
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <AnimatePresence>
+                  {clients.map((client) => (
+                    <motion.div
+                      key={client.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      whileHover={{ y: -5 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Link href={`/clientes/${client.id}`}>
+                        <div className={`bg-eerie-black rounded-xl border p-6 hover:border-sgbus-green/50 transition-colors cursor-pointer h-full relative ${
+                          isNewClient(client) 
+                            ? 'border-sgbus-green/30 shadow-lg shadow-sgbus-green/10' 
+                            : 'border-seasalt/10'
+                        }`}>
+                          {/* Badge de novo cliente */}
+                          <div className="absolute top-3 right-3 flex flex-col gap-1">
+                            {isNewClient(client) && (
+                              <div className="px-2 py-1 bg-sgbus-green/20 text-sgbus-green text-xs rounded-full flex items-center gap-1 animate-pulse">
+                                <Star className="w-3 h-3" />
+                                Novo
+                              </div>
                             )}
                           </div>
-                          <div className={`px-2 py-1 rounded-full text-xs font-medium ${getRichnessBg(client.richnessScore)} ${getRichnessColor(client.richnessScore)}`}>
-                            {client.richnessScore}%
+
+                          {/* Header do card */}
+                          <div className="flex items-start justify-between mb-4 pr-16">
+                            <div className="flex-1 min-w-0">
+                              <h3 className={`text-lg font-semibold truncate ${
+                                isNewClient(client) ? 'text-sgbus-green' : 'text-seasalt'
+                              }`}>
+                                {client.name}
+                              </h3>
+                              {client.industry && (
+                                <p className="text-sm text-periwinkle flex items-center mt-1">
+                                  <Building className="w-3 h-3 mr-1" />
+                                  {client.industry}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Completude */}
+                          <div className="mb-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs text-periwinkle">Completude</span>
+                              <span className={`text-xs font-medium ${getRichnessColor(client.richnessScore)}`}>
+                                {client.richnessScore}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-night rounded-full h-2">
+                              <div 
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  client.richnessScore >= 80 ? 'bg-sgbus-green' :
+                                  client.richnessScore >= 50 ? 'bg-yellow-400' : 'bg-red-400'
+                                }`}
+                                style={{ width: `${client.richnessScore}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Descrição */}
+                          {client.serviceOrProduct && (
+                            <p className="text-sm text-periwinkle mb-4 line-clamp-2">
+                              {client.serviceOrProduct}
+                            </p>
+                          )}
+
+                          {/* Estatísticas */}
+                          <div className="grid grid-cols-2 gap-4 text-xs text-periwinkle">
+                            <div className="flex items-center gap-1">
+                              <FileText className="w-3 h-3" />
+                              <span>{client._count.notes} nota{client._count.notes !== 1 ? 's' : ''}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Paperclip className="w-3 h-3" />
+                              <span>{client._count.attachments} anexo{client._count.attachments !== 1 ? 's' : ''}</span>
+                            </div>
+                          </div>
+
+                          {/* Data de criação */}
+                          <div className="mt-4 pt-4 border-t border-seasalt/10">
+                            <div className="flex items-center gap-1 text-xs text-periwinkle">
+                              <Calendar className="w-3 h-3" />
+                              <span>
+                                Criado em {new Date(client.createdAt).toLocaleDateString('pt-BR')}
+                              </span>
+                            </div>
                           </div>
                         </div>
-
-                        {/* Descrição */}
-                        {client.serviceOrProduct && (
-                          <p className="text-sm text-periwinkle mb-4 line-clamp-2">
-                            {client.serviceOrProduct}
-                          </p>
-                        )}
-
-                        {/* Estatísticas */}
-                        <div className="flex items-center justify-between text-xs text-periwinkle">
-                          <div className="flex items-center gap-4">
-                            <span className="flex items-center">
-                              <FileText className="w-3 h-3 mr-1" />
-                              {client._count.notes}
-                            </span>
-                            <span className="flex items-center">
-                              <Paperclip className="w-3 h-3 mr-1" />
-                              {client._count.attachments}
-                            </span>
-                          </div>
-                          <span className="flex items-center">
-                            <Calendar className="w-3 h-3 mr-1" />
-                            {new Date(client.createdAt).toLocaleDateString('pt-BR')}
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          )}
-
-          {/* Paginação */}
-          {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-8">
-              <button
-                onClick={() => changePage(currentPage - 1)}
-                disabled={!pagination.hasPreviousPage}
-                className="flex items-center px-3 py-2 text-sm bg-night border border-seasalt/20 rounded-lg text-seasalt hover:border-sgbus-green disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Anterior
-              </button>
-
-              {/* Números das páginas */}
-              <div className="flex gap-1">
-                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                  const pageNumber = Math.max(1, currentPage - 2) + i;
-                  if (pageNumber > pagination.totalPages) return null;
-                  
-                  return (
-                    <button
-                      key={pageNumber}
-                      onClick={() => changePage(pageNumber)}
-                      className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                        pageNumber === currentPage
-                          ? 'bg-sgbus-green text-night'
-                          : 'bg-night border border-seasalt/20 text-seasalt hover:border-sgbus-green'
-                      }`}
-                    >
-                      {pageNumber}
-                    </button>
-                  );
-                })}
+                      </Link>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
+            )}
 
-              <button
-                onClick={() => changePage(currentPage + 1)}
-                disabled={!pagination.hasNextPage}
-                className="flex items-center px-3 py-2 text-sm bg-night border border-seasalt/20 rounded-lg text-seasalt hover:border-sgbus-green disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Próxima
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </button>
-            </div>
-          )}
-        </>
-      )}
+            {/* Paginação */}
+            {pagination && pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between mt-8">
+                <div className="text-sm text-periwinkle">
+                  Mostrando {((pagination.page - 1) * pagination.limit) + 1} a {Math.min(pagination.page * pagination.limit, pagination.totalCount)} de {pagination.totalCount} resultados
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => changePage(pagination.page - 1)}
+                    disabled={!pagination.hasPreviousPage}
+                    className="p-2 rounded-lg border border-seasalt/20 text-seasalt hover:border-sgbus-green disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                      const pageNum = i + 1;
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => changePage(pageNum)}
+                          className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+                            pageNum === pagination.page
+                              ? 'bg-sgbus-green text-night'
+                              : 'text-seasalt hover:bg-seasalt/10'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  <button
+                    onClick={() => changePage(pagination.page + 1)}
+                    disabled={!pagination.hasNextPage}
+                    className="p-2 rounded-lg border border-seasalt/20 text-seasalt hover:border-sgbus-green disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
-} 
+}

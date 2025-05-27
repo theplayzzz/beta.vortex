@@ -62,6 +62,7 @@ model Client {
   preferencesRestrictions String? // TEXT no DB
 
   richnessScore Int @default(0) // 0-100, calculado pela aplicação
+  isViewed      Boolean @default(false) // Para controlar highlight de clientes novos
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

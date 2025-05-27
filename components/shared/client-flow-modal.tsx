@@ -11,15 +11,17 @@ import {
   Building, 
   Target,
   Loader2,
-  Check
+  Check,
+  AlertCircle
 } from "lucide-react";
+import { useDebounce } from "use-debounce";
 
 interface Client {
   id: string;
   name: string;
   industry?: string;
   richnessScore: number;
-  createdAt: Date;
+  createdAt: Date | string;
 }
 
 interface ClientFlowModalProps {
@@ -33,6 +35,7 @@ interface ClientFlowModalProps {
 interface NewClientForm {
   name: string;
   industry: string;
+  serviceOrProduct: string;
   initialObjective: string;
 }
 
@@ -47,11 +50,16 @@ export default function ClientFlowModal({
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [newClientForm, setNewClientForm] = useState<NewClientForm>({
     name: '',
     industry: '',
+    serviceOrProduct: '',
     initialObjective: ''
   });
+
+  // Debounce da busca
+  const [debouncedSearch] = useDebounce(searchTerm, 500);
 
   // Auto-save no localStorage durante digitação
   useEffect(() => {
@@ -84,76 +92,92 @@ export default function ClientFlowModal({
   // Limpar draft ao fechar modal
   const handleClose = () => {
     localStorage.removeItem('clientflow-draft');
-    setNewClientForm({ name: '', industry: '', initialObjective: '' });
+    setNewClientForm({ name: '', industry: '', serviceOrProduct: '', initialObjective: '' });
     setSearchTerm('');
     setMode('select');
+    setError(null);
     onClose();
   };
 
-  // Simular busca de clientes (será substituído por API real)
+  // Buscar clientes via API
   useEffect(() => {
     if (mode === 'select' && isOpen) {
-      setIsLoading(true);
-      // Simular delay de API
-      setTimeout(() => {
-        const mockClients: Client[] = [
-          {
-            id: '1',
-            name: 'Empresa ABC Ltda',
-            industry: 'Tecnologia',
-            richnessScore: 85,
-            createdAt: new Date('2024-01-15')
-          },
-          {
-            id: '2', 
-            name: 'Consultoria XYZ',
-            industry: 'Consultoria',
-            richnessScore: 45,
-            createdAt: new Date('2024-02-20')
-          },
-          {
-            id: '3',
-            name: 'Startup Inovadora',
-            industry: 'Fintech',
-            richnessScore: 92,
-            createdAt: new Date('2024-03-10')
+      const loadClients = async () => {
+        try {
+          setIsLoading(true);
+          setError(null);
+          
+          // Construir URL com filtros
+          const params = new URLSearchParams();
+          if (debouncedSearch) {
+            params.set('search', debouncedSearch);
           }
-        ];
-        
-        const filtered = mockClients.filter(client =>
-          client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          client.industry?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        
-        setClients(filtered);
-        setIsLoading(false);
-      }, 300);
-    }
-  }, [searchTerm, mode, isOpen]);
+          params.set('limit', '20'); // Limitar para o modal
+          params.set('sortBy', 'updatedAt');
+          params.set('sortOrder', 'desc');
 
-  // Criar novo cliente
+          const response = await fetch(`/api/clients?${params.toString()}`);
+          
+          if (response.ok) {
+            const data = await response.json();
+            setClients(data.clients || []);
+          } else {
+            const errorData = await response.json();
+            setError(errorData.error || 'Erro ao carregar clientes');
+          }
+        } catch (error) {
+          console.error('Erro ao buscar clientes:', error);
+          setError('Erro de conexão ao carregar clientes');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      loadClients();
+    }
+  }, [debouncedSearch, mode, isOpen]);
+
+  // Criar novo cliente via API
   const handleCreateClient = async () => {
     if (!newClientForm.name.trim()) return;
 
     setIsLoading(true);
+    setError(null);
     
     try {
-      // Simular criação de cliente (será substituído por API real)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const newClient: Client = {
-        id: Date.now().toString(),
-        name: newClientForm.name,
-        industry: newClientForm.industry,
-        richnessScore: 15, // Score inicial baixo
-        createdAt: new Date()
-      };
+      const response = await fetch('/api/clients', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newClientForm.name,
+          industry: newClientForm.industry || undefined,
+          serviceOrProduct: newClientForm.serviceOrProduct || undefined,
+          initialObjective: newClientForm.initialObjective || undefined,
+        }),
+      });
 
-      localStorage.removeItem('clientflow-draft');
-      onClientSelected(newClient);
-      handleClose();
+      if (response.ok) {
+        const data = await response.json();
+        const newClient: Client = {
+          id: data.client.id,
+          name: data.client.name,
+          industry: data.client.industry,
+          richnessScore: data.client.richnessScore,
+          createdAt: data.client.createdAt
+        };
+
+        localStorage.removeItem('clientflow-draft');
+        onClientSelected(newClient);
+        handleClose();
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'Erro ao criar cliente');
+      }
     } catch (error) {
       console.error('Erro ao criar cliente:', error);
+      setError('Erro de conexão ao criar cliente');
     } finally {
       setIsLoading(false);
     }
@@ -227,6 +251,20 @@ export default function ClientFlowModal({
               </button>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="mx-6 mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center">
+                <AlertCircle className="h-4 w-4 text-red-400 mr-2 flex-shrink-0" />
+                <span className="text-red-400 text-sm">{error}</span>
+                <button
+                  onClick={() => setError(null)}
+                  className="ml-auto p-1 hover:bg-red-500/20 rounded"
+                >
+                  <X className="h-3 w-3 text-red-400" />
+                </button>
+              </div>
+            )}
+
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6">
               <AnimatePresence mode="wait">
@@ -263,6 +301,9 @@ export default function ClientFlowModal({
                           <User className="h-12 w-12 text-periwinkle/50 mx-auto mb-3" />
                           <p className="text-periwinkle">
                             {searchTerm ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
+                          </p>
+                          <p className="text-seasalt/70 text-sm mt-1">
+                            {!searchTerm && 'Crie seu primeiro cliente usando a aba "Criar Novo"'}
                           </p>
                         </div>
                       ) : (
@@ -333,6 +374,22 @@ export default function ClientFlowModal({
                             value={newClientForm.industry}
                             onChange={(e) => setNewClientForm(prev => ({ ...prev, industry: e.target.value }))}
                             placeholder="Ex: Tecnologia, Consultoria, E-commerce"
+                            className="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-seasalt mb-2">
+                          Serviço/Produto Principal
+                        </label>
+                        <div className="relative">
+                          <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-periwinkle" />
+                          <input
+                            type="text"
+                            value={newClientForm.serviceOrProduct}
+                            onChange={(e) => setNewClientForm(prev => ({ ...prev, serviceOrProduct: e.target.value }))}
+                            placeholder="Ex: Desenvolvimento de software, Consultoria empresarial"
                             className="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
                           />
                         </div>
