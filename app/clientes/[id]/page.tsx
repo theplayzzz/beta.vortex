@@ -127,12 +127,13 @@ export default function ClientProfilePage() {
   const clientId = params.id as string;
   
   const [clientData, setClientData] = useState<ClientData | null>(null);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['basic']));
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['basic']));
   const [showActions, setShowActions] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [hasUserChanges, setHasUserChanges] = useState(false);
 
   // Carregar dados do cliente da API
   useEffect(() => {
@@ -180,33 +181,51 @@ export default function ClientProfilePage() {
 
   // Atualizar RichnessScore quando dados mudarem
   useEffect(() => {
-    if (clientData) {
+    if (clientData && hasUserChanges) {
       const newScore = calculateRichnessScore(clientData);
       if (newScore !== clientData.richnessScore) {
         setClientData(prev => prev ? { ...prev, richnessScore: newScore } : null);
       }
     }
-  }, [clientData]);
+  }, [clientData, hasUserChanges]);
 
-  // Auto-save com debounce
+  // Função para filtrar apenas campos válidos para a API
+  const getValidClientData = (data: ClientData) => {
+    const {
+      id,
+      createdAt,
+      updatedAt,
+      richnessScore,
+      ...validData
+    } = data;
+    return validData;
+  };
+
+  // Auto-save com debounce - apenas quando há mudanças do usuário
   useEffect(() => {
-    if (!clientData || isLoading) return;
+    if (!clientData || isLoading || !hasUserChanges) return;
 
     const timeoutId = setTimeout(async () => {
       try {
         setIsSaving(true);
+        
+        // Filtrar apenas campos válidos
+        const validData = getValidClientData(clientData);
+        
         const response = await fetch(`/api/clients/${clientId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(clientData),
+          body: JSON.stringify(validData),
         });
 
         if (response.ok) {
           setLastSaved(new Date());
+          setHasUserChanges(false);
         } else {
-          console.error('Erro ao salvar cliente:', response.statusText);
+          const errorData = await response.json();
+          console.error('Erro ao salvar cliente:', errorData);
         }
       } catch (error) {
         console.error('Erro ao salvar cliente:', error);
@@ -216,10 +235,11 @@ export default function ClientProfilePage() {
     }, 1000);
 
     return () => clearTimeout(timeoutId);
-  }, [clientData, isLoading, clientId]);
+  }, [clientData, isLoading, clientId, hasUserChanges]);
 
   const handleFieldChange = (field: keyof ClientData, value: string) => {
     setClientData(prev => prev ? { ...prev, [field]: value } : null);
+    setHasUserChanges(true);
   };
 
   const toggleSection = (sectionId: string) => {
