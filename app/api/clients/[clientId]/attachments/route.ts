@@ -39,7 +39,7 @@ export async function GET(
         createdAt: 'desc',
       },
       include: {
-        user: {
+        User: {
           select: {
             firstName: true,
             lastName: true,
@@ -180,6 +180,7 @@ export async function POST(
         // Salvar no banco
         const attachment = await prisma.clientAttachment.create({
           data: {
+            id: crypto.randomUUID(),
             fileName: file.name,
             fileUrl: urlData.publicUrl,
             fileType: file.type,
@@ -188,7 +189,7 @@ export async function POST(
             userId: userId,
           },
           include: {
-            user: {
+            User: {
               select: {
                 firstName: true,
                 lastName: true,
