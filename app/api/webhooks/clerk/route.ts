@@ -100,6 +100,7 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
       lastName: data.last_name || null,
       profileImageUrl: data.image_url || null,
       creditBalance: 100, // Saldo inicial de 100 créditos
+      updatedAt: new Date(),
     },
   })
 
