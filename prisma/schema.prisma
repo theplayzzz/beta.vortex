@@ -207,12 +207,19 @@ model StrategicPlanning {
   userId             String
   createdAt          DateTime       @default(now())
   updatedAt          DateTime
+  
+  // 🆕 NOVOS CAMPOS PARA PLAN-005
+  formDataJSON       Json?          // Dados completos do formulário (4 abas)
+  clientSnapshot     Json?          // Snapshot dos dados do cliente
+  
   PlanningTask       PlanningTask[]
   Client             Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
   User               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([userId])
+  @@index([userId, clientId])    // 🆕 Índice otimizado
+  @@index([userId, status])      // 🆕 Índice para filtros
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -296,6 +303,12 @@ enum PlanningStatus {
   ACTIVE
   COMPLETED
   ARCHIVED
+  
+  // 🆕 Status para Plan-006 (IA)
+  PENDING_AI_BACKLOG_GENERATION   // Aguardando geração IA
+  AI_BACKLOG_VISIBLE              // Backlog IA visível
+  PENDING_AI_REFINED_LIST         // Aguardando lista refinada
+  AI_REFINED_LIST_VISIBLE         // Lista refinada visível
 }
 
 enum ProposalStatus {
