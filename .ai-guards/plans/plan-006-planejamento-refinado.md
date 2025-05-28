@@ -19,24 +19,62 @@ status: draft
 Implementar o sistema completo de geração de backlog por IA, interface de aprovação e refinamento de tarefas, criação de listas refinadas, e gestão avançada do sistema de créditos. Esta fase constrói sobre a infraestrutura criada no plan-005, adicionando processamento inteligente, webhooks, sistema de aprovação interativo e criação final de tarefas executáveis.
 
 ### Componentes Desta Fase:
-- **Integração com IA Externa**: Webhooks para geração de backlog e refinamento de listas
-- **Sistema de Créditos**: Gestão completa de consumo e validação de saldo
-- **Interface de Aprovação**: Sistema interativo para revisar, editar e selecionar tarefas
-- **Refinamento Individual**: Capacidade de refinar tarefas específicas
-- **Criação de Listas Refinadas**: Conversão final para `PlanningTask` executáveis
-- **Sistema de Auditoria**: Logs completos de modificações e histórico
+- **Integração com IA Externa**: 
+  - Webhooks para geração de backlog inicial
+  - Sistema de refinamento individual de tarefas
+  - Processamento de listas refinadas
+  - Validação e segurança de callbacks
+- **Sistema de Créditos**: 
+  - Gestão completa de consumo (10 créditos para backlog, 10 para refinamento)
+  - Validação de saldo antes de operações
+  - Transações atômicas e auditáveis
+  - Histórico detalhado de consumo
+- **Interface de Aprovação**: 
+  - Sistema interativo para revisar tarefas geradas
+  - Editor em tempo real para modificações
+  - Seleção e priorização de tarefas
+  - Refinamento individual com contexto adicional
+- **Refinamento Individual**: 
+  - Capacidade de refinar tarefas específicas
+  - Adição de contexto personalizado
+  - Reprocessamento por IA
+  - Histórico de modificações
+- **Criação de Listas Refinadas**: 
+  - Conversão para `PlanningTask` executáveis
+  - Output detalhado em markdown
+  - Integração com sistema existente
+  - Métricas de qualidade
+- **Sistema de Auditoria**: 
+  - Logs completos de modificações
+  - Timeline visual do processo
+  - Métricas de uso e qualidade
+  - Feedback para melhoria contínua
 
 ## ✅ Functional Requirements
 
 ### 1. Análise e Validação da Base Criada no Plan-005
-- **Verificar IDs e relacionamentos**: Confirmar mapeamento de `clientId`, `planningId`, `userId` criado no plan-005
-- **Validar estruturas JSON**: Confirmar formato de `formDataJSON` e `clientSnapshot`
-- **Testar relacionamentos**: Verificar integridade Client-StrategicPlanning
-- **Confirmar endpoints**: Validar APIs básicas de criação e listagem de planejamentos
+
+#### 1.1 Verificação de Estruturas
+- **Mapeamento de IDs**: Confirmar implementação correta de `clientId`, `planningId`, `userId`
+- **Validação de Schemas**: Verificar modelos Prisma e tipos TypeScript
+- **Teste de Relacionamentos**: Validar integridade Client-StrategicPlanning
+- **Revisão de APIs**: Confirmar endpoints básicos funcionando
+
+#### 1.2 Validação do Formulário
+- **Teste das 4 Abas**: Confirmar funcionamento do formulário multi-etapas
+- **Validação de Campos**: Verificar regras de validação implementadas
+- **Persistência**: Testar salvamento local e no banco
+- **Integração Cliente**: Confirmar linkagem obrigatória funcionando
+
+#### 1.3 Preparação para IA
+- **Estruturas JSON**: Validar formato de `formDataJSON` e `clientSnapshot`
+- **Webhooks**: Confirmar URLs configuradas no `.env`
+- **Status**: Verificar enum `PlanningStatus` preparado
+- **Segurança**: Validar proteções implementadas
 
 ### 2. Sistema de Gestão de Créditos Completo
 
-#### 2.1 Configuração de Custos
+#### 2.1 Configuração de Custos e Ambiente
 - **Variáveis de ambiente** (adicionar ao `.env` existente):
   ```env
   # Webhooks
@@ -46,26 +84,139 @@ Implementar o sistema completo de geração de backlog por IA, interface de apro
   # Custos de crédito
   COST_PLANNING_BACKLOG_VISIBLE=10
   COST_REFINED_LIST_VISIBLE=10
+  COST_INDIVIDUAL_REFINEMENT=2
   
   # Webhook Security
   WEBHOOK_SECRET=sua_chave_secreta_aqui
+  WEBHOOK_TIMEOUT=30000
+  WEBHOOK_MAX_RETRIES=3
   ```
 
 #### 2.2 Modelo de Transações de Crédito
-- **Atualizar Schema Prisma** com novos tipos de transação:
+- **Atualizar Schema Prisma**:
   ```prisma
   enum CreditTransactionType {
     // Tipos existentes...
     CONSUMPTION_PLANNING_BACKLOG_VISIBLE
     CONSUMPTION_REFINED_LIST_VISIBLE
+    CONSUMPTION_INDIVIDUAL_REFINEMENT
+    REFUND_FAILED_PROCESSING
+  }
+  
+  model CreditTransaction {
+    id          String   @id @default(cuid())
+    userId      String
+    type        CreditTransactionType
+    amount      Int
+    planningId  String?
+    taskId      String?
+    status      TransactionStatus @default(PENDING)
+    metadata    Json?
+    createdAt   DateTime @default(now())
+    completedAt DateTime?
+    
+    user     User @relation(fields: [userId], references: [id])
+    planning StrategicPlanning? @relation(fields: [planningId], references: [id])
+    
+    @@index([userId, type])
+    @@index([planningId])
+  }
+  
+  enum TransactionStatus {
+    PENDING
+    COMPLETED
+    FAILED
+    REFUNDED
   }
   ```
 
 #### 2.3 Sistema de Validação e Débito
-- **Verificação antes da operação**: Validar saldo antes de processar
-- **Débito após sucesso**: Cobrar apenas quando IA entregar resultados
-- **Transações atômicas**: Garantir consistência em caso de erro
-- **Histórico detalhado**: Log de todas as operações de crédito
+- **Verificação Prévia**:
+  ```typescript
+  async function validateCredits(userId: string, operationType: CreditTransactionType): Promise<boolean> {
+    const costs = {
+      CONSUMPTION_PLANNING_BACKLOG_VISIBLE: 10,
+      CONSUMPTION_REFINED_LIST_VISIBLE: 10,
+      CONSUMPTION_INDIVIDUAL_REFINEMENT: 2
+    };
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { creditBalance: true }
+    });
+    
+    return user?.creditBalance >= costs[operationType];
+  }
+  ```
+
+- **Débito Atômico**:
+  ```typescript
+  async function debitCredits(userId: string, planningId: string, type: CreditTransactionType) {
+    return await prisma.$transaction(async (tx) => {
+      // Criar transação pendente
+      const transaction = await tx.creditTransaction.create({
+        data: {
+          userId,
+          planningId,
+          type,
+          amount: -costs[type],
+          status: 'PENDING'
+        }
+      });
+      
+      // Atualizar saldo do usuário
+      const user = await tx.user.update({
+        where: { id: userId },
+        data: { creditBalance: { decrement: costs[type] } }
+      });
+      
+      // Finalizar transação
+      return await tx.creditTransaction.update({
+        where: { id: transaction.id },
+        data: { 
+          status: 'COMPLETED',
+          completedAt: new Date()
+        }
+      });
+    });
+  }
+  ```
+
+#### 2.4 Sistema de Reembolso Automático
+- **Detecção de Falhas**:
+  ```typescript
+  async function handleProcessingFailure(planningId: string, type: CreditTransactionType) {
+    const transaction = await prisma.creditTransaction.findFirst({
+      where: { 
+        planningId,
+        type,
+        status: 'COMPLETED'
+      }
+    });
+    
+    if (transaction) {
+      await prisma.$transaction([
+        // Criar transação de reembolso
+        prisma.creditTransaction.create({
+          data: {
+            userId: transaction.userId,
+            type: 'REFUND_FAILED_PROCESSING',
+            amount: Math.abs(transaction.amount),
+            planningId,
+            status: 'COMPLETED',
+            completedAt: new Date(),
+            metadata: { originalTransactionId: transaction.id }
+          }
+        }),
+        // Restaurar créditos do usuário
+        prisma.user.update({
+          where: { id: transaction.userId },
+          data: { creditBalance: { increment: Math.abs(transaction.amount) } }
+        })
+      ]);
+    }
+  }
+  ```
 
 ### 3. Submissão para Geração de Backlog IA
 
@@ -73,10 +224,11 @@ Implementar o sistema completo de geração de backlog por IA, interface de apro
 - **Expandir enum `PlanningStatus`**:
   ```prisma
   enum PlanningStatus {
+    // Status do plan-005
     DRAFT
-    COMPLETED  // Status do plan-005
+    COMPLETED
     
-    // Novos status para IA
+    // Status de processamento IA
     PENDING_AI_BACKLOG_GENERATION
     AI_BACKLOG_RECEIVED_PENDING_PAYMENT
     AI_BACKLOG_VISIBLE
@@ -85,58 +237,155 @@ Implementar o sistema completo de geração de backlog por IA, interface de apro
     REFINEMENT_CALLBACK_RECEIVED_PENDING_TASKS_PAYMENT
     PROCESSING_COMPLETED
     FAILED_PROCESSING
+    
+    // Status de refinamento individual
+    TASK_REFINEMENT_IN_PROGRESS
+    TASK_REFINEMENT_COMPLETED
   }
   ```
 
 #### 3.2 API de Submissão para IA
 - **Endpoint**: `app/api/strategic-planning/[planningId]/submit-ai/route.ts`
-- **Funcionalidades**:
-  - Buscar dados completos do planejamento (incluindo cliente)
-  - Verificar saldo de créditos (sem debitar ainda)
-  - Estruturar payload enriquecido para webhook
-  - Enviar para `PLANNING_WEBHOOK_URL`
-  - Atualizar status para `PENDING_AI_BACKLOG_GENERATION`
-  - Iniciar animação de carregamento no frontend
-
-#### 3.3 Payload Enriquecido para IA
-```json
-{
-  "planning_id": "planning_123",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "client_info": {
-    "id": "client_456",
-    "name": "Empresa XYZ Ltda",
-    "industry": "E-commerce",
-    "richnessScore": 85,
-    "customIndustry": null,
-    "data_quality": "alto"
-  },
-  "form_submission_data": {
-    "informacoes_basicas": { /* dados da aba 1 */ },
-    "detalhes_do_setor": { /* dados da aba 2 */ },
-    "marketing": { /* dados da aba 3 */ },
-    "comercial": { /* dados da aba 4 */ }
-  },
-  "context_enrichment": {
-    "client_richness_level": "alto",
-    "industry_specific_insights": true,
-    "personalization_level": "avançado",
-    "recommended_task_complexity": "intermediário-avançado"
+- **Implementação**:
+  ```typescript
+  export async function POST(
+    req: Request,
+    { params: { planningId } }: { params: { planningId: string } }
+  ) {
+    try {
+      // Validar usuário e permissões
+      const { userId } = auth();
+      if (!userId) return new Response('Unauthorized', { status: 401 });
+      
+      // Verificar saldo de créditos
+      const hasCredits = await validateCredits(userId, 'CONSUMPTION_PLANNING_BACKLOG_VISIBLE');
+      if (!hasCredits) {
+        return new Response('Insufficient credits', { status: 402 });
+      }
+      
+      // Buscar dados do planejamento
+      const planning = await prisma.strategicPlanning.findUnique({
+        where: { id: planningId },
+        include: { client: true }
+      });
+      
+      if (!planning) return new Response('Planning not found', { status: 404 });
+      if (planning.userId !== userId) return new Response('Forbidden', { status: 403 });
+      
+      // Estruturar payload enriquecido
+      const payload = {
+        planning_id: planningId,
+        timestamp: new Date().toISOString(),
+        client_info: {
+          id: planning.client.id,
+          name: planning.client.name,
+          industry: planning.client.industry,
+          richnessScore: planning.client.richnessScore,
+          customIndustry: planning.client.customIndustry,
+          data_quality: planning.client.richnessScore > 80 ? "alto" : "médio"
+        },
+        form_submission_data: planning.formDataJSON,
+        context_enrichment: {
+          client_richness_level: planning.client.richnessScore > 80 ? "alto" : "médio",
+          industry_specific_insights: true,
+          personalization_level: "avançado",
+          recommended_task_complexity: planning.client.richnessScore > 80 ? "avançado" : "intermediário"
+        }
+      };
+      
+      // Enviar para webhook
+      const response = await fetch(process.env.PLANNING_WEBHOOK_URL!, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Webhook-Secret': process.env.WEBHOOK_SECRET!
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) throw new Error('Webhook failed');
+      
+      // Atualizar status
+      await prisma.strategicPlanning.update({
+        where: { id: planningId },
+        data: { 
+          status: 'PENDING_AI_BACKLOG_GENERATION',
+          aiProcessingStarted: new Date()
+        }
+      });
+      
+      return new Response('Processing started', { status: 202 });
+      
+    } catch (error) {
+      console.error('Error submitting to AI:', error);
+      return new Response('Internal error', { status: 500 });
+    }
   }
-}
-```
+  ```
 
 ### 4. Recebimento e Processamento do Backlog IA
 
 #### 4.1 Webhook de Callback do Planejamento
 - **Endpoint**: `app/api/webhooks/planning-callback/route.ts`
-- **Funcionalidades**:
-  - Validar autenticidade do webhook (WEBHOOK_SECRET)
-  - Receber estrutura JSON de tarefas (`aiGeneratedTasksJSON`)
-  - Salvar dados no `StrategicPlanning`
-  - Verificar e debitar créditos (`COST_PLANNING_BACKLOG_VISIBLE`)
-  - Atualizar status baseado no pagamento
-  - Notificar frontend (encerrar animação)
+- **Implementação**:
+  ```typescript
+  export async function POST(req: Request) {
+    try {
+      // Validar autenticidade
+      const secret = req.headers.get('X-Webhook-Secret');
+      if (secret !== process.env.WEBHOOK_SECRET) {
+        return new Response('Invalid secret', { status: 401 });
+      }
+      
+      const data = await req.json();
+      const { planning_id, tasks } = data;
+      
+      // Validar estrutura de dados
+      if (!planning_id || !Array.isArray(tasks)) {
+        return new Response('Invalid payload', { status: 400 });
+      }
+      
+      // Buscar planejamento
+      const planning = await prisma.strategicPlanning.findUnique({
+        where: { id: planning_id },
+        include: { user: true }
+      });
+      
+      if (!planning) return new Response('Planning not found', { status: 404 });
+      
+      // Verificar créditos
+      const hasCredits = await validateCredits(
+        planning.userId,
+        'CONSUMPTION_PLANNING_BACKLOG_VISIBLE'
+      );
+      
+      // Atualizar planejamento
+      await prisma.strategicPlanning.update({
+        where: { id: planning_id },
+        data: {
+          aiGeneratedTasksJSON: data,
+          status: hasCredits ? 'AI_BACKLOG_VISIBLE' : 'AI_BACKLOG_RECEIVED_PENDING_PAYMENT',
+          aiProcessingCompleted: new Date()
+        }
+      });
+      
+      // Se tem créditos, debitar
+      if (hasCredits) {
+        await debitCredits(
+          planning.userId,
+          planning_id,
+          'CONSUMPTION_PLANNING_BACKLOG_VISIBLE'
+        );
+      }
+      
+      return new Response('Success', { status: 200 });
+      
+    } catch (error) {
+      console.error('Error processing webhook:', error);
+      return new Response('Internal error', { status: 500 });
+    }
+  }
+  ```
 
 #### 4.2 Estrutura de Dados do Backlog
 ```json
@@ -154,9 +403,23 @@ Implementar o sistema completo de geração de backlog por IA, interface de apro
           "texto": "Configurar pixel de conversão",
           "origem": "ia_inicial"
         }
-      ]
+      ],
+      "metadata": {
+        "setor_relacionado": "marketing",
+        "complexidade": "intermediária",
+        "tempo_estimado": "2 horas"
+      }
     }
-  ]
+  ],
+  "metadata": {
+    "total_tarefas": 15,
+    "distribuicao_prioridade": {
+      "alta": 5,
+      "media": 7,
+      "baixa": 3
+    },
+    "areas_cobertas": ["marketing", "comercial", "operacional"]
+  }
 }
 ```
 
@@ -164,62 +427,269 @@ Implementar o sistema completo de geração de backlog por IA, interface de apro
 
 #### 5.1 Componente Principal de Aprovação
 - **Página**: `app/planejamento/[planningId]/approve/page.tsx`
-- **Componente**: `TaskApprovalInterface.tsx`
-- **Funcionalidades**:
-  - Exibição visual das tarefas em cards organizados
-  - Sistema de seleção/desseleção com checkboxes
-  - Interface de edição inline para nome e descrição
-  - Dropdown visual para prioridades (🔵 Baixa, 🟡 Normal, 🟠 Média, 🔴 Alta)
-  - Expansão/colapso para detalhamentos completos
-  - Contador de tarefas selecionadas
+- **Componentes**:
+  ```typescript
+  // TaskApprovalInterface.tsx
+  interface TaskApprovalProps {
+    planningId: string;
+    initialTasks: TarefaAI[];
+    onTaskUpdate: (taskIndex: number, updates: Partial<TarefaAI>) => void;
+    onTaskSelect: (taskIndex: number, selected: boolean) => void;
+    onRequestRefinement: (taskIndex: number) => void;
+  }
+  
+  // TaskCard.tsx
+  interface TaskCardProps {
+    task: TarefaAI;
+    index: number;
+    selected: boolean;
+    onSelect: (selected: boolean) => void;
+    onEdit: (updates: Partial<TarefaAI>) => void;
+    onRefinementRequest: () => void;
+  }
+  
+  // PrioritySelector.tsx
+  interface PrioritySelectorProps {
+    value: TaskPriority;
+    onChange: (priority: TaskPriority) => void;
+    size?: 'sm' | 'md' | 'lg';
+  }
+  ```
 
 #### 5.2 Funcionalidades de Interação
-- **Edição em tempo real**: Auto-save de alterações
-- **Visualização de detalhes**: Modal/tooltip para subtarefas
-- **Sistema de prioridades visuais**: Cores e ícones intuitivos
-- **Validação ao vivo**: Feedback visual de campos obrigatórios
-- **Persistência local**: Backup em localStorage durante edição
+- **Edição em tempo real**:
+  ```typescript
+  const handleTaskEdit = (index: number, updates: Partial<TarefaAI>) => {
+    const updatedTasks = [...tasks];
+    updatedTasks[index] = { ...updatedTasks[index], ...updates };
+    
+    // Salvar em localStorage para backup
+    localStorage.setItem(
+      `task-edits-${planningId}`,
+      JSON.stringify(updatedTasks)
+    );
+    
+    // Atualizar estado
+    setTasks(updatedTasks);
+    
+    // Notificar servidor (debounced)
+    debouncedUpdateTask(planningId, index, updates);
+  };
+  ```
+
+- **Sistema de prioridades visuais**:
+  ```typescript
+  const PriorityBadge: React.FC<{ priority: TaskPriority }> = ({ priority }) => {
+    const colors = {
+      baixa: 'bg-blue-100 text-blue-800',
+      normal: 'bg-yellow-100 text-yellow-800',
+      media: 'bg-orange-100 text-orange-800',
+      alta: 'bg-red-100 text-red-800'
+    };
+    
+    const icons = {
+      baixa: '🔵',
+      normal: '🟡',
+      media: '🟠',
+      alta: '🔴'
+    };
+    
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[priority]}`}>
+        {icons[priority]} {priority.toUpperCase()}
+      </span>
+    );
+  };
+  ```
 
 #### 5.3 Sistema de Refinamento Individual
-- **Botão "Refinar Tarefa"**: Em cada card de tarefa
-- **Modal de refinamento**: Campo para contexto adicional
-- **API específica**: `app/api/strategic-planning/[planningId]/refine-task/route.ts`
-- **Webhook individual**: Endpoint separado para refinamento de tarefa específica
-- **Atualização em tempo real**: Substituir tarefa no array
+- **Modal de refinamento**:
+  ```typescript
+  interface RefinementModalProps {
+    task: TarefaAI;
+    isOpen: boolean;
+    onClose: () => void;
+    onSubmit: (context: string) => Promise<void>;
+  }
+  ```
+
+- **API específica**:
+  ```typescript
+  // app/api/strategic-planning/[planningId]/refine-task/route.ts
+  export async function POST(
+    req: Request,
+    { params: { planningId } }: { params: { planningId: string } }
+  ) {
+    const { taskIndex, additionalContext } = await req.json();
+    
+    // Validar créditos para refinamento individual
+    const hasCredits = await validateCredits(
+      userId,
+      'CONSUMPTION_INDIVIDUAL_REFINEMENT'
+    );
+    
+    if (!hasCredits) {
+      return new Response('Insufficient credits', { status: 402 });
+    }
+    
+    // Processar refinamento
+    const planning = await prisma.strategicPlanning.findUnique({
+      where: { id: planningId },
+      include: { client: true }
+    });
+    
+    // Preparar payload para refinamento
+    const payload = {
+      planning_id: planningId,
+      task_index: taskIndex,
+      original_task: planning.aiGeneratedTasksJSON.tarefas[taskIndex],
+      additional_context: additionalContext,
+      client_context: {
+        industry: planning.client.industry,
+        richness_score: planning.client.richnessScore
+      }
+    };
+    
+    // Enviar para webhook de refinamento
+    const response = await fetch(
+      `${process.env.PLANNING_WEBHOOK_URL}/refine-task`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Webhook-Secret': process.env.WEBHOOK_SECRET!
+        },
+        body: JSON.stringify(payload)
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Refinement failed');
+    }
+    
+    // Debitar créditos
+    await debitCredits(
+      userId,
+      planningId,
+      'CONSUMPTION_INDIVIDUAL_REFINEMENT'
+    );
+    
+    return new Response('Refinement submitted', { status: 202 });
+  }
+  ```
 
 ### 6. Submissão para Refinamento de Lista
 
 #### 6.1 API de Submissão para Refinamento
 - **Endpoint**: `app/api/strategic-planning/[planningId]/submit-refinement/route.ts`
-- **Funcionalidades**:
-  - Coletar tarefas com `selecionada: true`
-  - Salvar em `approvedTasksJSON`
-  - Estruturar payload para `REFINED_LIST_WEBHOOK_URL`
-  - Atualizar status para `REFINEMENT_SUBMITTED_PENDING_CALLBACK`
-  - Iniciar animação de carregamento
+- **Implementação**:
+  ```typescript
+  export async function POST(
+    req: Request,
+    { params: { planningId } }: { params: { planningId: string } }
+  ) {
+    try {
+      const { userId } = auth();
+      if (!userId) return new Response('Unauthorized', { status: 401 });
+      
+      // Buscar planejamento com tarefas aprovadas
+      const planning = await prisma.strategicPlanning.findUnique({
+        where: { id: planningId },
+        include: { client: true }
+      });
+      
+      if (!planning) return new Response('Planning not found', { status: 404 });
+      if (planning.userId !== userId) return new Response('Forbidden', { status: 403 });
+      
+      // Coletar tarefas selecionadas
+      const selectedTasks = planning.aiGeneratedTasksJSON.tarefas.filter(
+        (t: TarefaAI) => t.selecionada
+      );
+      
+      // Salvar tarefas aprovadas
+      await prisma.strategicPlanning.update({
+        where: { id: planningId },
+        data: {
+          approvedTasksJSON: selectedTasks,
+          status: 'REFINEMENT_SUBMITTED_PENDING_CALLBACK'
+        }
+      });
+      
+      // Preparar payload para refinamento
+      const payload = {
+        planning_id: planningId,
+        client_info: {
+          id: planning.client.id,
+          name: planning.client.name,
+          industry: planning.client.industry,
+          richnessScore: planning.client.richnessScore
+        },
+        approved_tasks: selectedTasks,
+        form_data: planning.formDataJSON,
+        statistics: {
+          total_tasks: planning.aiGeneratedTasksJSON.tarefas.length,
+          approved_tasks: selectedTasks.length,
+          approval_rate: selectedTasks.length / planning.aiGeneratedTasksJSON.tarefas.length
+        }
+      };
+      
+      // Enviar para webhook de refinamento
+      const response = await fetch(process.env.REFINED_LIST_WEBHOOK_URL!, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Webhook-Secret': process.env.WEBHOOK_SECRET!
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) throw new Error('Refinement submission failed');
+      
+      return new Response('Refinement submitted', { status: 202 });
+      
+    } catch (error) {
+      console.error('Error submitting refinement:', error);
+      return new Response('Internal error', { status: 500 });
+    }
+  }
+  ```
 
 #### 6.2 Payload para Refinamento de Lista
 ```json
 {
   "planning_id": "planning_123",
-  "client_info": { /* dados do cliente */ },
-  "original_backlog": { /* backlog completo original */ },
-  "approved_tasks": [ /* apenas tarefas selecionadas */ ],
-  "user_modifications": [
+  "client_info": {
+    "id": "client_456",
+    "name": "Empresa XYZ Ltda",
+    "industry": "E-commerce",
+    "richnessScore": 85
+  },
+  "approved_tasks": [
     {
-      "task_index": 2,
-      "modifications": {
-        "nome": "Nome editado pelo usuário",
-        "prioridade": "URGENT"
-      },
-      "additional_context": "Contexto adicional do usuário"
+      "nome": "SUPER Configuração Otimizada do Meta Ads",
+      "descricao": "Criar, configurar E VALIDAR a conta de anúncios...",
+      "prioridade": "URGENT",
+      "detalhamentos": [],
+      "detalhamento_adicional_usuario": "Focar em lookalike do público comprador atual",
+      "metadata": {
+        "edicoes_usuario": ["nome", "descricao", "prioridade"],
+        "refinamentos_aplicados": 1,
+        "tempo_edicao": "5 minutos"
+      }
     }
   ],
+  "form_data": {
+    "informacoes_basicas": {},
+    "detalhes_do_setor": {},
+    "marketing": {},
+    "comercial": {}
+  },
   "statistics": {
     "total_tasks": 15,
     "approved_tasks": 8,
-    "individual_refinements": 3,
-    "session_duration": "45 minutos"
+    "approval_rate": 0.53,
+    "refinements_requested": 3,
+    "average_edit_time": "3 minutos"
   }
 }
 ```
@@ -228,401 +698,644 @@ Implementar o sistema completo de geração de backlog por IA, interface de apro
 
 #### 7.1 Webhook de Lista Refinada
 - **Endpoint**: `app/api/webhooks/refined-list-callback/route.ts`
-- **Funcionalidades**:
-  - Receber sinalização de conclusão
-  - Verificar e debitar créditos (`COST_REFINED_LIST_VISIBLE`)
-  - Processar criação de `PlanningTask` individuais
-  - Atualizar status final
-  - Notificar frontend
-
-#### 7.2 Criação de PlanningTask
-- **Atualizar Schema Prisma** para `PlanningTask`:
-  ```prisma
-  model PlanningTask {
-    id          String   @id @default(cuid())
-    title       String
-    description String?
-    priority    TaskPriority
-    status      TaskStatus @default(PENDING)
-    
-    userId      String
-    planningId  String
-    
-    // Dados específicos do planejamento
-    planejamentoInformacoes Json?  // Dados originais da IA
-    planejamentoFinal      Json?   // Versão final aprovada
-    refinedOutputMarkdown  String? // Output detalhado construído pelo backend
-    clientContext          Json?   // Contexto do cliente
-    
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
-    
-    planning StrategicPlanning @relation(fields: [planningId], references: [id])
-    user     User @relation(fields: [userId], references: [id])
-    
-    @@index([planningId])
-    @@index([userId, status])
-  }
-  
-  enum TaskPriority {
-    BAIXA
-    NORMAL
-    MEDIA
-    ALTA
-    URGENT
-  }
-  
-  enum TaskStatus {
-    PENDING
-    IN_PROGRESS
-    COMPLETED
-    CANCELLED
+- **Implementação**:
+  ```typescript
+  export async function POST(req: Request) {
+    try {
+      // Validar autenticidade
+      const secret = req.headers.get('X-Webhook-Secret');
+      if (secret !== process.env.WEBHOOK_SECRET) {
+        return new Response('Invalid secret', { status: 401 });
+      }
+      
+      const { planning_id } = await req.json();
+      
+      // Buscar planejamento
+      const planning = await prisma.strategicPlanning.findUnique({
+        where: { id: planning_id },
+        include: { user: true }
+      });
+      
+      if (!planning) return new Response('Planning not found', { status: 404 });
+      
+      // Verificar créditos
+      const hasCredits = await validateCredits(
+        planning.userId,
+        'CONSUMPTION_REFINED_LIST_VISIBLE'
+      );
+      
+      if (!hasCredits) {
+        await prisma.strategicPlanning.update({
+          where: { id: planning_id },
+          data: { status: 'REFINEMENT_CALLBACK_RECEIVED_PENDING_TASKS_PAYMENT' }
+        });
+        return new Response('Insufficient credits', { status: 402 });
+      }
+      
+      // Debitar créditos
+      await debitCredits(
+        planning.userId,
+        planning_id,
+        'CONSUMPTION_REFINED_LIST_VISIBLE'
+      );
+      
+      // Criar PlanningTasks
+      const tasks = planning.approvedTasksJSON;
+      await prisma.$transaction(
+        tasks.map((task: TarefaAI) => 
+          prisma.planningTask.create({
+            data: {
+              title: task.nome,
+              description: task.descricao,
+              priority: task.prioridade,
+              userId: planning.userId,
+              planningId: planning_id,
+              refinedOutputMarkdown: generateTaskMarkdown(task, planning),
+              planejamentoInformacoes: task,
+              planejamentoFinal: {
+                ...task,
+                metadata: {
+                  ...task.metadata,
+                  created_at: new Date().toISOString()
+                }
+              },
+              clientContext: {
+                industry: planning.client.industry,
+                richnessScore: planning.client.richnessScore,
+                snapshot: planning.clientSnapshot
+              }
+            }
+          })
+        )
+      );
+      
+      // Atualizar status do planejamento
+      await prisma.strategicPlanning.update({
+        where: { id: planning_id },
+        data: { status: 'PROCESSING_COMPLETED' }
+      });
+      
+      return new Response('Tasks created successfully', { status: 200 });
+      
+    } catch (error) {
+      console.error('Error processing refined list:', error);
+      return new Response('Internal error', { status: 500 });
+    }
   }
   ```
 
-#### 7.3 Construção do Output Detalhado
-```markdown
-# [Nome da Tarefa]
+#### 7.2 Geração do Output Markdown
+```typescript
+function generateTaskMarkdown(task: TarefaAI, planning: StrategicPlanning): string {
+  return `# ${task.nome}
 
 ## 📋 Objetivo
-[Descrição detalhada da tarefa]
+${task.descricao}
 
 ## 🔍 Contexto do Cliente
-- **Empresa**: [Nome do Cliente]
-- **Setor**: [Industry]
-- **Nível de Maturidade**: [Marketing/Comercial]
+- **Empresa**: ${planning.client.name}
+- **Setor**: ${planning.client.industry}
+- **Nível de Maturidade**: ${planning.formDataJSON.marketing.maturidade_marketing}
 
 ## ⚙️ Detalhamentos
-[Lista de subtarefas e detalhamentos]
+${task.detalhamentos.map(d => `- ${d.texto} (${d.origem})`).join('\n')}
+
+${task.detalhamento_adicional_usuario ? `## 📝 Contexto Adicional
+${task.detalhamento_adicional_usuario}` : ''}
 
 ## 🎯 Métricas de Sucesso
-[Indicadores definidos pela IA]
+${generateMetrics(task, planning)}
 
 ## 📅 Prazo Sugerido
-[Timeline recomendada]
+${task.metadata?.tempo_estimado || 'A definir'}
 
 ## 🔗 Recursos Adicionais
-[Links e materiais complementares]
+${generateResources(task, planning)}`;
+}
+
+function generateMetrics(task: TarefaAI, planning: StrategicPlanning): string {
+  // Gerar métricas baseadas no contexto
+  const metrics = [];
+  
+  if (task.metadata?.setor_relacionado === 'marketing') {
+    metrics.push('- Aumento no tráfego qualificado');
+    metrics.push('- Melhoria na taxa de conversão');
+  }
+  
+  if (task.metadata?.setor_relacionado === 'comercial') {
+    metrics.push('- Aumento no número de leads');
+    metrics.push('- Melhoria no ticket médio');
+  }
+  
+  return metrics.join('\n');
+}
+
+function generateResources(task: TarefaAI, planning: StrategicPlanning): string {
+  // Gerar links e recursos baseados no contexto
+  const resources = [];
+  
+  if (task.metadata?.setor_relacionado === 'marketing') {
+    resources.push('- [Meta Ads Best Practices](https://www.facebook.com/business/help)');
+    resources.push('- [Google Analytics Setup](https://analytics.google.com/analytics/web/)');
+  }
+  
+  return resources.join('\n');
+}
 ```
 
 ### 8. Visualização e Gestão de Listas Refinadas
 
 #### 8.1 Página de Lista Refinada
 - **Rota**: `app/planejamento/[planningId]/refined-list/page.tsx`
-- **Funcionalidades**:
-  - Exibição das `PlanningTask` criadas
-  - Interface para visualizar `refinedOutputMarkdown`
-  - Links para editar tarefas individuais
-  - Histórico completo do processo
-  - Estatísticas de aprovação/modificação
+- **Implementação**:
+  ```typescript
+  export default async function RefinedListPage({ params }: { params: { planningId: string } }) {
+    const planning = await prisma.strategicPlanning.findUnique({
+      where: { id: params.planningId },
+      include: {
+        client: true,
+        tasks: {
+          orderBy: { priority: 'desc' }
+        }
+      }
+    });
+    
+    return (
+      <div className="container mx-auto py-8">
+        <PlanningHeader planning={planning} />
+        <TaskStatistics tasks={planning.tasks} />
+        <TaskList tasks={planning.tasks} />
+        <ExecutionTracker tasks={planning.tasks} />
+      </div>
+    );
+  }
+  ```
 
 #### 8.2 Componentes de Visualização
-- **`RefinedTaskView.tsx`**: Visualização rica do markdown
-- **`TaskHistoryView.tsx`**: Histórico de modificações
-- **`PlanningStats.tsx`**: Estatísticas do processo
-- **`TaskExecutionTracker.tsx`**: Acompanhamento de execução
+```typescript
+// RefinedTaskView.tsx
+interface RefinedTaskViewProps {
+  task: PlanningTask;
+  onStatusChange: (status: TaskStatus) => void;
+}
+
+const RefinedTaskView: React.FC<RefinedTaskViewProps> = ({ task, onStatusChange }) => {
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-semibold">{task.title}</h3>
+        <PriorityBadge priority={task.priority} />
+      </div>
+      
+      <div className="mt-4 prose">
+        <ReactMarkdown>{task.refinedOutputMarkdown}</ReactMarkdown>
+      </div>
+      
+      <div className="mt-6 border-t pt-4">
+        <h4 className="font-medium">Histórico de Refinamento</h4>
+        <TaskHistory task={task} />
+      </div>
+      
+      <div className="mt-4 flex justify-between items-center">
+        <StatusSelector
+          value={task.status}
+          onChange={onStatusChange}
+        />
+        <Button onClick={() => window.open(`/tasks/${task.id}`, '_blank')}>
+          Abrir Tarefa
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+// TaskStatistics.tsx
+interface TaskStatisticsProps {
+  tasks: PlanningTask[];
+}
+
+const TaskStatistics: React.FC<TaskStatisticsProps> = ({ tasks }) => {
+  const stats = {
+    total: tasks.length,
+    completed: tasks.filter(t => t.status === 'COMPLETED').length,
+    inProgress: tasks.filter(t => t.status === 'IN_PROGRESS').length,
+    byPriority: {
+      URGENT: tasks.filter(t => t.priority === 'URGENT').length,
+      ALTA: tasks.filter(t => t.priority === 'ALTA').length,
+      MEDIA: tasks.filter(t => t.priority === 'MEDIA').length,
+      BAIXA: tasks.filter(t => t.priority === 'BAIXA').length
+    }
+  };
+  
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <StatCard
+        title="Total de Tarefas"
+        value={stats.total}
+        icon={<TaskIcon />}
+      />
+      <StatCard
+        title="Concluídas"
+        value={`${Math.round((stats.completed / stats.total) * 100)}%`}
+        icon={<CheckIcon />}
+      />
+      <StatCard
+        title="Em Progresso"
+        value={stats.inProgress}
+        icon={<ProgressIcon />}
+      />
+      <StatCard
+        title="Prioridade Alta/Urgente"
+        value={stats.byPriority.URGENT + stats.byPriority.ALTA}
+        icon={<PriorityIcon />}
+      />
+    </div>
+  );
+};
+```
 
 ### 9. Sistema de Auditoria e Histórico
 
 #### 9.1 Log de Auditoria
-- **Modelo no Prisma**:
-  ```prisma
-  model PlanningAuditLog {
-    id          String   @id @default(cuid())
-    planningId  String
-    userId      String
-    action      String  // "task_edited", "priority_changed", etc.
-    details     Json    // Dados da modificação
-    timestamp   DateTime @default(now())
-    
-    planning StrategicPlanning @relation(fields: [planningId], references: [id])
-    
-    @@index([planningId])
-    @@index([userId, timestamp])
+```typescript
+// models/PlanningAuditLog.ts
+interface PlanningAuditLog {
+  id: string;
+  planningId: string;
+  userId: string;
+  action: AuditAction;
+  details: Json;
+  timestamp: Date;
+  
+  planning: StrategicPlanning;
+  user: User;
+}
+
+enum AuditAction {
+  TASK_CREATED = 'task_created',
+  TASK_EDITED = 'task_edited',
+  TASK_STATUS_CHANGED = 'task_status_changed',
+  TASK_REFINED = 'task_refined',
+  PLANNING_STATUS_CHANGED = 'planning_status_changed',
+  CREDIT_TRANSACTION = 'credit_transaction'
+}
+
+// services/audit.ts
+async function createAuditLog(
+  planningId: string,
+  userId: string,
+  action: AuditAction,
+  details: any
+) {
+  return await prisma.planningAuditLog.create({
+    data: {
+      planningId,
+      userId,
+      action,
+      details,
+      timestamp: new Date()
+    }
+  });
+}
+
+// Exemplo de uso
+await createAuditLog(
+  planningId,
+  userId,
+  'task_refined',
+  {
+    taskId: task.id,
+    previousState: task.planejamentoInformacoes,
+    newState: task.planejamentoFinal,
+    refinementContext: additionalContext
   }
-  ```
+);
+```
 
 #### 9.2 Interface de Histórico
-- **Timeline visual**: Linha do tempo com todas as modificações
-- **Comparação de versões**: Before/After das edições
-- **Métricas de engage**: Tempo gasto, número de modificações
-- **Análise de padrões**: Insights sobre uso do sistema
+```typescript
+// components/TaskHistory.tsx
+interface TaskHistoryProps {
+  task: PlanningTask;
+}
+
+const TaskHistory: React.FC<TaskHistoryProps> = async ({ task }) => {
+  const logs = await prisma.planningAuditLog.findMany({
+    where: {
+      planningId: task.planningId,
+      details: { path: ['taskId'], equals: task.id }
+    },
+    include: { user: true },
+    orderBy: { timestamp: 'desc' }
+  });
+  
+  return (
+    <div className="space-y-4">
+      {logs.map(log => (
+        <div key={log.id} className="flex items-start gap-4">
+          <div className="flex-shrink-0">
+            <TimelineIcon action={log.action} />
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">
+              {format(log.timestamp, 'dd/MM/yyyy HH:mm')}
+            </p>
+            <p className="font-medium">
+              {formatAction(log.action)}
+            </p>
+            <div className="mt-1 text-sm">
+              {formatDetails(log.details)}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// components/PlanningTimeline.tsx
+interface PlanningTimelineProps {
+  planningId: string;
+}
+
+const PlanningTimeline: React.FC<PlanningTimelineProps> = async ({ planningId }) => {
+  const logs = await prisma.planningAuditLog.findMany({
+    where: { planningId },
+    include: { user: true },
+    orderBy: { timestamp: 'desc' }
+  });
+  
+  const groupedLogs = groupLogsByDate(logs);
+  
+  return (
+    <div className="space-y-8">
+      {Object.entries(groupedLogs).map(([date, dayLogs]) => (
+        <div key={date}>
+          <h3 className="text-lg font-medium mb-4">{formatDate(date)}</h3>
+          <div className="space-y-4">
+            {dayLogs.map(log => (
+              <TimelineEvent key={log.id} log={log} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+```
 
 ### 10. Sistema de Notificações e Feedback
 
 #### 10.1 Estados de Carregamento
-- **Animações específicas**: Para cada etapa do processo
-- **Progress indicators**: Mostra etapa atual
-- **Estimativa de tempo**: Baseada em histórico
-- **Cancelamento**: Opção de cancelar durante processamento
+```typescript
+// hooks/useProcessingState.ts
+interface ProcessingState {
+  status: 'idle' | 'loading' | 'success' | 'error';
+  progress: number;
+  message: string;
+  error?: Error;
+}
+
+const useProcessingState = (planningId: string) => {
+  const [state, setState] = useState<ProcessingState>({
+    status: 'idle',
+    progress: 0,
+    message: ''
+  });
+  
+  const startProcessing = (type: 'backlog' | 'refinement') => {
+    setState({
+      status: 'loading',
+      progress: 0,
+      message: type === 'backlog'
+        ? 'Gerando backlog inicial...'
+        : 'Refinando lista de tarefas...'
+    });
+    
+    // Simular progresso baseado em tempos médios
+    const interval = setInterval(() => {
+      setState(prev => ({
+        ...prev,
+        progress: Math.min(prev.progress + 10, 90)
+      }));
+    }, type === 'backlog' ? 3000 : 2000);
+    
+    return () => clearInterval(interval);
+  };
+  
+  const completeProcessing = () => {
+    setState({
+      status: 'success',
+      progress: 100,
+      message: 'Processamento concluído!'
+    });
+  };
+  
+  const handleError = (error: Error) => {
+    setState({
+      status: 'error',
+      progress: 0,
+      message: 'Erro no processamento',
+      error
+    });
+  };
+  
+  return {
+    state,
+    startProcessing,
+    completeProcessing,
+    handleError
+  };
+};
+
+// components/ProcessingIndicator.tsx
+const ProcessingIndicator: React.FC<{ state: ProcessingState }> = ({ state }) => {
+  return (
+    <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 max-w-sm">
+      <div className="flex items-center gap-4">
+        {state.status === 'loading' && (
+          <Spinner size="sm" className="text-primary" />
+        )}
+        <div>
+          <p className="font-medium">{state.message}</p>
+          {state.status === 'loading' && (
+            <Progress value={state.progress} className="mt-2" />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+```
 
 #### 10.2 Feedback ao Usuário
-- **Notificações em tempo real**: Toast messages para cada ação
-- **Estados de erro**: Tratamento específico para falhas
-- **Recuperação automática**: Retry em caso de falha temporária
-- **Feedback de qualidade**: Sistema para avaliar tarefas geradas
+```typescript
+// components/TaskFeedback.tsx
+interface TaskFeedbackProps {
+  task: PlanningTask;
+  onFeedback: (feedback: TaskFeedback) => void;
+}
+
+interface TaskFeedback {
+  quality: 1 | 2 | 3 | 4 | 5;
+  relevance: 1 | 2 | 3 | 4 | 5;
+  clarity: 1 | 2 | 3 | 4 | 5;
+  comments?: string;
+}
+
+const TaskFeedback: React.FC<TaskFeedbackProps> = ({ task, onFeedback }) => {
+  const [feedback, setFeedback] = useState<TaskFeedback>({
+    quality: 3,
+    relevance: 3,
+    clarity: 3
+  });
+  
+  const handleSubmit = async () => {
+    await prisma.planningTask.update({
+      where: { id: task.id },
+      data: {
+        metadata: {
+          ...task.metadata,
+          feedback
+        }
+      }
+    });
+    
+    await createAuditLog(
+      task.planningId,
+      task.userId,
+      'task_feedback',
+      { taskId: task.id, feedback }
+    );
+    
+    onFeedback(feedback);
+  };
+  
+  return (
+    <div className="space-y-4">
+      <h3 className="font-medium">Avalie esta tarefa</h3>
+      
+      <div className="space-y-2">
+        <RatingInput
+          label="Qualidade"
+          value={feedback.quality}
+          onChange={quality => setFeedback(prev => ({ ...prev, quality }))}
+        />
+        <RatingInput
+          label="Relevância"
+          value={feedback.relevance}
+          onChange={relevance => setFeedback(prev => ({ ...prev, relevance }))}
+        />
+        <RatingInput
+          label="Clareza"
+          value={feedback.clarity}
+          onChange={clarity => setFeedback(prev => ({ ...prev, clarity }))}
+        />
+      </div>
+      
+      <textarea
+        placeholder="Comentários adicionais..."
+        value={feedback.comments}
+        onChange={e => setFeedback(prev => ({ ...prev, comments: e.target.value }))}
+        className="w-full mt-2 rounded-md border-gray-300"
+      />
+      
+      <Button onClick={handleSubmit}>
+        Enviar Feedback
+      </Button>
+    </div>
+  );
+};
+```
 
 ### 11. Otimizações e Performance
 
 #### 11.1 Cache e Otimização
-- **Cache de perguntas por setor**: Evitar consultas repetitivas
-- **Lazy loading**: Carregar tarefas sob demanda
-- **Debounce**: Em edições em tempo real
-- **Compression**: Para payloads de webhook grandes
+```typescript
+// utils/cache.ts
+const CACHE_KEYS = {
+  planningTasks: (planningId: string) => `planning-tasks-${planningId}`,
+  taskHistory: (taskId: string) => `task-history-${taskId}`,
+  clientContext: (clientId: string) => `client-context-${clientId}`
+};
+
+const cache = new Map<string, { data: any; timestamp: number }>();
+
+const CACHE_TTL = {
+  planningTasks: 5 * 60 * 1000, // 5 minutos
+  taskHistory: 10 * 60 * 1000,  // 10 minutos
+  clientContext: 30 * 60 * 1000 // 30 minutos
+};
+
+async function getCachedData<T>(
+  key: string,
+  ttl: number,
+  fetchFn: () => Promise<T>
+): Promise<T> {
+  const cached = cache.get(key);
+  
+  if (cached && Date.now() - cached.timestamp < ttl) {
+    return cached.data as T;
+  }
+  
+  const data = await fetchFn();
+  cache.set(key, { data, timestamp: Date.now() });
+  
+  return data;
+}
+
+// Exemplo de uso
+const tasks = await getCachedData(
+  CACHE_KEYS.planningTasks(planningId),
+  CACHE_TTL.planningTasks,
+  () => prisma.planningTask.findMany({ where: { planningId } })
+);
+```
 
 #### 11.2 Monitoramento
-- **Logs estruturados**: Para debugging e analytics
-- **Métricas de performance**: Tempo de resposta dos webhooks
-- **Health checks**: Status dos serviços externos
-- **Alertas**: Para falhas críticas
+```typescript
+// utils/monitoring.ts
+interface ProcessingMetrics {
+  planningId: string;
+  operation: 'backlog' | 'refinement' | 'task_creation';
+  startTime: number;
+  endTime: number;
+  success: boolean;
+  error?: string;
+}
 
-## ⚙️ Non-Functional Requirements
+const metrics = new Map<string, ProcessingMetrics[]>();
 
-### Performance
-- **Webhook response**: < 30s para geração de backlog
-- **UI responsiveness**: Edições em tempo real < 100ms
-- **Lista refinada**: Criação em < 60s após aprovação
-- **Carregamento**: Páginas < 3s, componentes < 1s
+function recordMetric(metric: ProcessingMetrics) {
+  const existing = metrics.get(metric.planningId) || [];
+  metrics.set(metric.planningId, [...existing, metric]);
+  
+  // TODO: Enviar para sistema de monitoramento externo
+}
 
-### Security
-- **Webhook validation**: Verificação de assinatura/secret
-- **Credit transactions**: Transações atômicas e auditáveis
-- **Input sanitization**: Limpeza de dados de entrada
-- **Authorization**: Verificação em todas as operações
-
-### Reliability
-- **Retry mechanism**: Para webhooks com falha
-- **Transaction rollback**: Em caso de erro no débito de créditos
-- **Data backup**: Snapshots antes de operações críticas
-- **Error recovery**: Capacidade de retomar processamento
-
-### Scalability
-- **Queue system**: Para processamento de webhooks
-- **Rate limiting**: Prevenção de abuso de APIs
-- **Database optimization**: Índices e queries eficientes
-- **Cache layers**: Para dados frequentemente acessados
-
-## 📚 Guidelines & Packages
-
-### Tecnologias Adicionais (Além do Plan-005)
-- **Queue**: Bull/BullMQ para processamento assíncrono
-- **Webhook Security**: Crypto para validação de assinaturas
-- **Real-time**: WebSockets ou Server-Sent Events (opcional)
-- **Markdown**: React-Markdown para visualização de outputs
-- **Charts**: Recharts para estatísticas e métricas
-
-### Webhooks URLs
-- `PLANNING_WEBHOOK_URL="https://webhook.lucasfelix.com/webhook/vortex-planejamento-beta-2025"`
-- `REFINED_LIST_WEBHOOK_URL="https://webhook.lucasfelix.com/webhook/vortex-refinada-beta-2025"`
-
-## 🔐 Threat Model
-
-### Webhook Security
-- **Signature validation**: Verificar HMAC signatures
-- **Timestamp validation**: Prevenir replay attacks
-- **Rate limiting**: Limitar chamadas por origem
-- **IP whitelist**: Restringir origens autorizadas
-
-### Credit System Security
-- **Transaction integrity**: Preventing double charges
-- **Balance validation**: Atomic operations
-- **Audit trail**: Complete transaction history
-- **Fraud detection**: Unusual patterns monitoring
-
-### Data Protection
-- **Client data**: Encryption at rest and transit
-- **PII handling**: Minimal exposure and proper storage
-- **Backup security**: Encrypted backups
-- **Access control**: Role-based permissions
-
-## 🔢 Execution Plan
-
-### Fase 1: Setup e Configuração Avançada
-1. **Análise da Base do Plan-005**:
-   - Verificar implementação completa do formulário
-   - Confirmar estruturas JSON e relacionamentos
-   - Testar criação e listagem de planejamentos
-   - Validar esquema de IDs implementado
-
-2. **Atualização do Schema para IA**:
-   - Expandir `PlanningStatus` com novos estados
-   - Adicionar campos para IA no `StrategicPlanning`:
-     ```prisma
-     aiGeneratedTasksJSON Json?      // Resposta do PLANNING_WEBHOOK_URL
-     approvedTasksJSON    Json?      // Tarefas aprovadas pelo usuário
-     aiProcessingStarted  DateTime?  // Timestamp do início
-     aiProcessingCompleted DateTime? // Timestamp da conclusão
-     ```
-   - Criar modelo `PlanningTask` completo
-   - Criar modelo `PlanningAuditLog`
-   - Executar migração Prisma
-
-3. **Configuração de Ambiente**:
-   - Adicionar URLs de webhook ao `.env`
-   - Configurar custos de crédito
-   - Adicionar chave secreta para webhooks
-   - Configurar variáveis de retry e timeout
-
-### Fase 2: Sistema de Créditos e Webhook de Planejamento
-1. **Expansão do Sistema de Créditos**:
-   - Atualizar `CreditTransactionType` enum
-   - Implementar funções de verificação/débito específicas
-   - Criar APIs de consulta de saldo
-   - Implementar transações atômicas
-
-2. **API de Submissão para IA**:
-   - `app/api/strategic-planning/[planningId]/submit-ai/route.ts`
-   - Validação de dados e saldo
-   - Estruturação do payload enriquecido
-   - Dispatch assíncrono para `PLANNING_WEBHOOK_URL`
-   - Atualização de status
-
-3. **Webhook de Callback do Planejamento**:
-   - `app/api/webhooks/planning-callback/route.ts`
-   - Validação de segurança (HMAC)
-   - Processamento da resposta da IA
-   - Débito de créditos após sucesso
-   - Notificação ao frontend
-
-### Fase 3: Interface de Aprovação de Tarefas
-1. **Componentes Base de Aprovação**:
-   - `TaskApprovalInterface.tsx`: Interface principal
-   - `TaskCard.tsx`: Card individual de tarefa
-   - `PrioritySelector.tsx`: Seletor visual de prioridades
-   - `TaskDetailsModal.tsx`: Modal para detalhes completos
-
-2. **Funcionalidades de Interação**:
-   - Sistema de seleção/desseleção
-   - Edição inline de nome e descrição
-   - Alteração de prioridades
-   - Auto-save em localStorage
-   - Contador de tarefas selecionadas
-
-3. **Sistema de Refinamento Individual**:
-   - `TaskRefinementModal.tsx`: Modal para contexto adicional
-   - API `app/api/strategic-planning/[planningId]/refine-task/route.ts`
-   - Webhook específico para refinamento individual
-   - Atualização em tempo real da tarefa
-
-### Fase 4: Submissão para Refinamento de Lista
-1. **API de Submissão para Refinamento**:
-   - `app/api/strategic-planning/[planningId]/submit-refinement/route.ts`
-   - Coleta de tarefas aprovadas
-   - Estruturação do payload completo
-   - Envio para `REFINED_LIST_WEBHOOK_URL`
-
-2. **Estados de Carregamento**:
-   - Animações específicas para refinamento
-   - Progress indicators
-   - Estimativas de tempo
-   - Opção de cancelamento
-
-### Fase 5: Processamento Final e Criação de Tarefas
-1. **Webhook de Lista Refinada**:
-   - `app/api/webhooks/refined-list-callback/route.ts`
-   - Verificação e débito de créditos
-   - Sinalização para criar `PlanningTask`
-
-2. **Criação de PlanningTask**:
-   - Iteração sobre `approvedTasksJSON`
-   - Construção do `refinedOutputMarkdown`
-   - Criação dos registros individuais
-   - Atualização de status final
-
-3. **Construção do Output Detalhado**:
-   - Templates markdown por tipo de tarefa
-   - Incorporação de dados do cliente
-   - Formatação de detalhamentos
-   - Links e recursos adicionais
-
-### Fase 6: Visualização de Listas Refinadas
-1. **Página de Lista Refinada**:
-   - `app/planejamento/[planningId]/refined-list/page.tsx`
-   - Listagem de `PlanningTask` criadas
-   - Filtros e busca
-   - Links para detalhes
-
-2. **Componentes de Visualização**:
-   - `RefinedTaskView.tsx`: Visualização do markdown
-   - `TaskHistoryView.tsx`: Histórico de modificações
-   - `PlanningStats.tsx`: Estatísticas do processo
-   - Integration com sistema de tarefas existente
-
-### Fase 7: Sistema de Auditoria e Histórico
-1. **Implementação de Logs**:
-   - Criação automática de `PlanningAuditLog`
-   - Captura de todas as modificações
-   - Timestamps e contexto detalhado
-
-2. **Interface de Histórico**:
-   - Timeline visual do processo
-   - Comparação de versões
-   - Métricas de engajamento
-   - Análise de padrões de uso
-
-### Fase 8: Estados de Loading e Notificações
-1. **Sistema de Loading States**:
-   - Animações específicas por etapa
-   - Progress indicators visuais
-   - Feedback de tempo estimado
-   - Estados de erro específicos
-
-2. **Sistema de Notificações**:
-   - Toast messages por ação
-   - Notificações de conclusão
-   - Alertas de erro
-   - Feedback de qualidade
-
-### Fase 9: Otimizações e Performance
-1. **Cache e Performance**:
-   - Cache de consultas frequentes
-   - Lazy loading de componentes
-   - Debounce em edições
-   - Compression de payloads
-
-2. **Monitoramento**:
-   - Logs estruturados
-   - Métricas de performance
-   - Health checks
-   - Sistema de alertas
-
-### Fase 10: Testes Integrados e Refinamentos
-1. **Testes do Fluxo Completo**:
-   - Formulário → IA → Aprovação → Refinamento → Tarefas
-   - Teste de todos os estados de status
-   - Validação de débito de créditos
-   - Teste de recuperação de erros
-
-2. **Testes de Segurança**:
-   - Validação de webhooks
-   - Teste de transações de crédito
-   - Verificação de autorização
-   - Teste de payload maliciosos
-
-3. **Otimizações de UX**:
-   - Testes de usabilidade
-   - Refinamento de animações
-   - Melhoria de feedback visual
-   - Acessibilidade completa
-
-### Fase 11: Documentação e Handover
-1. **Documentação Técnica Completa**:
-   - Fluxo completo documentado
-   - APIs e contratos
-   - Estruturas JSON finais
-   - Troubleshooting guide
-
-2. **Métricas de Sucesso**:
-   - KPIs de conversão
-   - Métricas de qualidade
-   - Performance benchmarks
-   - Feedback dos usuários
-
-3. **Preparação para Produção**:
-   - Health checks finais
-   - Monitoring dashboards
-   - Alertas configurados
-   - Backup strategies
+// Exemplo de uso
+const startTime = Date.now();
+try {
+  await processBacklog(planningId);
+  recordMetric({
+    planningId,
+    operation: 'backlog',
+    startTime,
+    endTime: Date.now(),
+    success: true
+  });
+} catch (error) {
+  recordMetric({
+    planningId,
+    operation: 'backlog',
+    startTime,
+    endTime: Date.now(),
+    success: false,
+    error: error.message
+  });
+  throw error;
+}
+```
 
 ## 🎯 Success Metrics
 
@@ -636,6 +1349,7 @@ Implementar o sistema completo de geração de backlog por IA, interface de apro
 - **Taxa de tarefas aprovadas sem modificação**: Métrica de qualidade da IA
 - **Número médio de edições por tarefa**: Indicador de precisão
 - **Uso do refinamento individual**: Métrica de necessidade de ajustes
+- **Feedback médio das tarefas**: Score de qualidade, relevância e clareza
 
 ### Performance e Confiabilidade
 - **Tempo de resposta de webhooks**: < 30s (95th percentile)
@@ -647,7 +1361,7 @@ Implementar o sistema completo de geração de backlog por IA, interface de apro
 - **Satisfação com tarefas geradas**: Survey qualitativo
 - **Taxa de conclusão do fluxo**: % que chegam até o final
 - **Tempo médio na interface de aprovação**: Métrica de UX
-- **Taxa de use de funcionalidades avançadas**: Adoption metrics
+- **Taxa de uso de funcionalidades avançadas**: Adoption metrics
 
 ### Negócio
 - **Conversão para execução de tarefas**: % de `PlanningTask` executadas
