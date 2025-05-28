@@ -6,9 +6,10 @@ import { z } from 'zod'
 // Schema para criação de cliente
 const CreateClientSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
-  industry: z.string().optional(),
-  serviceOrProduct: z.string().optional(),
-  initialObjective: z.string().optional(),
+  industry: z.string().nullable().optional(),
+  serviceOrProduct: z.string().nullable().optional(),
+  initialObjective: z.string().nullable().optional(),
+  businessDetails: z.string().nullable().optional(), // Para campo "Outro"
 })
 
 // Schema para validação dos filtros
@@ -259,6 +260,7 @@ export async function POST(request: NextRequest) {
         industry: validatedData.industry || null,
         serviceOrProduct: validatedData.serviceOrProduct || null,
         initialObjective: validatedData.initialObjective || null,
+        businessDetails: validatedData.businessDetails || null,
         richnessScore: initialRichnessScore,
         userId: userId,
       },

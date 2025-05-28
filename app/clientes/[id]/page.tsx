@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import NotesAndAttachments from "@/components/client/notes-and-attachments";
+import { SectorSelect } from "@/components/ui/sector-select";
 
 interface ClientData {
   id: string;
@@ -55,7 +56,7 @@ interface Section {
   fields: {
     key: keyof ClientData;
     label: string;
-    type: 'text' | 'textarea' | 'email' | 'tel' | 'url';
+    type: 'text' | 'textarea' | 'email' | 'tel' | 'url' | 'sector-select';
     placeholder: string;
   }[];
 }
@@ -67,7 +68,7 @@ const sections: Section[] = [
     icon: User,
     fields: [
       { key: 'name', label: 'Nome do Cliente', type: 'text', placeholder: 'Nome da empresa ou pessoa' },
-      { key: 'industry', label: 'Setor de Atuação', type: 'text', placeholder: 'Ex: Tecnologia, Consultoria, E-commerce' },
+      { key: 'industry', label: 'Setor de Atuação', type: 'sector-select', placeholder: 'Selecione o setor de atuação' },
       { key: 'serviceOrProduct', label: 'Serviço/Produto', type: 'text', placeholder: 'Breve descrição do que oferece' },
       { key: 'initialObjective', label: 'Objetivo Inicial', type: 'textarea', placeholder: 'Objetivo principal do cliente' }
     ]
@@ -134,6 +135,7 @@ export default function ClientProfilePage() {
   const [showActions, setShowActions] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [hasUserChanges, setHasUserChanges] = useState(false);
+  const [showCustomIndustry, setShowCustomIndustry] = useState(false);
 
   // Carregar dados do cliente da API
   useEffect(() => {
@@ -162,21 +164,42 @@ export default function ClientProfilePage() {
     loadClientData();
   }, [clientId]);
 
-  // Calcular RichnessScore em tempo real
+  // Monitorar mudanças no setor selecionado
+  useEffect(() => {
+    if (clientData) {
+      setShowCustomIndustry(clientData.industry === "Outro");
+    }
+  }, [clientData?.industry]);
+
+  // Calcular RichnessScore em tempo real com lógica correta para "Outro"
   const calculateRichnessScore = (data: ClientData): number => {
-    const fields = [
+    // Lista de todos os campos que compõem o richnessScore
+    const allFields = [
       'industry', 'serviceOrProduct', 'initialObjective', 'contactEmail', 
       'contactPhone', 'website', 'address', 'businessDetails', 'targetAudience',
       'marketingObjectives', 'historyAndStrategies', 'challengesOpportunities',
       'competitors', 'resourcesBudget', 'toneOfVoice', 'preferencesRestrictions'
     ];
+
+    // Criar uma versão "transformada" dos dados para o cálculo
+    const transformedData = { ...data };
     
-    const filledFields = fields.filter(field => {
-      const value = data[field as keyof ClientData];
+    // 🔄 Aplicar lógica de transformação "Outro" no cálculo
+    if (data.industry === "Outro" && data.businessDetails?.trim()) {
+      // Quando "Outro" é selecionado, businessDetails vira industry
+      transformedData.industry = data.businessDetails.trim();
+      transformedData.businessDetails = undefined; // Não contar businessDetails separadamente
+    }
+    
+    // Contar campos preenchidos na versão transformada
+    const filledFields = allFields.filter(field => {
+      const value = transformedData[field as keyof ClientData];
       return value && value.toString().trim().length > 0;
     });
 
-    return Math.round((filledFields.length / fields.length) * 100);
+    const score = Math.round((filledFields.length / allFields.length) * 100);
+    
+    return score;
   };
 
   // Atualizar RichnessScore quando dados mudarem
@@ -199,76 +222,72 @@ export default function ClientProfilePage() {
       ...validData
     } = data;
 
-    // Limpar campos vazios e inválidos
-    const cleanedData = Object.fromEntries(
-      Object.entries(validData).map(([key, value]) => [
-        key,
-        value === '' ? null : value
-      ])
-    );
+    // Garantir que todos os campos sejam explicitamente definidos
+    const explicitData = {
+      name: data.name || null,
+      industry: data.industry || null,
+      serviceOrProduct: data.serviceOrProduct || null,
+      initialObjective: data.initialObjective || null,
+      contactEmail: data.contactEmail || null,
+      contactPhone: data.contactPhone || null,
+      website: data.website || null,
+      address: data.address || null,
+      businessDetails: data.businessDetails || null,
+      targetAudience: data.targetAudience || null,
+      marketingObjectives: data.marketingObjectives || null,
+      historyAndStrategies: data.historyAndStrategies || null,
+      challengesOpportunities: data.challengesOpportunities || null,
+      competitors: data.competitors || null,
+      resourcesBudget: data.resourcesBudget || null,
+      toneOfVoice: data.toneOfVoice || null,
+      preferencesRestrictions: data.preferencesRestrictions || null,
+    };
 
-    console.log('Dados limpos para API:', cleanedData); // Debug
-    return cleanedData;
+    // Se "Outro" foi selecionado e há businessDetails, usar como setor
+    if (data.industry === "Outro" && data.businessDetails?.trim()) {
+      explicitData.industry = data.businessDetails.trim();
+      explicitData.businessDetails = null; // Limpar para evitar duplicação
+    }
+
+    return explicitData;
   };
 
-  // Auto-save com debounce - versão simplificada para debug
+  // Auto-save com debounce
   useEffect(() => {
     if (!clientData || isLoading || !hasUserChanges) {
-      console.log('Auto-save ignorado:', { clientData: !!clientData, isLoading, hasUserChanges });
       return;
     }
 
-    console.log('Auto-save iniciado para cliente:', clientId);
-
     const timeoutId = setTimeout(async () => {
       try {
-        console.log('Iniciando salvamento...');
         setIsSaving(true);
         
-        // Versão simplificada - apenas campos básicos
-        const basicData = {
-          name: clientData.name,
-          industry: clientData.industry || null,
-          serviceOrProduct: clientData.serviceOrProduct || null,
-          initialObjective: clientData.initialObjective || null,
-        };
-        
-        console.log('Dados básicos preparados:', basicData);
+        // Usar a função que faz a transformação correta dos dados
+        const validData = getValidClientData(clientData);
         
         const response = await fetch(`/api/clients/${clientId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(basicData),
+          body: JSON.stringify(validData),
         });
 
-        console.log('Response status:', response.status);
-
         if (response.ok) {
-          console.log('Salvamento bem-sucedido');
           setLastSaved(new Date());
           setHasUserChanges(false);
         } else {
           const errorData = await response.json();
-          console.error('Erro HTTP ao salvar cliente:', {
-            status: response.status,
-            statusText: response.statusText,
-            errorData
-          });
+          console.error('Erro ao salvar cliente:', errorData);
         }
       } catch (error) {
         console.error('Erro de rede ao salvar cliente:', error);
       } finally {
-        console.log('Finalizando salvamento');
         setIsSaving(false);
       }
     }, 1000);
 
-    return () => {
-      console.log('Limpando timeout');
-      clearTimeout(timeoutId);
-    };
+    return () => clearTimeout(timeoutId);
   }, [clientData, isLoading, clientId, hasUserChanges]);
 
   const handleFieldChange = (field: keyof ClientData, value: string) => {
@@ -532,6 +551,31 @@ export default function ClientProfilePage() {
                               rows={4}
                               className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20 resize-none"
                             />
+                          ) : field.type === 'sector-select' ? (
+                            <div>
+                              <SectorSelect
+                                value={clientData[field.key] as string || ''}
+                                onValueChange={(value) => handleFieldChange(field.key, value)}
+                                placeholder={field.placeholder}
+                              />
+                              {showCustomIndustry && (
+                                <div className="mt-4">
+                                  <label className="block text-sm font-medium text-seasalt mb-2">
+                                    Especifique o setor *
+                                  </label>
+                                  <div className="relative">
+                                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-periwinkle" />
+                                    <input
+                                      type="text"
+                                      value={clientData.businessDetails || ''}
+                                      onChange={(e) => handleFieldChange('businessDetails', e.target.value)}
+                                      placeholder="Descreva o setor específico..."
+                                      className="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <input
                               type={field.type}

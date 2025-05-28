@@ -6,22 +6,22 @@ import { z } from 'zod'
 // Schema para atualização de cliente
 const UpdateClientSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').optional(),
-  industry: z.string().optional(),
-  serviceOrProduct: z.string().optional(),
-  initialObjective: z.string().optional(),
-  contactEmail: z.string().email('E-mail inválido').optional(),
-  contactPhone: z.string().optional(),
-  website: z.string().url('URL inválida').optional(),
-  address: z.string().optional(),
-  businessDetails: z.string().optional(),
-  targetAudience: z.string().optional(),
-  marketingObjectives: z.string().optional(),
-  historyAndStrategies: z.string().optional(),
-  challengesOpportunities: z.string().optional(),
-  competitors: z.string().optional(),
-  resourcesBudget: z.string().optional(),
-  toneOfVoice: z.string().optional(),
-  preferencesRestrictions: z.string().optional(),
+  industry: z.union([z.string(), z.null()]).optional(),
+  serviceOrProduct: z.union([z.string(), z.null()]).optional(),
+  initialObjective: z.union([z.string(), z.null()]).optional(),
+  contactEmail: z.union([z.string().email('E-mail inválido'), z.literal(''), z.null()]).optional(),
+  contactPhone: z.union([z.string(), z.null()]).optional(),
+  website: z.union([z.string().url('URL inválida'), z.literal(''), z.null()]).optional(),
+  address: z.union([z.string(), z.null()]).optional(),
+  businessDetails: z.union([z.string(), z.null()]).optional(),
+  targetAudience: z.union([z.string(), z.null()]).optional(),
+  marketingObjectives: z.union([z.string(), z.null()]).optional(),
+  historyAndStrategies: z.union([z.string(), z.null()]).optional(),
+  challengesOpportunities: z.union([z.string(), z.null()]).optional(),
+  competitors: z.union([z.string(), z.null()]).optional(),
+  resourcesBudget: z.union([z.string(), z.null()]).optional(),
+  toneOfVoice: z.union([z.string(), z.null()]).optional(),
+  preferencesRestrictions: z.union([z.string(), z.null()]).optional(),
 })
 
 // GET /api/clients/[clientId] - Obter cliente específico
@@ -106,6 +106,22 @@ export async function PUT(
     // Validar dados
     const validatedData = UpdateClientSchema.parse(body)
 
+    // Normalizar dados: converter strings vazias e undefined para null
+    const normalizedData = Object.fromEntries(
+      Object.entries(validatedData).map(([key, value]) => [
+        key,
+        value === '' || value === undefined ? null : value
+      ])
+    );
+
+    // 🚀 Lógica de transformação "Outro" → texto personalizado
+    let finalData = { ...normalizedData };
+    
+    if (normalizedData.industry === "Outro" && normalizedData.businessDetails?.trim()) {
+      finalData.industry = normalizedData.businessDetails.trim();
+      finalData.businessDetails = null; // Limpar para evitar duplicação
+    }
+
     // Verificar se o cliente existe e pertence ao usuário
     const existingClient = await prisma.client.findFirst({
       where: {
@@ -119,7 +135,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Cliente não encontrado' }, { status: 404 })
     }
 
-    // Calcular novo richnessScore
+    // Calcular novo richnessScore com lógica correta para "Outro"
     const fields = [
       'industry', 'serviceOrProduct', 'initialObjective', 'contactEmail', 
       'contactPhone', 'website', 'address', 'businessDetails', 'targetAudience',
@@ -127,9 +143,17 @@ export async function PUT(
       'competitors', 'resourcesBudget', 'toneOfVoice', 'preferencesRestrictions'
     ]
 
-    const updatedData = { ...existingClient, ...validatedData }
+    // Criar versão dos dados para cálculo (aplicando transformação "Outro")
+    const dataForCalculation = { ...existingClient, ...finalData };
+    
+    // Se a transformação "Outro" foi aplicada, ajustar para o cálculo
+    if (finalData.industry && finalData.industry !== "Outro" && normalizedData.industry === "Outro") {
+      // Caso onde "Outro" foi transformado - não contar businessDetails separadamente
+      dataForCalculation.businessDetails = null;
+    }
+
     const filledFields = fields.filter(field => {
-      const value = updatedData[field as keyof typeof updatedData]
+      const value = dataForCalculation[field as keyof typeof dataForCalculation]
       return value && value.toString().trim().length > 0
     })
 
@@ -141,7 +165,7 @@ export async function PUT(
         id: clientId,
       },
       data: {
-        ...validatedData,
+        ...finalData,
         richnessScore: newRichnessScore,
         updatedAt: new Date(),
       },
@@ -160,15 +184,23 @@ export async function PUT(
     return NextResponse.json({ client: updatedClient })
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error('❌ Erro de validação Zod:', error.errors);
       return NextResponse.json(
-        { error: 'Dados inválidos', details: error.errors },
+        { 
+          error: 'Dados inválidos', 
+          details: error.errors,
+          message: 'Verifique os campos preenchidos e tente novamente'
+        },
         { status: 400 }
       )
     }
 
-    console.error('Erro ao atualizar cliente:', error)
+    console.error('❌ Erro ao atualizar cliente:', error)
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { 
+        error: 'Erro interno do servidor',
+        message: 'Não foi possível salvar as alterações. Tente novamente.'
+      },
       { status: 500 }
     )
   }
