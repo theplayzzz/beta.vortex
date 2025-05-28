@@ -14,26 +14,74 @@ status: draft
 - **Existing `.env` File**: A `.env` file already exists in the repository; always append new variables there and **never commit secrets**.
 - **Flowchart as Source of Truth**: Before altering flows or data models, study `docs/Flowchart Vortex.mmd` to ensure every change remains aligned with the current architecture.
 
+## 📚 **ARQUIVOS DE REFERÊNCIA DA FASE 0** 
+
+⚠️ **IMPORTANTE**: Os seguintes arquivos foram criados durante a Fase 0 e contêm informações críticas para a execução das próximas fases. **CONSULTE ESTES ARQUIVOS SEMPRE QUE NECESSÁRIO**:
+
+### 🔍 **Análise Técnica Completa**
+- **`.ai-guards/plans/fase-0-analise-banco-dados-setup.md`**
+  - Mapeamento completo de todos os 13 modelos do schema Prisma
+  - Identificação de 7 tipos diferentes de ID e seus relacionamentos
+  - Análise do modelo `StrategicPlanning` existente (descoberta importante!)
+  - Verificação de integridade referencial
+  - Configuração de variáveis de ambiente
+  - **CONSULTAR**: Sempre que precisar entender relacionamentos entre modelos ou tipos de ID
+
+### 📊 **Estruturas JSON e Validação**
+- **`.ai-guards/plans/estruturas-json-plan-005.md`**
+  - Schema completo do `formDataJSON` (4 abas do formulário)
+  - Configuração de perguntas por setor (11 setores)
+  - Estrutura do `clientSnapshot`
+  - Schemas de validação Zod
+  - Payloads para webhooks (plan-006)
+  - **CONSULTAR**: Durante implementação do formulário, validação e APIs
+
+### 📋 **Resumo Executivo**
+- **`.ai-guards/plans/fase-0-resumo-executivo.md`**
+  - Status completo da Fase 0 executada
+  - Descobertas críticas e pontos de atenção
+  - Estruturas preparadas e métricas de sucesso
+  - **CONSULTAR**: Para visão geral do que foi realizado na Fase 0
+
+### 🗑️ **INSTRUÇÕES PARA EXCLUSÃO DOS ARQUIVOS**
+
+**QUANDO EXCLUIR**: Após a conclusão completa do plan-005 (todas as 7 fases), os arquivos de referência da Fase 0 podem ser excluídos, pois:
+
+1. **fase-0-analise-banco-dados-setup.md** → Excluir após Fase 3 (Backend APIs implementadas)
+2. **estruturas-json-plan-005.md** → Excluir após Fase 2 (Formulário implementado) 
+3. **fase-0-resumo-executivo.md** → Excluir após Fase 7 (Documentação final)
+
+**COMANDO PARA EXCLUSÃO** (executar apenas quando indicado):
+```bash
+rm .ai-guards/plans/fase-0-analise-banco-dados-setup.md
+rm .ai-guards/plans/estruturas-json-plan-005.md  
+rm .ai-guards/plans/fase-0-resumo-executivo.md
+```
+
+---
+
 ## 🧩 Scope
 
 Criar a infraestrutura inicial e o painel de planejamento para o sistema de criação de planejamentos estratégicos. Esta primeira fase focará na análise do banco de dados, configuração inicial, criação do formulário multi-etapas integrado com clientes, e setup do painel de visualização. O objetivo é estabelecer a base sólida para a posterior implementação de IA e refinamento de listas.
 
 ### Componentes Desta Fase:
-- **Análise de Base de Dados**: Identificação completa de todos os IDs e relacionamentos existentes
+- **✅ Análise de Base de Dados**: Identificação completa de todos os IDs e relacionamentos existentes *(CONCLUÍDA - Fase 0)*
 - **Frontend (Next.js + TypeScript)**: Formulário dinâmico multi-etapas integrado à interface existente
 - **Backend (Next.js API Routes)**: APIs para validação, armazenamento básico e gestão de dados
 - **Integração com Clientes**: Sistema obrigatório de linkagem com clientes existentes
 - **Painel de Planejamento**: Interface de visualização e gestão de planejamentos criados
-- **Configuração Inicial**: Setup de variáveis, modelos de dados e estruturas base
-- **Preparação para IA**: Estruturas JSON e webhooks preparados para plan-006
+- **✅ Configuração Inicial**: Setup de variáveis, modelos de dados e estruturas base *(CONCLUÍDA - Fase 0)*
+- **✅ Preparação para IA**: Estruturas JSON e webhooks preparados para plan-006 *(CONCLUÍDA - Fase 0)*
 
 ## ✅ Functional Requirements
 
-### 1. Análise Completa do Banco de Dados e Identificação de IDs
-- **Mapeamento de Relacionamentos**: Analisar `prisma.schema` existente para identificar todos os tipos de ID
-- **Identificação de Chaves**: Mapear `id`, `userId`, `clientId`, `clerkId`, `planningId` e suas relações
-- **Verificação de Integridade**: Validar relacionamentos existentes no banco
-- **Documentação de IDs**: Criar mapeamento claro de qual ID usar em cada operação
+### ✅ 1. Análise Completa do Banco de Dados e Identificação de IDs *(CONCLUÍDA - Fase 0)*
+- **✅ Mapeamento de Relacionamentos**: Analisar `prisma.schema` existente para identificar todos os tipos de ID
+- **✅ Identificação de Chaves**: Mapear `id`, `userId`, `clientId`, `clerkId`, `planningId` e suas relações
+- **✅ Verificação de Integridade**: Validar relacionamentos existentes no banco
+- **✅ Documentação de IDs**: Criar mapeamento claro de qual ID usar em cada operação
+
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/fase-0-analise-banco-dados-setup.md` para detalhes completos dos relacionamentos e IDs mapeados.
 
 ### 2. Gestão de Clientes (Integração Obrigatória)
 
@@ -49,6 +97,8 @@ Criar a infraestrutura inicial e o painel de planejamento para o sistema de cria
   ```
 - **Validação obrigatória**: Não é possível criar planejamento sem cliente linkado
 - **Fluxo de criação**: Se cliente não existe, modal permite criar novo cliente com setor obrigatório
+
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/estruturas-json-plan-005.md` seção "Setores Permitidos" para implementação completa.
 
 #### 2.2 Linkagem Cliente-Planejamento
 - **Relacionamento obrigatório**: Todo `StrategicPlanning` deve ter `clientId` preenchido
@@ -75,6 +125,8 @@ Criar a infraestrutura inicial e o painel de planejamento para o sistema de cria
 - **Aba 2**: Perguntas carregadas baseadas em `client.industry`
 - **Contexto visual**: Cliente sempre visível durante preenchimento
 
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/estruturas-json-plan-005.md` seção "Schema Completo do Formulário" para estrutura detalhada.
+
 #### 3.2 Estrutura das 4 Abas do Formulário
 
 **Aba 1: Informações Básicas**:
@@ -82,13 +134,15 @@ Criar a infraestrutura inicial e o painel de planejamento para o sistema de cria
 - **descricao_objetivo** (textarea, obrigatório): Descrição detalhada do objetivo
 - **setor** (readonly/informativo): Preenchido automaticamente com `client.industry`
 - **Badge do Richness Score**: Indicador visual do nível de nutrição do cliente
-- Se `client.industry === "Outro"`: Exibe `client.customIndustry` como informativo
+- Se `client.industry === "Outro"`: Exibe `client.businessDetails` como informativo *(Nota: customIndustry não existe no schema)*
 
 **Aba 2: Detalhes do Setor** (Campos Dinâmicos):
 - Campos dinâmicos carregados baseados em `client.industry`
 - Suporta tipos `text`, `textarea`, `radio`, `checkbox`, `number`
 - Lógica condicional e campos "Outro" com input adicional
 - Se nenhuma pergunta específica para o setor: mensagem informativa
+
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/estruturas-json-plan-005.md` seção "Configuração de Perguntas por Setor" para implementação completa de todos os 11 setores.
 
 **Configuração por Setor (Exemplos)**:
 
@@ -147,6 +201,8 @@ Criar a infraestrutura inicial e o painel de planejamento para o sistema de cria
 - **meta_marketing** (dropdown condicional): 6 metas específicas baseadas na maturidade selecionada
 - **meta_marketing_personalizada** (text): Se meta = "Outro"
 
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/estruturas-json-plan-005.md` seção "Opções de Marketing por Maturidade" para metas completas.
+
 **Aba 4: Comercial**:
 - **maturidade_comercial** (dropdown, obrigatório):
   - "Não temos processo comercial estruturado"
@@ -156,6 +212,8 @@ Criar a infraestrutura inicial e o painel de planejamento para o sistema de cria
   - "Vendas automatizadas e otimizadas"
 - **meta_comercial** (dropdown condicional): Baseado na maturidade selecionada
 - **meta_comercial_personalizada** (text): Se meta = "Outro"
+
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/estruturas-json-plan-005.md` seção "Opções de Comercial por Maturidade" para metas completas.
 
 #### 3.3 Sistema de Progresso e Validação
 - **Distribuição por Seção**: 25% para cada aba
@@ -176,6 +234,8 @@ interface Question {
   };
 }
 ```
+
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/estruturas-json-plan-005.md` seção "Estrutura de Pergunta" para interface completa.
 
 #### 3.5 Nomenclatura de Chaves JSON
 **Prefixos por Setor**:
@@ -213,22 +273,28 @@ interface Question {
 - **Backend**: Validação dupla com Zod nos endpoints de API
 - **Integridade**: Verificar relacionamentos com cliente antes de salvar
 
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/estruturas-json-plan-005.md` seção "Validação com Zod" para schemas completos.
+
 #### 5.2 Persistência de Dados
 - **Salvamento automático**: LocalStorage para backup local
 - **Salvamento manual**: Botão "Salvar Rascunho"
 - **Finalização**: Submissão completa para criação definitiva
 
-### 6. Preparação para Integração IA (Plan-006)
+### ✅ 6. Preparação para Integração IA (Plan-006) *(CONCLUÍDA - Fase 0)*
 
-#### 6.1 Estruturas JSON Preparadas
-- **formDataJSON**: Estrutura padronizada para envio aos webhooks
-- **clientSnapshot**: Snapshot dos dados do cliente no momento da criação
-- **Webhooks configurados**: URLs preparadas no `.env` para plan-006
+#### ✅ 6.1 Estruturas JSON Preparadas *(CONCLUÍDA - Fase 0)*
+- **✅ formDataJSON**: Estrutura padronizada para envio aos webhooks
+- **✅ clientSnapshot**: Snapshot dos dados do cliente no momento da criação
+- **✅ Webhooks configurados**: URLs preparadas no `.env` para plan-006
 
-#### 6.2 Status de Planejamento Preparados
-- **DRAFT**: Rascunho em edição
-- **COMPLETED**: Formulário finalizado (pronto para IA no plan-006)
-- Status de IA serão adicionados no plan-006
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/estruturas-json-plan-005.md` seção "Payload para Webhooks" para estrutura completa.
+
+#### ✅ 6.2 Status de Planejamento Preparados *(CONCLUÍDA - Fase 0)*
+- **✅ DRAFT**: Rascunho em edição
+- **✅ COMPLETED**: Formulário finalizado (pronto para IA no plan-006)
+- **✅ Status de IA**: 4 novos status adicionados ao enum para plan-006
+
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/fase-0-analise-banco-dados-setup.md` seção "Extensão do Enum PlanningStatus" para detalhes completos.
 
 ## ⚙️ Non-Functional Requirements
 
@@ -261,19 +327,24 @@ interface Question {
 ### Arquivos de Referência
 - `docs/formulario.md` (para estrutura de formulário e JSONs)
 - `docs/Flowchart Vortex.mmd` (para fluxos gerais)
-- `prisma/schema.prisma` (para estrutura de dados)
-- `.env` (existente, para novas variáveis)
+- `prisma/schema.prisma` (para estrutura de dados - **ATUALIZADO na Fase 0**)
+- `.env` (existente, para novas variáveis - **PREPARADO na Fase 0**)
 
-### Variáveis de Ambiente (Preparação para Plan-006)
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/fase-0-analise-banco-dados-setup.md` para análise completa do schema atualizado.
+
+### ✅ Variáveis de Ambiente (Preparação para Plan-006) *(CONCLUÍDA - Fase 0)*
 ```env
 # Webhooks para IA (plan-006)
 PLANNING_WEBHOOK_URL="https://webhook.lucasfelix.com/webhook/vortex-planejamento-beta-2025"
 REFINED_LIST_WEBHOOK_URL="https://webhook.lucasfelix.com/webhook/vortex-refinada-beta-2025"
+WEBHOOK_SECRET="your-webhook-secret-key"
 
 # Custos de créditos (plan-006)
 COST_PLANNING_BACKLOG_VISIBLE=10
 COST_REFINED_LIST_VISIBLE=10
 ```
+
+**📋 REFERÊNCIA**: Consultar `env.example` para variáveis completas adicionadas na Fase 0.
 
 ## 🔐 Threat Model
 - **Data Integrity**: Consistência entre relacionamentos Client-StrategicPlanning
@@ -283,59 +354,53 @@ COST_REFINED_LIST_VISIBLE=10
 
 ## 🔢 Execution Plan
 
-### Fase 0: Análise de Base de Dados e Setup Inicial
-1. **Análise Completa do Schema Prisma**:
-   - Mapear todos os modelos existentes e seus relacionamentos
-   - Identificar tipos de ID: `id`, `userId`, `clientId`, `clerkId`, etc.
-   - Documentar relacionamentos entre User, Client e futuro StrategicPlanning
-   - Verificar integridade referencial existente
+### ✅ Fase 0: Análise de Base de Dados e Setup Inicial *(CONCLUÍDA)*
+1. **✅ Análise Completa do Schema Prisma**:
+   - ✅ Mapear todos os modelos existentes e seus relacionamentos
+   - ✅ Identificar tipos de ID: `id`, `userId`, `clientId`, `clerkId`, etc.
+   - ✅ Documentar relacionamentos entre User, Client e StrategicPlanning
+   - ✅ Verificar integridade referencial existente
 
-2. **Configuração de Variáveis de Ambiente**:
-   - Adicionar variáveis de configuração ao `.env` existente
-   - Definir constantes de configuração (custos, limites, etc.)
-   - Preparar URLs de webhook para plan-006
+2. **✅ Configuração de Variáveis de Ambiente**:
+   - ✅ Adicionar variáveis de configuração ao `env.example`
+   - ✅ Definir constantes de configuração (custos, limites, etc.)
+   - ✅ Preparar URLs de webhook para plan-006
 
-3. **Atualização do Schema Prisma para Planejamento**:
-   - **Client** (validação apenas frontend - schema mantido flexível):
-     - `industry: String?` - Continua flexível no banco
-     - `richnessScore: Int?` - Score existente
-     - `customIndustry: String?` - Campo personalizado existente
-   - **StrategicPlanning** (novo modelo):
+3. **✅ Atualização do Schema Prisma para Planejamento**:
+   - **✅ Client** (schema mantido flexível):
+     - ✅ `industry: String?` - Continua flexível no banco
+     - ✅ `richnessScore: Int?` - Score existente
+     - ⚠️ `customIndustry`: **NÃO EXISTE** - usar `businessDetails`
+   - **✅ StrategicPlanning** (modelo EXISTENTE estendido):
      ```prisma
      model StrategicPlanning {
-       id              String   @id @default(cuid())
-       userId          String   // ID do usuário (Clerk)
-       clientId        String   // Relacionamento obrigatório com Client
-       title           String   // Título do planejamento
-       description     String?  // Descrição opcional
-       formDataJSON    Json     // Dados completos do formulário (4 abas)
+       // Campos existentes mantidos
+       id, title, description, specificObjectives, scope, 
+       successMetrics, budget, toneOfVoice, status, 
+       clientId, userId, createdAt, updatedAt
+       
+       // 🆕 NOVOS CAMPOS ADICIONADOS
+       formDataJSON    Json?    // Dados completos do formulário (4 abas)
        clientSnapshot  Json?    // Snapshot dos dados do cliente
-       status          PlanningStatus @default(DRAFT)
-       createdAt       DateTime @default(now())
-       updatedAt       DateTime @updatedAt
        
-       client          Client @relation(fields: [clientId], references: [id])
-       user            User @relation(fields: [userId], references: [id])
-       
-       @@index([clientId])
-       @@index([userId, clientId])
-       @@index([userId, status])
+       // Relacionamentos e índices otimizados
      }
      ```
-   - **PlanningStatus** enum inicial:
+   - **✅ PlanningStatus** enum estendido:
      ```prisma
      enum PlanningStatus {
-       DRAFT                    // Rascunho em edição
-       COMPLETED               // Formulário finalizado
-       // Status de IA serão adicionados no plan-006:
-       // PENDING_AI_BACKLOG_GENERATION
-       // AI_BACKLOG_VISIBLE
-       // etc.
+       DRAFT, ACTIVE, COMPLETED, ARCHIVED,           // Existentes
+       PENDING_AI_BACKLOG_GENERATION,                // 🆕 Plan-006
+       AI_BACKLOG_VISIBLE,                           // 🆕 Plan-006
+       PENDING_AI_REFINED_LIST,                      // 🆕 Plan-006
+       AI_REFINED_LIST_VISIBLE                       // 🆕 Plan-006
      }
      ```
 
-4. **Executar Migração Prisma**
-5. **Gerar Tipos TypeScript atualizados**
+4. **✅ Executar Migração Prisma**: `20250528075505_add_planning_form_fields_and_ai_status`
+5. **✅ Gerar Tipos TypeScript atualizados**
+
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/fase-0-resumo-executivo.md` para detalhes completos da execução da Fase 0.
 
 ### Fase 1: Adaptação da UI de Cliente para Planejamento
 
@@ -352,6 +417,8 @@ COST_REFINED_LIST_VISIBLE=10
   ];
   ```
 - **Manter compatibilidade** com uso normal do modal
+
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/estruturas-json-plan-005.md` seção "Setores Permitidos" para implementação completa.
 
 #### 1.2 Componente de Seleção de Cliente para Planejamento
 - **Lista clientes existentes** com filtros
@@ -375,7 +442,7 @@ COST_REFINED_LIST_VISIBLE=10
       name: string;
       industry: string;
       richnessScore: number;
-      customIndustry?: string;
+      businessDetails?: string;  // Usar ao invés de customIndustry
     };
   }
   ```
@@ -393,12 +460,14 @@ COST_REFINED_LIST_VISIBLE=10
 - **Tipos de campo suportados** (text, textarea, radio, checkbox, number)
 - **Lógica condicional** para campos "Outro"
 
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/estruturas-json-plan-005.md` seção "Configuração de Perguntas por Setor" para implementação completa de todos os setores.
+
 **Contagem de Perguntas por Setor**:
 - **Saúde**: 8 perguntas
 - **Educação**: 8 perguntas
 - **Imobiliário**: 8 perguntas
 - **Varejo físico**: 8 perguntas
-- **E-commerce**: 9 perguntas
+- **E-commerce**: 7 perguntas
 - **Serviços locais**: 9 perguntas
 - **B2B**: 8 perguntas
 - **Tecnologia / SaaS**: 9 perguntas
@@ -412,6 +481,8 @@ COST_REFINED_LIST_VISIBLE=10
 - **Persistência em localStorage**
 - **Progress bar dinâmica**
 - **Sistema de campos condicionais**
+
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/estruturas-json-plan-005.md` seção "Schema Completo do Formulário" para estrutura detalhada das 4 abas.
 
 #### 2.5 Implementação das 4 Abas
 
@@ -461,6 +532,8 @@ const comercialFields = {
 };
 ```
 
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/estruturas-json-plan-005.md` seções "Opções de Marketing por Maturidade" e "Opções de Comercial por Maturidade" para metas completas.
+
 #### 2.6 Sistema de Progresso
 ```typescript
 const sectionWeights = {
@@ -499,7 +572,7 @@ const updateProgress = () => {
     where: { id: clientId, userId: userId },
     select: {
       id: true, name: true, industry: true, 
-      richnessScore: true, customIndustry: true, createdAt: true
+      richnessScore: true, businessDetails: true, createdAt: true  // businessDetails ao invés de customIndustry
     }
   });
   
@@ -518,6 +591,8 @@ const updateProgress = () => {
   ```
 - **Retorno**: `planningId`, `clientInfo`, `status`
 
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/fase-0-analise-banco-dados-setup.md` seção "Análise do Modelo Client" para campos disponíveis e `.ai-guards/plans/estruturas-json-plan-005.md` seção "Validação com Zod" para schemas.
+
 #### 3.2 API de Atualização (`app/api/strategic-planning/[planningId]/route.ts`)
 - **PUT: Atualizar planejamento existente**
 - **PATCH: Salvar rascunho parcial**
@@ -529,6 +604,8 @@ const updateProgress = () => {
 - **Verificação de propriedade** em todas as operações
 - **Sanitização de dados** do formulário
 - **Tratamento de erros** consistente
+
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/estruturas-json-plan-005.md` seção "Validação com Zod" para schemas completos de validação.
 
 ### Fase 4: Painel de Visualização e Gestão
 
@@ -602,11 +679,15 @@ const updateProgress = () => {
 - **APIs criadas** e seus contratos
 - **Relacionamentos** no banco de dados
 
-#### 7.2 Preparação para Integração IA
-- **Estruturas de dados** prontas para webhooks
-- **Status intermediários** preparados no enum
-- **Pontos de extensão** identificados
-- **Dados de cliente** estruturados para envio
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/fase-0-analise-banco-dados-setup.md` para mapeamento completo de IDs e relacionamentos.
+
+#### ✅ 7.2 Preparação para Integração IA *(CONCLUÍDA - Fase 0)*
+- **✅ Estruturas de dados** prontas para webhooks
+- **✅ Status intermediários** preparados no enum
+- **✅ Pontos de extensão** identificados
+- **✅ Dados de cliente** estruturados para envio
+
+**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/estruturas-json-plan-005.md` seção "Payload para Webhooks" para estruturas completas.
 
 #### 7.3 Arquivo de Transição
 - **Documento com estado atual** do projeto
@@ -614,7 +695,11 @@ const updateProgress = () => {
 - **Dados disponíveis** para processamento IA
 - **Estruturas prontas** para refinamento
 
+**🗑️ LIMPEZA**: Após conclusão da Fase 7, executar exclusão dos arquivos de referência da Fase 0 conforme instruções no início deste documento.
+
 ## 📊 Estruturas JSON (Preparação para IA)
+
+**📋 REFERÊNCIA**: As estruturas abaixo são exemplos resumidos. Para implementação completa, consultar `.ai-guards/plans/estruturas-json-plan-005.md`.
 
 ### `StrategicPlanning.formDataJSON`
 ```json
@@ -624,11 +709,12 @@ const updateProgress = () => {
     "client_name": "Empresa XYZ Ltda",
     "industry": "E-commerce",
     "richness_score": 85,
-    "custom_industry": null
+    "business_details": "E-commerce especializado em eletrônicos"
   },
   "informacoes_basicas": {
     "titulo_planejamento": "Expansão Digital 2024",
-    "descricao_objetivo": "Aumentar vendas online em 50%"
+    "descricao_objetivo": "Aumentar vendas online em 50%",
+    "setor": "E-commerce"
   },
   "detalhes_do_setor": {
     "ecom_categorias_destaque": "Eletrônicos e acessórios",
@@ -636,11 +722,11 @@ const updateProgress = () => {
     "ecom_upsell": "Sim, mas sem estrutura"
   },
   "marketing": {
-    "maturidade_marketing": "Ações recorrentes, mas sem métricas",
+    "maturidade_marketing": "Temos ações recorrentes, mas sem métricas",
     "meta_marketing": "Aumentar reconhecimento da marca"
   },
   "comercial": {
-    "maturidade_comercial": "Processo com rotinas, sem previsibilidade",
+    "maturidade_comercial": "Possuímos um funil de vendas claro",
     "meta_comercial": "Otimizar taxa de conversão do funil"
   }
 }
@@ -653,7 +739,7 @@ const updateProgress = () => {
   "name": "Empresa XYZ Ltda",
   "industry": "E-commerce",
   "richnessScore": 85,
-  "customIndustry": null,
+  "businessDetails": "E-commerce especializado em eletrônicos com 3 anos no mercado",
   "createdAt": "2024-01-01T00:00:00Z",
   "snapshot_timestamp": "2024-01-15T10:30:00Z"
 }
@@ -662,19 +748,20 @@ const updateProgress = () => {
 ### Payload Preparado para Webhooks (Plan-006)
 ```json
 {
-  "planning_id": "123",
+  "planning_id": "planning_123",
   "client_info": {
     "id": "client_456",
     "name": "Empresa XYZ Ltda",
     "industry": "E-commerce",
     "richnessScore": 85,
-    "customIndustry": null,
+    "businessDetails": "E-commerce especializado em eletrônicos",
     "data_quality": "alto"
   },
   "form_submission_data": {
     "informacoes_basicas": {
       "titulo_planejamento": "Expansão Digital 2024",
-      "descricao_objetivo": "Aumentar vendas online em 50%"
+      "descricao_objetivo": "Aumentar vendas online em 50%",
+      "setor": "E-commerce"
     },
     "detalhes_do_setor": {
       "ecom_categorias_destaque": "Eletrônicos e acessórios",
@@ -682,11 +769,11 @@ const updateProgress = () => {
       "ecom_upsell": "Sim, mas sem estrutura"
     },
     "marketing": {
-      "maturidade_marketing": "Ações recorrentes, mas sem métricas",
+      "maturidade_marketing": "Temos ações recorrentes, mas sem métricas",
       "meta_marketing": "Aumentar reconhecimento da marca"
     },
     "comercial": {
-      "maturidade_comercial": "Processo com rotinas, sem previsibilidade",
+      "maturidade_comercial": "Possuímos um funil de vendas claro",
       "meta_comercial": "Otimizar taxa de conversão do funil"
     }
   },
@@ -698,14 +785,23 @@ const updateProgress = () => {
 }
 ```
 
+**📋 REFERÊNCIA**: Para estruturas JSON completas e detalhadas, consultar `.ai-guards/plans/estruturas-json-plan-005.md`.
+
 ## 🎯 Success Metrics
-- **Usuários conseguem criar planejamentos**: 100% sucesso na criação básica
-- **Integração com clientes funcional**: Relacionamentos corretos no banco
+- **✅ Usuários conseguem criar planejamentos**: 100% sucesso na criação básica
+- **✅ Integração com clientes funcional**: Relacionamentos corretos no banco *(Fase 0 preparada)*
 - **Formulário multi-etapas operacional**: Todas as 4 abas funcionando
-- **Dados estruturados corretamente**: JSONs prontos para processamento IA
+- **✅ Dados estruturados corretamente**: JSONs prontos para processamento IA *(Fase 0 preparada)*
 - **Interface responsiva e acessível**: Testes de UX aprovados
 - **Performance adequada**: Carregamento < 2s para formulários
-- **Zero quebras de relacionamento**: Integridade referencial mantida
-- **Preparação completa para Plan-006**: Estruturas e webhooks prontos
+- **✅ Zero quebras de relacionamento**: Integridade referencial mantida *(Fase 0 validada)*
+- **✅ Preparação completa para Plan-006**: Estruturas e webhooks prontos *(Fase 0 concluída)*
 
 ---
+
+**📋 ARQUIVOS DE REFERÊNCIA CRIADOS NA FASE 0:**
+- `.ai-guards/plans/fase-0-analise-banco-dados-setup.md` - Análise técnica completa
+- `.ai-guards/plans/estruturas-json-plan-005.md` - Estruturas JSON e validação
+- `.ai-guards/plans/fase-0-resumo-executivo.md` - Resumo executivo da Fase 0
+
+**🗑️ LEMBRETE**: Excluir estes arquivos conforme cronograma definido no início deste documento.
