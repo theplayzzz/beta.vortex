@@ -198,43 +198,77 @@ export default function ClientProfilePage() {
       richnessScore,
       ...validData
     } = data;
-    return validData;
+
+    // Limpar campos vazios e inválidos
+    const cleanedData = Object.fromEntries(
+      Object.entries(validData).map(([key, value]) => [
+        key,
+        value === '' ? null : value
+      ])
+    );
+
+    console.log('Dados limpos para API:', cleanedData); // Debug
+    return cleanedData;
   };
 
-  // Auto-save com debounce - apenas quando há mudanças do usuário
+  // Auto-save com debounce - versão simplificada para debug
   useEffect(() => {
-    if (!clientData || isLoading || !hasUserChanges) return;
+    if (!clientData || isLoading || !hasUserChanges) {
+      console.log('Auto-save ignorado:', { clientData: !!clientData, isLoading, hasUserChanges });
+      return;
+    }
+
+    console.log('Auto-save iniciado para cliente:', clientId);
 
     const timeoutId = setTimeout(async () => {
       try {
+        console.log('Iniciando salvamento...');
         setIsSaving(true);
         
-        // Filtrar apenas campos válidos
-        const validData = getValidClientData(clientData);
+        // Versão simplificada - apenas campos básicos
+        const basicData = {
+          name: clientData.name,
+          industry: clientData.industry || null,
+          serviceOrProduct: clientData.serviceOrProduct || null,
+          initialObjective: clientData.initialObjective || null,
+        };
+        
+        console.log('Dados básicos preparados:', basicData);
         
         const response = await fetch(`/api/clients/${clientId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(validData),
+          body: JSON.stringify(basicData),
         });
 
+        console.log('Response status:', response.status);
+
         if (response.ok) {
+          console.log('Salvamento bem-sucedido');
           setLastSaved(new Date());
           setHasUserChanges(false);
         } else {
           const errorData = await response.json();
-          console.error('Erro ao salvar cliente:', errorData);
+          console.error('Erro HTTP ao salvar cliente:', {
+            status: response.status,
+            statusText: response.statusText,
+            errorData
+          });
         }
       } catch (error) {
-        console.error('Erro ao salvar cliente:', error);
+        console.error('Erro de rede ao salvar cliente:', error);
       } finally {
+        console.log('Finalizando salvamento');
         setIsSaving(false);
       }
     }, 1000);
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      console.log('Limpando timeout');
+      clearTimeout(timeoutId);
+    };
   }, [clientData, isLoading, clientId, hasUserChanges]);
 
   const handleFieldChange = (field: keyof ClientData, value: string) => {
@@ -345,10 +379,10 @@ export default function ClientProfilePage() {
           </Link>
           <div className="flex-1">
             <h1 className="text-3xl font-bold text-seasalt">
-              {clientData.name}
+              {clientData?.name}
             </h1>
             <p className="text-periwinkle">
-              {clientData.industry || 'Setor não informado'} • Criado em {clientData.createdAt.toLocaleDateString('pt-BR')}
+              {clientData?.industry || 'Setor não informado'} • Criado em {clientData?.createdAt?.toLocaleDateString('pt-BR')}
             </p>
           </div>
           
@@ -388,12 +422,12 @@ export default function ClientProfilePage() {
                 Completude do Perfil
               </h2>
               <p className="text-periwinkle text-sm">
-                {getMotivationalMessage(clientData.richnessScore)}
+                {getMotivationalMessage(clientData?.richnessScore || 0)}
               </p>
             </div>
             <div className="text-right">
-              <div className={`text-3xl font-bold ${getRichnessColor(clientData.richnessScore)}`}>
-                {clientData.richnessScore}%
+              <div className={`text-3xl font-bold ${getRichnessColor(clientData?.richnessScore || 0)}`}>
+                {clientData?.richnessScore || 0}%
               </div>
               <div className="flex items-center text-xs text-periwinkle mt-1">
                 {isSaving ? (
@@ -414,9 +448,9 @@ export default function ClientProfilePage() {
           {/* Progress Bar */}
           <div className="w-full bg-night rounded-full h-3 overflow-hidden">
             <motion.div
-              className={`h-full bg-gradient-to-r ${getRichnessGradient(clientData.richnessScore)} rounded-full`}
+              className={`h-full bg-gradient-to-r ${getRichnessGradient(clientData?.richnessScore || 0)} rounded-full`}
               initial={{ width: 0 }}
-              animate={{ width: `${clientData.richnessScore}%` }}
+              animate={{ width: `${clientData?.richnessScore || 0}%` }}
               transition={{ duration: 0.8, ease: "easeOut" }}
             />
           </div>

@@ -45,10 +45,10 @@ export const UpdateClientSchema = z.object({
   serviceOrProduct: z.string().nullable().optional(),
   initialObjective: z.string().nullable().optional(),
   
-  // Informações detalhadas
-  contactEmail: z.string().email().nullable().optional(),
+  // Informações detalhadas - simplificadas para debug
+  contactEmail: z.string().nullable().optional(),
   contactPhone: z.string().nullable().optional(),
-  website: z.string().url().nullable().optional(),
+  website: z.string().nullable().optional(),
   address: z.string().nullable().optional(),
   businessDetails: z.string().nullable().optional(),
   targetAudience: z.string().nullable().optional(),
