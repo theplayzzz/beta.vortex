@@ -402,34 +402,299 @@ COST_REFINED_LIST_VISIBLE=10
 
 **📋 REFERÊNCIA**: Consultar `.ai-guards/plans/fase-0-resumo-executivo.md` para detalhes completos da execução da Fase 0.
 
-### Fase 1: Adaptação da UI de Cliente para Planejamento
+### Fase 1: Implementação de Dropdown de Setores na UI de Cliente
 
-#### 1.1 Modificação do Modal de Cliente Existente
-- **Identificar modal atual** de criação/edição de cliente
-- **Adicionar contexto** de "seleção para planejamento"
-- **Implementar validação frontend** para os 11 setores:
-  ```typescript
-  // components/client/ClientModal.tsx
-  const SETORES_PERMITIDOS = [
-    "Alimentação", "Saúde e Bem-estar", "Educação", "Varejo físico",
-    "E-commerce", "Serviços locais", "Serviços B2B", "Tecnologia / SaaS",
-    "Imobiliário", "Indústria", "Outro"
-  ];
-  ```
-- **Manter compatibilidade** com uso normal do modal
+**🎯 OBJETIVO**: Substituir os campos de input de texto livre para setor/indústria por dropdowns com opções pré-definidas, limitando a seleção aos 11 setores suportados pelo sistema de planejamento.
 
-**📋 REFERÊNCIA**: Consultar `.ai-guards/plans/estruturas-json-plan-005.md` seção "Setores Permitidos" para implementação completa.
+#### 1.1 Identificação dos Elementos de Input de Setor
 
-#### 1.2 Componente de Seleção de Cliente para Planejamento
-- **Lista clientes existentes** com filtros
-- **Busca por nome** de cliente
-- **Botão "Criar Novo Cliente"** integrado
-- **Validação obrigatória** de setor antes de prosseguir
+**Elementos identificados que precisam ser modificados**:
 
-#### 1.3 Fluxo de Início de Planejamento
-- **Botão "Novo Planejamento"** na área de planejamento
-- **Modal de seleção/criação** de cliente
-- **Redirecionamento** para formulário com `clientId` na URL
+1. **Campo "Setor de Atuação" no modal de criação de cliente**:
+   ```html
+   <!-- ATUAL: Input de texto livre -->
+   <input 
+     placeholder="Ex: Tecnologia, Consultoria, E-commerce" 
+     class="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20" 
+     type="text" 
+     value=""
+   />
+   ```
+
+2. **Campo de edição de setor em formulários existentes**:
+   ```html
+   <!-- ATUAL: Input de texto livre -->
+   <input 
+     placeholder="Ex: Tecnologia, Consultoria, E-commerce" 
+     class="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20" 
+     type="text" 
+     value="Assesssoria de Marketing"
+   />
+   ```
+
+**📍 LOCALIZAÇÃO**: Arquivo `components/shared/client-flow-modal.tsx` (identificado na análise anterior)
+
+#### 1.2 Definição dos Setores Permitidos
+
+**Constante de setores** (baseada na documentação do plan-005):
+```typescript
+// lib/constants/sectors.ts
+export const SETORES_PERMITIDOS = [
+  "Alimentação",
+  "Saúde e Bem-estar", 
+  "Educação",
+  "Varejo físico",
+  "E-commerce",
+  "Serviços locais",
+  "Serviços B2B",
+  "Tecnologia / SaaS",
+  "Imobiliário",
+  "Indústria",
+  "Outro"
+] as const;
+
+export type SetorPermitido = typeof SETORES_PERMITIDOS[number];
+
+// Mapeamento para exibição (se necessário)
+export const SETORES_DISPLAY_MAP: Record<SetorPermitido, string> = {
+  "Alimentação": "Alimentação",
+  "Saúde e Bem-estar": "Saúde e Bem-estar",
+  "Educação": "Educação", 
+  "Varejo físico": "Varejo físico",
+  "E-commerce": "E-commerce",
+  "Serviços locais": "Serviços locais",
+  "Serviços B2B": "Serviços B2B",
+  "Tecnologia / SaaS": "Tecnologia / SaaS",
+  "Imobiliário": "Imobiliário",
+  "Indústria": "Indústria",
+  "Outro": "Outro"
+};
+```
+
+#### 1.3 Implementação do Componente Dropdown de Setor
+
+**Componente reutilizável** para seleção de setor:
+```typescript
+// components/ui/sector-select.tsx
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Building } from "lucide-react";
+import { SETORES_PERMITIDOS } from "@/lib/constants/sectors";
+
+interface SectorSelectProps {
+  value?: string;
+  onValueChange: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+}
+
+export function SectorSelect({ 
+  value, 
+  onValueChange, 
+  placeholder = "Selecione o setor de atuação",
+  disabled = false,
+  className = ""
+}: SectorSelectProps) {
+  return (
+    <div className={`relative ${className}`}>
+      <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-periwinkle z-10" />
+      <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+        <SelectTrigger className="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20">
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent className="bg-night border border-seasalt/20 rounded-lg">
+          {SETORES_PERMITIDOS.map((setor) => (
+            <SelectItem 
+              key={setor} 
+              value={setor}
+              className="text-seasalt hover:bg-sgbus-green/10 focus:bg-sgbus-green/10 cursor-pointer"
+            >
+              {setor}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+```
+
+#### 1.4 Modificação do Modal de Cliente (`client-flow-modal.tsx`)
+
+**Substituição dos inputs de texto por dropdown**:
+
+```typescript
+// components/shared/client-flow-modal.tsx
+
+// Importar o novo componente
+import { SectorSelect } from "@/components/ui/sector-select";
+
+// Substituir o campo "Setor de Atuação" na seção de criação:
+<div>
+  <label className="block text-sm font-medium text-seasalt mb-2">
+    Setor de Atuação *
+  </label>
+  {/* SUBSTITUIR o input atual por: */}
+  <SectorSelect
+    value={newClientForm.industry}
+    onValueChange={(value) => setNewClientForm(prev => ({ ...prev, industry: value }))}
+    placeholder="Selecione o setor de atuação"
+  />
+</div>
+
+// Se houver campo de edição de cliente existente, aplicar a mesma substituição
+```
+
+#### 1.5 Validação Frontend com Zod
+
+**Atualização do schema de validação**:
+```typescript
+// lib/validations/client.ts
+import { z } from "zod";
+import { SETORES_PERMITIDOS } from "@/lib/constants/sectors";
+
+export const clientFormSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  industry: z.enum(SETORES_PERMITIDOS, {
+    errorMap: () => ({ message: "Selecione um setor válido" })
+  }).optional(),
+  serviceOrProduct: z.string().optional(),
+  initialObjective: z.string().optional(),
+});
+
+export type ClientFormData = z.infer<typeof clientFormSchema>;
+```
+
+#### 1.6 Tratamento do Campo "Outro"
+
+**Lógica condicional** para quando "Outro" for selecionado:
+```typescript
+// No componente do modal, adicionar estado para campo adicional
+const [showCustomIndustry, setShowCustomIndustry] = useState(false);
+
+// Monitorar mudanças no setor selecionado
+useEffect(() => {
+  setShowCustomIndustry(newClientForm.industry === "Outro");
+}, [newClientForm.industry]);
+
+// Renderização condicional do campo adicional
+{showCustomIndustry && (
+  <div className="mt-4">
+    <label className="block text-sm font-medium text-seasalt mb-2">
+      Especifique o setor
+    </label>
+    <div className="relative">
+      <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-periwinkle" />
+      <input
+        type="text"
+        value={newClientForm.businessDetails || ""}
+        onChange={(e) => setNewClientForm(prev => ({ 
+          ...prev, 
+          businessDetails: e.target.value 
+        }))}
+        placeholder="Descreva o setor específico..."
+        className="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+      />
+    </div>
+  </div>
+)}
+```
+
+#### 1.7 Compatibilidade com Banco de Dados
+
+**Manutenção da estrutura atual**:
+- ✅ **Campo `Client.industry`**: Continua como `String?` no banco
+- ✅ **Armazenamento**: Salva a string selecionada no dropdown
+- ✅ **Campo `Client.businessDetails`**: Usado para detalhes quando "Outro" é selecionado
+- ✅ **Retrocompatibilidade**: Clientes existentes com setores em texto livre continuam funcionando
+
+**Exemplo de dados salvos**:
+```json
+{
+  "industry": "E-commerce",           // Valor do dropdown
+  "businessDetails": null             // Null para setores pré-definidos
+}
+
+// OU para "Outro":
+{
+  "industry": "Outro",                // Valor do dropdown
+  "businessDetails": "Consultoria em sustentabilidade"  // Detalhes específicos
+}
+```
+
+#### 1.8 Testes e Validação
+
+**Checklist de validação**:
+- [ ] Dropdown renderiza com todos os 11 setores
+- [ ] Seleção de setor atualiza o estado corretamente
+- [ ] Campo "Outro" exibe input adicional quando selecionado
+- [ ] Validação Zod funciona corretamente
+- [ ] Dados são salvos no formato correto no banco
+- [ ] Clientes existentes continuam funcionando
+- [ ] Modal mantém compatibilidade com uso normal (fora do contexto de planejamento)
+
+#### 1.9 Migração de Dados Existentes (Opcional)
+
+**Script de migração** para normalizar setores existentes:
+```typescript
+// scripts/migrate-client-sectors.ts
+import { prisma } from "@/lib/prisma";
+import { SETORES_PERMITIDOS } from "@/lib/constants/sectors";
+
+// Mapeamento de setores comuns para os padronizados
+const SECTOR_MAPPING: Record<string, string> = {
+  "tecnologia": "Tecnologia / SaaS",
+  "consultoria": "Serviços B2B", 
+  "ecommerce": "E-commerce",
+  "e-commerce": "E-commerce",
+  "saude": "Saúde e Bem-estar",
+  "educacao": "Educação",
+  "varejo": "Varejo físico",
+  "alimentacao": "Alimentação",
+  "imobiliario": "Imobiliário",
+  "industria": "Indústria",
+  // ... outros mapeamentos conforme necessário
+};
+
+export async function migrateClientSectors() {
+  const clients = await prisma.client.findMany({
+    where: { industry: { not: null } }
+  });
+
+  for (const client of clients) {
+    if (!client.industry) continue;
+    
+    const normalizedSector = client.industry.toLowerCase().trim();
+    const mappedSector = SECTOR_MAPPING[normalizedSector];
+    
+    if (mappedSector && SETORES_PERMITIDOS.includes(mappedSector as any)) {
+      await prisma.client.update({
+        where: { id: client.id },
+        data: { 
+          industry: mappedSector,
+          businessDetails: client.industry !== mappedSector ? client.industry : null
+        }
+      });
+    } else if (!SETORES_PERMITIDOS.includes(client.industry as any)) {
+      // Setor não mapeado - mover para "Outro" com detalhes
+      await prisma.client.update({
+        where: { id: client.id },
+        data: { 
+          industry: "Outro",
+          businessDetails: client.industry
+        }
+      });
+    }
+  }
+}
+```
+
+**📋 REFERÊNCIA**: Esta migração é opcional e deve ser executada apenas se houver necessidade de normalizar dados existentes.
+
+---
+
+**🎯 RESULTADO ESPERADO**: Após a conclusão desta fase, todos os campos de setor de cliente na aplicação utilizarão dropdowns com opções pré-definidas, garantindo consistência de dados para o sistema de planejamento estratégico, mantendo compatibilidade total com o banco de dados existente.
+
 
 ### Fase 2: Desenvolvimento do Formulário Multi-Etapas
 

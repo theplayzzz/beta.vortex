@@ -15,6 +15,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { useDebounce } from "use-debounce";
+import { SectorSelect } from "@/components/ui/sector-select";
 
 interface Client {
   id: string;
@@ -37,6 +38,7 @@ interface NewClientForm {
   industry: string;
   serviceOrProduct: string;
   initialObjective: string;
+  businessDetails: string; // Para campo "Outro"
 }
 
 export default function ClientFlowModal({
@@ -55,11 +57,18 @@ export default function ClientFlowModal({
     name: '',
     industry: '',
     serviceOrProduct: '',
-    initialObjective: ''
+    initialObjective: '',
+    businessDetails: ''
   });
+  const [showCustomIndustry, setShowCustomIndustry] = useState(false);
 
   // Debounce da busca
   const [debouncedSearch] = useDebounce(searchTerm, 500);
+
+  // Monitorar mudanças no setor selecionado
+  useEffect(() => {
+    setShowCustomIndustry(newClientForm.industry === "Outro");
+  }, [newClientForm.industry]);
 
   // Auto-save no localStorage durante digitação
   useEffect(() => {
@@ -92,10 +101,17 @@ export default function ClientFlowModal({
   // Limpar draft ao fechar modal
   const handleClose = () => {
     localStorage.removeItem('clientflow-draft');
-    setNewClientForm({ name: '', industry: '', serviceOrProduct: '', initialObjective: '' });
+    setNewClientForm({ 
+      name: '', 
+      industry: '', 
+      serviceOrProduct: '', 
+      initialObjective: '',
+      businessDetails: ''
+    });
     setSearchTerm('');
     setMode('select');
     setError(null);
+    setShowCustomIndustry(false);
     onClose();
   };
 
@@ -145,17 +161,30 @@ export default function ClientFlowModal({
     setError(null);
     
     try {
+      // Preparar dados para envio
+      let industryToSave = newClientForm.industry;
+      let businessDetailsToSave = newClientForm.businessDetails;
+
+      // Se "Outro" foi selecionado e há texto personalizado, usar o texto como setor
+      if (newClientForm.industry === "Outro" && newClientForm.businessDetails?.trim()) {
+        industryToSave = newClientForm.businessDetails.trim();
+        businessDetailsToSave = ''; // Limpar para evitar duplicação
+      }
+
+      const dataToSend = {
+        name: newClientForm.name,
+        industry: industryToSave || undefined,
+        serviceOrProduct: newClientForm.serviceOrProduct || undefined,
+        initialObjective: newClientForm.initialObjective || undefined,
+        businessDetails: businessDetailsToSave || undefined,
+      };
+
       const response = await fetch('/api/clients', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: newClientForm.name,
-          industry: newClientForm.industry || undefined,
-          serviceOrProduct: newClientForm.serviceOrProduct || undefined,
-          initialObjective: newClientForm.initialObjective || undefined,
-        }),
+        body: JSON.stringify(dataToSend),
       });
 
       if (response.ok) {
@@ -365,19 +394,35 @@ export default function ClientFlowModal({
 
                       <div>
                         <label className="block text-sm font-medium text-seasalt mb-2">
-                          Setor de Atuação
+                          Setor de Atuação *
                         </label>
-                        <div className="relative">
-                          <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-periwinkle" />
-                          <input
-                            type="text"
-                            value={newClientForm.industry}
-                            onChange={(e) => setNewClientForm(prev => ({ ...prev, industry: e.target.value }))}
-                            placeholder="Ex: Tecnologia, Consultoria, E-commerce"
-                            className="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
-                          />
-                        </div>
+                        <SectorSelect
+                          value={newClientForm.industry}
+                          onValueChange={(value) => setNewClientForm(prev => ({ ...prev, industry: value }))}
+                          placeholder="Selecione o setor de atuação"
+                        />
                       </div>
+
+                      {showCustomIndustry && (
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium text-seasalt mb-2">
+                            Especifique o setor *
+                          </label>
+                          <div className="relative">
+                            <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-periwinkle" />
+                            <input
+                              type="text"
+                              value={newClientForm.businessDetails || ""}
+                              onChange={(e) => setNewClientForm(prev => ({ 
+                                ...prev, 
+                                businessDetails: e.target.value 
+                              }))}
+                              placeholder="Descreva o setor específico..."
+                              className="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+                            />
+                          </div>
+                        </div>
+                      )}
 
                       <div>
                         <label className="block text-sm font-medium text-seasalt mb-2">

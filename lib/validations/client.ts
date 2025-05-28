@@ -1,10 +1,13 @@
 import { z } from 'zod'
+import { SETORES_PERMITIDOS } from '@/lib/constants/sectors'
 
 // Schema base para Client
 export const ClientSchema = z.object({
   id: z.string().cuid(),
   name: z.string().min(1, 'Nome é obrigatório'),
-  industry: z.string().nullable(),
+  industry: z.enum(SETORES_PERMITIDOS, {
+    errorMap: () => ({ message: "Selecione um setor válido" })
+  }).nullable(),
   serviceOrProduct: z.string().nullable(),
   initialObjective: z.string().nullable(),
   
@@ -32,16 +35,21 @@ export const ClientSchema = z.object({
 // Schema para criação de cliente (campos obrigatórios mínimos)
 export const CreateClientSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
-  industry: z.string().optional(),
+  industry: z.enum(SETORES_PERMITIDOS, {
+    errorMap: () => ({ message: "Selecione um setor válido" })
+  }).optional(),
   serviceOrProduct: z.string().optional(),
   initialObjective: z.string().optional(),
+  businessDetails: z.string().optional(), // Para campo "Outro"
   userId: z.string().cuid(),
 })
 
 // Schema para atualização de cliente
 export const UpdateClientSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').optional(),
-  industry: z.string().nullable().optional(),
+  industry: z.enum(SETORES_PERMITIDOS, {
+    errorMap: () => ({ message: "Selecione um setor válido" })
+  }).nullable().optional(),
   serviceOrProduct: z.string().nullable().optional(),
   initialObjective: z.string().nullable().optional(),
   
@@ -66,9 +74,12 @@ export const UpdateClientSchema = z.object({
 // Schema para o formulário inicial de cliente (pop-up)
 export const ClientInitialFormSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
-  industry: z.string().optional(),
+  industry: z.enum(SETORES_PERMITIDOS, {
+    errorMap: () => ({ message: "Selecione um setor válido" })
+  }).optional(),
   serviceOrProduct: z.string().optional(),
   initialObjective: z.string().optional(),
+  businessDetails: z.string().optional(), // Para campo "Outro"
 })
 
 // Schema para enriquecimento progressivo
