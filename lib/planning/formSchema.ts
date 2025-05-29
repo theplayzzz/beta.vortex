@@ -14,7 +14,6 @@ const informacoesBasicasSchema = z.object({
     .max(100, "Título deve ter no máximo 100 caracteres"),
   descricao_objetivo: z
     .string()
-    .min(1, "Descrição é obrigatória")
     .min(10, "Descrição deve ter pelo menos 10 caracteres")
     .max(500, "Descrição deve ter no máximo 500 caracteres"),
   setor: z.enum(SETORES_PERMITIDOS)
