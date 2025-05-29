@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
 import * as Dialog from "@radix-ui/react-dialog";
-import { motion } from "framer-motion";
 import { 
   Search, 
   Plus, 
+  X, 
   User, 
-  Loader2, 
   Building, 
-  Star,
-  X,
-  ArrowRight,
-  CheckCircle
+  Target,
+  Loader2,
+  Check,
+  AlertCircle
 } from "lucide-react";
 import { useDebounce } from "use-debounce";
 import { useClients, useCreateClient, type Client, type ClientFilters } from "@/lib/react-query";
@@ -175,53 +175,71 @@ export default function ClientFlowModal({
 
   // Renderizar clientes
   const clients = clientsData?.clients || [];
-  const isLoadingOrCreating = isLoadingClients || isCreatingClient;
+  const isLoading = isLoadingClients || isCreatingClient;
   const error = clientsError || createError;
 
+  // Calcular cor do richnessScore
+  const getRichnessColor = (score: number) => {
+    if (score >= 80) return 'text-sgbus-green';
+    if (score >= 50) return 'text-yellow-400';
+    return 'text-red-400';
+  };
+
+  const getRichnessBackground = (score: number) => {
+    if (score >= 80) return 'bg-sgbus-green/20';
+    if (score >= 50) return 'bg-yellow-400/20';
+    return 'bg-red-400/20';
+  };
+
   return (
-    <Dialog.Root open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+    <Dialog.Root open={isOpen} onOpenChange={handleClose}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-night/80 backdrop-blur-sm z-40" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-2xl max-h-[90vh] overflow-hidden">
+        <Dialog.Overlay className="fixed inset-0 bg-night/80 backdrop-blur-sm z-50" />
+        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[90vh] bg-eerie-black border border-seasalt/20 rounded-lg shadow-2xl z-50 overflow-hidden">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-eerie-black border border-accent/20 rounded-xl shadow-2xl overflow-hidden"
+            transition={{ duration: 0.2 }}
+            className="flex flex-col h-full"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-seasalt/10">
               <div>
-                <h2 className="text-xl font-semibold text-seasalt">{title}</h2>
-                <p className="text-periwinkle mt-1">{description}</p>
+                <Dialog.Title className="text-xl font-semibold text-seasalt">
+                  {title}
+                </Dialog.Title>
+                <Dialog.Description className="text-sm text-periwinkle mt-1">
+                  {description}
+                </Dialog.Description>
               </div>
-              <button
+              <button 
                 onClick={handleClose}
-                className="p-2 text-seasalt/50 hover:text-seasalt transition-colors rounded-lg hover:bg-accent/10"
+                className="p-2 hover:bg-seasalt/10 rounded-lg transition-colors"
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5 text-seasalt" />
               </button>
             </div>
 
-            {/* Tabs */}
+            {/* Mode Toggle */}
             <div className="flex border-b border-seasalt/10">
               <button
                 onClick={() => setMode('select')}
                 className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
                   mode === 'select'
                     ? 'text-sgbus-green border-b-2 border-sgbus-green bg-sgbus-green/5'
-                    : 'text-seasalt/70 hover:text-seasalt'
+                    : 'text-seasalt/70 hover:text-seasalt hover:bg-seasalt/5'
                 }`}
               >
-                <User className="h-4 w-4 inline mr-2" />
-                Cliente Existente
+                <Search className="h-4 w-4 inline mr-2" />
+                Selecionar Existente
               </button>
               <button
                 onClick={() => setMode('create')}
                 className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
                   mode === 'create'
                     ? 'text-sgbus-green border-b-2 border-sgbus-green bg-sgbus-green/5'
-                    : 'text-seasalt/70 hover:text-seasalt'
+                    : 'text-seasalt/70 hover:text-seasalt hover:bg-seasalt/5'
                 }`}
               >
                 <Plus className="h-4 w-4 inline mr-2" />
@@ -229,168 +247,198 @@ export default function ClientFlowModal({
               </button>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="mx-6 mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center">
+                <AlertCircle className="h-4 w-4 text-red-400 mr-2 flex-shrink-0" />
+                <span className="text-red-400 text-sm">
+                  {error instanceof Error ? error.message : 'Ocorreu um erro'}
+                </span>
+                <button
+                  onClick={() => {}}
+                  className="ml-auto p-1 hover:bg-red-500/20 rounded"
+                >
+                  <X className="h-3 w-3 text-red-400" />
+                </button>
+              </div>
+            )}
+
             {/* Content */}
-            <div className="p-6 max-h-[60vh] overflow-y-auto">
-              {error && (
-                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <p className="text-red-400 text-sm">
-                    {error instanceof Error ? error.message : 'Ocorreu um erro'}
-                  </p>
-                </div>
-              )}
+            <div className="flex-1 overflow-y-auto p-6">
+              <AnimatePresence mode="wait">
+                {mode === 'select' ? (
+                  <motion.div
+                    key="select"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-4"
+                  >
+                    {/* Search */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-periwinkle" />
+                      <input
+                        type="text"
+                        placeholder="Buscar por nome ou setor..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+                      />
+                    </div>
 
-              {mode === 'select' && (
-                <div className="space-y-4">
-                  {/* Busca */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-periwinkle" />
-                    <input
-                      type="text"
-                      placeholder="Buscar clientes..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-accent/20 border border-accent/30 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green/50 focus:ring-1 focus:ring-sgbus-green/20"
-                    />
-                  </div>
-
-                  {/* Lista de clientes */}
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {isLoadingClients ? (
-                      <div className="flex items-center justify-center py-8">
-                        <Loader2 className="h-6 w-6 text-sgbus-green animate-spin" />
-                        <span className="ml-2 text-periwinkle">Carregando clientes...</span>
-                      </div>
-                    ) : clients.length === 0 ? (
-                      <div className="text-center py-8">
-                        <User className="h-12 w-12 text-periwinkle/50 mx-auto mb-3" />
-                        <p className="text-periwinkle">
-                          {searchTerm ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
-                        </p>
-                        <p className="text-seasalt/70 text-sm mt-1">
-                          {!searchTerm && 'Crie seu primeiro cliente usando a aba "Criar Novo"'}
-                        </p>
-                      </div>
-                    ) : (
-                      clients.map((client) => (
-                        <motion.button
-                          key={client.id}
-                          onClick={() => onClientSelected(client)}
-                          className="w-full p-4 bg-accent/10 hover:bg-accent/20 border border-accent/20 hover:border-sgbus-green/30 rounded-lg transition-all group text-left"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center">
+                    {/* Client List */}
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {isLoadingClients ? (
+                        <div className="flex items-center justify-center py-8">
+                          <Loader2 className="h-6 w-6 text-sgbus-green animate-spin" />
+                          <span className="ml-2 text-periwinkle">Carregando clientes...</span>
+                        </div>
+                      ) : clients.length === 0 ? (
+                        <div className="text-center py-8">
+                          <User className="h-12 w-12 text-periwinkle/50 mx-auto mb-3" />
+                          <p className="text-periwinkle">
+                            {searchTerm ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
+                          </p>
+                          <p className="text-seasalt/70 text-sm mt-1">
+                            {!searchTerm && 'Crie seu primeiro cliente usando a aba "Criar Novo"'}
+                          </p>
+                        </div>
+                      ) : (
+                        clients.map((client) => (
+                          <button
+                            key={client.id}
+                            onClick={() => onClientSelected(client)}
+                            className="w-full p-4 bg-night border border-seasalt/10 rounded-lg hover:border-sgbus-green/50 hover:bg-sgbus-green/5 transition-all text-left group"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
                                 <h3 className="font-medium text-seasalt group-hover:text-sgbus-green transition-colors">
                                   {client.name}
                                 </h3>
-                                {!client.isViewed && (
-                                  <span className="ml-2 px-2 py-1 bg-sgbus-green/20 text-sgbus-green text-xs rounded-full">
-                                    Novo
-                                  </span>
-                                )}
+                                <p className="text-sm text-periwinkle mt-1">
+                                  {client.industry || 'Setor não informado'}
+                                </p>
                               </div>
-                              <div className="flex items-center mt-1 text-sm text-periwinkle">
-                                {client.industry && (
-                                  <>
-                                    <Building className="h-3 w-3 mr-1" />
-                                    <span>{client.industry}</span>
-                                  </>
-                                )}
-                                <div className="flex items-center ml-auto">
-                                  <Star className="h-3 w-3 mr-1" />
-                                  <span>{client.richnessScore}%</span>
+                              <div className="flex items-center space-x-3">
+                                <div className={`px-3 py-1 rounded-full text-xs font-medium ${getRichnessBackground(client.richnessScore)}`}>
+                                  <span className={getRichnessColor(client.richnessScore)}>
+                                    {client.richnessScore}% completo
+                                  </span>
                                 </div>
+                                <Check className="h-4 w-4 text-sgbus-green opacity-0 group-hover:opacity-100 transition-opacity" />
                               </div>
                             </div>
-                            <ArrowRight className="h-4 w-4 text-periwinkle group-hover:text-sgbus-green transition-colors ml-3" />
-                          </div>
-                        </motion.button>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {mode === 'create' && (
-                <div className="space-y-4">
-                  {/* Nome */}
-                  <div>
-                    <label className="block text-sm font-medium text-seasalt mb-2">
-                      Nome do Cliente *
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ex: Empresa XYZ Ltda"
-                      value={newClientForm.name}
-                      onChange={(e) => setNewClientForm(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-4 py-3 bg-accent/20 border border-accent/30 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green/50 focus:ring-1 focus:ring-sgbus-green/20"
-                    />
-                  </div>
-
-                  {/* Setor */}
-                  <div>
-                    <label className="block text-sm font-medium text-seasalt mb-2">
-                      Setor de Atuação
-                    </label>
-                    <select
-                      value={newClientForm.industry}
-                      onChange={(e) => setNewClientForm(prev => ({ ...prev, industry: e.target.value }))}
-                      className="w-full px-4 py-3 bg-accent/20 border border-accent/30 rounded-lg text-seasalt focus:outline-none focus:border-sgbus-green/50 focus:ring-1 focus:ring-sgbus-green/20"
-                    >
-                      <option value="">Selecione um setor</option>
-                      {AVAILABLE_INDUSTRIES.map(industry => (
-                        <option key={industry} value={industry}>{industry}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Campo customizado para "Outro" */}
-                  {showCustomIndustry && (
-                    <div>
-                      <label className="block text-sm font-medium text-seasalt mb-2">
-                        Especifique o setor
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Digite o setor específico"
-                        value={newClientForm.businessDetails}
-                        onChange={(e) => setNewClientForm(prev => ({ ...prev, businessDetails: e.target.value }))}
-                        className="w-full px-4 py-3 bg-accent/20 border border-accent/30 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green/50 focus:ring-1 focus:ring-sgbus-green/20"
-                      />
+                          </button>
+                        ))
+                      )}
                     </div>
-                  )}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="create"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-6"
+                  >
+                    {/* Form */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-seasalt mb-2">
+                          Nome do Cliente *
+                        </label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-periwinkle" />
+                          <input
+                            type="text"
+                            value={newClientForm.name}
+                            onChange={(e) => setNewClientForm(prev => ({ ...prev, name: e.target.value }))}
+                            placeholder="Ex: Empresa ABC Ltda"
+                            className="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+                          />
+                        </div>
+                      </div>
 
-                  {/* Produto/Serviço */}
-                  <div>
-                    <label className="block text-sm font-medium text-seasalt mb-2">
-                      Produto ou Serviço Principal
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ex: Software de gestão, Consultoria em RH..."
-                      value={newClientForm.serviceOrProduct}
-                      onChange={(e) => setNewClientForm(prev => ({ ...prev, serviceOrProduct: e.target.value }))}
-                      className="w-full px-4 py-3 bg-accent/20 border border-accent/30 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green/50 focus:ring-1 focus:ring-sgbus-green/20"
-                    />
-                  </div>
+                      <div>
+                        <label className="block text-sm font-medium text-seasalt mb-2">
+                          Setor de Atuação *
+                        </label>
+                        <select
+                          value={newClientForm.industry}
+                          onChange={(e) => setNewClientForm(prev => ({ ...prev, industry: e.target.value }))}
+                          className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+                        >
+                          <option value="" className="bg-night text-seasalt">Selecione o setor de atuação</option>
+                          {AVAILABLE_INDUSTRIES.map(industry => (
+                            <option key={industry} value={industry} className="bg-night text-seasalt">{industry}</option>
+                          ))}
+                        </select>
+                      </div>
 
-                  {/* Objetivo Inicial */}
-                  <div>
-                    <label className="block text-sm font-medium text-seasalt mb-2">
-                      Objetivo Inicial
-                    </label>
-                    <textarea
-                      placeholder="Ex: Aumentar vendas online, Melhorar presença digital..."
-                      value={newClientForm.initialObjective}
-                      onChange={(e) => setNewClientForm(prev => ({ ...prev, initialObjective: e.target.value }))}
-                      rows={3}
-                      className="w-full px-4 py-3 bg-accent/20 border border-accent/30 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green/50 focus:ring-1 focus:ring-sgbus-green/20 resize-none"
-                    />
-                  </div>
-                </div>
-              )}
+                      {showCustomIndustry && (
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium text-seasalt mb-2">
+                            Especifique o setor *
+                          </label>
+                          <div className="relative">
+                            <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-periwinkle" />
+                            <input
+                              type="text"
+                              value={newClientForm.businessDetails || ""}
+                              onChange={(e) => setNewClientForm(prev => ({ 
+                                ...prev, 
+                                businessDetails: e.target.value 
+                              }))}
+                              placeholder="Descreva o setor específico..."
+                              className="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-sm font-medium text-seasalt mb-2">
+                          Serviço/Produto Principal
+                        </label>
+                        <div className="relative">
+                          <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-periwinkle" />
+                          <input
+                            type="text"
+                            value={newClientForm.serviceOrProduct}
+                            onChange={(e) => setNewClientForm(prev => ({ ...prev, serviceOrProduct: e.target.value }))}
+                            placeholder="Ex: Desenvolvimento de software, Consultoria empresarial"
+                            className="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-seasalt mb-2">
+                          Objetivo Inicial
+                        </label>
+                        <div className="relative">
+                          <Target className="absolute left-3 top-3 h-4 w-4 text-periwinkle" />
+                          <textarea
+                            value={newClientForm.initialObjective}
+                            onChange={(e) => setNewClientForm(prev => ({ ...prev, initialObjective: e.target.value }))}
+                            placeholder="Descreva brevemente o objetivo inicial do cliente..."
+                            rows={3}
+                            className="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20 resize-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Auto-save indicator */}
+                    <div className="flex items-center text-xs text-periwinkle">
+                      <div className="w-2 h-2 bg-sgbus-green rounded-full mr-2 animate-pulse" />
+                      Salvamento automático ativo
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Footer */}
@@ -414,7 +462,7 @@ export default function ClientFlowModal({
                     </>
                   ) : (
                     <>
-                      <CheckCircle className="h-4 w-4 mr-2" />
+                      <Plus className="h-4 w-4 mr-2" />
                       Criar Cliente
                     </>
                   )}
