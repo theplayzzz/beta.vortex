@@ -33,6 +33,30 @@ interface Tab {
   component: React.ComponentType<any>;
 }
 
+// Definir tabs fora do componente para evitar problemas de inicialização
+const TABS: Tab[] = [
+  { 
+    id: "informacoes_basicas", 
+    label: "Informações Básicas", 
+    component: BasicInfoTab 
+  },
+  { 
+    id: "detalhes_setor", 
+    label: "Detalhes do Setor", 
+    component: SectorDetailsTab 
+  },
+  { 
+    id: "marketing", 
+    label: "Marketing", 
+    component: MarketingTab 
+  },
+  { 
+    id: "comercial", 
+    label: "Comercial", 
+    component: CommercialTab 
+  }
+];
+
 export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: PlanningFormProps) {
   const [currentTab, setCurrentTab] = useState(0);
   const { formData, updateFormData } = usePlanningForm(client);
@@ -43,12 +67,20 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
     mode: 'onChange'
   });
 
+  // Função para mudança segura de aba
+  const safeSetCurrentTab = useCallback((tabIndex: number) => {
+    // Garantir que o índice está dentro dos bounds válidos
+    const safeIndex = Math.max(0, Math.min(TABS.length - 1, tabIndex));
+    setCurrentTab(safeIndex);
+    console.log(`🔄 Navegando para aba ${safeIndex} (${TABS[safeIndex]?.label || 'Indefinida'})`);
+  }, []);
+
   // Disponibilizar função de mudança de aba para componente pai
   useEffect(() => {
     if (onTabChangeRef) {
-      onTabChangeRef(setCurrentTab);
+      onTabChangeRef(safeSetCurrentTab);
     }
-  }, [onTabChangeRef]);
+  }, [onTabChangeRef, safeSetCurrentTab]);
 
   // Auto-save para localStorage com throttling
   useEffect(() => {
@@ -77,31 +109,15 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
     }
   }, [formData, form]);
 
-  const tabs: Tab[] = [
-    { 
-      id: "informacoes_basicas", 
-      label: "Informações Básicas", 
-      component: BasicInfoTab 
-    },
-    { 
-      id: "detalhes_setor", 
-      label: "Detalhes do Setor", 
-      component: SectorDetailsTab 
-    },
-    { 
-      id: "marketing", 
-      label: "Marketing", 
-      component: MarketingTab 
-    },
-    { 
-      id: "comercial", 
-      label: "Comercial", 
-      component: CommercialTab 
-    }
-  ];
-
   const handleFieldChange = useCallback((field: string, value: any) => {
-    const currentTabId = tabs[currentTab].id;
+    // Verificar se currentTab é válido
+    if (currentTab < 0 || currentTab >= TABS.length) {
+      console.warn(`⚠️ currentTab inválido: ${currentTab}, usando 0`);
+      setCurrentTab(0);
+      return;
+    }
+
+    const currentTabId = TABS[currentTab].id;
     let fieldPath: string;
 
     // Mapear o campo para a estrutura aninhada baseada na aba atual
@@ -124,7 +140,7 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
 
     form.setValue(fieldPath as any, value, { shouldValidate: true, shouldDirty: true });
     console.log(`📝 Campo atualizado: ${fieldPath} = ${value}`);
-  }, [form, currentTab, tabs]);
+  }, [form, currentTab]);
 
   const handleSaveDraft = useCallback(() => {
     const currentData = form.getValues();
@@ -137,12 +153,18 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
   }, [onSubmit]);
 
   const handleTabChange = useCallback((tabIndex: number) => {
-    setCurrentTab(tabIndex);
-  }, []);
+    safeSetCurrentTab(tabIndex);
+  }, [safeSetCurrentTab]);
 
   const getCurrentTabData = useCallback(() => {
+    // Verificar se currentTab é válido
+    if (currentTab < 0 || currentTab >= TABS.length) {
+      console.warn(`⚠️ currentTab inválido em getCurrentTabData: ${currentTab}`);
+      return {};
+    }
+
     const allData = form.getValues();
-    const currentTabId = tabs[currentTab].id;
+    const currentTabId = TABS[currentTab].id;
     
     switch (currentTabId) {
       case 'informacoes_basicas':
@@ -156,11 +178,17 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
       default:
         return {};
     }
-  }, [form, currentTab, tabs]);
+  }, [form, currentTab]);
 
   const getCurrentTabErrors = useCallback(() => {
+    // Verificar se currentTab é válido
+    if (currentTab < 0 || currentTab >= TABS.length) {
+      console.warn(`⚠️ currentTab inválido em getCurrentTabErrors: ${currentTab}`);
+      return {};
+    }
+
     const errors = form.formState.errors;
-    const currentTabId = tabs[currentTab].id;
+    const currentTabId = TABS[currentTab].id;
     
     // Função helper para extrair mensagens de erro de forma segura
     const extractErrorMessages = (errorObj: any): Record<string, string> => {
@@ -200,12 +228,65 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
       default:
         return {};
     }
-  }, [form.formState.errors, currentTab, tabs]);
+  }, [form.formState.errors, currentTab]);
 
   const renderCurrentTab = () => {
-    const TabComponent = tabs[currentTab].component;
+    console.log(`🔍 Renderizando aba - currentTab: ${currentTab}, TABS.length: ${TABS.length}`);
+    
+    // Verificação de bounds - crucial para prevenir o erro
+    if (currentTab < 0 || currentTab >= TABS.length) {
+      console.error(`❌ currentTab fora dos bounds: ${currentTab}, total de abas: ${TABS.length}`);
+      // Reset para aba 0 de forma segura
+      setTimeout(() => setCurrentTab(0), 0);
+      return (
+        <div className="text-yellow-400 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+          <h4 className="font-medium mb-2">Navegação inválida</h4>
+          <p className="text-sm">
+            Redirecionando para a primeira aba...
+          </p>
+        </div>
+      );
+    }
+
+    const currentTabConfig = TABS[currentTab];
+    console.log(`🔍 Configuração da aba:`, currentTabConfig);
+    
+    if (!currentTabConfig) {
+      console.error(`❌ Configuração da aba não encontrada para índice: ${currentTab}`);
+      return (
+        <div className="text-red-400 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <h4 className="font-medium mb-2">Erro de configuração</h4>
+          <p className="text-sm">
+            Configuração da aba não encontrada. Índice: {currentTab}, Total: {TABS.length}
+          </p>
+          <button 
+            onClick={() => setCurrentTab(0)}
+            className="mt-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-2 rounded text-sm"
+          >
+            Voltar para primeira aba
+          </button>
+        </div>
+      );
+    }
+
+    const TabComponent = currentTabConfig.component;
+    if (!TabComponent) {
+      console.error(`❌ Componente não encontrado para aba: ${currentTabConfig.id}`);
+      return (
+        <div className="text-red-400 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <h4 className="font-medium mb-2">Componente não encontrado</h4>
+          <p className="text-sm">
+            O componente para a aba "{currentTabConfig.label}" não foi encontrado.
+          </p>
+        </div>
+      );
+    }
+
     const tabData = getCurrentTabData();
     const tabErrors = getCurrentTabErrors();
+
+    console.log(`🔍 Dados da aba ${currentTabConfig.id}:`, tabData);
+    console.log(`🔍 Erros da aba ${currentTabConfig.id}:`, tabErrors);
 
     const commonProps = {
       formData: tabData || {},
@@ -214,7 +295,7 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
     };
 
     try {
-      switch (tabs[currentTab].id) {
+      switch (currentTabConfig.id) {
         case 'informacoes_basicas':
           return <TabComponent {...commonProps} client={client} />;
         case 'detalhes_setor':
@@ -226,13 +307,16 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
           return <div className="text-seasalt">Aba não encontrada</div>;
       }
     } catch (error) {
-      console.error(`❌ Erro ao renderizar aba ${tabs[currentTab].id}:`, error);
+      console.error(`❌ Erro ao renderizar aba ${currentTabConfig.id}:`, error);
       return (
         <div className="text-red-400 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
           <h4 className="font-medium mb-2">Erro ao carregar aba</h4>
           <p className="text-sm">
             Ocorreu um erro ao renderizar esta aba. Verifique o console para mais detalhes.
           </p>
+          <pre className="text-xs mt-2 bg-night p-2 rounded overflow-auto">
+            {error instanceof Error ? error.message : String(error)}
+          </pre>
         </div>
       );
     }
@@ -243,7 +327,7 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
       {/* Tab Navigation */}
       <div className="bg-eerie-black rounded-lg border border-accent/20">
         <nav className="flex space-x-8 border-b border-seasalt/20 p-4">
-          {tabs.map((tab, index) => (
+          {TABS.map((tab, index) => (
             <button
               key={tab.id}
               onClick={() => handleTabChange(index)}
@@ -278,7 +362,7 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
             <Button
               type="button"
               variant="outline"
-              onClick={() => setCurrentTab(Math.max(0, currentTab - 1))}
+              onClick={() => safeSetCurrentTab(currentTab - 1)}
               disabled={currentTab === 0}
               className="bg-transparent border-seasalt/20 text-seasalt hover:bg-seasalt/10"
             >
@@ -295,10 +379,10 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
                 💾 Salvar Rascunho
               </Button>
 
-              {currentTab < tabs.length - 1 ? (
+              {currentTab < TABS.length - 1 ? (
                 <Button
                   type="button"
-                  onClick={() => setCurrentTab(Math.min(tabs.length - 1, currentTab + 1))}
+                  onClick={() => safeSetCurrentTab(currentTab + 1)}
                   className="bg-sgbus-green text-night hover:bg-sgbus-green/90"
                 >
                   Próximo →
