@@ -93,7 +93,7 @@ export default function HomePage() {
             <div className="text-sm text-seasalt/70">Planejamentos ativos</div>
           </div>
           <div className="mt-4 pt-4 border-t border-accent/20">
-            <Link href="/backlog" className="text-sgbus-green text-sm hover:underline">
+            <Link href="/planejamentos" className="text-sgbus-green text-sm hover:underline">
               Ver todos →
             </Link>
           </div>
@@ -142,7 +142,7 @@ export default function HomePage() {
       <div className="bg-eerie-black rounded-lg p-6 border border-accent/20">
         <h3 className="text-lg font-semibold text-seasalt mb-4">Ações Rápidas</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link href="/backlog/new" className="p-4 bg-sgbus-green/10 hover:bg-sgbus-green/20 rounded-lg border border-sgbus-green/20 transition-colors group">
+          <Link href="/planejamentos/novo" className="p-4 bg-sgbus-green/10 hover:bg-sgbus-green/20 rounded-lg border border-sgbus-green/20 transition-colors group">
             <div className="text-sgbus-green text-2xl mb-2">📋</div>
             <div className="text-seasalt font-medium">Novo Planejamento</div>
             <div className="text-seasalt/70 text-sm mt-1">Criar estratégia com IA</div>
