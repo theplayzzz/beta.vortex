@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { FormDataDisplay } from './FormDataDisplay';
 import { RichnessScoreBadge } from './RichnessScoreBadge';
+import { TaskRefinementInterface } from './TaskRefinementInterface';
+import type { Planning } from '@/types/planning';
 
 interface Client {
   id: string;
@@ -23,19 +25,6 @@ interface Client {
   businessDetails?: string;
   contactEmail?: string;
   website?: string;
-}
-
-interface Planning {
-  id: string;
-  title: string;
-  description?: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  formDataJSON?: any;
-  clientSnapshot?: any;
-  specificObjectives?: string;
-  Client: Client;
 }
 
 interface PlanningDetailsProps {
@@ -99,8 +88,21 @@ function formatRelativeDate(dateString: string): string {
   return `${Math.floor(diffInDays / 30)} meses atrás`;
 }
 
+// Função para verificar se specificObjectives contém tarefas estruturadas
+function hasStructuredTasks(specificObjectives?: string): boolean {
+  if (!specificObjectives) return false;
+  
+  try {
+    const parsed = JSON.parse(specificObjectives);
+    return parsed.tarefas && Array.isArray(parsed.tarefas) && parsed.tarefas.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 export function PlanningDetails({ planning, isLoading = false }: PlanningDetailsProps) {
   const [currentTab, setCurrentTab] = useState<'form_data' | 'objectives'>('form_data');
+  const [currentPlanning, setCurrentPlanning] = useState(planning);
   
   if (isLoading) {
     return (
@@ -114,11 +116,16 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
     );
   }
 
-  const status = statusConfig[planning.status as keyof typeof statusConfig] || statusConfig.DRAFT;
+  const status = statusConfig[currentPlanning.status as keyof typeof statusConfig] || statusConfig.DRAFT;
   
   // Verificar se os objetivos específicos estão disponíveis
-  const hasSpecificObjectives = planning.specificObjectives && planning.specificObjectives.trim().length > 0;
-  const isObjectivesProcessing = planning.status === 'PENDING_AI_BACKLOG_GENERATION';
+  const hasSpecificObjectives = currentPlanning.specificObjectives && currentPlanning.specificObjectives.trim().length > 0;
+  const hasTasksForRefinement = hasStructuredTasks(currentPlanning.specificObjectives);
+  const isObjectivesProcessing = currentPlanning.status === 'PENDING_AI_BACKLOG_GENERATION';
+
+  const handlePlanningUpdate = (updatedPlanning: Planning) => {
+    setCurrentPlanning(updatedPlanning);
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -132,23 +139,23 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-seasalt">{planning.title}</h1>
+            <h1 className="text-2xl font-bold text-seasalt">{currentPlanning.title}</h1>
             <div className="flex items-center gap-3 mt-2">
               <div className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${status.color}`}>
                 <span className="mr-1">{status.icon}</span>
                 {status.label}
               </div>
               <span className="text-seasalt/70 text-sm">
-                Cliente: {planning.Client.name}
+                Cliente: {currentPlanning.Client.name}
               </span>
-              <RichnessScoreBadge score={planning.Client.richnessScore} />
+              <RichnessScoreBadge score={currentPlanning.Client.richnessScore} />
             </div>
           </div>
         </div>
         
         <div className="flex items-center gap-3">
           <Link
-            href={`/planejamentos/${planning.id}/editar`}
+            href={`/planejamentos/${currentPlanning.id}/editar`}
             className="bg-sgbus-green hover:bg-sgbus-green/90 text-night px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
           >
             <Edit3 className="h-4 w-4" />
@@ -167,17 +174,17 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-blue-400" />
               <span className="text-seasalt/70">Criado:</span>
-              <span className="text-seasalt">{formatDate(planning.createdAt)}</span>
+              <span className="text-seasalt">{formatDate(currentPlanning.createdAt)}</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-amber-400" />
               <span className="text-seasalt/70">Atualizado:</span>
-              <span className="text-seasalt">{formatDate(planning.updatedAt)}</span>
+              <span className="text-seasalt">{formatDate(currentPlanning.updatedAt)}</span>
             </div>
           </div>
-          {planning.description && (
+          {currentPlanning.description && (
             <div className="text-seasalt/70 max-w-md truncate">
-              {planning.description}
+              {currentPlanning.description}
             </div>
           )}
         </div>
@@ -202,12 +209,12 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
           </button>
           
           <button
-            onClick={() => hasSpecificObjectives && setCurrentTab('objectives')}
-            disabled={!hasSpecificObjectives && !isObjectivesProcessing}
+            onClick={() => (hasSpecificObjectives || hasTasksForRefinement) && setCurrentTab('objectives')}
+            disabled={!hasSpecificObjectives && !hasTasksForRefinement && !isObjectivesProcessing}
             className={`pb-3 border-b-2 font-medium text-sm transition-colors ${
               currentTab === 'objectives'
                 ? 'border-sgbus-green text-sgbus-green'
-                : hasSpecificObjectives
+                : (hasSpecificObjectives || hasTasksForRefinement)
                   ? 'border-transparent text-periwinkle hover:text-seasalt hover:border-seasalt/40'
                   : 'border-transparent text-seasalt/40 cursor-not-allowed'
             }`}
@@ -219,7 +226,7 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
                 <Target className="h-4 w-4" />
               )}
               <span>Objetivos Específicos</span>
-              {!hasSpecificObjectives && !isObjectivesProcessing && (
+              {!hasSpecificObjectives && !hasTasksForRefinement && !isObjectivesProcessing && (
                 <span className="text-xs bg-seasalt/20 px-2 py-1 rounded">Aguardando IA</span>
               )}
             </span>
@@ -229,7 +236,7 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
         {/* Tab Content */}
         <div className="p-6">
           {currentTab === 'form_data' ? (
-            <FormDataDisplay formData={planning.formDataJSON} />
+            <FormDataDisplay formData={currentPlanning.formDataJSON} />
           ) : (
             <div className="space-y-4">
               {isObjectivesProcessing ? (
@@ -243,7 +250,14 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
                     Isso pode levar alguns minutos.
                   </p>
                 </div>
+              ) : hasTasksForRefinement ? (
+                // Interface de refinamento de tarefas
+                <TaskRefinementInterface 
+                  planning={currentPlanning} 
+                  onUpdate={handlePlanningUpdate}
+                />
               ) : hasSpecificObjectives ? (
+                // Exibição simples (fallback para objetivos não estruturados)
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 mb-4">
                     <Target className="h-6 w-6 text-sgbus-green" />
@@ -254,7 +268,7 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
                   <div className="bg-night rounded-lg p-6 border border-accent/20">
                     <div 
                       className="text-seasalt/90 prose prose-invert max-w-none"
-                      dangerouslySetInnerHTML={{ __html: planning.specificObjectives || '' }}
+                      dangerouslySetInnerHTML={{ __html: currentPlanning.specificObjectives || '' }}
                     />
                   </div>
                 </div>
