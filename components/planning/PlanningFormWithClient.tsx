@@ -187,12 +187,17 @@ export function PlanningFormWithClient({
       // Limpar localStorage após sucesso
       localStorage.removeItem(`planning-form-draft-${client.id}`);
 
+      // Adicionar flag "novo" ao localStorage para destacar na listagem
+      const newPlannings = JSON.parse(localStorage.getItem('new-plannings') || '[]');
+      newPlannings.push(createdPlanning.id);
+      localStorage.setItem('new-plannings', JSON.stringify(newPlannings));
+
       // Mostrar toast de sucesso
       addToast(toast.success(
         'Planejamento criado com sucesso!',
-        `"${createdPlanning.title}" foi salvo e está pronto para visualização`,
+        `"${createdPlanning.title}" foi salvo e está sendo processado. O webhook irá preencher os objetivos específicos.`,
         {
-          duration: 6000,
+          duration: 4000,
           action: {
             label: 'Visualizar',
             onClick: () => router.push(`/planejamentos/${createdPlanning.id}`)
@@ -200,15 +205,9 @@ export function PlanningFormWithClient({
         }
       ));
 
-      // Adicionar flag "novo" ao localStorage para destacar na listagem
-      const newPlannings = JSON.parse(localStorage.getItem('new-plannings') || '[]');
-      newPlannings.push(createdPlanning.id);
-      localStorage.setItem('new-plannings', JSON.stringify(newPlannings));
-
-      // Aguardar um pouco para o usuário ver o toast e então redirecionar
-      setTimeout(() => {
-        router.push(`/planejamentos?highlight=${createdPlanning.id}`);
-      }, 1500);
+      // Redirecionar IMEDIATAMENTE para a listagem de planejamentos
+      console.log('🔄 Redirecionando imediatamente para a listagem...');
+      router.push(`/planejamentos?highlight=${createdPlanning.id}`);
       
     } catch (error) {
       console.error('❌ Erro ao criar planejamento:', error);
