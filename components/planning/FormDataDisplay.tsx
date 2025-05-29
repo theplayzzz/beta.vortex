@@ -3,9 +3,11 @@
 import { Calendar, User, Building, Target, TrendingUp, ShoppingBag } from 'lucide-react';
 
 interface FormData {
+  // Estrutura direta (planejamentos mais antigos)
   informacoes_basicas?: {
     titulo_planejamento?: string;
     descricao_objetivo?: string;
+    setor?: string;
   };
   detalhes_do_setor?: {
     [key: string]: any;
@@ -20,6 +22,32 @@ interface FormData {
     meta_comercial?: string;
     [key: string]: any;
   };
+  
+  // Estrutura aninhada (planejamentos mais novos)
+  form_data?: {
+    informacoes_basicas?: {
+      titulo_planejamento?: string;
+      descricao_objetivo?: string;
+      setor?: string;
+    };
+    detalhes_do_setor?: {
+      [key: string]: any;
+    };
+    marketing?: {
+      maturidade_marketing?: string;
+      meta_marketing?: string;
+      [key: string]: any;
+    };
+    comercial?: {
+      maturidade_comercial?: string;
+      meta_comercial?: string;
+      [key: string]: any;
+    };
+  };
+  
+  // Metadados extras
+  client_context?: any;
+  submission_metadata?: any;
 }
 
 interface FormDataDisplayProps {
@@ -27,16 +55,65 @@ interface FormDataDisplayProps {
   className?: string;
 }
 
+// Função para normalizar os dados independente da estrutura
+function normalizeFormData(formData: FormData | null): FormData | null {
+  if (!formData) return null;
+
+  // Se tem form_data aninhado, extrair de lá
+  if (formData.form_data) {
+    return {
+      informacoes_basicas: formData.form_data.informacoes_basicas,
+      detalhes_do_setor: formData.form_data.detalhes_do_setor,
+      marketing: formData.form_data.marketing,
+      comercial: formData.form_data.comercial,
+    };
+  }
+
+  // Se é estrutura direta, retornar como está
+  return formData;
+}
+
 function formatFieldLabel(key: string): string {
   const labelMappings: { [key: string]: string } = {
     titulo_planejamento: 'Título do Planejamento',
     descricao_objetivo: 'Descrição do Objetivo',
+    setor: 'Setor',
     maturidade_marketing: 'Maturidade de Marketing',
     meta_marketing: 'Meta de Marketing',
+    meta_marketing_personalizada: 'Meta Marketing Personalizada',
+    principais_canais_marketing: 'Principais Canais de Marketing',
+    investimento_marketing_mensal: 'Investimento Mensal em Marketing',
     maturidade_comercial: 'Maturidade Comercial',
     meta_comercial: 'Meta Comercial',
-    numero_de_lojas_atuais: 'Número de Lojas Atuais',
-    principais_categorias_de_produtos: 'Principais Categorias de Produtos',
+    meta_comercial_personalizada: 'Meta Comercial Personalizada',
+    tempo_medio_fechamento: 'Tempo Médio de Fechamento',
+    principal_objecao_vendas: 'Principal Objeção de Vendas',
+    
+    // Varejo
+    varejo_numero_de_lojas_atuais: 'Número de Lojas Atuais',
+    varejo_principais_categorias_de_produtos: 'Principais Categorias de Produtos',
+    varejo_ticket_medio_atual: 'Ticket Médio Atual',
+    varejo_canais_venda_atuais: 'Canais de Venda Atuais',
+    varejo_sazonalidade_vendas: 'Sazonalidade das Vendas',
+    
+    // Alimentício
+    alimenticio_tipo_estabelecimento: 'Tipo de Estabelecimento',
+    alimenticio_principais_produtos: 'Principais Produtos',
+    alimenticio_capacidade_producao_mensal: 'Capacidade de Produção Mensal',
+    alimenticio_fornecedores_principais: 'Principais Fornecedores',
+    alimenticio_certificacoes: 'Certificações',
+    
+    // Saúde
+    saude_area: 'Área de Atuação',
+    saude_profissionais: 'Número de Profissionais',
+    saude_volume_pacientes: 'Volume de Pacientes/Mês',
+    saude_valor_consulta: 'Valor da Consulta',
+    saude_convenios: 'Convênios',
+    saude_agendamento: 'Formas de Agendamento',
+    saude_diferencial: 'Diferencial',
+    saude_desafio: 'Principal Desafio',
+    
+    // Genéricos
     tamanho_da_empresa: 'Tamanho da Empresa',
     numero_de_funcionarios: 'Número de Funcionários',
     receita_anual: 'Receita Anual',
@@ -81,8 +158,8 @@ function SectionCard({
 
 function FieldDisplay({ label, value }: { label: string; value: any }) {
   return (
-    <div className="mb-4 last:mb-0">
-      <dt className="text-sm font-medium text-seasalt/70 mb-1">{label}</dt>
+    <div className="space-y-1">
+      <dt className="text-sm font-medium text-seasalt/70">{label}</dt>
       <dd className="text-seasalt bg-night rounded-lg p-3 text-sm">
         {formatValue(value)}
       </dd>
@@ -90,8 +167,25 @@ function FieldDisplay({ label, value }: { label: string; value: any }) {
   );
 }
 
+function SectionFields({ fields }: { fields: Array<{ key: string; value: any }> }) {
+  return (
+    <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {fields.map(({ key, value }) => (
+        <FieldDisplay 
+          key={key}
+          label={formatFieldLabel(key)}
+          value={value}
+        />
+      ))}
+    </dl>
+  );
+}
+
 export function FormDataDisplay({ formData, className = '' }: FormDataDisplayProps) {
-  if (!formData) {
+  // Normalizar os dados para lidar com diferentes estruturas
+  const normalizedData = normalizeFormData(formData);
+
+  if (!normalizedData) {
     return (
       <div className={`bg-eerie-black rounded-lg border border-accent/20 p-8 text-center ${className}`}>
         <div className="w-16 h-16 bg-sgbus-green/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -112,78 +206,59 @@ export function FormDataDisplay({ formData, className = '' }: FormDataDisplayPro
     detalhes_do_setor,
     marketing,
     comercial
-  } = formData;
+  } = normalizedData;
 
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Informações Básicas */}
-      {informacoes_basicas && (
+      {informacoes_basicas && Object.keys(informacoes_basicas).length > 0 && (
         <SectionCard title="Informações Básicas" icon={Target}>
-          <dl className="space-y-4">
-            {Object.entries(informacoes_basicas).map(([key, value]) => (
-              <FieldDisplay 
-                key={key}
-                label={formatFieldLabel(key)}
-                value={value}
-              />
-            ))}
-          </dl>
+          <SectionFields 
+            fields={Object.entries(informacoes_basicas)
+              .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+              .map(([key, value]) => ({ key, value }))} 
+          />
         </SectionCard>
       )}
 
       {/* Detalhes do Setor */}
       {detalhes_do_setor && Object.keys(detalhes_do_setor).length > 0 && (
         <SectionCard title="Detalhes do Setor" icon={Building}>
-          <dl className="space-y-4">
-            {Object.entries(detalhes_do_setor)
+          <SectionFields 
+            fields={Object.entries(detalhes_do_setor)
               .filter(([key, value]) => value !== null && value !== undefined && value !== '')
-              .map(([key, value]) => (
-                <FieldDisplay 
-                  key={key}
-                  label={formatFieldLabel(key)}
-                  value={value}
-                />
-              ))}
-          </dl>
+              .map(([key, value]) => ({ key, value }))} 
+          />
         </SectionCard>
       )}
 
       {/* Marketing */}
-      {marketing && (
+      {marketing && Object.keys(marketing).length > 0 && (
         <SectionCard title="Marketing" icon={TrendingUp}>
-          <dl className="space-y-4">
-            {Object.entries(marketing)
+          <SectionFields 
+            fields={Object.entries(marketing)
               .filter(([key, value]) => value !== null && value !== undefined && value !== '')
-              .map(([key, value]) => (
-                <FieldDisplay 
-                  key={key}
-                  label={formatFieldLabel(key)}
-                  value={value}
-                />
-              ))}
-          </dl>
+              .map(([key, value]) => ({ key, value }))} 
+          />
         </SectionCard>
       )}
 
       {/* Comercial */}
-      {comercial && (
+      {comercial && Object.keys(comercial).length > 0 && (
         <SectionCard title="Comercial" icon={ShoppingBag}>
-          <dl className="space-y-4">
-            {Object.entries(comercial)
+          <SectionFields 
+            fields={Object.entries(comercial)
               .filter(([key, value]) => value !== null && value !== undefined && value !== '')
-              .map(([key, value]) => (
-                <FieldDisplay 
-                  key={key}
-                  label={formatFieldLabel(key)}
-                  value={value}
-                />
-              ))}
-          </dl>
+              .map(([key, value]) => ({ key, value }))} 
+          />
         </SectionCard>
       )}
 
       {/* Caso não haja dados em nenhuma seção */}
-      {!informacoes_basicas && !detalhes_do_setor && !marketing && !comercial && (
+      {(!informacoes_basicas || Object.keys(informacoes_basicas).length === 0) && 
+       (!detalhes_do_setor || Object.keys(detalhes_do_setor).length === 0) && 
+       (!marketing || Object.keys(marketing).length === 0) && 
+       (!comercial || Object.keys(comercial).length === 0) && (
         <div className="bg-eerie-black rounded-lg border border-accent/20 p-8 text-center">
           <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <Building className="h-8 w-8 text-amber-400" />

@@ -181,24 +181,68 @@ export default function EditarPlanejamentoPage() {
 
   // Converter dados existentes para o formato do formulário
   const convertToFormData = (planning: any): PlanningFormData => {
-    if (planning.formDataJSON) {
-      return planning.formDataJSON;
+    console.log('🔄 Convertendo dados do planejamento para formulário:', planning);
+
+    // Se não tem formDataJSON, criar estrutura padrão
+    if (!planning.formDataJSON) {
+      console.log('⚠️ Planejamento sem formDataJSON, criando estrutura padrão');
+      return {
+        informacoes_basicas: {
+          titulo_planejamento: planning.title || '',
+          descricao_objetivo: planning.description || '',
+          setor: (planning.Client.industry as any) || 'Outro',
+        },
+        detalhes_do_setor: {},
+        marketing: {
+          maturidade_marketing: 'Não fazemos marketing' as any,
+          meta_marketing: '',
+        },
+        comercial: {
+          maturidade_comercial: 'Não temos processo comercial estruturado' as any,
+          meta_comercial: '',
+        },
+      };
     }
 
-    // Fallback para planejamentos antigos sem formDataJSON
-    // Criar uma estrutura válida com valores padrão
+    const formDataJSON = planning.formDataJSON;
+    
+    // Verificar se tem estrutura aninhada (form_data)
+    if (formDataJSON.form_data) {
+      console.log('📦 Estrutura aninhada detectada, extraindo dados de form_data');
+      const { form_data } = formDataJSON;
+      
+      return {
+        informacoes_basicas: form_data.informacoes_basicas || {
+          titulo_planejamento: planning.title || '',
+          descricao_objetivo: planning.description || '',
+          setor: (planning.Client.industry as any) || 'Outro',
+        },
+        detalhes_do_setor: form_data.detalhes_do_setor || {},
+        marketing: form_data.marketing || {
+          maturidade_marketing: 'Não fazemos marketing' as any,
+          meta_marketing: '',
+        },
+        comercial: form_data.comercial || {
+          maturidade_comercial: 'Não temos processo comercial estruturado' as any,
+          meta_comercial: '',
+        },
+      };
+    }
+    
+    // Estrutura direta (planejamentos mais antigos)
+    console.log('📋 Estrutura direta detectada, usando dados como estão');
     return {
-      informacoes_basicas: {
+      informacoes_basicas: formDataJSON.informacoes_basicas || {
         titulo_planejamento: planning.title || '',
         descricao_objetivo: planning.description || '',
-        setor: planning.Client.industry as any || 'Outro',
+        setor: (planning.Client.industry as any) || 'Outro',
       },
-      detalhes_do_setor: {},
-      marketing: {
+      detalhes_do_setor: formDataJSON.detalhes_do_setor || {},
+      marketing: formDataJSON.marketing || {
         maturidade_marketing: 'Não fazemos marketing' as any,
         meta_marketing: '',
       },
-      comercial: {
+      comercial: formDataJSON.comercial || {
         maturidade_comercial: 'Não temos processo comercial estruturado' as any,
         meta_comercial: '',
       },
@@ -295,20 +339,26 @@ function EditablePlanningForm({
   onSaveDraft: (data: PlanningFormData) => void;
   initialData: PlanningFormData;
 }) {
-  // Para modo de edição, vamos simular localStorage com dados iniciais
+  // Para modo de edição, forçar carregamento dos dados iniciais
   const draftKey = `planning-form-draft-${client.id}`;
   
-  // Salvar dados iniciais no localStorage se não existirem
+  // Sempre salvar os dados iniciais no localStorage, sobrescrevendo qualquer draft
   React.useEffect(() => {
-    const existingDraft = localStorage.getItem(draftKey);
-    if (!existingDraft && initialData) {
-      localStorage.setItem(draftKey, JSON.stringify({
-        client,
-        formData: initialData,
-        savedAt: new Date().toISOString(),
-        sessionId: `edit_${Date.now()}`,
-      }));
-    }
+    console.log('💾 Forçando carregamento dos dados iniciais no localStorage:', initialData);
+    
+    // Criar a estrutura do draft com os dados iniciais
+    const draftData = {
+      client,
+      formData: initialData,
+      savedAt: new Date().toISOString(),
+      sessionId: `edit_${Date.now()}`,
+      isEditMode: true, // Flag para indicar modo de edição
+    };
+    
+    // Sempre sobrescrever o localStorage com os dados atuais
+    localStorage.setItem(draftKey, JSON.stringify(draftData));
+    
+    console.log('✅ Dados iniciais salvos no localStorage com chave:', draftKey);
   }, [client, initialData, draftKey]);
 
   return (

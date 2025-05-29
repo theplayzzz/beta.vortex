@@ -57,19 +57,36 @@ const TABS: Tab[] = [
   }
 ];
 
-// Debug: Verificar se todos os componentes foram importados corretamente
-console.log('🔍 TABS definidas:', TABS);
-console.log('🔍 Componentes:', {
-  BasicInfoTab: typeof BasicInfoTab,
-  SectorDetailsTab: typeof SectorDetailsTab,
-  MarketingTab: typeof MarketingTab,
-  CommercialTab: typeof CommercialTab
-});
+// Função para validar e normalizar o índice da aba
+const normalizeTabIndex = (index: any): number => {
+  // Converter para number e verificar se é válido
+  const numIndex = typeof index === 'number' ? index : parseInt(index, 10);
+  
+  // Se for NaN, undefined, null ou inválido, retornar 0
+  if (isNaN(numIndex) || numIndex < 0 || numIndex >= TABS.length) {
+    console.warn(`⚠️ Índice de aba inválido: ${index}, usando 0`);
+    return 0;
+  }
+  
+  return numIndex;
+};
 
 export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: PlanningFormProps) {
   console.log('🚀 PlanningForm inicializando com cliente:', client);
 
-  const [currentTab, setCurrentTab] = useState(0);
+  // Inicializar com 0 e garantir que sempre seja um número válido
+  const [currentTabState, setCurrentTabState] = useState<number>(0);
+  
+  // Getter que sempre retorna um valor válido
+  const currentTab = normalizeTabIndex(currentTabState);
+  
+  // Setter que sempre define um valor válido
+  const setCurrentTab = useCallback((newTab: number | string) => {
+    const validTab = normalizeTabIndex(newTab);
+    setCurrentTabState(validTab);
+    console.log(`🔄 Aba alterada para: ${validTab} (${TABS[validTab]?.label || 'Indefinida'})`);
+  }, []);
+
   const { formData, updateFormData } = usePlanningForm(client);
 
   const form = useForm<PlanningFormData>({
@@ -80,11 +97,8 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
 
   // Função para mudança segura de aba
   const safeSetCurrentTab = useCallback((tabIndex: number) => {
-    // Garantir que o índice está dentro dos bounds válidos
-    const safeIndex = Math.max(0, Math.min(TABS.length - 1, tabIndex));
-    setCurrentTab(safeIndex);
-    console.log(`🔄 Navegando para aba ${safeIndex} (${TABS[safeIndex]?.label || 'Indefinida'})`);
-  }, []);
+    setCurrentTab(tabIndex);
+  }, [setCurrentTab]);
 
   // Disponibilizar função de mudança de aba para componente pai
   useEffect(() => {
@@ -113,22 +127,30 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
 
   // Carregar dados salvos do localStorage apenas uma vez
   useEffect(() => {
-    if (formData && Object.keys(formData).length > 0 && !form.formState.isDirty) {
+    console.log('🔍 Verificando dados para carregar no formulário:', {
+      formData,
+      hasData: formData && Object.keys(formData).length > 0,
+      isDirty: form.formState.isDirty,
+      isValid: form.formState.isValid
+    });
+
+    if (formData && Object.keys(formData).length > 0) {
       // Resetar o formulário com os dados salvos
+      console.log('🔄 Resetando formulário com dados salvos:', formData);
       form.reset(formData as PlanningFormData);
-      console.log('🔄 Formulário resetado com dados salvos:', formData);
+      
+      // Forçar revalidação após reset
+      setTimeout(() => {
+        form.trigger();
+        console.log('✅ Formulário resetado e revalidado');
+      }, 100);
     }
   }, [formData, form]);
 
   const handleFieldChange = useCallback((field: string, value: any) => {
-    // Verificar se currentTab é válido
-    if (currentTab < 0 || currentTab >= TABS.length) {
-      console.warn(`⚠️ currentTab inválido: ${currentTab}, usando 0`);
-      setCurrentTab(0);
-      return;
-    }
-
-    const currentTabId = TABS[currentTab].id;
+    // currentTab já é normalizado, mas vamos ser extra cuidadosos
+    const safeCurrentTab = normalizeTabIndex(currentTab);
+    const currentTabId = TABS[safeCurrentTab].id;
     let fieldPath: string;
 
     // Mapear o campo para a estrutura aninhada baseada na aba atual
@@ -168,14 +190,9 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
   }, [safeSetCurrentTab]);
 
   const getCurrentTabData = useCallback(() => {
-    // Verificar se currentTab é válido
-    if (currentTab < 0 || currentTab >= TABS.length) {
-      console.warn(`⚠️ currentTab inválido em getCurrentTabData: ${currentTab}`);
-      return {};
-    }
-
     const allData = form.getValues();
-    const currentTabId = TABS[currentTab].id;
+    const safeCurrentTab = normalizeTabIndex(currentTab);
+    const currentTabId = TABS[safeCurrentTab].id;
     
     switch (currentTabId) {
       case 'informacoes_basicas':
@@ -192,14 +209,9 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
   }, [form, currentTab]);
 
   const getCurrentTabErrors = useCallback(() => {
-    // Verificar se currentTab é válido
-    if (currentTab < 0 || currentTab >= TABS.length) {
-      console.warn(`⚠️ currentTab inválido em getCurrentTabErrors: ${currentTab}`);
-      return {};
-    }
-
     const errors = form.formState.errors;
-    const currentTabId = TABS[currentTab].id;
+    const safeCurrentTab = normalizeTabIndex(currentTab);
+    const currentTabId = TABS[safeCurrentTab].id;
     
     // Função helper para extrair mensagens de erro de forma segura
     const extractErrorMessages = (errorObj: any): Record<string, string> => {
@@ -242,33 +254,20 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
   }, [form.formState.errors, currentTab]);
 
   const renderCurrentTab = () => {
-    console.log(`🔍 Renderizando aba - currentTab: ${currentTab}, TABS.length: ${TABS.length}`);
-    
-    // Verificação de bounds - crucial para prevenir o erro
-    if (currentTab < 0 || currentTab >= TABS.length) {
-      console.error(`❌ currentTab fora dos bounds: ${currentTab}, total de abas: ${TABS.length}`);
-      // Reset para aba 0 de forma segura
-      setTimeout(() => setCurrentTab(0), 0);
-      return (
-        <div className="text-yellow-400 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-          <h4 className="font-medium mb-2">Navegação inválida</h4>
-          <p className="text-sm">
-            Redirecionando para a primeira aba...
-          </p>
-        </div>
-      );
-    }
+    // currentTab já é normalizado, mas vamos garantir mais uma vez
+    const safeCurrentTab = normalizeTabIndex(currentTab);
+    console.log(`🔍 Renderizando aba - currentTab: ${safeCurrentTab}, TABS.length: ${TABS.length}`);
 
-    const currentTabConfig = TABS[currentTab];
+    const currentTabConfig = TABS[safeCurrentTab];
     console.log(`🔍 Configuração da aba:`, currentTabConfig);
     
     if (!currentTabConfig) {
-      console.error(`❌ Configuração da aba não encontrada para índice: ${currentTab}`);
+      console.error(`❌ Configuração da aba não encontrada para índice: ${safeCurrentTab}`);
       return (
         <div className="text-red-400 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
           <h4 className="font-medium mb-2">Erro de configuração</h4>
           <p className="text-sm">
-            Configuração da aba não encontrada. Índice: {currentTab}, Total: {TABS.length}
+            Configuração da aba não encontrada. Índice: {safeCurrentTab}, Total: {TABS.length}
           </p>
           <button 
             onClick={() => setCurrentTab(0)}

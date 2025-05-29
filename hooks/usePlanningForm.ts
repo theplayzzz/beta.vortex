@@ -22,8 +22,22 @@ export function usePlanningForm(client: Client) {
     if (savedData) {
       try {
         const parsedData = JSON.parse(savedData);
-        setFormData(parsedData);
-        console.log('📂 Dados recuperados do localStorage:', parsedData);
+        
+        // Verificar se é estrutura aninhada (modo de edição)
+        if (parsedData.formData) {
+          console.log('📂 Dados de edição recuperados do localStorage:', parsedData);
+          setFormData(parsedData.formData);
+        } 
+        // Verificar se é estrutura direta (modo de criação)
+        else if (parsedData.informacoes_basicas || parsedData.marketing || parsedData.comercial || parsedData.detalhes_do_setor) {
+          console.log('📂 Dados diretos recuperados do localStorage:', parsedData);
+          setFormData(parsedData);
+        }
+        // Estrutura desconhecida, tentar usar como está
+        else {
+          console.log('📂 Dados em estrutura desconhecida:', parsedData);
+          setFormData(parsedData);
+        }
       } catch (error) {
         console.error('❌ Erro ao recuperar dados do formulário:', error);
         localStorage.removeItem(`planning-form-draft-${client.id}`);
