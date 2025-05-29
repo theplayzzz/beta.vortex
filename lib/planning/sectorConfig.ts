@@ -45,4 +45,68 @@ export function getSectorLabel(sector: SetorPermitido): string {
   };
   
   return labels[sector] || sector;
+}
+
+/**
+ * Mapear valores antigos de setores para valores válidos
+ * Usado para compatibilidade com dados existentes no banco
+ */
+export function mapLegacySectorToValid(sector: string): SetorPermitido {
+  const legacyMapping: Record<string, SetorPermitido> = {
+    // Valores antigos que podem existir no banco
+    "foodtruck": "Alimentação",
+    "food truck": "Alimentação", 
+    "restaurante": "Alimentação",
+    "lanchonete": "Alimentação",
+    "tecnologia": "Tecnologia / SaaS",
+    "tech": "Tecnologia / SaaS",
+    "saas": "Tecnologia / SaaS",
+    "software": "Tecnologia / SaaS",
+    "saude": "Saúde e Bem-estar",
+    "medicina": "Saúde e Bem-estar",
+    "clinica": "Saúde e Bem-estar",
+    "educacao": "Educação",
+    "ensino": "Educação",
+    "escola": "Educação",
+    "varejo": "Varejo físico",
+    "loja": "Varejo físico",
+    "comercio": "Varejo físico",
+    "ecommerce": "E-commerce",
+    "loja online": "E-commerce",
+    "servicos": "Serviços locais",
+    "consultoria": "Serviços B2B",
+    "imoveis": "Imobiliário",
+    "imobiliaria": "Imobiliário",
+    "industria": "Indústria",
+    "industrial": "Indústria",
+    "outro": "Outro",
+    "others": "Outro"
+  };
+
+  // Primeiro tenta o mapeamento direto
+  const normalizedSector = sector.toLowerCase().trim();
+  if (legacyMapping[normalizedSector]) {
+    return legacyMapping[normalizedSector];
+  }
+
+  // Se o valor já é válido, retorna ele mesmo
+  if (isValidSector(sector)) {
+    return sector as SetorPermitido;
+  }
+
+  // Caso contrário, retorna "Outro"
+  console.warn(`⚠️ Setor não reconhecido: "${sector}", usando "Outro"`);
+  return "Outro";
+}
+
+/**
+ * Validar e normalizar setor do cliente
+ * Usado no formulário para garantir que sempre temos um valor válido
+ */
+export function validateAndNormalizeSector(sector: string | null | undefined): SetorPermitido {
+  if (!sector) {
+    return "Outro";
+  }
+
+  return mapLegacySectorToValid(sector);
 } 

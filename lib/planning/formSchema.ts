@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { SETORES_PERMITIDOS } from "./sectorConfig";
 import { MATURIDADE_MARKETING } from './marketingConfig';
 import { MATURIDADE_COMERCIAL } from './commercialConfig';
 
@@ -16,7 +15,7 @@ const informacoesBasicasSchema = z.object({
     .string()
     .min(10, "Descrição deve ter pelo menos 10 caracteres")
     .max(500, "Descrição deve ter no máximo 500 caracteres"),
-  setor: z.enum(SETORES_PERMITIDOS)
+  setor: z.string().min(1, "Setor é obrigatório")
 });
 
 /**
@@ -148,7 +147,7 @@ export function getDefaultValues(clientIndustry?: string): {
     informacoes_basicas: {
       titulo_planejamento: "",
       descricao_objetivo: "",
-      setor: clientIndustry as any || ""
+      setor: clientIndustry || "Outro"
     },
     detalhes_do_setor: {},
     marketing: {
