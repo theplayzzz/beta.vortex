@@ -26,8 +26,8 @@ export function TaskRefinementInterface({ planning, onUpdate }: TaskRefinementIn
         const parsed = JSON.parse(planning.specificObjectives);
         if (parsed.tarefas && Array.isArray(parsed.tarefas)) {
           setTasks(parsed.tarefas);
-          // Pré-selecionar todas as tarefas
-          setSelectedTasks(new Set(parsed.tarefas.map((_: any, index: number) => index)));
+          // NÃO pré-selecionar todas as tarefas - deixar vazio
+          setSelectedTasks(new Set());
         }
       } catch (error) {
         console.error('Erro ao parsear tarefas:', error);
@@ -70,6 +70,16 @@ export function TaskRefinementInterface({ planning, onUpdate }: TaskRefinementIn
     setTasks(newTasks);
     updatePlanningData(newTasks);
     setAddingContextTask(null);
+  };
+
+  const handlePriorityChange = (index: number, priority: TarefaAI['prioridade']) => {
+    const newTasks = [...tasks];
+    newTasks[index] = {
+      ...newTasks[index],
+      prioridade: priority
+    };
+    setTasks(newTasks);
+    updatePlanningData(newTasks);
   };
 
   const updatePlanningData = async (updatedTasks: TarefaAI[]) => {
@@ -194,6 +204,7 @@ export function TaskRefinementInterface({ planning, onUpdate }: TaskRefinementIn
         onTaskSelect={handleTaskSelect}
         onEditTask={(index, task) => setEditingTask({ index, task })}
         onAddContext={(index, task) => setAddingContextTask({ index, task })}
+        onPriorityChange={handlePriorityChange}
       />
 
       {/* Rodapé */}

@@ -11,7 +11,8 @@
       "@/app/*": ["app/*"],
       "@/lib/*": ["lib/*"],
       "@/hooks/*": ["hooks/*"],
-      "@/styles/*": ["styles/*"]
+      "@/styles/*": ["styles/*"],
+      "@/types/*": ["types/*"]
     },
     "strict": true,
     "forceConsistentCasingInFileNames": true,

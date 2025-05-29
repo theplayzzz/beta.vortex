@@ -9,6 +9,7 @@ interface TaskRefinementListProps {
   onTaskSelect: (index: number) => void;
   onEditTask: (index: number, task: TarefaAI) => void;
   onAddContext: (index: number, task: TarefaAI) => void;
+  onPriorityChange: (index: number, priority: TarefaAI['prioridade']) => void;
 }
 
 export function TaskRefinementList({
@@ -16,7 +17,8 @@ export function TaskRefinementList({
   selectedTasks,
   onTaskSelect,
   onEditTask,
-  onAddContext
+  onAddContext,
+  onPriorityChange
 }: TaskRefinementListProps) {
   if (tasks.length === 0) {
     return (
@@ -45,6 +47,7 @@ export function TaskRefinementList({
           onSelect={() => onTaskSelect(index)}
           onEdit={() => onEditTask(index, task)}
           onAddContext={() => onAddContext(index, task)}
+          onPriorityChange={(priority) => onPriorityChange(index, priority)}
         />
       ))}
     </div>
