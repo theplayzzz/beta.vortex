@@ -4,70 +4,46 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Users, Plus } from "lucide-react";
 import Link from "next/link";
-
-// Placeholder para o componente de seleção de cliente (será implementado nas próximas fases)
-interface Client {
-  id: string;
-  name: string;
-  industry: string;
-  richnessScore: number;
-}
+import { PlanningFormWithClient, Client } from "@/components/planning";
+import ClientFlowModal from "@/components/shared/client-flow-modal";
+import { useClientFlow } from "@/hooks/use-client-flow";
 
 export default function NovoPlnejamentoPage() {
   const router = useRouter();
   const [step, setStep] = useState<'client' | 'form'>('client');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
-  const handleClientSelected = (client: Client) => {
-    setSelectedClient(client);
-    setStep('form');
-  };
+  // Hook para gerenciar o modal de cliente
+  const clientFlow = useClientFlow({
+    title: "Selecionar Cliente para Planejamento",
+    description: "Escolha um cliente existente ou crie um novo para este planejamento estratégico",
+    onClientSelected: (client) => {
+      // Converter o tipo Client do useClients para o tipo esperado
+      const convertedClient: Client = {
+        id: client.id,
+        name: client.name,
+        industry: client.industry || 'Outro', // Converter null para string
+        richnessScore: client.richnessScore,
+        businessDetails: client.businessDetails || undefined,
+        createdAt: new Date(client.createdAt),
+      };
+      setSelectedClient(convertedClient);
+      setStep('form');
+    }
+  });
 
   const handleBackToClient = () => {
     setStep('client');
     setSelectedClient(null);
   };
 
-  if (step === 'form') {
+  if (step === 'form' && selectedClient) {
     return (
-      <div className="p-6 space-y-6">
-        {/* Header com breadcrumb */}
-        <div className="flex items-center gap-4">
-          <button
-            onClick={handleBackToClient}
-            className="p-2 text-seasalt/70 hover:text-seasalt transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-seasalt">Novo Planejamento</h1>
-            <p className="text-seasalt/70">
-              Cliente: {selectedClient?.name} • {selectedClient?.industry}
-            </p>
-          </div>
-        </div>
-
-        {/* Aqui será integrado o PlanningForm do PLAN-006 */}
-        <div className="bg-eerie-black rounded-lg p-8 border border-accent/20">
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-sgbus-green/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-sgbus-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-seasalt mb-2">
-              Formulário de Planejamento
-            </h3>
-            <p className="text-seasalt/70 mb-4">
-              Aqui será integrado o formulário completo do PLAN-006
-            </p>
-            <p className="text-sm text-seasalt/50">
-              📋 4 Abas: Básico → Setor → Marketing → Comercial<br />
-              🎯 Cliente: {selectedClient?.name}<br />
-              🏢 Setor: {selectedClient?.industry}
-            </p>
-          </div>
-        </div>
+      <div className="p-6">
+        <PlanningFormWithClient
+          client={selectedClient}
+          onBack={handleBackToClient}
+        />
       </div>
     );
   }
@@ -101,102 +77,83 @@ export default function NovoPlnejamentoPage() {
             <h3 className="text-lg font-semibold text-seasalt">Cliente Existente</h3>
           </div>
           <p className="text-seasalt/70 mb-6">
-            Selecione um cliente já cadastrado no sistema
+            Selecione um cliente já cadastrado no sistema ou crie um novo
           </p>
           
-          {/* Lista de clientes mockada */}
-          <div className="space-y-3 mb-6">
-            <div className="text-sm text-seasalt/50 mb-3">
-              Clientes recentes:
-            </div>
-            {/* Estados vazios para demonstração */}
-            <div className="text-center py-8 text-seasalt/50">
-              <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>Nenhum cliente cadastrado ainda</p>
-              <p className="text-sm">Crie um cliente primeiro</p>
-            </div>
+          <div className="text-center py-8">
+            <Users className="h-12 w-12 mx-auto mb-3 text-sgbus-green/50" />
+            <p className="text-seasalt/70 mb-4 text-sm">
+              Use o botão abaixo para buscar clientes existentes ou criar um novo cliente
+            </p>
           </div>
           
-          <button className="w-full bg-[#2A1B45] hover:bg-[#3A2B55] text-seasalt py-2 px-4 rounded-lg transition-colors border border-accent/20">
-            Ver Todos os Clientes
+          <button 
+            onClick={clientFlow.openModal}
+            className="w-full bg-sgbus-green hover:bg-sgbus-green/90 text-night py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+          >
+            <Users className="h-4 w-4" />
+            Selecionar ou Criar Cliente
           </button>
         </div>
 
-        {/* Novo Cliente */}
+        {/* Informações sobre o Processo */}
         <div className="bg-eerie-black rounded-lg p-6 border border-accent/20">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-sgbus-green/20 rounded-lg flex items-center justify-center">
-              <Plus className="h-4 w-4 text-sgbus-green" />
+            <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
+              <Plus className="h-4 w-4 text-blue-400" />
             </div>
-            <h3 className="text-lg font-semibold text-seasalt">Novo Cliente</h3>
+            <h3 className="text-lg font-semibold text-seasalt">Processo de Criação</h3>
           </div>
           <p className="text-seasalt/70 mb-6">
-            Crie um novo cliente rapidamente para este planejamento
+            Após selecionar ou criar um cliente, você será direcionado para o formulário completo
           </p>
           
-          {/* Formulário rápido */}
-          <div className="space-y-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-seasalt/70 mb-2">
-                Nome da Empresa
-              </label>
-              <input
-                type="text"
-                placeholder="Digite o nome da empresa..."
-                className="w-full bg-[#2A1B45] text-seasalt border border-accent/20 rounded-lg px-3 py-2 text-sm placeholder:text-seasalt/50 focus:outline-none focus:ring-2 focus:ring-sgbus-green/50"
-              />
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-sgbus-green rounded-full flex items-center justify-center text-night font-bold text-xs mt-0.5">
+                1
+              </div>
+              <div>
+                <h4 className="font-medium text-seasalt text-sm">Seleção de Cliente</h4>
+                <p className="text-seasalt/70 text-xs">Escolha um cliente ou crie um novo</p>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-seasalt/70 mb-2">
-                Setor/Indústria
-              </label>
-              <select className="w-full bg-[#2A1B45] text-seasalt border border-accent/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sgbus-green/50">
-                <option value="">Selecione o setor...</option>
-                <option value="Alimentação">Alimentação</option>
-                <option value="Saúde e Bem-estar">Saúde e Bem-estar</option>
-                <option value="Educação">Educação</option>
-                <option value="Varejo físico">Varejo físico</option>
-                <option value="E-commerce">E-commerce</option>
-                <option value="Serviços locais">Serviços locais</option>
-                <option value="Serviços B2B">Serviços B2B</option>
-                <option value="Tecnologia / SaaS">Tecnologia / SaaS</option>
-                <option value="Imobiliário">Imobiliário</option>
-                <option value="Indústria">Indústria</option>
-                <option value="Outro">Outro</option>
-              </select>
+            
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-seasalt/20 rounded-full flex items-center justify-center text-seasalt/70 font-bold text-xs mt-0.5">
+                2
+              </div>
+              <div>
+                <h4 className="font-medium text-seasalt text-sm">Informações Básicas</h4>
+                <p className="text-seasalt/70 text-xs">Título, descrição e dados iniciais</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-seasalt/20 rounded-full flex items-center justify-center text-seasalt/70 font-bold text-xs mt-0.5">
+                3
+              </div>
+              <div>
+                <h4 className="font-medium text-seasalt text-sm">Detalhes do Setor</h4>
+                <p className="text-seasalt/70 text-xs">Perguntas específicas por setor</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 bg-seasalt/20 rounded-full flex items-center justify-center text-seasalt/70 font-bold text-xs mt-0.5">
+                4
+              </div>
+              <div>
+                <h4 className="font-medium text-seasalt text-sm">Marketing & Comercial</h4>
+                <p className="text-seasalt/70 text-xs">Maturidade e objetivos estratégicos</p>
+              </div>
             </div>
           </div>
-          
-          <button className="w-full bg-sgbus-green hover:bg-sgbus-green/90 text-night py-2 px-4 rounded-lg font-medium transition-colors">
-            Criar Cliente e Continuar
-          </button>
         </div>
       </div>
 
-      {/* Informações do Fluxo */}
-      <div className="bg-eerie-black rounded-lg p-6 border border-accent/20">
-        <h3 className="text-lg font-semibold text-seasalt mb-3">
-          📋 Próximos Passos
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-sgbus-green rounded-full flex items-center justify-center text-night font-bold text-xs">1</div>
-            <span className="text-seasalt font-medium">Selecionar Cliente</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-seasalt/20 rounded-full flex items-center justify-center text-seasalt/70 font-bold text-xs">2</div>
-            <span className="text-seasalt/70">Informações Básicas</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-seasalt/20 rounded-full flex items-center justify-center text-seasalt/70 font-bold text-xs">3</div>
-            <span className="text-seasalt/70">Detalhes do Setor</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-seasalt/20 rounded-full flex items-center justify-center text-seasalt/70 font-bold text-xs">4</div>
-            <span className="text-seasalt/70">Marketing & Comercial</span>
-          </div>
-        </div>
-      </div>
+      {/* Modal de Cliente */}
+      <ClientFlowModal {...clientFlow.modalProps} />
     </div>
   );
 } 

@@ -1,12 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { Form } from '@/components/ui/form';
-import { ClientHeader } from './ClientHeader';
-import { FormProgress } from './FormProgress';
 import { BasicInfoTab } from './tabs/BasicInfoTab';
 import { SectorDetailsTab } from './tabs/SectorDetailsTab';
 import { MarketingTab } from './tabs/MarketingTab';
@@ -37,7 +34,7 @@ interface Tab {
 
 export function PlanningForm({ client, onSubmit, onSaveDraft }: PlanningFormProps) {
   const [currentTab, setCurrentTab] = useState(0);
-  const { progress, formData, updateFormData, prepareFinalPayload, hasSavedData } = usePlanningForm(client);
+  const { formData, updateFormData } = usePlanningForm(client);
 
   const form = useForm<PlanningFormData>({
     resolver: zodResolver(planningFormSchema),
@@ -45,19 +42,30 @@ export function PlanningForm({ client, onSubmit, onSaveDraft }: PlanningFormProp
     mode: 'onChange'
   });
 
-  // Auto-save para localStorage
+  // Auto-save para localStorage com throttling
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     const subscription = form.watch((data) => {
-      updateFormData(data as Partial<PlanningFormData>);
+      // Debounce para evitar muitas atualizações
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        updateFormData(data as Partial<PlanningFormData>);
+      }, 500);
     });
-    return () => subscription.unsubscribe();
-  }, [form.watch, updateFormData]);
 
-  // Carregar dados salvos do localStorage
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeoutId);
+    };
+  }, [updateFormData, form]);
+
+  // Carregar dados salvos do localStorage apenas uma vez
   useEffect(() => {
-    if (formData) {
-      form.reset(formData as any);
-      console.log('🔄 Formulário resetado com dados salvos');
+    if (formData && Object.keys(formData).length > 0 && !form.formState.isDirty) {
+      // Resetar o formulário com os dados salvos
+      form.reset(formData as PlanningFormData);
+      console.log('🔄 Formulário resetado com dados salvos:', formData);
     }
   }, [formData, form]);
 
@@ -84,26 +92,47 @@ export function PlanningForm({ client, onSubmit, onSaveDraft }: PlanningFormProp
     }
   ];
 
-  const handleFieldChange = (field: string, value: any) => {
-    form.setValue(field as any, value, { shouldValidate: true });
-  };
+  const handleFieldChange = useCallback((field: string, value: any) => {
+    const currentTabId = tabs[currentTab].id;
+    let fieldPath: string;
 
-  const handleSaveDraft = () => {
+    // Mapear o campo para a estrutura aninhada baseada na aba atual
+    switch (currentTabId) {
+      case 'informacoes_basicas':
+        fieldPath = `informacoes_basicas.${field}`;
+        break;
+      case 'detalhes_setor':
+        fieldPath = `detalhes_do_setor.${field}`;
+        break;
+      case 'marketing':
+        fieldPath = `marketing.${field}`;
+        break;
+      case 'comercial':
+        fieldPath = `comercial.${field}`;
+        break;
+      default:
+        fieldPath = field;
+    }
+
+    form.setValue(fieldPath as any, value, { shouldValidate: true, shouldDirty: true });
+    console.log(`📝 Campo atualizado: ${fieldPath} = ${value}`);
+  }, [form, currentTab, tabs]);
+
+  const handleSaveDraft = useCallback(() => {
     const currentData = form.getValues();
     onSaveDraft(currentData);
-  };
+  }, [form, onSaveDraft]);
 
-  const handleFormSubmit = (data: PlanningFormData) => {
+  const handleFormSubmit = useCallback((data: PlanningFormData) => {
     console.log('📝 Formulário submetido:', data);
     onSubmit(data);
-  };
+  }, [onSubmit]);
 
-  const handleTabChange = (tabIndex: number) => {
-    // Validar a aba atual antes de mudar (opcional)
+  const handleTabChange = useCallback((tabIndex: number) => {
     setCurrentTab(tabIndex);
-  };
+  }, []);
 
-  const getCurrentTabData = () => {
+  const getCurrentTabData = useCallback(() => {
     const allData = form.getValues();
     const currentTabId = tabs[currentTab].id;
     
@@ -119,25 +148,51 @@ export function PlanningForm({ client, onSubmit, onSaveDraft }: PlanningFormProp
       default:
         return {};
     }
-  };
+  }, [form, currentTab, tabs]);
 
-  const getCurrentTabErrors = () => {
+  const getCurrentTabErrors = useCallback(() => {
     const errors = form.formState.errors;
     const currentTabId = tabs[currentTab].id;
     
+    // Função helper para extrair mensagens de erro de forma segura
+    const extractErrorMessages = (errorObj: any): Record<string, string> => {
+      if (!errorObj || typeof errorObj !== 'object') return {};
+      
+      const result: Record<string, string> = {};
+      
+      try {
+        Object.keys(errorObj).forEach(key => {
+          const error = errorObj[key];
+          if (error) {
+            if (typeof error === 'string') {
+              result[key] = error;
+            } else if (error && typeof error === 'object' && error.message) {
+              result[key] = String(error.message);
+            } else if (error) {
+              result[key] = 'Erro de validação';
+            }
+          }
+        });
+      } catch (e) {
+        console.warn('Erro ao processar erros de validação:', e);
+      }
+      
+      return result;
+    };
+    
     switch (currentTabId) {
       case 'informacoes_basicas':
-        return errors.informacoes_basicas || {};
+        return extractErrorMessages(errors.informacoes_basicas);
       case 'detalhes_setor':
-        return errors.detalhes_do_setor || {};
+        return extractErrorMessages(errors.detalhes_do_setor);
       case 'marketing':
-        return errors.marketing || {};
+        return extractErrorMessages(errors.marketing);
       case 'comercial':
-        return errors.comercial || {};
+        return extractErrorMessages(errors.comercial);
       default:
         return {};
     }
-  };
+  }, [form.formState.errors, currentTab, tabs]);
 
   const renderCurrentTab = () => {
     const TabComponent = tabs[currentTab].component;
@@ -145,44 +200,41 @@ export function PlanningForm({ client, onSubmit, onSaveDraft }: PlanningFormProp
     const tabErrors = getCurrentTabErrors();
 
     const commonProps = {
-      formData: tabData,
+      formData: tabData || {},
       onFieldChange: handleFieldChange,
-      errors: tabErrors
+      errors: tabErrors || {}
     };
 
-    switch (tabs[currentTab].id) {
-      case 'informacoes_basicas':
-        return <TabComponent {...commonProps} client={client} />;
-      case 'detalhes_setor':
-        return <TabComponent {...commonProps} sector={client.industry} />;
-      case 'marketing':
-      case 'comercial':
-        return <TabComponent {...commonProps} />;
-      default:
-        return null;
+    try {
+      switch (tabs[currentTab].id) {
+        case 'informacoes_basicas':
+          return <TabComponent {...commonProps} client={client} />;
+        case 'detalhes_setor':
+          return <TabComponent {...commonProps} sector={client.industry} />;
+        case 'marketing':
+        case 'comercial':
+          return <TabComponent {...commonProps} />;
+        default:
+          return <div className="text-seasalt">Aba não encontrada</div>;
+      }
+    } catch (error) {
+      console.error(`❌ Erro ao renderizar aba ${tabs[currentTab].id}:`, error);
+      return (
+        <div className="text-red-400 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <h4 className="font-medium mb-2">Erro ao carregar aba</h4>
+          <p className="text-sm">
+            Ocorreu um erro ao renderizar esta aba. Verifique o console para mais detalhes.
+          </p>
+        </div>
+      );
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <ClientHeader client={client} />
-      <FormProgress currentProgress={progress} currentTab={currentTab} />
-
-      {/* Recovery notification */}
-      {hasSavedData() && (
-        <div className="mb-6 p-4 bg-sgbus-green/10 border border-sgbus-green/20 rounded-lg">
-          <div className="flex items-center space-x-2">
-            <span className="text-sgbus-green">💾</span>
-            <p className="text-sgbus-green text-sm">
-              Dados recuperados automaticamente do seu último preenchimento.
-            </p>
-          </div>
-        </div>
-      )}
-
+    <div className="space-y-6">
       {/* Tab Navigation */}
-      <div className="mb-6">
-        <nav className="flex space-x-8 border-b border-seasalt/20">
+      <div className="bg-eerie-black rounded-lg border border-accent/20">
+        <nav className="flex space-x-8 border-b border-seasalt/20 p-4">
           {tabs.map((tab, index) => (
             <button
               key={tab.id}
@@ -197,7 +249,7 @@ export function PlanningForm({ client, onSubmit, onSaveDraft }: PlanningFormProp
                 <span className={`w-6 h-6 rounded-full text-xs flex items-center justify-center ${
                   currentTab === index 
                     ? 'bg-sgbus-green text-night' 
-                    : 'bg-eerie-black text-periwinkle'
+                    : 'bg-night text-periwinkle border border-seasalt/20'
                 }`}>
                   {index + 1}
                 </span>
@@ -206,17 +258,15 @@ export function PlanningForm({ client, onSubmit, onSaveDraft }: PlanningFormProp
             </button>
           ))}
         </nav>
-      </div>
 
-      {/* Form Content */}
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-          <div className="min-h-[400px]">
+        {/* Form Content */}
+        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="p-6">
+          <div className="min-h-[500px]">
             {renderCurrentTab()}
           </div>
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between items-center pt-8 border-t border-seasalt/20">
+          <div className="flex justify-between items-center pt-8 border-t border-seasalt/20 mt-8">
             <Button
               type="button"
               variant="outline"
@@ -232,7 +282,7 @@ export function PlanningForm({ client, onSubmit, onSaveDraft }: PlanningFormProp
                 type="button"
                 variant="secondary"
                 onClick={handleSaveDraft}
-                className="bg-eerie-black text-seasalt hover:bg-eerie-black/80"
+                className="bg-night text-seasalt hover:bg-night/80 border border-seasalt/20"
               >
                 💾 Salvar Rascunho
               </Button>
@@ -256,18 +306,6 @@ export function PlanningForm({ client, onSubmit, onSaveDraft }: PlanningFormProp
             </div>
           </div>
         </form>
-      </Form>
-
-      {/* Progress Summary */}
-      <div className="mt-8 p-4 bg-eerie-black rounded-lg">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-periwinkle">
-            Progresso geral: <strong className="text-seasalt">{progress}%</strong>
-          </span>
-          <span className="text-periwinkle">
-            Aba {currentTab + 1} de {tabs.length}: <strong className="text-seasalt">{tabs[currentTab].label}</strong>
-          </span>
-        </div>
       </div>
     </div>
   );

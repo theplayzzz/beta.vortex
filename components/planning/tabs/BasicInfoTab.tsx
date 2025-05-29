@@ -68,69 +68,6 @@ export function BasicInfoTab({ client, formData, onFieldChange, errors }: BasicI
           <p className="text-red-400 text-sm">{errors.descricao_objetivo}</p>
         )}
       </div>
-
-      {/* Setor (Readonly) */}
-      <div className="space-y-3">
-        <label className="block text-sm font-medium text-seasalt">
-          Setor do Cliente
-        </label>
-        
-        <div className="w-full px-4 py-3 bg-eerie-black border border-seasalt/10 rounded-lg text-seasalt">
-          {client.industry}
-          {client.industry === "Outro" && client.businessDetails && (
-            <div className="mt-2 text-periwinkle text-sm">
-              <strong>Detalhes:</strong> {client.businessDetails}
-            </div>
-          )}
-        </div>
-        
-        <p className="text-periwinkle text-xs">
-          O setor é definido no cadastro do cliente e não pode ser alterado aqui.
-        </p>
-      </div>
-
-      {/* Informações do Cliente (Contexto) */}
-      <div className="bg-eerie-black rounded-lg p-4">
-        <h4 className="text-seasalt font-medium mb-3 flex items-center">
-          📋 Contexto do Cliente
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-periwinkle">Cliente:</span>
-            <div className="text-seasalt font-medium">{client.name}</div>
-          </div>
-          <div>
-            <span className="text-periwinkle">Setor:</span>
-            <div className="text-seasalt">{client.industry}</div>
-          </div>
-          <div>
-            <span className="text-periwinkle">Score de Dados:</span>
-            <div className="text-seasalt">{client.richnessScore}%</div>
-          </div>
-          <div>
-            <span className="text-periwinkle">ID do Cliente:</span>
-            <div className="text-seasalt font-mono text-xs">{client.id}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Dica */}
-      <div className="mt-8 p-4 bg-eerie-black rounded-lg">
-        <div className="flex items-start space-x-3">
-          <div className="flex-shrink-0">
-            <div className="w-6 h-6 bg-sgbus-green/20 rounded-full flex items-center justify-center">
-              <span className="text-sgbus-green text-sm">💡</span>
-            </div>
-          </div>
-          <div>
-            <h4 className="text-seasalt font-medium mb-1">Dica de Preenchimento</h4>
-            <p className="text-periwinkle text-sm">
-              Seja específico no título e objetivo. Essas informações guiarão toda a criação 
-              do planejamento estratégico pela IA. Evite termos muito genéricos.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 } 
