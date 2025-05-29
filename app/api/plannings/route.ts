@@ -215,11 +215,15 @@ export async function POST(request: NextRequest) {
         console.log('📡 Enviando webhook para:', process.env.PLANNING_WEBHOOK_URL);
         console.log('📤 Payload do webhook:', JSON.stringify(webhookPayload, null, 2));
         
+        // Obter domínio da aplicação
+        const originDomain = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3003';
+        
         const webhookResponse = await fetch(process.env.PLANNING_WEBHOOK_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-Webhook-Secret': process.env.WEBHOOK_SECRET || '',
+            'X-Origin-Domain': originDomain,
             'User-Agent': 'Vortex-Planning-System/1.0'
           },
           body: JSON.stringify(webhookPayload)
@@ -227,6 +231,7 @@ export async function POST(request: NextRequest) {
 
         if (webhookResponse.ok) {
           console.log('✅ Webhook enviado com sucesso');
+          console.log('🌐 Domínio de origem incluído:', originDomain);
         } else {
           console.error('❌ Erro no webhook:', webhookResponse.status, await webhookResponse.text());
         }

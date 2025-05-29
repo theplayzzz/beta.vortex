@@ -9,9 +9,34 @@ const UpdateClientSchema = z.object({
   industry: z.union([z.string(), z.null()]).optional(),
   serviceOrProduct: z.union([z.string(), z.null()]).optional(),
   initialObjective: z.union([z.string(), z.null()]).optional(),
-  contactEmail: z.union([z.string().email('E-mail inválido'), z.literal(''), z.null()]).optional(),
+  contactEmail: z.union([z.string(), z.null(), z.undefined()])
+    .optional()
+    .transform(val => val === '' || val === undefined ? null : val)
+    .refine(val => {
+      if (!val) return true; // null/undefined é válido
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(val);
+    }, 'E-mail deve ter um formato válido'),
   contactPhone: z.union([z.string(), z.null()]).optional(),
-  website: z.union([z.string().url('URL inválida'), z.literal(''), z.null()]).optional(),
+  website: z.union([z.string(), z.null(), z.undefined()])
+    .optional()
+    .transform(val => val === '' || val === undefined ? null : val)
+    .refine(val => {
+      if (!val) return true; // null/undefined é válido
+      try {
+        // Verificar se contém pelo menos um ponto (domínio válido)
+        if (!val.includes('.')) return false;
+        
+        // Tentar com protocolo se não tiver
+        const urlToTest = val.startsWith('http') ? val : `https://${val}`;
+        const url = new URL(urlToTest);
+        
+        // Verificar se o hostname tem pelo menos um ponto
+        return url.hostname.includes('.');
+      } catch {
+        return false;
+      }
+    }, 'Website deve ter um formato válido de URL'),
   address: z.union([z.string(), z.null()]).optional(),
   businessDetails: z.union([z.string(), z.null()]).optional(),
   targetAudience: z.union([z.string(), z.null()]).optional(),
@@ -103,6 +128,8 @@ export async function PUT(
     const { clientId } = await params
     const body = await request.json()
 
+    console.log('📝 Dados recebidos para atualização:', JSON.stringify(body, null, 2));
+
     // Validar dados
     const validatedData = UpdateClientSchema.parse(body)
 
@@ -185,11 +212,25 @@ export async function PUT(
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error('❌ Erro de validação Zod:', error.errors);
+      
+      // Extrair mensagens de erro mais específicas
+      const fieldErrors = error.errors.map(err => ({
+        field: err.path.join('.'),
+        message: err.message,
+        code: err.code,
+        received: err.message.includes('email') || err.message.includes('URL') ? 'Formato inválido' : undefined
+      }));
+      
+      const specificMessage = fieldErrors.length === 1 
+        ? `Erro no campo ${fieldErrors[0].field}: ${fieldErrors[0].message}`
+        : `Encontrados ${fieldErrors.length} erros de validação`;
+      
       return NextResponse.json(
         { 
           error: 'Dados inválidos', 
-          details: error.errors,
-          message: 'Verifique os campos preenchidos e tente novamente'
+          details: fieldErrors,
+          message: specificMessage,
+          debug: process.env.NODE_ENV === 'development' ? error.errors : undefined
         },
         { status: 400 }
       )
