@@ -16,7 +16,7 @@ status: draft
 
 ## 🧩 Scope
 
-Implementar o sistema completo de geração de backlog por IA, interface de aprovação e refinamento de tarefas, criação de listas refinadas, e gestão avançada do sistema de créditos. Esta fase constrói sobre a infraestrutura criada no plan-005, adicionando processamento inteligente, webhooks, sistema de aprovação interativo e criação final de tarefas executáveis.
+Implementar o sistema completo de geração de backlog por IA, interface de aprovação e refinamento de tarefas, criação de listas refinadas, e gestão avançada do sistema de créditos. Esta fase constrói sobre a infraestrutura criada no plan 006 007 008 , adicionando processamento inteligente, webhooks, sistema de aprovação interativo e criação final de tarefas executáveis.
 
 ### Componentes Desta Fase:
 - **Integração com IA Externa**: 

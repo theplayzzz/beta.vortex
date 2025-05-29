@@ -77,6 +77,7 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
   // Inicializar com 0 e garantir que sempre seja um número válido
   const [currentTabState, setCurrentTabState] = useState<number>(0);
   const [tabsWithErrors, setTabsWithErrors] = useState<Set<number>>(new Set());
+  const [pendingTabNavigation, setPendingTabNavigation] = useState<number | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<{
     type: 'error' | 'success' | 'info';
     message: string;
@@ -93,12 +94,21 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
     console.log(`🔄 Aba alterada para: ${validTab} (${TABS[validTab]?.label || 'Indefinida'})`);
   }, []);
 
+  // useEffect para lidar com navegação pendente de aba (corrige o erro de React)
+  useEffect(() => {
+    if (pendingTabNavigation !== null) {
+      console.log(`🎯 Executando navegação pendente para aba: ${pendingTabNavigation}`);
+      setCurrentTab(pendingTabNavigation);
+      setPendingTabNavigation(null);
+    }
+  }, [pendingTabNavigation, setCurrentTab]);
+
   const { formData, updateFormData } = usePlanningForm(client);
 
   const form = useForm<PlanningFormData>({
     resolver: zodResolver(planningFormSchema),
     defaultValues: getDefaultValues(client.industry),
-    mode: 'onChange'
+    mode: 'onSubmit'
   });
 
   // Função para mudança segura de aba
@@ -311,9 +321,7 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
         setTabsWithErrors(errorTabIndices);
         
         if (tabsWithErrorsData.length > 0) {
-          // Navegar para a primeira aba com erro
           const firstErrorTab = tabsWithErrorsData[0];
-          setCurrentTab(firstErrorTab.tabIndex);
           
           // Mostrar mensagem de erro específica
           const errorMessage = tabsWithErrorsData.length === 1 
@@ -329,6 +337,10 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
             message: errorMessage,
             details: firstErrorTab.errors
           });
+          
+          // Usar estado pendente para navegação de aba (corrige o erro de React)
+          console.log(`🎯 Programando navegação para aba com erro: ${firstErrorTab.tabIndex}`);
+          setPendingTabNavigation(firstErrorTab.tabIndex);
           
           console.log('❌ SUBMISSÃO CANCELADA - Erros de validação encontrados');
           return;
@@ -377,7 +389,7 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
         });
       }
     }
-  }, [onSubmit, form, setCurrentTab]);
+  }, [onSubmit, form]);
 
   const handleTabChange = useCallback((tabIndex: number) => {
     safeSetCurrentTab(tabIndex);
@@ -639,7 +651,12 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
               {currentTab < TABS.length - 1 ? (
                 <Button
                   type="button"
-                  onClick={() => safeSetCurrentTab(currentTab + 1)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🔄 Botão PRÓXIMO clicado - navegando para próxima aba');
+                    safeSetCurrentTab(currentTab + 1);
+                  }}
                   className="bg-sgbus-green text-night hover:bg-sgbus-green/90"
                 >
                   Próximo →

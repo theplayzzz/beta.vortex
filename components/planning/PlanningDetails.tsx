@@ -1,12 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { 
   ArrowLeft, 
   Calendar, 
   Edit3, 
   MoreVertical,
-  Clock
+  Clock,
+  Target,
+  FileText,
+  Loader2
 } from 'lucide-react';
 import { FormDataDisplay } from './FormDataDisplay';
 import { RichnessScoreBadge } from './RichnessScoreBadge';
@@ -30,6 +34,7 @@ interface Planning {
   updatedAt: string;
   formDataJSON?: any;
   clientSnapshot?: any;
+  specificObjectives?: string;
   Client: Client;
 }
 
@@ -95,6 +100,8 @@ function formatRelativeDate(dateString: string): string {
 }
 
 export function PlanningDetails({ planning, isLoading = false }: PlanningDetailsProps) {
+  const [currentTab, setCurrentTab] = useState<'form_data' | 'objectives'>('form_data');
+  
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -108,6 +115,10 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
   }
 
   const status = statusConfig[planning.status as keyof typeof statusConfig] || statusConfig.DRAFT;
+  
+  // Verificar se os objetivos específicos estão disponíveis
+  const hasSpecificObjectives = planning.specificObjectives && planning.specificObjectives.trim().length > 0;
+  const isObjectivesProcessing = planning.status === 'PENDING_AI_BACKLOG_GENERATION';
 
   return (
     <div className="p-6 space-y-6">
@@ -172,9 +183,95 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
         </div>
       </div>
 
-      {/* Conteúdo Principal: Dados do Formulário */}
-      <div className="space-y-6">
-        <FormDataDisplay formData={planning.formDataJSON} />
+      {/* Sistema de Abas */}
+      <div className="bg-eerie-black rounded-lg border border-accent/20">
+        {/* Navigation Tabs */}
+        <nav className="flex border-b border-seasalt/20 p-4">
+          <button
+            onClick={() => setCurrentTab('form_data')}
+            className={`pb-3 border-b-2 font-medium text-sm transition-colors mr-8 ${
+              currentTab === 'form_data'
+                ? 'border-sgbus-green text-sgbus-green'
+                : 'border-transparent text-periwinkle hover:text-seasalt hover:border-seasalt/40'
+            }`}
+          >
+            <span className="flex items-center space-x-2">
+              <FileText className="h-4 w-4" />
+              <span>Dados do Formulário</span>
+            </span>
+          </button>
+          
+          <button
+            onClick={() => hasSpecificObjectives && setCurrentTab('objectives')}
+            disabled={!hasSpecificObjectives && !isObjectivesProcessing}
+            className={`pb-3 border-b-2 font-medium text-sm transition-colors ${
+              currentTab === 'objectives'
+                ? 'border-sgbus-green text-sgbus-green'
+                : hasSpecificObjectives
+                  ? 'border-transparent text-periwinkle hover:text-seasalt hover:border-seasalt/40'
+                  : 'border-transparent text-seasalt/40 cursor-not-allowed'
+            }`}
+          >
+            <span className="flex items-center space-x-2">
+              {isObjectivesProcessing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Target className="h-4 w-4" />
+              )}
+              <span>Objetivos Específicos</span>
+              {!hasSpecificObjectives && !isObjectivesProcessing && (
+                <span className="text-xs bg-seasalt/20 px-2 py-1 rounded">Aguardando IA</span>
+              )}
+            </span>
+          </button>
+        </nav>
+
+        {/* Tab Content */}
+        <div className="p-6">
+          {currentTab === 'form_data' ? (
+            <FormDataDisplay formData={planning.formDataJSON} />
+          ) : (
+            <div className="space-y-4">
+              {isObjectivesProcessing ? (
+                <div className="text-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-sgbus-green" />
+                  <h3 className="text-lg font-semibold text-seasalt mb-2">
+                    Processando Objetivos Específicos
+                  </h3>
+                  <p className="text-seasalt/70">
+                    Nossa IA está analisando os dados do formulário para gerar objetivos específicos personalizados.
+                    Isso pode levar alguns minutos.
+                  </p>
+                </div>
+              ) : hasSpecificObjectives ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Target className="h-6 w-6 text-sgbus-green" />
+                    <h3 className="text-xl font-semibold text-seasalt">
+                      Objetivos Específicos Gerados pela IA
+                    </h3>
+                  </div>
+                  <div className="bg-night rounded-lg p-6 border border-accent/20">
+                    <div 
+                      className="text-seasalt/90 prose prose-invert max-w-none"
+                      dangerouslySetInnerHTML={{ __html: planning.specificObjectives || '' }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Target className="h-8 w-8 mx-auto mb-4 text-seasalt/40" />
+                  <h3 className="text-lg font-semibold text-seasalt/70 mb-2">
+                    Objetivos Específicos Não Disponíveis
+                  </h3>
+                  <p className="text-seasalt/50">
+                    Esta funcionalidade estará disponível após o processamento do webhook.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
