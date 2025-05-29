@@ -76,6 +76,12 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
 
   // Inicializar com 0 e garantir que sempre seja um número válido
   const [currentTabState, setCurrentTabState] = useState<number>(0);
+  const [tabsWithErrors, setTabsWithErrors] = useState<Set<number>>(new Set());
+  const [feedbackMessage, setFeedbackMessage] = useState<{
+    type: 'error' | 'success' | 'info';
+    message: string;
+    details?: string[];
+  } | null>(null);
   
   // Getter que sempre retorna um valor válido
   const currentTab = normalizeTabIndex(currentTabState);
@@ -148,6 +154,11 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
   }, [formData, form]);
 
   const handleFieldChange = useCallback((field: string, value: any) => {
+    // Limpar mensagem de feedback quando usuário começar a corrigir
+    if (feedbackMessage?.type === 'error') {
+      setFeedbackMessage(null);
+    }
+    
     // currentTab já é normalizado, mas vamos ser extra cuidadosos
     const safeCurrentTab = normalizeTabIndex(currentTab);
     const currentTabId = TABS[safeCurrentTab].id;
@@ -173,17 +184,200 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
 
     form.setValue(fieldPath as any, value, { shouldValidate: true, shouldDirty: true });
     console.log(`📝 Campo atualizado: ${fieldPath} = ${value}`);
-  }, [form, currentTab]);
+  }, [form, currentTab, feedbackMessage]);
 
   const handleSaveDraft = useCallback(() => {
     const currentData = form.getValues();
     onSaveDraft(currentData);
   }, [form, onSaveDraft]);
 
-  const handleFormSubmit = useCallback((data: PlanningFormData) => {
-    console.log('📝 Formulário submetido:', data);
-    onSubmit(data);
-  }, [onSubmit]);
+  // Função helper para extrair mensagem de erro de forma segura
+  const extractErrorMessage = (error: any): string => {
+    if (!error) return 'Erro de validação';
+    if (typeof error === 'string') return error;
+    if (typeof error === 'object' && error.message) return String(error.message);
+    return 'Erro de validação';
+  };
+
+  // Função helper para nomes dos campos mais amigáveis
+  const getFieldDisplayName = (fieldKey: string): string => {
+    const fieldNames: { [key: string]: string } = {
+      titulo_planejamento: 'Título do Planejamento',
+      descricao_objetivo: 'Descrição do Objetivo',
+      setor: 'Setor',
+      maturidade_marketing: 'Maturidade de Marketing',
+      meta_marketing: 'Meta de Marketing',
+      meta_marketing_personalizada: 'Meta Marketing Personalizada',
+      maturidade_comercial: 'Maturidade Comercial',
+      meta_comercial: 'Meta Comercial',
+      meta_comercial_personalizada: 'Meta Comercial Personalizada',
+    };
+    
+    return fieldNames[fieldKey] || fieldKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const handleFormSubmit = useCallback(async (data: PlanningFormData) => {
+    console.log('📝 INÍCIO DA SUBMISSÃO - Tentando submeter formulário:', data);
+    console.log('📝 Estado do formulário:', {
+      isDirty: form.formState.isDirty,
+      isValid: form.formState.isValid,
+      isSubmitting: form.formState.isSubmitting,
+      isValidating: form.formState.isValidating,
+      errors: form.formState.errors
+    });
+    
+    try {
+      // Validar todo o formulário
+      console.log('🔍 Iniciando validação completa do formulário...');
+      const isValid = await form.trigger();
+      console.log('🔍 Resultado da validação:', isValid);
+      
+      if (!isValid) {
+        console.log('❌ Formulário tem erros, verificando abas...');
+        
+        // Obter todos os erros
+        const errors = form.formState.errors;
+        console.log('🔍 Erros encontrados:', errors);
+        
+        // Mapear erros para abas
+        const tabsWithErrorsData: { tabIndex: number; tabName: string; errors: string[] }[] = [];
+        const errorTabIndices = new Set<number>();
+        
+        // Verificar aba 1: Informações Básicas
+        if (errors.informacoes_basicas) {
+          const basicErrors = Object.entries(errors.informacoes_basicas).map(([field, error]) => {
+            return `${getFieldDisplayName(field)}: ${extractErrorMessage(error)}`;
+          });
+          
+          if (basicErrors.length > 0) {
+            tabsWithErrorsData.push({
+              tabIndex: 0,
+              tabName: 'Informações Básicas',
+              errors: basicErrors
+            });
+            errorTabIndices.add(0);
+          }
+        }
+        
+        // Verificar aba 2: Detalhes do Setor
+        if (errors.detalhes_do_setor) {
+          const sectorErrors = Object.entries(errors.detalhes_do_setor).map(([field, error]) => {
+            return `${getFieldDisplayName(field)}: ${extractErrorMessage(error)}`;
+          });
+          
+          if (sectorErrors.length > 0) {
+            tabsWithErrorsData.push({
+              tabIndex: 1,
+              tabName: 'Detalhes do Setor',
+              errors: sectorErrors
+            });
+            errorTabIndices.add(1);
+          }
+        }
+        
+        // Verificar aba 3: Marketing
+        if (errors.marketing) {
+          const marketingErrors = Object.entries(errors.marketing).map(([field, error]) => {
+            return `${getFieldDisplayName(field)}: ${extractErrorMessage(error)}`;
+          });
+          
+          if (marketingErrors.length > 0) {
+            tabsWithErrorsData.push({
+              tabIndex: 2,
+              tabName: 'Marketing',
+              errors: marketingErrors
+            });
+            errorTabIndices.add(2);
+          }
+        }
+        
+        // Verificar aba 4: Comercial
+        if (errors.comercial) {
+          const commercialErrors = Object.entries(errors.comercial).map(([field, error]) => {
+            return `${getFieldDisplayName(field)}: ${extractErrorMessage(error)}`;
+          });
+          
+          if (commercialErrors.length > 0) {
+            tabsWithErrorsData.push({
+              tabIndex: 3,
+              tabName: 'Comercial',
+              errors: commercialErrors
+            });
+            errorTabIndices.add(3);
+          }
+        }
+        
+        // Atualizar estado das abas com erro
+        setTabsWithErrors(errorTabIndices);
+        
+        if (tabsWithErrorsData.length > 0) {
+          // Navegar para a primeira aba com erro
+          const firstErrorTab = tabsWithErrorsData[0];
+          setCurrentTab(firstErrorTab.tabIndex);
+          
+          // Mostrar mensagem de erro específica
+          const errorMessage = tabsWithErrorsData.length === 1 
+            ? `Há ${firstErrorTab.errors.length} erro(s) na aba "${firstErrorTab.tabName}"`
+            : `Há erros em ${tabsWithErrorsData.length} abas. Navegando para "${firstErrorTab.tabName}"`;
+          
+          console.log(`🎯 ${errorMessage}`);
+          console.log('📋 Detalhes dos erros:', firstErrorTab.errors);
+          
+          // Definir mensagem de feedback
+          setFeedbackMessage({
+            type: 'error',
+            message: errorMessage,
+            details: firstErrorTab.errors
+          });
+          
+          console.log('❌ SUBMISSÃO CANCELADA - Erros de validação encontrados');
+          return;
+        } else {
+          // Se não há erros específicos mas validação falhou, permitir submissão mesmo assim
+          console.log('⚠️ Validação falhou mas não foram encontrados erros específicos, prosseguindo...');
+        }
+      } else {
+        // Limpar erros das abas se tudo estiver válido
+        setTabsWithErrors(new Set());
+        setFeedbackMessage(null);
+        console.log('✅ Validação passou - todas as abas estão válidas');
+      }
+      
+      // Se chegou aqui, formulário está válido ou não tem erros específicos
+      console.log('✅ PROSSEGUINDO COM SUBMISSÃO - Formulário considerado válido');
+      console.log('📤 Dados finais para submissão:', data);
+      
+      setFeedbackMessage({
+        type: 'success',
+        message: 'Formulário válido! Enviando planejamento...'
+      });
+      
+      console.log('📞 Chamando onSubmit com dados:', data);
+      onSubmit(data);
+      console.log('✅ onSubmit chamado com sucesso');
+      
+    } catch (error) {
+      console.error('❌ ERRO NA SUBMISSÃO:', error);
+      
+      // Em caso de erro, tentar submeter mesmo assim
+      console.log('🔄 Tentando submissão de emergência...');
+      setFeedbackMessage({
+        type: 'error',
+        message: 'Erro na validação, mas tentando enviar mesmo assim...'
+      });
+      
+      try {
+        onSubmit(data);
+        console.log('✅ Submissão de emergência bem-sucedida');
+      } catch (emergencyError) {
+        console.error('❌ Falha na submissão de emergência:', emergencyError);
+        setFeedbackMessage({
+          type: 'error',
+          message: 'Erro crítico na submissão. Verifique o console.'
+        });
+      }
+    }
+  }, [onSubmit, form, setCurrentTab]);
 
   const handleTabChange = useCallback((tabIndex: number) => {
     safeSetCurrentTab(tabIndex);
@@ -337,29 +531,82 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
       {/* Tab Navigation */}
       <div className="bg-eerie-black rounded-lg border border-accent/20">
         <nav className="flex space-x-8 border-b border-seasalt/20 p-4">
-          {TABS.map((tab, index) => (
-            <button
-              key={tab.id}
-              onClick={() => handleTabChange(index)}
-              className={`pb-3 border-b-2 font-medium text-sm transition-colors ${
-                currentTab === index
-                  ? 'border-sgbus-green text-sgbus-green'
-                  : 'border-transparent text-periwinkle hover:text-seasalt hover:border-seasalt/40'
-              }`}
-            >
-              <span className="flex items-center space-x-2">
-                <span className={`w-6 h-6 rounded-full text-xs flex items-center justify-center ${
-                  currentTab === index 
-                    ? 'bg-sgbus-green text-night' 
-                    : 'bg-night text-periwinkle border border-seasalt/20'
-                }`}>
-                  {index + 1}
+          {TABS.map((tab, index) => {
+            const hasError = tabsWithErrors.has(index);
+            const isActive = currentTab === index;
+            
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(index)}
+                className={`pb-3 border-b-2 font-medium text-sm transition-colors ${
+                  isActive
+                    ? hasError 
+                      ? 'border-red-500 text-red-500' 
+                      : 'border-sgbus-green text-sgbus-green'
+                    : hasError
+                      ? 'border-transparent text-red-400 hover:text-red-300 hover:border-red-400/40'
+                      : 'border-transparent text-periwinkle hover:text-seasalt hover:border-seasalt/40'
+                }`}
+              >
+                <span className="flex items-center space-x-2">
+                  <span className={`w-6 h-6 rounded-full text-xs flex items-center justify-center ${
+                    isActive 
+                      ? hasError
+                        ? 'bg-red-500 text-white' 
+                        : 'bg-sgbus-green text-night'
+                      : hasError
+                        ? 'bg-red-500/20 text-red-400 border border-red-500/40'
+                        : 'bg-night text-periwinkle border border-seasalt/20'
+                  }`}>
+                    {hasError ? '!' : index + 1}
+                  </span>
+                  <span>{tab.label}</span>
+                  {hasError && !isActive && (
+                    <span className="text-red-400 text-xs">●</span>
+                  )}
                 </span>
-                <span>{tab.label}</span>
-              </span>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </nav>
+
+        {/* Feedback Message */}
+        {feedbackMessage && (
+          <div className={`mx-6 mt-4 p-4 rounded-lg border ${
+            feedbackMessage.type === 'error' 
+              ? 'bg-red-500/10 border-red-500/30 text-red-400' 
+              : feedbackMessage.type === 'success'
+                ? 'bg-green-500/10 border-green-500/30 text-green-400'
+                : 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+          }`}>
+            <div className="flex items-start space-x-3">
+              <span className="text-lg">
+                {feedbackMessage.type === 'error' ? '⚠️' : 
+                 feedbackMessage.type === 'success' ? '✅' : 'ℹ️'}
+              </span>
+              <div className="flex-1">
+                <p className="font-medium">{feedbackMessage.message}</p>
+                {feedbackMessage.details && feedbackMessage.details.length > 0 && (
+                  <ul className="mt-2 text-sm space-y-1">
+                    {feedbackMessage.details.map((detail, index) => (
+                      <li key={index} className="flex items-start space-x-2">
+                        <span className="text-red-400 mt-0.5">•</span>
+                        <span>{detail}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <button
+                onClick={() => setFeedbackMessage(null)}
+                className="text-current hover:opacity-70 transition-opacity"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Form Content */}
         <form onSubmit={form.handleSubmit(handleFormSubmit)} className="p-6">

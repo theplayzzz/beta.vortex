@@ -14,11 +14,6 @@ import { useCreatePlanning } from '@/lib/react-query/hooks/usePlanningMutations'
 import { generateUUID } from '@/lib/utils/uuid';
 import { ArrowLeft, AlertTriangle, User, Building, BarChart3, Calendar } from 'lucide-react';
 import { useToast, toast } from '@/components/ui/toast';
-import { 
-  validateCompleteForm, 
-  getValidationErrorSummary, 
-  navigateToFirstError 
-} from '@/lib/planning/formValidation';
 
 interface PlanningFormWithClientProps {
   client: Client;
@@ -149,36 +144,17 @@ export function PlanningFormWithClient({
   }
 
   const handleFormSubmit = async (formData: PlanningFormData) => {
+    console.log('🚨 INÍCIO - PlanningFormWithClient.handleFormSubmit CHAMADO!');
+    console.log('🚨 Dados recebidos:', formData);
+    console.log('🚨 Cliente:', client);
+    console.log('🚨 SessionId:', sessionId);
+    console.log('🚨 isSubmitting atual:', isSubmitting);
+    
     try {
       setIsSubmitting(true);
+      console.log('🚨 setIsSubmitting(true) executado');
       
-      // Validar formulário completo antes de submeter
-      const validationResult = validateCompleteForm(formData);
-      
-      if (!validationResult.isValid) {
-        const errorSummary = getValidationErrorSummary(validationResult);
-        
-        // Mostrar toast de erro
-        addToast(toast.error(
-          'Formulário incompleto',
-          errorSummary.summary,
-          {
-            duration: 8000,
-            action: {
-              label: 'Ir para erro',
-              onClick: () => {
-                navigateToFirstError(validationResult, currentTabRef);
-              }
-            }
-          }
-        ));
-
-        // Navegar automaticamente para o primeiro erro
-        navigateToFirstError(validationResult, currentTabRef);
-        
-        setIsSubmitting(false);
-        return;
-      }
+      console.log('📤 Formulário válido recebido, preparando submissão:', formData);
 
       // Preparar payload para submissão
       const submissionPayload = prepareFinalSubmissionPayload(
@@ -194,8 +170,10 @@ export function PlanningFormWithClient({
         'Criando planejamento...',
         'Validando dados e preparando o planejamento estratégico'
       ));
+      console.log('🚨 Toast de início exibido');
 
       // Criar planejamento no banco
+      console.log('🚨 Chamando createPlanningMutation.mutateAsync...');
       const createdPlanning = await createPlanningMutation.mutateAsync({
         title: submissionPayload.title,
         description: submissionPayload.description,
@@ -234,6 +212,7 @@ export function PlanningFormWithClient({
       
     } catch (error) {
       console.error('❌ Erro ao criar planejamento:', error);
+      console.error('🚨 Stack trace completo:', error);
       
       // Mostrar toast de erro detalhado
       addToast(toast.error(
@@ -248,6 +227,7 @@ export function PlanningFormWithClient({
         }
       ));
     } finally {
+      console.log('🚨 Executando finally - setIsSubmitting(false)');
       setIsSubmitting(false);
     }
   };

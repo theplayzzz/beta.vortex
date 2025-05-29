@@ -14,46 +14,53 @@ interface Client {
 
 export function usePlanningForm(client: Client) {
   const [progress, setProgress] = useState(0);
-  const [formData, setFormData] = useState<Partial<PlanningFormData> | null>(null);
+  const [formData, setFormData] = useState<Partial<PlanningFormData>>({});
 
-  // Recovery de dados do localStorage
-  useEffect(() => {
-    const savedData = localStorage.getItem(`planning-form-draft-${client.id}`);
-    if (savedData) {
-      try {
-        const parsedData = JSON.parse(savedData);
+  // Função para carregar dados do localStorage
+  const loadFromLocalStorage = useCallback(() => {
+    try {
+      const draftKey = `planning-form-draft-${client.id}`;
+      const saved = localStorage.getItem(draftKey);
+      
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        console.log('📁 Dados carregados do localStorage:', parsed);
         
-        // Verificar se é estrutura aninhada (modo de edição)
-        if (parsedData.formData) {
-          console.log('📂 Dados de edição recuperados do localStorage:', parsedData);
-          setFormData(parsedData.formData);
-        } 
-        // Verificar se é estrutura direta (modo de criação)
-        else if (parsedData.informacoes_basicas || parsedData.marketing || parsedData.comercial || parsedData.detalhes_do_setor) {
-          console.log('📂 Dados diretos recuperados do localStorage:', parsedData);
-          setFormData(parsedData);
-        }
-        // Estrutura desconhecida, tentar usar como está
-        else {
-          console.log('📂 Dados em estrutura desconhecida:', parsedData);
-          setFormData(parsedData);
-        }
-      } catch (error) {
-        console.error('❌ Erro ao recuperar dados do formulário:', error);
-        localStorage.removeItem(`planning-form-draft-${client.id}`);
+        // Verificar se tem estrutura aninhada de dados
+        let loadedFormData = parsed.formData || parsed;
+        
+        setFormData(loadedFormData);
+        return loadedFormData;
       }
+    } catch (error) {
+      console.error('❌ Erro ao carregar dados do localStorage:', error);
     }
+    return null;
   }, [client.id]);
+
+  // Carregar dados salvos na inicialização
+  useEffect(() => {
+    loadFromLocalStorage();
+  }, [loadFromLocalStorage]);
 
   // Função para salvar no localStorage
   const saveToLocalStorage = useCallback((data: Partial<PlanningFormData>) => {
     try {
-      localStorage.setItem(`planning-form-draft-${client.id}`, JSON.stringify(data));
-      console.log('💾 Dados salvos no localStorage');
+      const draftKey = `planning-form-draft-${client.id}`;
+      
+      const draftData = {
+        client,
+        formData: data,
+        savedAt: new Date().toISOString(),
+        sessionId: `session_${Date.now()}`
+      };
+      
+      localStorage.setItem(draftKey, JSON.stringify(draftData));
+      console.log('💾 Draft salvo no localStorage:', draftKey);
     } catch (error) {
       console.error('❌ Erro ao salvar no localStorage:', error);
     }
-  }, [client.id]);
+  }, [client]);
 
   // Função para atualizar progresso
   const updateProgress = useCallback((data: Partial<PlanningFormData>) => {
