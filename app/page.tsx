@@ -6,45 +6,23 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import ClientFlowModal from "@/components/shared/client-flow-modal";
 import { useClientFlow } from "../hooks/use-client-flow";
-
-interface Client {
-  id: string;
-  name: string;
-  industry?: string;
-  richnessScore: number;
-  createdAt: Date | string;
-}
+import { useClientsCount } from "@/lib/react-query";
+import type { Client } from "@/lib/react-query";
 
 export default function HomePage() {
   const { user, isLoading, isSignedIn } = useCurrentUser();
-  const [clientsCount, setClientsCount] = useState(0);
+  
+  // TanStack Query hook para contagem de clientes
+  const { data: clientsCount = 0, refetch: refetchClientsCount } = useClientsCount();
 
   const clientFlow = useClientFlow({
     title: "Novo Cliente",
     description: "Crie um novo cliente rapidamente",
     onClientSelected: (client: Client) => {
       // Atualizar contagem após criação
-      fetchClientsCount();
+      refetchClientsCount();
     }
   });
-
-  const fetchClientsCount = async () => {
-    try {
-      const response = await fetch('/api/clients?limit=1');
-      if (response.ok) {
-        const data = await response.json();
-        setClientsCount(data.total || 0);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar contagem de clientes:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (isSignedIn) {
-      fetchClientsCount();
-    }
-  }, [isSignedIn]);
 
   if (isLoading) {
     return (

@@ -4,14 +4,7 @@ import { Plus } from "lucide-react";
 import ClientListWithFilters from "@/components/client/client-list-with-filters";
 import ClientFlowModal from "@/components/shared/client-flow-modal";
 import { useClientFlow } from "../../hooks/use-client-flow";
-
-interface Client {
-  id: string;
-  name: string;
-  industry?: string;
-  richnessScore: number;
-  createdAt: Date | string;
-}
+import type { Client } from "@/lib/react-query";
 
 export default function ClientesPage() {
   const clientFlow = useClientFlow({
