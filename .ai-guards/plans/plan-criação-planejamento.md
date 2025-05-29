@@ -1,4 +1,4 @@
-# Plan 005: Criação de Planejamento e Painel de Planejamento
+
 
 ---
 id: plan-005

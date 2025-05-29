@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { createClient } from '@supabase/supabase-js'
 import { prisma } from '@/lib/prisma/client'
+import { generateUUID } from '@/lib/utils/uuid'
 import { supabase, STORAGE_BUCKET, generateUniqueFileName, isAllowedFileType, MAX_FILE_SIZE, MAX_TOTAL_SIZE } from '@/lib/supabase/client'
 
 // GET /api/clients/[clientId]/attachments - Listar anexos do cliente
@@ -180,7 +182,7 @@ export async function POST(
         // Salvar no banco
         const attachment = await prisma.clientAttachment.create({
           data: {
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             fileName: file.name,
             fileUrl: urlData.publicUrl,
             fileType: file.type,
