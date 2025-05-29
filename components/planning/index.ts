@@ -1,15 +1,19 @@
-// Phase 2 Components
-export { ClientHeader } from './ClientHeader';
+// Core Components
 export { RichnessScoreBadge } from './RichnessScoreBadge';
+export { ClientHeader } from './ClientHeader';
 export { FormProgress } from './FormProgress';
 
-// Phase 3 Components
-export { QuestionField } from './QuestionField';
+// Tab Components
+export { BasicInfoTab } from './tabs/BasicInfoTab';
 export { SectorDetailsTab } from './tabs/SectorDetailsTab';
-
-// Phase 4 Components
 export { MarketingTab } from './tabs/MarketingTab';
 export { CommercialTab } from './tabs/CommercialTab';
+
+// Question Components
+export { QuestionField } from './QuestionField';
+
+// Main Form Component
+export { PlanningForm } from './PlanningForm';
 
 // Demo Components
 export { ComponentsDemo } from './ComponentsDemo';
