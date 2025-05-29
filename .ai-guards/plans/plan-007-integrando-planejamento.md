@@ -3,45 +3,46 @@ id: plan-007
 title: Reformulação da Área de Planejamento - Integração Cliente-Formulário
 createdAt: 2025-05-29
 author: theplayzzz
-status: draft
+status: in-progress
+progress: "Phase 1: ✅ CONCLUÍDA | Phase 2-6: Pendentes"
 ---
 
 ## 🧩 Scope
 
 Reformular completamente a área de planejamento removendo abas desnecessárias e criando um fluxo integrado onde:
-1. **Sidebar**: Uma única aba "Planejamentos"
-2. **Página Principal**: Lista todos os planejamentos existentes com botão "Novo Planejamento"
-3. **Fluxo de Criação**: Cliente → Formulário Multi-Etapas
+1. **Sidebar**: Uma única aba "Planejamentos" ✅ **CONCLUÍDO**
+2. **Página Principal**: Lista todos os planejamentos existentes com botão "Novo Planejamento" ✅ **CONCLUÍDO**
+3. **Fluxo de Criação**: Cliente → Formulário Multi-Etapas ✅ **ESTRUTURA CRIADA**
 4. **Integração**: Usar todo o sistema de formulário do PLAN-006 concluído
 5. **Otimização**: TanStack Query para operações CRUD e cache inteligente
 
 ## ✅ Functional Requirements
 
-### 1. Estrutura de Navegação
-- **Remover**: Aba de "lista refinada" do sidebar
-- **Manter**: Única aba "Planejamentos" no sidebar
-- **Página Principal**: `/planejamentos` - lista completa de planejamentos
+### 1. Estrutura de Navegação ✅ **CONCLUÍDO**
+- **Removido**: Aba de "lista refinada" do sidebar ✅
+- **Mantido**: Única aba "Planejamentos" no sidebar ✅
+- **Página Principal**: `/planejamentos` - lista completa de planejamentos ✅
 
-### 2. Fluxo de Criação de Planejamento
-- **Trigger**: Botão "Novo Planejamento" na página principal
-- **Step 1**: Modal/Página de seleção/criação de cliente
-- **Step 2**: Inicialização do formulário multi-etapas com cliente selecionado
-- **Formulário**: Sistema completo do PLAN-006 (4 abas integradas)
+### 2. Fluxo de Criação de Planejamento ✅ **ESTRUTURA CRIADA**
+- **Trigger**: Botão "Novo Planejamento" na página principal ✅
+- **Step 1**: Modal/Página de seleção/criação de cliente ✅ **UI PRONTA**
+- **Step 2**: Inicialização do formulário multi-etapas com cliente selecionado ⏳ **PENDENTE**
+- **Formulário**: Sistema completo do PLAN-006 (4 abas integradas) ⏳ **PENDENTE**
 
-### 3. Integração Cliente-Formulário
+### 3. Integração Cliente-Formulário ⏳ **PENDENTE**
 - **Cliente Existente**: Usar modal de seleção existente
 - **Cliente Novo**: Usar modal de criação existente
 - **Categoria/Setor**: Cliente define qual formulário dinâmico será usado
 - **Context Transfer**: Dados do cliente alimentam automaticamente o formulário
 
-### 4. Sistema de Formulário (Aproveitando PLAN-006)
+### 4. Sistema de Formulário (Aproveitando PLAN-006) ⏳ **PENDENTE**
 - **Componente Principal**: `PlanningForm.tsx` já implementado
 - **4 Abas Funcionais**: Informações Básicas, Detalhes do Setor, Marketing, Comercial
 - **88 Perguntas Dinâmicas**: Por setor específico
 - **Validação Robusta**: React Hook Form + Zod
 - **Auto-save**: localStorage para recuperação
 
-### 5. Otimizações TanStack Query
+### 5. Otimizações TanStack Query ⏳ **PENDENTE**
 - **Cache Inteligente**: Queries para listagem de planejamentos e clientes
 - **Mutations Otimizadas**: Create, Update, Delete com optimistic updates
 - **Auto-invalidation**: Cache refresh automático após mutações
@@ -104,125 +105,217 @@ Reformular completamente a área de planejamento removendo abas desnecessárias 
 - **Mitigação**: Optimistic updates com rollback automático
 - **Invalidation**: Estratégia precisa de invalidação de cache
 
-## 🔢 Execution Plan
+## 🔢 Execution Plan - REORGANIZADO PARA IMPLEMENTAÇÃO INCREMENTAL
 
-### Phase 1: Reestruturação da Navegação
-1. **Atualizar Sidebar**: Remover abas desnecessárias
-2. **Configurar Rota**: `/planejamentos` como página principal
-3. **Página Principal**: Lista de planejamentos + botão "Novo Planejamento"
-4. **Navegação**: Integrar com routing existente
+### ✅ Phase 1: Reestruturação da Navegação - **CONCLUÍDA 29/05/2025**
+1. ✅ **Atualizar Sidebar**: Remover abas desnecessárias
+2. ✅ **Configurar Rota**: `/planejamentos` como página principal
+3. ✅ **Página Principal**: Lista de planejamentos + botão "Novo Planejamento"
+4. ✅ **Fluxo Base**: Estrutura cliente→formulário criada
+5. ✅ **Navegação**: Integrar com routing existente
 
-### Phase 2: Setup TanStack Query
-1. **QueryClient Setup**: Configurar cliente global
-2. **Query Keys**: Definir estrutura de keys para cache
-3. **Base Queries**: Queries para listagem de planejamentos
-4. **Base Mutations**: Mutations para CRUD operations
+**📋 Testável**: Navegação sidebar, páginas carregam, botões funcionam
+**📄 Documentação**: `.ai-guards/plans/concluido/PHASE-1-NAVEGACAO-CONCLUIDA.md`
 
-### Phase 3: Fluxo Cliente-Formulário
-1. **Modal Integration**: Conectar modal cliente existente
-2. **Client Selection**: Componente de seleção/criação
-3. **Data Transfer**: Cliente → Context do formulário
-4. **State Bridge**: Hook para transição cliente→formulário
+---
 
-### Phase 4: Integração Formulário PLAN-006
-1. **Component Import**: Integrar PlanningForm.tsx
-2. **Client Context**: Alimentar dados do cliente selecionado
-3. **Sector Detection**: Auto-configurar formulário por setor
-4. **Validation**: Adaptar schema para novo fluxo
+### 🔄 Phase 2: Setup TanStack Query e API Routes
+**Objetivo**: Criar infraestrutura para operações CRUD funcionais
 
-### Phase 5: Otimizações TanStack Query
-1. **Optimistic Updates**: Feedback imediato para mutations
-2. **Cache Strategy**: Estratégia de invalidação inteligente
-3. **Error Handling**: Recovery automático em falhas
-4. **Performance**: Otimizar queries e mutations
+#### 2.1 Instalação e Configuração TanStack Query
+1. **Instalar Packages**: `@tanstack/react-query` e devtools
+2. **QueryClient Setup**: Configurar cliente global em `app/layout.tsx`
+3. **Query Keys Structure**: Definir hierarquia de keys para cache
+4. **Provider Setup**: Envolver aplicação com QueryClient
 
-### Phase 6: Produção e Documentação
-1. **API Integration**: Endpoints para salvar planejamentos
-2. **Database**: Conectar com schema Prisma
-3. **Documentation**: Atualizar README
-4. **Deployment**: Build e testes finais
+#### 2.2 API Routes para Planejamentos
+1. **GET `/api/plannings`**: Listar planejamentos do usuário
+2. **POST `/api/plannings`**: Criar novo planejamento
+3. **GET `/api/plannings/[id]`**: Buscar planejamento específico
+4. **PUT `/api/plannings/[id]`**: Atualizar planejamento
+5. **DELETE `/api/plannings/[id]`**: Deletar planejamento
 
-## 📋 Estrutura de Arquivos Planejada
+#### 2.3 Hooks Base TanStack Query
+1. **usePlannings()**: Query para listagem
+2. **usePlanning(id)**: Query para item específico
+3. **useCreatePlanning()**: Mutation para criação
+4. **useUpdatePlanning()**: Mutation para atualização
+5. **useDeletePlanning()**: Mutation para deleção
 
-### Novos Componentes
+**📋 Testável**: 
+- Instalar packages sem erro
+- API routes respondem corretamente
+- Cache TanStack Query funcionando
+- DevTools mostrando queries
+
+**📄 Entregáveis**:
 ```
-components/planning/
-├── PlanningForm.tsx              # [EXISTENTE] Do PLAN-006
-├── ClientSelection.tsx           # [NOVO] Seleção/criação cliente
-├── PlanningWorkflow.tsx          # [NOVO] Orquestrador cliente→formulário
+lib/react-query/
+├── queryClient.ts
+├── queryKeys.ts
 └── hooks/
-    ├── usePlanningForm.ts        # [EXISTENTE] Do PLAN-006
-    ├── useClientSelection.ts     # [NOVO] Gerenciar seleção cliente
-    ├── usePlanningWorkflow.ts    # [NOVO] Fluxo completo
-    ├── usePlannings.ts           # [NOVO] TanStack Query hooks
-    └── usePlanningMutations.ts   # [NOVO] Mutations optimizadas
+    ├── usePlannings.ts
+    └── usePlanningMutations.ts
 
-app/
-├── planejamentos/
-│   ├── page.tsx                  # [NOVO] Página principal
-│   └── novo/
-│       └── page.tsx              # [NOVO] Fluxo cliente→formulário
-
-lib/
-├── react-query/
-│   ├── queryClient.ts            # [NOVO] Setup QueryClient
-│   ├── queryKeys.ts              # [NOVO] Query keys structure
-│   └── mutations.ts              # [NOVO] Mutations factory
+app/api/plannings/
+├── route.ts
+└── [id]/route.ts
 ```
 
-### TanStack Query Structure
-```typescript
-// Query Keys Hierarchy
-export const queryKeys = {
-  plannings: {
-    all: ['plannings'] as const,
-    lists: () => [...queryKeys.plannings.all, 'list'] as const,
-    list: (filters: PlanningFilters) => [...queryKeys.plannings.lists(), { filters }] as const,
-    details: () => [...queryKeys.plannings.all, 'detail'] as const,
-    detail: (id: string) => [...queryKeys.plannings.details(), id] as const,
-  },
-  clients: {
-    all: ['clients'] as const,
-    lists: () => [...queryKeys.clients.all, 'list'] as const,
-    list: (filters: ClientFilters) => [...queryKeys.clients.lists(), { filters }] as const,
-    details: () => [...queryKeys.clients.all, 'detail'] as const,
-    detail: (id: string) => [...queryKeys.clients.details(), id] as const,
-  },
-} as const;
+---
+
+### 🔄 Phase 3: Integração Real com Banco de Dados
+**Objetivo**: Conectar frontend com dados reais via Prisma
+
+#### 3.1 Atualizar Schema Prisma (se necessário)
+1. **Verificar StrategicPlanning**: Campos compatíveis com PLAN-006
+2. **Adicionar campos**: Se necessário para formulário completo
+3. **Migrations**: Aplicar mudanças no banco
+
+#### 3.2 Implementar API Routes Completas
+1. **Validação**: Schemas Zod para entrada de dados
+2. **Filtros**: Query params para busca/filtros
+3. **Paginação**: Implementar paginação eficiente
+4. **Relacionamentos**: Include Client nos queries
+
+#### 3.3 Conectar Frontend com API Real
+1. **Atualizar usePlannings**: Usar API real
+2. **Página Principal**: Mostrar dados reais do banco
+3. **Filtros Funcionais**: Conectar com query params
+4. **Loading States**: Implementar skeletons
+
+**📋 Testável**:
+- Página `/planejamentos` mostra dados reais
+- Filtros funcionam corretamente
+- Loading states aparecem
+- Paginação funcional
+
+**📄 Entregáveis**:
+```
+app/planejamentos/page.tsx         # Conectado com dados reais
+components/planning/
+├── PlanningCard.tsx               # Card para listagem
+├── PlanningFilters.tsx            # Componente de filtros
+└── PlanningList.tsx               # Lista com loading states
 ```
 
-## 🎯 User Experience Flow
+---
 
-### 1. Navegação Principal
+### 🔄 Phase 4: Integração Modal Cliente Existente
+**Objetivo**: Conectar seleção de cliente com modais já implementados
+
+#### 4.1 Identificar Componentes Existentes
+1. **ClientFlowModal**: Localizar modal de seleção/criação
+2. **useClientFlow**: Hook de gerenciamento existente
+3. **API Clientes**: Verificar endpoints disponíveis
+
+#### 4.2 Integrar na Página de Criação
+1. **Cliente Existente**: Conectar com modal de seleção
+2. **Novo Cliente**: Conectar com modal de criação
+3. **Callback Integration**: Receber cliente selecionado
+4. **Estado Management**: Gerenciar transição cliente→formulário
+
+#### 4.3 Funcionalidade Completa de Seleção
+1. **Lista Real**: Buscar clientes do banco via API
+2. **Busca/Filtros**: Implementar filtros no modal
+3. **Criação Express**: Formulário rápido funcional
+4. **Validação**: Cliente obrigatório para continuar
+
+**📋 Testável**:
+- Botão "Cliente Existente" abre modal funcional
+- Lista de clientes reais aparece
+- Criação de novo cliente funciona
+- Transição para formulário com dados corretos
+
+**📄 Entregáveis**:
 ```
-Sidebar → "Planejamentos" → /planejamentos
+app/planejamentos/novo/page.tsx    # Conectado com modais reais
+components/planning/
+├── ClientSelection.tsx            # Wrapper para modais existentes
+└── PlanningWorkflow.tsx           # Orquestrador do fluxo
+hooks/
+└── usePlanningWorkflow.ts         # Hook do fluxo completo
 ```
 
-### 2. Página de Planejamentos
+---
+
+### 🔄 Phase 5: Integração PlanningForm do PLAN-006
+**Objetivo**: Integrar formulário completo de 4 abas com dados do cliente
+
+#### 5.1 Import e Configuração do PlanningForm
+1. **Verificar Imports**: Todos os componentes do PLAN-006
+2. **Context Setup**: Preparar dados do cliente para formulário
+3. **Inicialização**: Auto-preencher campos com dados do cliente
+4. **Setor Mapping**: Mapear setor do cliente para perguntas dinâmicas
+
+#### 5.2 Fluxo Completo Cliente→Formulário
+1. **Context Transfer**: Passar dados do cliente selecionado
+2. **Form Initialization**: Inicializar com contexto correto
+3. **Breadcrumb**: Navegação entre cliente e formulário
+4. **Auto-save**: Preservar progresso durante preenchimento
+
+#### 5.3 Submissão e Salvamento
+1. **Form Validation**: Validação completa antes submissão
+2. **API Integration**: Enviar para API de criação
+3. **Success Flow**: Redirecionamento após criação
+4. **Error Handling**: Tratamento de erros com rollback
+
+**📋 Testável**:
+- Seleção de cliente inicia formulário corretamente
+- 4 abas do formulário funcionais
+- Dados do cliente pré-preenchidos corretamente
+- Submissão cria planejamento no banco
+- Redirecionamento para planejamento criado
+
+**📄 Entregáveis**:
 ```
-Lista de Planejamentos Existentes
-┌─────────────────────────────────────┐
-│ [+ Novo Planejamento]               │
-│                                     │
-│ 📊 Planejamento - Cliente A         │
-│ 📊 Planejamento - Cliente B         │
-│ 📊 Planejamento - Cliente C         │
-└─────────────────────────────────────┘
+app/planejamentos/novo/page.tsx    # Formulário PLAN-006 integrado
+components/planning/
+├── PlanningFormWithClient.tsx     # Wrapper com contexto cliente
+└── ClientFormContext.tsx          # Context provider
+lib/planning/
+└── clientContextMapping.ts        # Mapeamento cliente→formulário
 ```
 
-### 3. Fluxo de Criação
+---
+
+### 🔄 Phase 6: Otimizações TanStack Query e Polimento
+**Objetivo**: Implementar optimistic updates e otimizações de performance
+
+#### 6.1 Optimistic Updates
+1. **Create Planning**: Feedback imediato na criação
+2. **Update Planning**: Atualizações instantâneas
+3. **Delete Planning**: Remoção visual imediata
+4. **Rollback Logic**: Reverter em caso de erro
+
+#### 6.2 Cache Strategy Avançada
+1. **Invalidation Rules**: Quando invalidar cada query
+2. **Background Refetch**: Atualizações automáticas
+3. **Stale Time**: Configurar tempo de cache
+4. **Garbage Collection**: Limpeza automática
+
+#### 6.3 UX Enhancements
+1. **Loading Skeletons**: Esqueletos durante carregamento
+2. **Error Boundaries**: Tratamento elegante de erros
+3. **Retry Logic**: Tentativas automáticas
+4. **Offline Support**: Funcionalidade básica offline
+
+**📋 Testável**:
+- Criação de planejamento mostra feedback imediato
+- Lista atualiza automaticamente após mudanças
+- Errors são tratados elegantemente
+- Performance otimizada (< 2s carregamento)
+
+**📄 Entregáveis**:
 ```
-[Novo Planejamento] 
-    ↓
-[Modal Seleção/Criação Cliente]
-    ↓
-[Cliente Selecionado]
-    ↓
-[Formulário Multi-Etapas Inicializado]
-    ↓
-[4 Abas: Básico → Setor → Marketing → Comercial]
-    ↓
-[Submissão e Salvamento]
+lib/react-query/
+├── optimisticUpdates.ts           # Lógica de updates otimistas
+├── cacheStrategies.ts             # Estratégias de cache
+└── errorHandling.ts               # Tratamento de erros
+
+components/ui/
+├── PlanningCardSkeleton.tsx       # Loading skeleton
+└── ErrorBoundary.tsx              # Boundary de erro
 ```
 
 ## 📊 Análise do Modelo Prisma
@@ -322,154 +415,6 @@ interface StrategicPlanningCreate {
 }
 ```
 
-## 🔄 TanStack Query Optimizations
-
-### 1. Queries Structure
-```typescript
-// hooks/usePlannings.ts
-export const usePlannings = (filters?: PlanningFilters) => {
-  return useQuery({
-    queryKey: queryKeys.plannings.list(filters || {}),
-    queryFn: () => api.plannings.list(filters),
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000,   // 10 minutos
-  });
-};
-
-export const usePlanning = (id: string) => {
-  return useQuery({
-    queryKey: queryKeys.plannings.detail(id),
-    queryFn: () => api.plannings.get(id),
-    enabled: !!id,
-  });
-};
-```
-
-### 2. Optimistic Mutations
-```typescript
-// hooks/usePlanningMutations.ts
-export const useCreatePlanning = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (data: PlanningFormData) => api.plannings.create(data),
-    onMutate: async (newPlanning) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ 
-        queryKey: queryKeys.plannings.lists() 
-      });
-
-      // Snapshot previous value
-      const previousPlannings = queryClient.getQueryData(
-        queryKeys.plannings.list({})
-      );
-
-      // Optimistically update cache
-      const optimisticPlanning = {
-        id: `temp-${Date.now()}`,
-        title: `Planejamento - ${newPlanning.client_context.nome}`,
-        status: 'DRAFT' as const,
-        clientId: newPlanning.client_context.id,
-        createdAt: new Date().toISOString(),
-        Client: {
-          id: newPlanning.client_context.id,
-          name: newPlanning.client_context.nome,
-          industry: newPlanning.client_context.setor,
-        },
-        ...newPlanning,
-      };
-
-      queryClient.setQueryData(
-        queryKeys.plannings.list({}), 
-        (old: any) => old ? [optimisticPlanning, ...old] : [optimisticPlanning]
-      );
-
-      return { previousPlannings };
-    },
-    onError: (err, newPlanning, context) => {
-      // Rollback on error
-      queryClient.setQueryData(
-        queryKeys.plannings.list({}),
-        context?.previousPlannings
-      );
-    },
-    onSettled: () => {
-      // Always refetch after error or success
-      queryClient.invalidateQueries({ 
-        queryKey: queryKeys.plannings.lists() 
-      });
-    },
-  });
-};
-```
-
-### 3. Cache Integration Strategy
-```typescript
-// lib/react-query/queryClient.ts
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,     // 5 minutos default
-      gcTime: 10 * 60 * 1000,       // 10 minutos GC
-      retry: (failureCount, error) => {
-        // Custom retry logic
-        if (error?.status === 404) return false;
-        return failureCount < 3;
-      },
-    },
-    mutations: {
-      retry: 1,
-      gcTime: 5 * 60 * 1000,        // 5 minutos para mutations
-    },
-  },
-});
-```
-
-### 4. Form Integration with TanStack Query
-```typescript
-// hooks/usePlanningWorkflow.ts
-export const usePlanningWorkflow = () => {
-  const [step, setStep] = useState<'client' | 'form'>('client');
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  
-  const createPlanningMutation = useCreatePlanning();
-  
-  const handleClientSelected = (client: Client) => {
-    setSelectedClient(client);
-    setStep('form');
-  };
-  
-  const handleFormSubmit = async (formData: PlanningFormData) => {
-    try {
-      const result = await createPlanningMutation.mutateAsync({
-        ...formData,
-        client_context: {
-          id: selectedClient!.id,
-          nome: selectedClient!.name,
-          setor: selectedClient!.industry || '',
-          categoria: selectedClient!.industry || '',
-          richness_score: selectedClient!.richnessScore,
-        },
-      });
-      
-      // Navigate to created planning
-      router.push(`/planejamentos/${result.id}`);
-    } catch (error) {
-      console.error('Failed to create planning:', error);
-    }
-  };
-  
-  return {
-    step,
-    selectedClient,
-    handleClientSelected,
-    handleFormSubmit,
-    isCreating: createPlanningMutation.isPending,
-    createError: createPlanningMutation.error,
-  };
-};
-```
-
 ## 🧪 Testing Strategy
 
 ### Componente Testing
@@ -486,16 +431,13 @@ export const usePlanningWorkflow = () => {
 - **Error Recovery**: Cenários de falha com rollback
 - **Cache Consistency**: Validar invalidação correta
 
-### E2E Testing
+### E2E Testing Manual por Phase
 ```
-1. Navegar para /planejamentos
-2. Verificar carregamento da lista (TanStack Query)
-3. Clicar "Novo Planejamento"
-4. Selecionar cliente existente
-5. Verificar formulário inicializado com dados corretos
-6. Preencher 4 abas do formulário
-7. Submeter e verificar optimistic update
-8. Verificar salvamento final e cache update
+Phase 2: Navegar para /planejamentos, verificar TanStack Query DevTools
+Phase 3: Verificar dados reais, filtros funcionais, paginação
+Phase 4: Testar seleção cliente, criação nova, transição
+Phase 5: Fluxo completo cliente→formulário→submissão
+Phase 6: Performance, optimistic updates, error handling
 ```
 
 ## 📈 Success Metrics
@@ -554,87 +496,43 @@ interface PlanningWithClient extends StrategicPlanning {
 }
 ```
 
-### API Routes Structure
-```typescript
-// app/api/plannings/route.ts
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const filters = Object.fromEntries(searchParams);
-  
-  const plannings = await prisma.strategicPlanning.findMany({
-    where: {
-      userId: await getCurrentUserId(), // User.id (não clerkId)
-      ...buildFilters(filters),
-    },
-    include: {
-      Client: {
-        select: {
-          id: true,
-          name: true,
-          industry: true,
-          richnessScore: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
-  
-  return Response.json(plannings);
-}
+## 📋 Deliverables por Phase
 
-export async function POST(request: Request) {
-  const data: PlanningFormData = await request.json();
-  
-  const planning = await prisma.strategicPlanning.create({
-    data: {
-      title: `Planejamento - ${data.client_context.nome}`,
-      clientId: data.client_context.id,
-      userId: await getCurrentUserId(), // User.id
-      formDataJSON: data,
-      clientSnapshot: await getClientSnapshot(data.client_context.id),
-      status: 'DRAFT',
-    },
-    include: {
-      Client: true,
-    },
-  });
-  
-  return Response.json(planning);
-}
-```
+### ✅ Phase 1 - CONCLUÍDA
+1. ✅ **Sidebar atualizado** - Navegação simplificada
+2. ✅ **Página principal** - `/planejamentos` 
+3. ✅ **Fluxo de criação** - `/planejamentos/novo`
+4. ✅ **Documentação** - Phase 1 completa
 
-## 📋 Deliverables
+### Phase 2 - Setup TanStack Query
+1. **QueryClient Configuration** - Configuração global
+2. **Query Keys Structure** - Hierarquia de keys
+3. **API Routes** - Endpoints CRUD planejamentos
+4. **Base Hooks** - usePlannings, mutations base
 
-### Components
-1. **ClientSelection.tsx** - Componente seleção/criação cliente
-2. **PlanningWorkflow.tsx** - Orquestrador fluxo completo
-3. **useClientSelection.ts** - Hook gerenciamento cliente
-4. **usePlanningWorkflow.ts** - Hook fluxo completo
-5. **usePlannings.ts** - TanStack Query hooks
-6. **usePlanningMutations.ts** - Mutations otimizadas
+### Phase 3 - Banco de Dados Real
+1. **API Implementation** - Conexão Prisma completa
+2. **Frontend Integration** - Dados reais na UI
+3. **Filtering System** - Filtros funcionais
+4. **Loading States** - UX durante carregamento
 
-### Pages
-1. **`/planejamentos`** - Página principal lista planejamentos
-2. **`/planejamentos/novo`** - Fluxo criação cliente→formulário
+### Phase 4 - Modal Cliente
+1. **ClientSelection.tsx** - Integração com modais existentes
+2. **PlanningWorkflow.tsx** - Orquestrador do fluxo
+3. **useClientSelection.ts** - Hook de seleção
+4. **Client Integration** - Seleção/criação funcional
 
-### TanStack Query Infrastructure
-1. **QueryClient Setup** - Configuração global
-2. **Query Keys** - Estrutura hierárquica de keys
-3. **Mutations Factory** - Factory para mutations CRUD
-4. **Cache Strategy** - Estratégia de invalidação
+### Phase 5 - PlanningForm PLAN-006
+1. **Form Integration** - PlanningForm completo
+2. **Client Context** - Dados cliente no formulário
+3. **Validation** - Schema integrado
+4. **Submission** - Salvamento no banco
 
-### Integration
-1. **Sidebar Update** - Remoção abas, única aba planejamentos
-2. **Modal Integration** - Cliente existente → formulário
-3. **Form Context** - Dados cliente no PlanningForm
-4. **API Routes** - Endpoints salvar planejamentos
-
-### Documentation
-1. **README.md** - Documentação fluxo completo
-2. **TANSTACK-INTEGRATION.md** - Como usar TanStack Query
-3. **API.md** - Endpoints e payload structure
+### Phase 6 - Otimizações
+1. **Optimistic Updates** - Feedback imediato
+2. **Cache Strategy** - Performance otimizada
+3. **Error Handling** - Recovery automático
+4. **Documentation** - Guias de uso
 
 ---
 
@@ -642,13 +540,15 @@ export async function POST(request: Request) {
 
 O PLAN-007 será considerado **CONCLUÍDO COM SUCESSO** quando:
 
-✅ **Navegação Simplificada**: Uma única aba "Planejamentos" no sidebar  
-✅ **Página Principal**: Lista planejamentos + botão "Novo Planejamento" funcional  
-✅ **Fluxo Cliente→Formulário**: Seleção cliente → formulário inicializado  
-✅ **Integração PLAN-006**: 100% dos componentes formulário reutilizados  
-✅ **TanStack Query**: Cache inteligente e optimistic updates funcionais  
-✅ **Validação Completa**: Zero erros TypeScript, build limpo  
-✅ **UX Polida**: Transições suaves, feedback visual, performance otimizada  
-✅ **Prisma Integration**: Compatibilidade total com modelo existente  
+✅ **Navegação Simplificada**: Uma única aba "Planejamentos" no sidebar ✅ **CONCLUÍDO**  
+✅ **Página Principal**: Lista planejamentos + botão "Novo Planejamento" funcional ✅ **CONCLUÍDO**  
+⏳ **Fluxo Cliente→Formulário**: Seleção cliente → formulário inicializado  
+⏳ **Integração PLAN-006**: 100% dos componentes formulário reutilizados  
+⏳ **TanStack Query**: Cache inteligente e optimistic updates funcionais  
+✅ **Validação Completa**: Zero erros TypeScript, build limpo ✅ **CONCLUÍDO**  
+⏳ **UX Polida**: Transições suaves, feedback visual, performance otimizada  
+⏳ **Prisma Integration**: Compatibilidade total com modelo existente  
 
 **Meta**: Sistema de planejamento **unificado, intuitivo, performante e otimizado** aproveitando todo o investimento do PLAN-006 + poder do TanStack Query! 🚀
+
+**Status Atual**: ✅ **Phase 1 COMPLETA** | 🔄 **Phase 2-6 PENDENTES** | �� **16% Concluído**

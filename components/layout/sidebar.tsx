@@ -44,18 +44,8 @@ const menuItems: MenuItem[] = [
   },
   {
     icon: FileText,
-    label: "Planejamento",
-    href: "/backlog",
-    submenu: [
-      { label: "Lista", href: "/backlog" },
-      { label: "Criar Novo", href: "/backlog/new" },
-      { label: "Histórico", href: "/backlog/history" },
-    ],
-  },
-  {
-    icon: CheckSquare,
-    label: "Lista Refinada",
-    href: "/tarefas",
+    label: "Planejamentos",
+    href: "/planejamentos",
   },
   {
     icon: BarChart2,
