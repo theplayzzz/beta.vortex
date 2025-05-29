@@ -4,14 +4,7 @@ import { useState } from "react";
 import { User, Building, Calendar, Plus, Search } from "lucide-react";
 import ClientFlowModal from "@/components/shared/client-flow-modal";
 import { useClientFlow } from "../../hooks/use-client-flow";
-
-interface Client {
-  id: string;
-  name: string;
-  industry?: string;
-  richnessScore: number;
-  createdAt: Date | string;
-}
+import type { Client } from "@/lib/react-query";
 
 interface ClientFlowExampleProps {
   mode?: 'create-only' | 'select-or-create';
@@ -27,11 +20,12 @@ export default function ClientFlowExample({
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
   const clientFlow = useClientFlow({
-    title: title || (mode === 'create-only' ? 'Novo Cliente' : 'Selecionar Cliente'),
-    description: description || (mode === 'create-only' 
-      ? 'Crie um novo cliente para continuar' 
-      : 'Escolha um cliente existente ou crie um novo'
-    ),
+    title: mode === 'create-only' 
+      ? 'Criar Novo Cliente' 
+      : 'Selecionar Cliente',
+    description: mode === 'create-only' 
+      ? 'Preencha os dados para criar um novo cliente'
+      : 'Escolha um cliente existente ou crie um novo',
     onClientSelected: (client: Client) => {
       setSelectedClient(client);
       console.log('Cliente selecionado:', client);

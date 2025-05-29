@@ -206,7 +206,7 @@ model StrategicPlanning {
   clientId           String
   userId             String
   createdAt          DateTime       @default(now())
-  updatedAt          DateTime
+  updatedAt          DateTime       @updatedAt
   
   // 🆕 NOVOS CAMPOS PARA PLAN-005
   formDataJSON       Json?          // Dados completos do formulário (4 abas)
