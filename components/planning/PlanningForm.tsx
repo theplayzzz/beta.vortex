@@ -24,6 +24,7 @@ interface PlanningFormProps {
   client: Client;
   onSubmit: (data: PlanningFormData) => void;
   onSaveDraft: (data: PlanningFormData) => void;
+  onTabChangeRef?: (setTabFunction: (tab: number) => void) => void;
 }
 
 interface Tab {
@@ -32,7 +33,7 @@ interface Tab {
   component: React.ComponentType<any>;
 }
 
-export function PlanningForm({ client, onSubmit, onSaveDraft }: PlanningFormProps) {
+export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: PlanningFormProps) {
   const [currentTab, setCurrentTab] = useState(0);
   const { formData, updateFormData } = usePlanningForm(client);
 
@@ -41,6 +42,13 @@ export function PlanningForm({ client, onSubmit, onSaveDraft }: PlanningFormProp
     defaultValues: getDefaultValues(client.industry),
     mode: 'onChange'
   });
+
+  // Disponibilizar função de mudança de aba para componente pai
+  useEffect(() => {
+    if (onTabChangeRef) {
+      onTabChangeRef(setCurrentTab);
+    }
+  }, [onTabChangeRef]);
 
   // Auto-save para localStorage com throttling
   useEffect(() => {

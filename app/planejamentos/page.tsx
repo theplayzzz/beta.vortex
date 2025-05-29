@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Star } from "lucide-react";
 import { usePlannings } from "@/lib/react-query/hooks/usePlannings";
 import { useClients } from "@/lib/react-query/hooks/useClients";
 import { PlanningList, PlanningFilters } from "@/components/planning";
@@ -14,12 +15,39 @@ interface FilterState {
 }
 
 export default function PlanejamentosPage() {
+  const searchParams = useSearchParams();
   const [filters, setFilters] = useState<FilterState>({
     search: '',
     status: '',
     clientId: ''
   });
   const [page, setPage] = useState(1);
+  const [newPlannings, setNewPlannings] = useState<string[]>([]);
+  const [highlightedPlanning, setHighlightedPlanning] = useState<string | null>(null);
+
+  // Verificar planejamentos "novos" e highlight no localStorage
+  useEffect(() => {
+    const storedNewPlannings = JSON.parse(localStorage.getItem('new-plannings') || '[]');
+    setNewPlannings(storedNewPlannings);
+
+    // Verificar se há um planejamento para destacar
+    const highlightId = searchParams.get('highlight');
+    if (highlightId) {
+      setHighlightedPlanning(highlightId);
+      
+      // Remover highlight após alguns segundos
+      setTimeout(() => {
+        setHighlightedPlanning(null);
+      }, 5000);
+    }
+  }, [searchParams]);
+
+  // Marcar planejamentos como visualizados
+  const markPlanningsAsViewed = (planningIds: string[]) => {
+    const updatedNewPlannings = newPlannings.filter(id => !planningIds.includes(id));
+    setNewPlannings(updatedNewPlannings);
+    localStorage.setItem('new-plannings', JSON.stringify(updatedNewPlannings));
+  };
 
   // Fetch plannings with filters
   const { 
@@ -43,6 +71,9 @@ export default function PlanejamentosPage() {
   const plannings = planningsData?.plannings || [];
   const totalPlannings = planningsData?.pagination?.total || 0;
   const clients = clientsData?.clients || [];
+
+  // Contar planejamentos novos na página atual
+  const newPlanningsCount = plannings.filter(p => newPlannings.includes(p.id)).length;
 
   // Calculate active filters count
   const activeFiltersCount = [
@@ -75,6 +106,29 @@ export default function PlanejamentosPage() {
         </Link>
       </div>
 
+      {/* Indicador de planejamentos novos */}
+      {newPlanningsCount > 0 && (
+        <div className="bg-sgbus-green/10 border border-sgbus-green/20 rounded-lg p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Star className="w-5 h-5 text-sgbus-green animate-pulse" />
+            <div>
+              <h3 className="font-medium text-sgbus-green">
+                {newPlanningsCount} planejamento{newPlanningsCount > 1 ? 's' : ''} novo{newPlanningsCount > 1 ? 's' : ''}!
+              </h3>
+              <p className="text-sgbus-green/80 text-sm">
+                Acabou{newPlanningsCount > 1 ? 'aram' : 'ou'} de ser criado{newPlanningsCount > 1 ? 's' : ''} e está{newPlanningsCount > 1 ? 'ão' : ''} aguardando sua visualização
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => markPlanningsAsViewed(plannings.map(p => p.id))}
+            className="text-sgbus-green hover:text-sgbus-green/80 text-sm font-medium transition-colors"
+          >
+            Marcar como visto
+          </button>
+        </div>
+      )}
+
       {/* Filtros e Busca */}
       <PlanningFilters
         filters={filters}
@@ -95,6 +149,9 @@ export default function PlanejamentosPage() {
             ? "Nenhum planejamento encontrado com os filtros aplicados"
             : "Nenhum planejamento criado ainda"
         }
+        newPlannings={newPlannings}
+        highlightedPlanning={highlightedPlanning}
+        onMarkAsViewed={markPlanningsAsViewed}
       />
 
       {/* Paginação */}

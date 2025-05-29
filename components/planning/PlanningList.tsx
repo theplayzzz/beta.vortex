@@ -27,13 +27,19 @@ interface PlanningListProps {
   isLoading?: boolean;
   error?: string;
   emptyMessage?: string;
+  newPlannings?: string[];
+  highlightedPlanning?: string | null;
+  onMarkAsViewed?: (planningIds: string[]) => void;
 }
 
 export function PlanningList({ 
   plannings, 
   isLoading = false, 
   error,
-  emptyMessage = "Nenhum planejamento encontrado"
+  emptyMessage = "Nenhum planejamento encontrado",
+  newPlannings = [],
+  highlightedPlanning = null,
+  onMarkAsViewed
 }: PlanningListProps) {
   
   // Loading state
@@ -105,6 +111,9 @@ export function PlanningList({
         <PlanningCard 
           key={planning.id} 
           planning={planning}
+          isNew={newPlannings.includes(planning.id)}
+          isHighlighted={highlightedPlanning === planning.id}
+          onMarkAsViewed={onMarkAsViewed ? () => onMarkAsViewed([planning.id]) : undefined}
         />
       ))}
     </div>

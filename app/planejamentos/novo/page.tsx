@@ -4,9 +4,19 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Users, Plus } from "lucide-react";
 import Link from "next/link";
-import { PlanningFormWithClient, Client } from "@/components/planning";
+import { PlanningFormWithClient } from "@/components/planning";
 import ClientFlowModal from "@/components/shared/client-flow-modal";
 import { useClientFlow } from "@/hooks/use-client-flow";
+
+// Definir o tipo Client localmente
+interface Client {
+  id: string;
+  name: string;
+  industry: string;
+  richnessScore: number;
+  businessDetails?: string;
+  createdAt?: Date;
+}
 
 export default function NovoPlnejamentoPage() {
   const router = useRouter();

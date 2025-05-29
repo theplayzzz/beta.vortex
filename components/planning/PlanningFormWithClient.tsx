@@ -13,6 +13,12 @@ import {
 import { useCreatePlanning } from '@/lib/react-query/hooks/usePlanningMutations';
 import { generateUUID } from '@/lib/utils/uuid';
 import { ArrowLeft, AlertTriangle, User, Building, BarChart3, Calendar } from 'lucide-react';
+import { useToast, toast } from '@/components/ui/toast';
+import { 
+  validateCompleteForm, 
+  getValidationErrorSummary, 
+  navigateToFirstError 
+} from '@/lib/planning/formValidation';
 
 interface PlanningFormWithClientProps {
   client: Client;
@@ -95,9 +101,11 @@ export function PlanningFormWithClient({
   onBack 
 }: PlanningFormWithClientProps) {
   const router = useRouter();
+  const { addToast } = useToast();
   const createPlanningMutation = useCreatePlanning();
   const [sessionId] = useState(() => generateUUID());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentTabRef, setCurrentTabRef] = useState<(tab: number) => void>(() => {});
 
   // Validar cliente antes de mostrar o formulário
   const clientValidation = validateClientForForm(client);
@@ -144,6 +152,34 @@ export function PlanningFormWithClient({
     try {
       setIsSubmitting(true);
       
+      // Validar formulário completo antes de submeter
+      const validationResult = validateCompleteForm(formData);
+      
+      if (!validationResult.isValid) {
+        const errorSummary = getValidationErrorSummary(validationResult);
+        
+        // Mostrar toast de erro
+        addToast(toast.error(
+          'Formulário incompleto',
+          errorSummary.summary,
+          {
+            duration: 8000,
+            action: {
+              label: 'Ir para erro',
+              onClick: () => {
+                navigateToFirstError(validationResult, currentTabRef);
+              }
+            }
+          }
+        ));
+
+        // Navegar automaticamente para o primeiro erro
+        navigateToFirstError(validationResult, currentTabRef);
+        
+        setIsSubmitting(false);
+        return;
+      }
+
       // Preparar payload para submissão
       const submissionPayload = prepareFinalSubmissionPayload(
         client,
@@ -152,6 +188,12 @@ export function PlanningFormWithClient({
       );
 
       console.log('📤 Enviando planejamento:', submissionPayload);
+
+      // Mostrar toast de processo iniciado
+      addToast(toast.info(
+        'Criando planejamento...',
+        'Validando dados e preparando o planejamento estratégico'
+      ));
 
       // Criar planejamento no banco
       const createdPlanning = await createPlanningMutation.mutateAsync({
@@ -167,13 +209,44 @@ export function PlanningFormWithClient({
       // Limpar localStorage após sucesso
       localStorage.removeItem(`planning-form-draft-${client.id}`);
 
-      // Redirecionar para o planejamento criado
-      router.push(`/planejamentos/${createdPlanning.id}`);
+      // Mostrar toast de sucesso
+      addToast(toast.success(
+        'Planejamento criado com sucesso!',
+        `"${createdPlanning.title}" foi salvo e está pronto para visualização`,
+        {
+          duration: 6000,
+          action: {
+            label: 'Visualizar',
+            onClick: () => router.push(`/planejamentos/${createdPlanning.id}`)
+          }
+        }
+      ));
+
+      // Adicionar flag "novo" ao localStorage para destacar na listagem
+      const newPlannings = JSON.parse(localStorage.getItem('new-plannings') || '[]');
+      newPlannings.push(createdPlanning.id);
+      localStorage.setItem('new-plannings', JSON.stringify(newPlannings));
+
+      // Aguardar um pouco para o usuário ver o toast e então redirecionar
+      setTimeout(() => {
+        router.push(`/planejamentos?highlight=${createdPlanning.id}`);
+      }, 1500);
       
     } catch (error) {
       console.error('❌ Erro ao criar planejamento:', error);
-      // TODO: Mostrar toast de erro
-      alert('Erro ao criar planejamento. Tente novamente.');
+      
+      // Mostrar toast de erro detalhado
+      addToast(toast.error(
+        'Erro ao criar planejamento',
+        error instanceof Error ? error.message : 'Ocorreu um erro inesperado. Tente novamente.',
+        {
+          duration: 10000,
+          action: {
+            label: 'Tentar novamente',
+            onClick: () => handleFormSubmit(formData)
+          }
+        }
+      ));
     } finally {
       setIsSubmitting(false);
     }
@@ -191,9 +264,21 @@ export function PlanningFormWithClient({
       }));
 
       console.log('💾 Draft salvo automaticamente');
-      // TODO: Mostrar toast de sucesso
+      
+      // Mostrar toast de confirmação de salvamento
+      addToast(toast.info(
+        'Rascunho salvo',
+        'Suas alterações foram salvas automaticamente',
+        { duration: 3000 }
+      ));
     } catch (error) {
       console.error('❌ Erro ao salvar draft:', error);
+      
+      addToast(toast.warning(
+        'Falha ao salvar rascunho',
+        'Suas alterações podem não estar sendo salvas automaticamente',
+        { duration: 5000 }
+      ));
     }
   };
 
@@ -238,7 +323,7 @@ export function PlanningFormWithClient({
                   Criando Planejamento...
                 </h3>
                 <p className="text-seasalt/70 text-sm">
-                  Salvando seus dados e configurando o planejamento
+                  Validando dados, salvando no banco e configurando webhook
                 </p>
               </div>
             </div>
@@ -250,6 +335,7 @@ export function PlanningFormWithClient({
               client={client}
               onSubmit={handleFormSubmit}
               onSaveDraft={handleSaveDraft}
+              onTabChangeRef={setCurrentTabRef}
             />
           </div>
         </div>

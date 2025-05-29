@@ -172,10 +172,71 @@ export async function POST(request: NextRequest) {
             name: true,
             industry: true,
             richnessScore: true,
+            businessDetails: true,
+            contactEmail: true,
+            website: true,
           },
         },
       },
     });
+
+    // 🆕 WEBHOOK DISPATCH
+    try {
+      const webhookPayload = {
+        planning_id: planning.id,
+        timestamp: new Date().toISOString(),
+        client_info: {
+          id: planning.Client.id,
+          name: planning.Client.name,
+          industry: planning.Client.industry || 'Não informado',
+          richnessScore: planning.Client.richnessScore,
+          businessDetails: planning.Client.businessDetails || 'Não informado',
+          contactEmail: planning.Client.contactEmail || 'Não informado',
+          website: planning.Client.website || 'Não informado',
+          data_quality: planning.Client.richnessScore > 80 ? "alto" : planning.Client.richnessScore > 50 ? "médio" : "baixo"
+        },
+        form_submission_data: planning.formDataJSON || {},
+        context_enrichment: {
+          client_richness_level: planning.Client.richnessScore > 80 ? "alto" : planning.Client.richnessScore > 50 ? "médio" : "baixo",
+          industry_specific_insights: true,
+          personalization_level: planning.Client.richnessScore > 80 ? "avançado" : "intermediário",
+          recommended_task_complexity: planning.Client.richnessScore > 80 ? "avançado" : "intermediário"
+        },
+        submission_metadata: {
+          user_id: user.id,
+          submitted_at: new Date().toISOString(),
+          form_version: "1.0",
+          session_id: `session_${planning.id}`
+        }
+      };
+
+      // Dispatch webhook assíncrono
+      if (process.env.PLANNING_WEBHOOK_URL) {
+        console.log('📡 Enviando webhook para:', process.env.PLANNING_WEBHOOK_URL);
+        console.log('📤 Payload do webhook:', JSON.stringify(webhookPayload, null, 2));
+        
+        const webhookResponse = await fetch(process.env.PLANNING_WEBHOOK_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Webhook-Secret': process.env.WEBHOOK_SECRET || '',
+            'User-Agent': 'Vortex-Planning-System/1.0'
+          },
+          body: JSON.stringify(webhookPayload)
+        });
+
+        if (webhookResponse.ok) {
+          console.log('✅ Webhook enviado com sucesso');
+        } else {
+          console.error('❌ Erro no webhook:', webhookResponse.status, await webhookResponse.text());
+        }
+      } else {
+        console.warn('⚠️ PLANNING_WEBHOOK_URL não configurada - webhook não enviado');
+      }
+    } catch (webhookError) {
+      console.error('❌ Erro ao enviar webhook:', webhookError);
+      // Não falhar a criação do planejamento por erro no webhook
+    }
 
     return NextResponse.json(planning, { status: 201 });
 
