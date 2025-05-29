@@ -57,7 +57,18 @@ const TABS: Tab[] = [
   }
 ];
 
+// Debug: Verificar se todos os componentes foram importados corretamente
+console.log('🔍 TABS definidas:', TABS);
+console.log('🔍 Componentes:', {
+  BasicInfoTab: typeof BasicInfoTab,
+  SectorDetailsTab: typeof SectorDetailsTab,
+  MarketingTab: typeof MarketingTab,
+  CommercialTab: typeof CommercialTab
+});
+
 export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: PlanningFormProps) {
+  console.log('🚀 PlanningForm inicializando com cliente:', client);
+
   const [currentTab, setCurrentTab] = useState(0);
   const { formData, updateFormData } = usePlanningForm(client);
 
