@@ -1,12 +1,12 @@
 'use client';
 
-import { createContext, useContext, useReducer, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useReducer, useMemo, ReactNode, useEffect } from 'react';
 import { usePollingWithRetry } from '@/hooks/usePollingWithRetry';
 import { pollingLogger } from '../utils/pollingLogger';
 import type { Planning, TarefaRefinada } from '@/types/planning';
 
 // Tipos refinados conforme plano
-type TabState = 'hidden' | 'generating' | 'ready' | 'new' | 'error';
+type TabState = 'hidden' | 'generating' | 'ready' | 'new' | 'error' | 'waiting';
 type PollingState = 'idle' | 'active' | 'paused' | 'stopped' | 'error';
 
 interface ScopeContent {
@@ -63,7 +63,8 @@ type RefinedPlanningAction =
   | { type: 'MARK_AS_VIEWED' }
   | { type: 'CLEAR_ERROR' }
   | { type: 'UPDATE_TIMESTAMP' }
-  | { type: 'RESET_STATE' };
+  | { type: 'RESET_STATE' }
+  | { type: 'SET_CURRENT_PLANNING_ID'; payload: string | null };
 
 // Estado inicial
 const initialState: RefinedPlanningState = {
@@ -149,6 +150,19 @@ function refinedPlanningReducer(
     case 'RESET_STATE':
       return initialState;
     
+    case 'SET_CURRENT_PLANNING_ID':
+      return {
+        ...state,
+        currentPlanningId: action.payload,
+        // Reset state quando mudar de planejamento
+        ...(action.payload !== state.currentPlanningId ? {
+          tabState: 'hidden',
+          scopeContent: null,
+          error: null,
+          isViewed: false
+        } : {})
+      };
+    
     default:
       return state;
   }
@@ -166,9 +180,121 @@ const pollingConfig = {
 };
 
 // Provider
-export function RefinedPlanningProvider({ children }: { children: ReactNode }) {
+export function RefinedPlanningProvider({ 
+  children, 
+  planningId 
+}: { 
+  children: ReactNode; 
+  planningId?: string;
+}) {
   const [state, dispatch] = useReducer(refinedPlanningReducer, initialState);
   
+  // Configurar planningId no estado quando recebido
+  useEffect(() => {
+    if (planningId && planningId !== state.currentPlanningId) {
+      console.log('🔧 Configurando planningId no estado:', planningId);
+      dispatch({ type: 'SET_CURRENT_PLANNING_ID', payload: planningId });
+    }
+  }, [planningId, state.currentPlanningId]);
+
+  // 🚀 REQUEST INICIAL - Verificar estado da aba ao carregar página
+  useEffect(() => {
+    // ✅ CORREÇÃO DO LOOP: Flag para evitar múltiplas execuções
+    let isInitialCheckExecuted = false;
+    
+    const checkInitialRefinedPlanningState = async () => {
+      if (!planningId || isInitialCheckExecuted) {
+        console.log('🔍 Pulo verificação inicial:', { planningId, isInitialCheckExecuted });
+        return;
+      }
+
+      isInitialCheckExecuted = true;
+      console.log('🔍 VERIFICAÇÃO INICIAL - Executing for:', planningId);
+
+      try {
+        console.log('🔍 VERIFICAÇÃO INICIAL - Checking refined planning state for:', planningId);
+        
+        // Fazer request para verificar estado atual do planejamento
+        const response = await fetch(`/api/plannings/${planningId}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+          },
+        });
+
+        if (!response.ok) {
+          console.error('❌ Erro ao buscar planejamento inicial:', response.status);
+          return;
+        }
+
+        const planning = await response.json();
+        console.log('🔍 Planning data:', {
+          id: planning.id,
+          status: planning.status,
+          hasScope: !!planning.scope,
+          hasSpecificObjectives: !!planning.specificObjectives
+        });
+
+        // Verificar se já tem dados no scope (planejamento já processado)
+        if (planning.scope) {
+          try {
+            const parsed = JSON.parse(planning.scope);
+            console.log('🔍 Scope data parsed:', parsed);
+            
+            if (parsed.tarefas_refinadas && Array.isArray(parsed.tarefas_refinadas) && parsed.tarefas_refinadas.length > 0) {
+              console.log('✅ DADOS ENCONTRADOS no scope - Configurando estado READY');
+              dispatch({ type: 'SET_TAB_STATE', payload: 'ready' });
+              dispatch({ type: 'SET_SCOPE_CONTENT', payload: parsed });
+              return;
+            }
+          } catch (parseError) {
+            console.warn('⚠️ Erro ao parsear scope, mas continuando...', parseError);
+          }
+        }
+
+        // Verificar se há tarefas estruturadas (planejamento tem objetivos)
+        if (planning.specificObjectives) {
+          try {
+            const objectives = JSON.parse(planning.specificObjectives);
+            if (objectives.tarefas && Array.isArray(objectives.tarefas) && objectives.tarefas.length > 0) {
+              console.log('⏳ TAREFAS ESTRUTURADAS encontradas - Configurando estado WAITING');
+              dispatch({ type: 'SET_TAB_STATE', payload: 'waiting' });
+              return;
+            }
+          } catch (parseError) {
+            console.warn('⚠️ Erro ao parsear specificObjectives:', parseError);
+          }
+        }
+
+        // ✅ CORREÇÃO DO LOOP: NÃO iniciar polling automaticamente aqui
+        // Verificar se está em processamento (status específico) - SÓ configurar estado
+        if (planning.status === 'PENDING_AI_REFINED_LIST') {
+          console.log('🔄 PROCESSAMENTO EM ANDAMENTO - Configurando estado GENERATING (sem polling automático)');
+          dispatch({ type: 'SET_TAB_STATE', payload: 'generating' });
+          // ❌ REMOVIDO: startPolling(planningId); - isso causava o loop
+          return;
+        }
+
+        console.log('❌ Nenhuma condição atendida - Mantendo estado HIDDEN');
+        dispatch({ type: 'SET_TAB_STATE', payload: 'hidden' });
+
+      } catch (error) {
+        console.error('❌ Erro na verificação inicial:', error);
+        dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error : new Error('Erro na verificação inicial') });
+      }
+    };
+
+    // Executar verificação inicial apenas se planningId está disponível
+    if (planningId) {
+      checkInitialRefinedPlanningState();
+    }
+
+    // ✅ CORREÇÃO DO LOOP: Cleanup function para resetar flag
+    return () => {
+      isInitialCheckExecuted = false;
+    };
+  }, [planningId]); // ✅ DEPENDÊNCIA LIMITADA: Só planningId
+
   // Função de polling
   const fetchPlanningData = async () => {
     if (!state.currentPlanningId) {
@@ -198,13 +324,15 @@ export function RefinedPlanningProvider({ children }: { children: ReactNode }) {
       try {
         const parsed = JSON.parse(planning.scope);
         if (parsed.tarefas_refinadas && Array.isArray(parsed.tarefas_refinadas)) {
+          console.log('🎉 DADOS ENCONTRADOS pelo polling!', { tasksFound: parsed.tarefas_refinadas.length });
+          
           pollingLogger.logPollingEvent({
             planningId: state.currentPlanningId,
             action: 'success',
             data: { tasksFound: parsed.tarefas_refinadas.length }
           });
           
-          // Atualizar scope content
+          // ✅ CORREÇÃO: Atualizar scope content E estado da aba automaticamente
           dispatch({ 
             type: 'SET_SCOPE_CONTENT', 
             payload: {
@@ -212,6 +340,11 @@ export function RefinedPlanningProvider({ children }: { children: ReactNode }) {
               timestamp: new Date().toISOString()
             }
           });
+
+          // ✅ CORREÇÃO: Mudar estado da aba para "ready" automaticamente
+          dispatch({ type: 'SET_TAB_STATE', payload: 'ready' });
+          
+          console.log('✅ Estado atualizado: scope content + tab state = ready');
           
           // Parar polling - dados encontrados
           return { shouldStop: true, data: planning };
@@ -233,8 +366,24 @@ export function RefinedPlanningProvider({ children }: { children: ReactNode }) {
     pollingConfig
   );
 
+  console.log('🔄 Hook polling state:', {
+    pollingState: state.pollingState,
+    tabState: state.tabState,
+    shouldPoll,
+    isPolling,
+    currentPlanningId: state.currentPlanningId
+  });
+  
   // Sync polling state
   const startPolling = (planningId: string) => {
+    console.log('🚀 startPolling chamado:', { planningId, currentState: state.pollingState });
+    
+    // ✅ CORREÇÃO DO LOOP: Evitar múltiplas chamadas
+    if (state.pollingState === 'active') {
+      console.log('⚠️ Polling já está ativo, ignorando...');
+      return;
+    }
+    
     dispatch({ type: 'SET_PLANNING_ID', payload: planningId });
     dispatch({ type: 'SET_POLLING_STATE', payload: 'active' });
     dispatch({ type: 'SET_TAB_STATE', payload: 'generating' });
@@ -247,6 +396,8 @@ export function RefinedPlanningProvider({ children }: { children: ReactNode }) {
   };
 
   const stopPolling = () => {
+    console.log('🛑 stopPolling chamado:', { currentState: state.pollingState });
+    
     dispatch({ type: 'SET_POLLING_STATE', payload: 'stopped' });
     stopPollingHook();
     
@@ -276,37 +427,73 @@ export function RefinedPlanningProvider({ children }: { children: ReactNode }) {
 
   const handleApproval = async (planningId: string, tasks: any[]) => {
     try {
+      console.log('🚀 INÍCIO handleApproval - Context');
+      console.log('📤 planningId:', planningId);
+      console.log('📤 tasks recebidas:', tasks);
+      console.log('📤 Tipo de tasks:', typeof tasks, 'Array?', Array.isArray(tasks));
+
+      // VALIDAÇÃO: Garantir que tasks é array válido
+      if (!Array.isArray(tasks) || tasks.length === 0) {
+        throw new Error('Tarefas aprovadas são obrigatórias e devem ser um array não vazio');
+      }
+
+      console.log('✅ Validação de tasks passou');
+
       // Primeiro, verificar se já existe scope
+      console.log('🔍 Verificando scope existente...');
       const response = await fetch(`/api/plannings/${planningId}`);
       if (response.ok) {
         const planning = await response.json();
         
         // Se já tem scope, limpar antes de enviar webhook
         if (planning.scope) {
+          console.log('🧹 Limpando scope existente...');
           await fetch(`/api/planning/${planningId}/clear-scope`, {
             method: 'POST'
           });
+          console.log('✅ Scope limpo');
         }
       }
 
+      // CORREÇÃO: Preparar payload correto com approvedTasks
+      const payload = {
+        approvedTasks: tasks // CAMPO CORRETO - não "selectedTasks"
+      };
+
+      console.log('📤 Payload preparado:', payload);
+
       // Enviar aprovação
+      console.log('📡 Enviando aprovação para API...');
       const approvalResponse = await fetch(`/api/planning/${planningId}/approve-tasks`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ selectedTasks: tasks }),
+        body: JSON.stringify(payload),
       });
 
+      console.log('📡 Response status:', approvalResponse.status);
+
       if (!approvalResponse.ok) {
-        throw new Error('Erro ao aprovar tarefas');
+        const errorData = await approvalResponse.json();
+        console.error('❌ Erro na resposta da API:', errorData);
+        throw new Error(errorData.error || 'Erro ao aprovar tarefas');
       }
 
-      // Iniciar processo de geração
+      const responseData = await approvalResponse.json();
+      console.log('✅ Aprovação bem-sucedida:', responseData);
+
+      // Mudar estado para generating IMEDIATAMENTE
+      dispatch({ type: 'SET_TAB_STATE', payload: 'generating' });
+      console.log('🎯 Estado da aba alterado para "generating"');
+
+      // Iniciar processo de geração (polling)
+      console.log('🔄 Iniciando polling...');
       startPolling(planningId);
       
     } catch (error) {
-      const err = error instanceof Error ? error : new Error('Erro desconhecido');
+      console.error('❌ ERRO em handleApproval:', error);
+      const err = error instanceof Error ? error : new Error('Erro desconhecido na aprovação');
       dispatch({ type: 'SET_ERROR', payload: err });
       
       if (state.currentPlanningId) {
@@ -316,6 +503,9 @@ export function RefinedPlanningProvider({ children }: { children: ReactNode }) {
           error: err
         });
       }
+      
+      // Re-throw para que o componente possa tratar
+      throw err;
     }
   };
 

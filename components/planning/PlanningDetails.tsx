@@ -20,6 +20,7 @@ import { RefinedTaskList } from './RefinedTaskList';
 import { TaskDetailModal } from './TaskDetailModal';
 import { TabStateManager } from './TabStateManager';
 import { RefinedPlanningProvider } from '../../contexts/RefinedPlanningContext';
+import { RefinedPlanningContent } from './RefinedPlanningContent';
 import type { Planning, TarefaRefinada } from '@/types/planning';
 
 // Import CSS transitions
@@ -191,7 +192,7 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
   };
 
   return (
-    <RefinedPlanningProvider>
+    <RefinedPlanningProvider planningId={currentPlanning.id}>
       <div className="p-6 space-y-6">
         {/* Header Simplificado */}
         <div className="flex items-center justify-between">
@@ -357,38 +358,10 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
                 )}
               </div>
             ) : currentTab === 'planejamento-refinado' ? (
-              <div className="space-y-4">
-                {hasRefinedTasks(currentPlanning.scope) ? (
-                  // Lista de tarefas refinadas estilo ClickUp
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Sparkles className="h-6 w-6 text-sgbus-green" />
-                      <h3 className="text-xl font-semibold text-seasalt">
-                        Planejamento Refinado
-                      </h3>
-                      <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
-                        Planejamento refinado pronto
-                      </span>
-                    </div>
-                    
-                    {/* Lista de tarefas refinadas */}
-                    <RefinedTaskList
-                      tasks={getRefinedTasks()}
-                      onTaskClick={handleTaskClick}
-                    />
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <Sparkles className="h-8 w-8 mx-auto mb-4 text-seasalt/40" />
-                    <h3 className="text-lg font-semibold text-seasalt/70 mb-2">
-                      Planejamento Refinado Não Disponível
-                    </h3>
-                    <p className="text-seasalt/50">
-                      Esta aba será ativada após a aprovação de tarefas.
-                    </p>
-                  </div>
-                )}
-              </div>
+              <RefinedPlanningContent
+                tasks={getRefinedTasks()}
+                onTaskClick={handleTaskClick}
+              />
             ) : null}
           </div>
         </div>
