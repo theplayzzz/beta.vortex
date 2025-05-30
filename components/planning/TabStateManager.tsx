@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { useRefinedPlanning } from '../../contexts/RefinedPlanningContext';
 import { TabStatusIndicator } from './TabStatusIndicator';
 import type { Planning } from '@/types/planning';
@@ -41,48 +41,30 @@ export function TabStateManager({ planning, onTabChange, currentTab }: TabStateM
     startPolling
   } = useRefinedPlanning();
   
+  // Ref para evitar múltiplas chamadas de polling
+  const pollingStartedRef = useRef<string | null>(null);
+  
   // Verificar se deve mostrar a aba (SEMPRE se tem tarefas estruturadas)
   const shouldShowTab = useMemo(() => {
     return hasStructuredTasks(planning.specificObjectives);
   }, [planning.specificObjectives]);
   
-  // Lógica de determinação de estado baseada em props + context
-  const computedState = useMemo(() => {
-    if (error) return 'error';
-    
-    // Se está fazendo polling ou status indica geração em andamento
-    if (isPolling || planning.status === 'PENDING_AI_REFINED_LIST') {
-      // Verificar se já não tem dados válidos
-      if (!hasValidRefinedTasks(scopeContent)) {
-        return 'generating';
-      }
-    }
-    
-    // Se tem dados válidos
-    if (hasValidRefinedTasks(scopeContent)) {
-      return 'ready';
-    }
-    
-    // Estado de espera - tem tarefas estruturadas mas não foi aprovado ainda
-    if (hasStructuredTasks(planning.specificObjectives)) {
-      return 'waiting';
-    }
-    
-    return 'hidden';
-  }, [error, isPolling, planning.status, scopeContent, planning.specificObjectives]);
-  
-  // Sync com context quando computed state muda
+  // Auto-iniciar polling se necessário - COM PROTEÇÃO CONTRA MÚLTIPLAS CHAMADAS
   useEffect(() => {
-    if (computedState !== tabState) {
-      setTabState(computedState);
-    }
-  }, [computedState, tabState, setTabState]);
-
-  // Auto-iniciar polling se necessário
-  useEffect(() => {
-    if (planning.status === 'PENDING_AI_REFINED_LIST' && !hasValidRefinedTasks(scopeContent) && !isPolling) {
-      console.log('🎯 Auto-iniciando polling para planejamento refinado...');
+    const shouldStartPolling = planning.status === 'PENDING_AI_REFINED_LIST' && 
+                               !hasValidRefinedTasks(scopeContent) && 
+                               !isPolling &&
+                               pollingStartedRef.current !== planning.id;
+                               
+    if (shouldStartPolling) {
+      console.log('🎯 Auto-iniciando polling para planejamento refinado...', planning.id);
+      pollingStartedRef.current = planning.id;
       startPolling(planning.id);
+    }
+    
+    // Reset ref se status mudou e não é mais PENDING
+    if (planning.status !== 'PENDING_AI_REFINED_LIST') {
+      pollingStartedRef.current = null;
     }
   }, [planning.status, planning.id, scopeContent, isPolling, startPolling]);
 

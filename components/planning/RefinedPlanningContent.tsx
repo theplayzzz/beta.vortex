@@ -6,12 +6,15 @@ import { RefinedTaskList } from './RefinedTaskList';
 import type { TarefaRefinada } from '@/types/planning';
 
 interface RefinedPlanningContentProps {
-  tasks: TarefaRefinada[];
+  tasks?: TarefaRefinada[]; // ✅ OPCIONAL - fallback
   onTaskClick: (task: TarefaRefinada, index: number) => void;
 }
 
-export function RefinedPlanningContent({ tasks, onTaskClick }: RefinedPlanningContentProps) {
-  const { tabState, error, clearError } = useRefinedPlanning();
+export function RefinedPlanningContent({ tasks: propTasks, onTaskClick }: RefinedPlanningContentProps) {
+  const { tabState, error, clearError, scopeContent } = useRefinedPlanning();
+  
+  // ✅ CORREÇÃO: Usar tasks do contexto (polling) como prioridade, fallback para props
+  const tasks = scopeContent?.tarefas_refinadas || propTasks || [];
 
   // Estado de carregamento/geração
   if (tabState === 'generating') {
