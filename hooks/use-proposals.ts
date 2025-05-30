@@ -19,6 +19,10 @@ export interface Proposal {
   proposalMarkdown: string | null;
   aiMetadata: AIMetadata | null;
   
+  // 🆕 Dados do formulário e snapshot do cliente
+  formDataJSON: any | null;
+  clientSnapshot: any | null;
+  
   Client?: {
     id: string;
     name: string;

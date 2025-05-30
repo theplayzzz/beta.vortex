@@ -127,6 +127,10 @@ model CommercialProposal {
   proposalMarkdown   String?      // Markdown da proposta para edição
   aiMetadata         Json?        // Metadados da geração (tokens, modelo, etc)
   
+  // 🆕 DADOS DO FORMULÁRIO DE PROPOSTA
+  formDataJSON       Json?        // Dados completos do formulário de proposta
+  clientSnapshot     Json?        // Snapshot dos dados do cliente no momento da criação
+  
   Client           Client?        @relation(fields: [clientId], references: [id])
   User             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
