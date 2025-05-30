@@ -1,0 +1,64 @@
+.tab-refined-planning {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-refined-planning.state-generating {
+  border-color: rgb(59 130 246 / 0.5);
+  background-color: rgb(59 130 246 / 0.05);
+}
+
+.tab-refined-planning.state-ready {
+  border-color: rgb(34 197 94 / 0.5);
+  background-color: rgb(34 197 94 / 0.05);
+}
+
+.tab-refined-planning.state-error {
+  border-color: rgb(239 68 68 / 0.5);
+  background-color: rgb(239 68 68 / 0.05);
+}
+
+.tab-refined-planning.state-new {
+  border-color: rgb(34 197 94 / 0.5);
+  background-color: rgb(34 197 94 / 0.05);
+}
+
+/* Substituir animate-ping problemático */
+.indicator-generating {
+  animation: gentle-pulse 2s ease-in-out infinite;
+}
+
+@keyframes gentle-pulse {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7; 
+    transform: scale(1.02);
+  }
+}
+
+/* Indicador suave para loading */
+.loading-indicator {
+  animation: smooth-spin 1.5s linear infinite;
+}
+
+@keyframes smooth-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Transições para mudanças de estado */
+.tab-state-transition {
+  transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Substituição das animações conflitantes */
+.no-conflicting-animations {
+  /* Remove todas as animações ping que causam conflito */
+  animation: none !important;
+}
+
+.no-conflicting-animations .animate-ping {
+  animation: none !important;
+} 
