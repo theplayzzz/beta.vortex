@@ -43,10 +43,6 @@ export function BasicInfoTab({ client, formData, onFieldChange, errors }: BasicI
           placeholder="Ex: Expansão Digital 2024, Crescimento de Vendas Q1..."
           className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
         />
-        
-        {errors.titulo_planejamento && (
-          <p className="text-red-400 text-sm">{errors.titulo_planejamento}</p>
-        )}
       </div>
 
       {/* Descrição do Objetivo */}
@@ -63,10 +59,6 @@ export function BasicInfoTab({ client, formData, onFieldChange, errors }: BasicI
           rows={4}
           className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20 resize-none"
         />
-        
-        {errors.descricao_objetivo && (
-          <p className="text-red-400 text-sm">{errors.descricao_objetivo}</p>
-        )}
       </div>
     </div>
   );
