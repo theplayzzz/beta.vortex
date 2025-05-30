@@ -168,10 +168,10 @@ export const MODALIDADES_ENTREGA = [
 ```
 
 **Tarefas:**
-- [ ] Criar tipos e enums em `proposalConfig.ts`
-- [ ] Implementar schema de validação com Zod
-- [ ] Definir interfaces TypeScript
-- [ ] Criar funções helpers para options
+- [x] Criar tipos e enums em `proposalConfig.ts`
+- [x] Implementar schema de validação com Zod
+- [x] Definir interfaces TypeScript
+- [x] Criar funções helpers para options
 
 #### 2.2 Componente Principal e Tabs
 ```typescript
@@ -198,32 +198,32 @@ export function ProposalForm({ client }: { client: Client }) {
 ```
 
 **Tarefas:**
-- [ ] Criar `ProposalForm` container com state management
-- [ ] Implementar navegação entre tabs
-- [ ] Criar `BasicInfoTab` com campos:
+- [x] Criar `ProposalForm` container com state management
+- [x] Implementar navegação entre tabs
+- [x] Criar `BasicInfoTab` com campos:
   - Título da Proposta
   - Tipo de Proposta (dropdown)
   - Descrição/Objetivo
   - Prazo Estimado
-- [ ] Criar `ScopeTab` com campos:
+- [x] Criar `ScopeTab` com campos:
   - Modalidade de Entrega
   - Serviços Incluídos (checkbox múltiplo)
   - Requisitos Especiais
-- [ ] Criar `CommercialTab` com campos:
+- [x] Criar `CommercialTab` com campos:
   - Orçamento Estimado (opcional)
   - Concorrentes Considerados
   - Urgência do Projeto
   - Tomador de Decisão
-- [ ] Implementar validação por aba
-- [ ] Adicionar indicador de progresso
-- [ ] Criar preview antes do envio
+- [x] Implementar validação por aba
+- [x] Adicionar indicador de progresso
+- [x] Criar preview antes do envio
 
 #### 2.3 Integração Client Flow
 **Tarefas:**
-- [ ] Integrar `useClientFlow` em `/app/propostas/nova/page.tsx`
-- [ ] Passar cliente selecionado para `ProposalForm`
-- [ ] Exibir `ClientHeader` com `RichnessScoreBadge`
-- [ ] Implementar redirect se não houver cliente
+- [x] Integrar `useClientFlow` em `/app/propostas/nova/page.tsx`
+- [x] Passar cliente selecionado para `ProposalForm`
+- [x] Exibir `ClientHeader` com `RichnessScoreBadge`
+- [x] Implementar redirect se não houver cliente
 
 ### **FASE 3: Backend - APIs e Integração (3-4 dias)**
 
@@ -430,6 +430,26 @@ const PropostasWidget = () => {
   - ✅ Integração do useClientFlow na página de nova proposta
   - ✅ Cards de estatísticas funcionais com dados mockados
   - ✅ Lista de propostas funcional com dados de teste
+  - ✅ FASE 2 COMPLETA - Formulário Multi-Step
+  - ✅ Criação da estrutura completa em `/lib/proposals/`: proposalConfig.ts, types.ts, formSchema.ts
+  - ✅ Implementação de todas as 3 abas: BasicInfoTab, ScopeTab, CommercialTab
+  - ✅ ProposalForm principal com navegação entre abas e validação
+  - ✅ Integração com React Hook Form e Zod
+  - ✅ Indicador de progresso dinâmico
+  - ✅ Modal de preview funcional
+  - ✅ ClientHeader integrado
+  - ✅ Validação por aba e progresso calculado automaticamente
+  - ✅ CORREÇÕES DE BUGS - Navegação e Validação
+  - ✅ Corrigidos os tipos TypeScript dos schemas Zod
+  - ✅ Ajustada navegação entre abas para permitir validação correta
+  - ✅ Melhorada validação por aba específica
+  - ✅ Campos obrigatórios agora funcionam corretamente (Prazo Estimado, Descrição)
+  - ✅ MELHORIAS UX - Reorganização dos Serviços
+  - ✅ Serviços reorganizados em 2 grupos: MARKETING (8 itens) e COMERCIAIS (8 itens)
+  - ✅ Funcionalidade de selecionar/deselecionar grupo inteiro implementada
+  - ✅ Estado visual diferenciado: selecionado completo, parcial, e vazio
+  - ✅ Interface mais clara com cabeçalhos de grupo e descrições
+  - ✅ Checkbox com estados visuais: completo (verde), parcial (amarelo), vazio (cinza)
 
 - **Descobertas Técnicas:**
   - O modelo CommercialProposal já está bem estruturado no Prisma
@@ -440,8 +460,69 @@ const PropostasWidget = () => {
   - Componentes de proposals seguem perfeitamente o padrão visual estabelecido
   - RichnessScoreBadge é reutilizável entre módulos
   - Sidebar expansível já preparado para novos menus
+  - React Hook Form com Zod oferece validação robusta e experiência fluida
+  - Sistema de tabs com validação condicional funciona perfeitamente
+  - ProposalProgress adapta-se bem ao conceito de 3 abas
+  - **Schemas Zod precisam ser flexíveis com strings vazias para campos enum**
+  - **Validação por aba específica melhora performance e UX**
+  - **TypeScript strict types melhoram segurança mas precisam ajustes para forms**
+  - **Agrupamento de serviços melhora significativamente a UX**
+  - **Estados parciais em checkboxes fornecem feedback visual valioso**
+
+- **Problemas Corrigidos:**
+  - ❌ **Problema**: Navegação entre abas não funcionava
+  - ✅ **Solução**: Ajustada lógica de validação e trigger por aba específica
+  - ❌ **Problema**: Campos "Prazo Estimado" e "Descrição" não eram obrigatórios
+  - ✅ **Solução**: Corrigidos schemas Zod para validação adequada
+  - ❌ **Problema**: Tipos TypeScript incompatíveis em formulários
+  - ✅ **Solução**: Mudança de enum strict para string com refine validation
+  - ❌ **Problema**: Mensagens de erro não apareciam
+  - ✅ **Solução**: Validação por campos específicos implementada
+  - ❌ **Problema**: Interface de serviços confusa com 10 itens desorganizados
+  - ✅ **Solução**: Reorganização em grupos A e B com funcionalidade de seleção em massa
+
+- **Nova Funcionalidade - Serviços Agrupados:**
+  **A) SERVIÇOS DE MARKETING (8 itens):**
+  - Tráfego pago (Google Ads, Meta Ads, etc)
+  - Copywriting (anúncios, e-mails, landing pages)
+  - Criação e gestão de landing pages e websites
+  - Planejamento de campanhas e conteúdo
+  - Design gráfico e soluções criativas
+  - SEO e CRO (otimizações e testes A/B)
+  - Email marketing e automações
+  - Análise de dados (dashboards e relatórios)
+
+  **B) SERVIÇOS COMERCIAIS (8 itens):**
+  - Diagnóstico do processo comercial
+  - Estruturação de BDRs e Closers
+  - Elaboração de scripts comerciais
+  - Treinamentos e reciclagens
+  - Implementação de Playbook
+  - Acompanhamento e gestão de metas
+  - Análise de performance
+  - Simulações de vendas
+
+  **Funcionalidades:**
+  - ✅ Checkbox do grupo seleciona/deseleciona todos os itens
+  - ✅ Estado visual diferenciado: completo, parcial, vazio
+  - ✅ Checkboxes individuais continuam funcionando
+  - ✅ Contador dinâmico de serviços selecionados
+  - ✅ Interface mais limpa e organizada
+
+- **Como Testar:**
+  1. Navegue para `/propostas/nova`
+  2. Selecione um cliente existente
+  3. **Teste na Aba 2 - Escopo de Serviços:**
+     - Clique no checkbox do **Grupo A (Marketing)** → seleciona todos os 8 itens
+     - Clique novamente → deseleciona todos
+     - Selecione alguns itens individuais → checkbox do grupo fica amarelo (parcial)
+     - Repita o teste com o **Grupo B (Comerciais)**
+     - Verifique se o contador "(X selecionados)" atualiza corretamente
+  4. Teste a navegação e validação normalmente
+  5. Submeta o formulário para ver o mock de sucesso
 
 - **Próximos Passos:**
-  - Fases 0 e 1 concluídas conforme solicitado
-  - Estrutura sólida criada para as próximas fases
-  - Pronto para implementar Fase 2 (Formulário Multi-Step) quando necessário
+  - Fases 0, 1 e 2 concluídas e totalmente funcionais
+  - Sistema de navegação e validação 100% operacional
+  - Interface de serviços otimizada para melhor UX
+  - Pronto para implementar Fase 3 (Backend - APIs e Integração) quando necessário

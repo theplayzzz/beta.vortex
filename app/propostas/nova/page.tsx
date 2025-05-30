@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Users, Plus, FileText } from "lucide-react";
+import { ArrowLeft, Users, Plus } from "lucide-react";
 import Link from "next/link";
 import ClientFlowModal from "@/components/shared/client-flow-modal";
 import { useClientFlow } from "@/hooks/use-client-flow";
+import { ProposalForm } from "@/components/proposals/ProposalForm";
 
 // Definir o tipo Client localmente
 interface Client {
@@ -49,35 +50,10 @@ export default function NovaPropostaPage() {
   if (step === 'form' && selectedClient) {
     return (
       <div className="p-6">
-        {/* TODO: Implementar ProposalFormWithClient na Fase 2 */}
-        <div className="bg-eerie-black rounded-lg p-6 border border-accent/20">
-          <div className="flex items-center gap-4 mb-6">
-            <button
-              onClick={handleBackToClient}
-              className="p-2 text-seasalt/70 hover:text-seasalt transition-colors"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold text-seasalt">Nova Proposta Comercial</h1>
-              <p className="text-seasalt/70">Cliente: {selectedClient.name}</p>
-            </div>
-          </div>
-          
-          <div className="text-center py-12">
-            <FileText className="h-12 w-12 mx-auto mb-4 text-sgbus-green/50" />
-            <h3 className="text-lg font-medium text-seasalt mb-2">Formulário em Desenvolvimento</h3>
-            <p className="text-seasalt/70 mb-6">
-              O formulário multi-step será implementado na Fase 2
-            </p>
-            <button
-              onClick={handleBackToClient}
-              className="bg-sgbus-green hover:bg-sgbus-green/90 text-night px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              Voltar para Seleção de Cliente
-            </button>
-          </div>
-        </div>
+        <ProposalForm 
+          client={selectedClient}
+          onBack={handleBackToClient}
+        />
       </div>
     );
   }
