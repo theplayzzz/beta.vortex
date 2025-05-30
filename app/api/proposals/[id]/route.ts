@@ -13,7 +13,7 @@ const UpdateProposalSchema = z.object({
 // GET /api/proposals/[id] - Buscar proposta específica
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -21,6 +21,9 @@ export async function GET(
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Await params to get the actual values
+    const { id } = await params;
 
     // Buscar usuário no banco
     const user = await prisma.user.findUnique({
@@ -35,7 +38,7 @@ export async function GET(
     // Buscar proposta
     const proposal = await prisma.commercialProposal.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: user.id,
       },
       include: {
@@ -88,7 +91,7 @@ export async function GET(
 // PUT /api/proposals/[id] - Atualizar proposta
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -96,6 +99,9 @@ export async function PUT(
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Await params to get the actual values
+    const { id } = await params;
 
     // Buscar usuário no banco
     const user = await prisma.user.findUnique({
@@ -114,7 +120,7 @@ export async function PUT(
     // Verificar se a proposta existe e pertence ao usuário
     const existingProposal = await prisma.commercialProposal.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: user.id,
       },
     });
@@ -128,7 +134,7 @@ export async function PUT(
 
     // Atualizar proposta
     const updatedProposal = await prisma.commercialProposal.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         ...data,
         updatedAt: new Date(),
@@ -172,7 +178,7 @@ export async function PUT(
 // DELETE /api/proposals/[id] - Deletar proposta (soft delete ou hard delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -180,6 +186,9 @@ export async function DELETE(
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Await params to get the actual values
+    const { id } = await params;
 
     // Buscar usuário no banco
     const user = await prisma.user.findUnique({
@@ -194,7 +203,7 @@ export async function DELETE(
     // Verificar se a proposta existe e pertence ao usuário
     const existingProposal = await prisma.commercialProposal.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: user.id,
       },
     });
@@ -213,17 +222,17 @@ export async function DELETE(
     if (hardDelete) {
       // Hard delete - remover completamente
       await prisma.commercialProposal.delete({
-        where: { id: params.id },
+        where: { id: id },
       });
       
       return NextResponse.json({ 
         message: 'Proposal permanently deleted',
-        deletedId: params.id 
+        deletedId: id 
       });
     } else {
       // Soft delete - marcar como arquivada
       const archivedProposal = await prisma.commercialProposal.update({
-        where: { id: params.id },
+        where: { id: id },
         data: {
           status: 'ARCHIVED',
           updatedAt: new Date(),

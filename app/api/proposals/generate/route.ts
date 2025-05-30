@@ -124,11 +124,27 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         status: 'DRAFT',
         updatedAt: new Date(),
+        
+        // 🔥 SALVAR DADOS DO FORMULÁRIO EM CAMPO DEDICADO
+        formDataJSON: formData,
+        clientSnapshot: {
+          id: client.id,
+          name: client.name,
+          industry: client.industry,
+          richnessScore: client.richnessScore,
+          businessDetails: client.businessDetails,
+          contactEmail: client.contactEmail,
+          website: client.website,
+          targetAudience: client.targetAudience,
+          competitors: client.competitors,
+          snapshotAt: new Date().toISOString()
+        },
+        
+        // Campo temporário para status da geração
         generatedContent: JSON.stringify({
-          formData: formData,
-          clientSnapshot: client,
           status: 'generating',
-          createdAt: new Date().toISOString()
+          message: 'Enviando para IA externa...',
+          timestamp: new Date().toISOString()
         }),
       },
       include: {
@@ -179,13 +195,20 @@ export async function POST(request: NextRequest) {
         const webhookResult = await webhookResponse.json();
         console.log('✅ Webhook enviado com sucesso:', webhookResult);
 
-        // Atualizar proposta com o conteúdo gerado
+        // 🔥 IMPORTANTE: Não sobrescrever dados do formulário!
+        // Os dados da IA vão para campos específicos, formData fica preservado
         const updatedProposal = await prisma.commercialProposal.update({
           where: { id: proposal.id },
           data: {
             status: 'SENT', // Mudando para SENT após geração
             updatedAt: new Date(),
-            generatedContent: webhookResult.generated_content || 'Proposta gerada com sucesso',
+            
+            // ✅ Status de sucesso no generatedContent (sem sobrescrever formData)
+            generatedContent: JSON.stringify({
+              status: 'completed',
+              message: 'Proposta gerada com sucesso pela IA',
+              completedAt: new Date().toISOString()
+            }),
           },
           include: {
             Client: {

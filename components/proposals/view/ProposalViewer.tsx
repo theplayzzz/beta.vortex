@@ -1,13 +1,15 @@
 'use client';
 
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText, Bot } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
 import { useProposal } from '@/hooks/use-proposals';
 import { ProposalHeader } from './ProposalHeader';
 import { ContentRenderer } from './ContentRenderer';
 import { AIInsightsPanel } from './AIInsightsPanel';
 import { ProposalActions } from './ProposalActions';
 import { ProposalEmptyState } from './ProposalEmptyState';
+import { FormDataPanel } from './FormDataPanel';
 
 interface ProposalViewerProps {
   proposalId: string;
@@ -15,6 +17,7 @@ interface ProposalViewerProps {
 
 export function ProposalViewer({ proposalId }: ProposalViewerProps) {
   const { data: proposal, isLoading, error } = useProposal(proposalId);
+  const [activeTab, setActiveTab] = useState('proposal'); // 'proposal' ou 'form'
 
   if (isLoading) {
     return (
@@ -85,7 +88,19 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
         </div>
 
         <ProposalHeader proposal={proposal} />
-        <ProposalEmptyState proposal={proposal} />
+        
+        {/* Se há dados do formulário, mostra eles mesmo sem IA */}
+        {proposal.formDataJSON ? (
+          <div className="mt-6">
+            <h2 className="text-xl font-semibold text-seasalt mb-4">Dados do Formulário</h2>
+            <FormDataPanel 
+              formData={proposal.formDataJSON}
+              clientSnapshot={proposal.clientSnapshot}
+            />
+          </div>
+        ) : (
+          <ProposalEmptyState proposal={proposal} />
+        )}
       </div>
     );
   }
@@ -107,23 +122,65 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
 
       <ProposalHeader proposal={proposal} />
       
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
-        {/* Conteúdo Principal */}
-        <div className="lg:col-span-3">
-          <ContentRenderer 
-            htmlContent={proposal.proposalHtml}
-            markdownContent={proposal.proposalMarkdown}
-          />
+      {/* Abas para navegar entre conteúdo da IA e dados do formulário */}
+      <div className="mt-6">
+        <div className="flex space-x-1 bg-night/50 rounded-lg p-1 mb-6">
+          <button
+            onClick={() => setActiveTab('proposal')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'proposal'
+                ? 'bg-sgbus-green text-night'
+                : 'text-seasalt/70 hover:text-seasalt'
+            }`}
+          >
+            <Bot className="h-4 w-4" />
+            Proposta Gerada pela IA
+          </button>
+          
+          {proposal.formDataJSON && (
+            <button
+              onClick={() => setActiveTab('form')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'form'
+                  ? 'bg-sgbus-green text-night'
+                  : 'text-seasalt/70 hover:text-seasalt'
+              }`}
+            >
+              <FileText className="h-4 w-4" />
+              Dados do Formulário
+            </button>
+          )}
         </div>
         
-        {/* Sidebar com Insights */}
-        <div className="lg:col-span-1">
-          <AIInsightsPanel 
-            insights={proposal.aiGeneratedContent?.ai_insights}
-            metadata={proposal.aiGeneratedContent?.metadata}
-            extraData={proposal.aiGeneratedContent?.dados_extras}
-          />
-        </div>
+        {activeTab === 'proposal' && (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Conteúdo Principal */}
+            <div className="lg:col-span-3">
+              <ContentRenderer 
+                htmlContent={proposal.proposalHtml}
+                markdownContent={proposal.proposalMarkdown}
+              />
+            </div>
+            
+            {/* Sidebar com Insights */}
+            <div className="lg:col-span-1">
+              <AIInsightsPanel 
+                insights={proposal.aiGeneratedContent?.ai_insights}
+                metadata={proposal.aiGeneratedContent?.metadata}
+                extraData={proposal.aiGeneratedContent?.dados_extras}
+              />
+            </div>
+          </div>
+        )}
+        
+        {activeTab === 'form' && proposal.formDataJSON && (
+          <div className="max-w-4xl">
+            <FormDataPanel 
+              formData={proposal.formDataJSON}
+              clientSnapshot={proposal.clientSnapshot}
+            />
+          </div>
+        )}
       </div>
       
       <ProposalActions proposalId={proposalId} proposal={proposal} />
