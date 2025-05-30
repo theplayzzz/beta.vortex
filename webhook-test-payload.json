@@ -1,0 +1,51 @@
+{
+  "success": true,
+  "proposal_id": "cmbb1jf7c000309tutmx8ckry",
+  "processing_time_ms": 15000,
+  "generated_content": {
+    "proposta_html": "<h1>Proposta Comercial - Teste Webhook</h1><h2>Cliente: Rugido</h2><div class=\"section\"><h3>Visão Geral</h3><p>Esta proposta foi gerada automaticamente pela nossa IA avançada, considerando as necessidades específicas do seu negócio.</p></div><div class=\"section\"><h3>Escopo de Trabalho</h3><ul><li>Análise estratégica completa</li><li>Implementação de soluções customizadas</li><li>Acompanhamento e suporte técnico</li><li>Relatórios de performance</li></ul></div><div class=\"section\"><h3>Investimento</h3><p>Valor total: R$ 25.000,00</p><p>Prazo de execução: 60 dias</p></div>",
+    "proposta_markdown": "# Proposta Comercial - Teste Webhook\n\n## Cliente: Rugido\n\n### Visão Geral\nEsta proposta foi gerada automaticamente pela nossa IA avançada, considerando as necessidades específicas do seu negócio.\n\n### Escopo de Trabalho\n- Análise estratégica completa\n- Implementação de soluções customizadas\n- Acompanhamento e suporte técnico\n- Relatórios de performance\n\n### Investimento\n- **Valor total:** R$ 25.000,00\n- **Prazo de execução:** 60 dias",
+    "dados_extras": {
+      "valor_total": 25000,
+      "prazo_total_dias": 60,
+      "nivel_complexidade": "intermediário",
+      "personalizacao_score": 85,
+      "fatores_decisao": [
+        "Expertise comprovada no setor",
+        "Metodologia ágil e flexível",
+        "ROI estimado em 6 meses",
+        "Suporte técnico especializado"
+      ],
+      "riscos_identificados": [
+        "Dependência de integração com sistemas legados",
+        "Necessidade de treinamento da equipe interna"
+      ],
+      "next_steps": [
+        "Aprovação da proposta pelo tomador de decisão",
+        "Assinatura do contrato e definição de cronograma",
+        "Kick-off meeting com as equipes envolvidas",
+        "Início da fase de descoberta e análise"
+      ]
+    },
+    "ai_insights": {
+      "personalization_score": 85,
+      "industry_match": "alta compatibilidade",
+      "urgency_consideration": "prazo adequado considerando complexidade",
+      "budget_alignment": "dentro da faixa esperada",
+      "confidence_level": 92,
+      "recommended_approach": "implementação incremental com marcos bem definidos",
+      "follow_up_strategy": [
+        "Agendar reunião de apresentação em 48h",
+        "Enviar casos de sucesso similares",
+        "Preparar demonstração técnica personalizada"
+      ]
+    },
+    "metadata": {
+      "generated_at": "2025-01-30T17:27:00.000Z",
+      "model_version": "gpt-4-turbo-preview",
+      "tokens_used": 2847,
+      "processing_complexity": "intermediário",
+      "quality_score": 92
+    }
+  }
+} 
