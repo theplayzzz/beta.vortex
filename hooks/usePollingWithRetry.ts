@@ -31,6 +31,11 @@ export function usePollingWithRetry<T>(
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isPollingRef = useRef(false);
+  const shouldPollRef = useRef(shouldPoll);
+  
+  useEffect(() => {
+    shouldPollRef.current = shouldPoll;
+  }, [shouldPoll]);
   
   const clearAllTimers = useCallback(() => {
     if (intervalRef.current) {
@@ -61,18 +66,23 @@ export function usePollingWithRetry<T>(
     setRetryCount(0);
   }, [stop]);
 
-  const executePoll = useCallback(async (): Promise<boolean> => {
+  const executePoll = useCallback(async (): Promise<{ success: boolean; shouldStop?: boolean }> => {
     try {
       const result = await pollFn();
       setData(result);
       setError(null);
       setRetryCount(0);
-      return true; // Sucesso
+      
+      if (result && typeof result === 'object' && 'shouldStop' in result) {
+        return { success: true, shouldStop: (result as any).shouldStop };
+      }
+      
+      return { success: true, shouldStop: false };
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erro desconhecido no polling');
       setError(error);
       console.error('❌ Erro no polling:', error);
-      return false; // Falha
+      return { success: false, shouldStop: false };
     }
   }, [pollFn]);
 
@@ -89,17 +99,27 @@ export function usePollingWithRetry<T>(
     setRetryCount(prev => prev + 1);
 
     retryTimeoutRef.current = setTimeout(async () => {
-      if (!isPollingRef.current) return;
+      if (!isPollingRef.current || !shouldPollRef.current) return;
       
-      const success = await executePoll();
-      if (!success && isPollingRef.current) {
+      const result = await executePoll();
+      
+      if (result.shouldStop) {
+        console.log('🎯 Polling deve parar - dados encontrados!');
+        stop();
+        return;
+      }
+      
+      if (!result.success && isPollingRef.current && shouldPollRef.current) {
         handleRetry();
       }
     }, delay);
   }, [retryCount, config.maxRetries, config.retryDelay, stop, executePoll]);
 
   const start = useCallback(() => {
-    if (isPollingRef.current) return;
+    if (isPollingRef.current) {
+      console.log('⚠️ Polling já está ativo, ignorando start()');
+      return;
+    }
     
     console.log('🔄 Iniciando polling otimizado...', {
       interval: config.interval,
@@ -118,19 +138,34 @@ export function usePollingWithRetry<T>(
     }, config.timeout);
     
     // Primeira execução imediata
-    executePoll().then(success => {
-      if (!success && isPollingRef.current) {
+    executePoll().then(result => {
+      if (result.shouldStop) {
+        console.log('🎯 Polling deve parar - dados encontrados na primeira tentativa!');
+        stop();
+        return;
+      }
+      
+      if (!result.success && isPollingRef.current && shouldPollRef.current) {
         handleRetry();
         return;
       }
       
       // Se sucesso, continuar polling normal
-      if (success && isPollingRef.current) {
+      if (result.success && isPollingRef.current && shouldPollRef.current) {
         intervalRef.current = setInterval(async () => {
-          if (!isPollingRef.current) return;
+          if (!isPollingRef.current || !shouldPollRef.current) return;
           
-          const success = await executePoll();
-          if (!success && isPollingRef.current) {
+          const result = await executePoll();
+          
+          if (result.shouldStop) {
+            console.log('🎯 Polling deve parar - dados encontrados durante interval!');
+            clearInterval(intervalRef.current!);
+            intervalRef.current = null;
+            stop();
+            return;
+          }
+          
+          if (!result.success && isPollingRef.current && shouldPollRef.current) {
             clearInterval(intervalRef.current!);
             intervalRef.current = null;
             handleRetry();
@@ -140,20 +175,21 @@ export function usePollingWithRetry<T>(
     });
   }, [config, executePoll, handleRetry, stop]);
 
-  // Iniciar/parar polling baseado em shouldPoll
   useEffect(() => {
-    if (shouldPoll && !isPolling) {
+    if (shouldPoll && !isPolling && !isPollingRef.current) {
+      console.log('🚀 Auto-start polling triggered');
       start();
     } else if (!shouldPoll && isPolling) {
+      console.log('🛑 Auto-stop polling triggered');
       stop();
     }
   }, [shouldPoll, isPolling, start, stop]);
 
-  // Cleanup em unmount
   useEffect(() => {
     return () => {
       clearAllTimers();
       isPollingRef.current = false;
+      shouldPollRef.current = false;
     };
   }, [clearAllTimers]);
 

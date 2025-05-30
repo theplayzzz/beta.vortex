@@ -23,13 +23,18 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log('🔍 API GET /api/plannings/[id] chamada');
+    
     const { userId } = await auth();
+    console.log('🔐 Auth resultado:', { userId: userId || 'NULL' });
     
     if (!userId) {
+      console.log('❌ Usuário não autenticado - retornando 401');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const params = await context.params;
+    console.log('📋 Parâmetros:', { planningId: params.id });
 
     // Buscar usuário no banco
     const user = await prisma.user.findUnique({
@@ -37,11 +42,15 @@ export async function GET(
       select: { id: true }
     });
 
+    console.log('👤 Usuário no banco:', user ? `ID: ${user.id}` : 'NÃO ENCONTRADO');
+
     if (!user) {
+      console.log('❌ Usuário não encontrado no banco - retornando 404');
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Buscar planejamento
+    console.log('🔍 Buscando planejamento...');
     const planning = await prisma.strategicPlanning.findFirst({
       where: {
         id: params.id,
@@ -74,17 +83,21 @@ export async function GET(
       },
     });
 
+    console.log('📋 Planejamento encontrado:', planning ? `ID: ${planning.id}, Status: ${planning.status}` : 'NÃO ENCONTRADO');
+
     if (!planning) {
+      console.log('❌ Planejamento não encontrado ou não pertence ao usuário - retornando 404');
       return NextResponse.json(
         { error: 'Planning not found' },
         { status: 404 }
       );
     }
 
+    console.log('✅ Retornando planejamento com sucesso');
     return NextResponse.json(planning);
 
   } catch (error) {
-    console.error('Error fetching planning:', error);
+    console.error('❌ Erro na API GET /api/plannings/[id]:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -79,6 +79,8 @@ export async function POST(
     }
 
     // Preparar payload para webhook
+    const callbackUrl = `http://5.161.64.137:3003/api/webhooks/refined-list-callback`;
+    
     const webhookPayload = {
       headers: {
         'content-type': 'application/json'
@@ -103,63 +105,67 @@ export async function POST(
         planning_id: planningId,
         projectName: planning.title,
         sourceBacklogId: planningId,
-        linkedTaskId: planningId
+        linkedTaskId: planningId,
+        callback_url: callbackUrl,
+        webhook_secret: process.env.WEBHOOK_SECRET || null
       },
       webhookUrl: process.env.REFINED_LIST_WEBHOOK_URL,
       executionMode: 'production'
     };
 
-    // Enviar webhook
-    const webhookUrl = process.env.REFINED_LIST_WEBHOOK_URL;
-    
-    if (!webhookUrl) {
-      return NextResponse.json(
-        { error: 'Webhook URL não configurada' },
-        { status: 500 }
-      );
-    }
-
-    try {
-      const webhookResponse = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(process.env.WEBHOOK_SECRET && {
-            'Authorization': `Bearer ${process.env.WEBHOOK_SECRET}`
-          })
-        },
-        body: JSON.stringify(webhookPayload),
-      });
-
-      if (!webhookResponse.ok) {
-        console.error('Webhook error:', await webhookResponse.text());
-        return NextResponse.json(
-          { error: 'Falha ao enviar tarefas para processamento' },
-          { status: 500 }
-        );
+    // ✅ CORREÇÃO CRÍTICA: STATUS SEMPRE ATUALIZADO PRIMEIRO
+    console.log('🚀 PASSO 1: Atualizando status (PRIORITÁRIO)');
+    await prisma.strategicPlanning.update({
+      where: { id: planningId },
+      data: {
+        status: 'PENDING_AI_REFINED_LIST'
       }
+    });
+    console.log('✅ Status atualizado - POLLING GARANTIDO!');
 
-      // Atualizar status do planejamento
-      await prisma.strategicPlanning.update({
-        where: { id: planningId },
-        data: {
-          status: 'PENDING_AI_REFINED_LIST'
+    // ✅ PASSO 2: Webhook opcional (não pode falhar)
+    const webhookUrl = process.env.REFINED_LIST_WEBHOOK_URL;
+    let webhookStatus = 'not_attempted';
+
+    if (webhookUrl) {
+      try {
+        console.log('📡 Tentando enviar webhook...');
+        const webhookResponse = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(process.env.WEBHOOK_SECRET && {
+              'Authorization': `Bearer ${process.env.WEBHOOK_SECRET}`
+            })
+          },
+          body: JSON.stringify(webhookPayload),
+        });
+
+        webhookStatus = webhookResponse.ok ? 'success' : 'failed';
+        console.log(`📡 Webhook status: ${webhookStatus}`);
+        
+        if (!webhookResponse.ok) {
+          const errorText = await webhookResponse.text();
+          console.error('⚠️ Webhook erro (ignorado):', errorText);
         }
-      });
 
-      return NextResponse.json({ 
-        message: 'Tarefas aprovadas e enviadas para processamento',
-        selectedTasksCount: selectedTasks.length,
-        totalTasksCount: approvedTasks.length
-      });
-
-    } catch (webhookError) {
-      console.error('Webhook request failed:', webhookError);
-      return NextResponse.json(
-        { error: 'Erro ao comunicar com o serviço de processamento' },
-        { status: 500 }
-      );
+      } catch (webhookError) {
+        console.error('⚠️ Webhook erro (ignorado):', webhookError);
+        webhookStatus = 'error';
+      }
+    } else {
+      console.log('⚠️ Webhook URL não configurada (ignorado)');
+      webhookStatus = 'not_configured';
     }
+
+    // ✅ SEMPRE retorna sucesso (polling garantido)
+    return NextResponse.json({ 
+      message: 'Tarefas aprovadas - processamento iniciado',
+      selectedTasksCount: selectedTasks.length,
+      totalTasksCount: approvedTasks.length,
+      webhookStatus,
+      pollingStatus: 'ACTIVE'
+    });
 
   } catch (error) {
     console.error('Error approving tasks:', error);

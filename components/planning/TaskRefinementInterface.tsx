@@ -16,18 +16,18 @@ interface TaskRefinementInterfaceProps {
 }
 
 export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab }: TaskRefinementInterfaceProps) {
-  const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
+  // Estados locais
   const [tasks, setTasks] = useState<TarefaAI[]>([]);
-  const [isApproving, setIsApproving] = useState(false);
+  const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
   const [editingTask, setEditingTask] = useState<{ index: number; task: TarefaAI } | null>(null);
   const [addingContextTask, setAddingContextTask] = useState<{ index: number; task: TarefaAI } | null>(null);
-  
+
   // Estados para modal de confirmação
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [buttonsDisabled, setButtonsDisabled] = useState(false);
 
   // Hook do Context para gerenciar estado da aba refinada
-  const { handleApproval, setTabState, error, clearError } = useRefinedPlanning();
+  const { handleApproval, setTabState, error, clearError, startPolling, stopPolling } = useRefinedPlanning();
 
   // Extrair tarefas do specificObjectives
   useEffect(() => {
@@ -141,10 +141,10 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
     setButtonsDisabled(true);
   };
 
-  // Handler para confirmar no modal - INTEGRADO COM CONTEXT
+  // ✅ CORREÇÃO: Handler para confirmar no modal - FEEDBACK IMEDIATO
   const handleConfirm = async () => {
     setIsModalOpen(false);
-    setIsApproving(true);
+    // ✅ NÃO REMOVER: setButtonsDisabled(true) para manter botões desabilitados
 
     try {
       console.log('🚀 Iniciando aprovação de tarefas...');
@@ -156,24 +156,57 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
 
       console.log('📋 Tarefas selecionadas:', selectedTasksArray.length);
 
-      // USAR O CONTEXT PARA GERENCIAR APROVAÇÃO
-      // Isso irá disparar o polling automaticamente e mudar o estado da aba
-      await handleApproval(planning.id, selectedTasksArray);
+      // ✅ NOVO: FEEDBACK IMEDIATO - ANTES DA API
+      console.log('🎯 PASSO 1: Feedback imediato ao usuário...');
       
-      console.log('✅ Aprovação disparada via Context');
+      // 1. Iniciar polling imediatamente (mostra "IA Gerando...")
+      console.log('🔄 Iniciando polling imediatamente...');
+      startPolling(planning.id);
       
-      // Ativar aba imediatamente
+      // 2. Navegar para aba refinada imediatamente
+      console.log('🎯 Navegando para aba "Planejamento Refinado" imediatamente...');
       onCreateRefinedTab?.();
       
-      console.log('🎯 Aba "Planejamento Refinado" ativada');
+      console.log('✅ Usuário movido para aba refinada com status "IA Gerando"');
+
+      // ✅ PASSO 2: Limpar scope ANTES do processamento
+      console.log('🧹 PASSO 2: Limpando scope anterior...');
+      
+      try {
+        const clearResponse = await fetch(`/api/planning/${planning.id}/clear-scope`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (clearResponse.ok) {
+          console.log('✅ Scope limpo com sucesso');
+        } else {
+          console.warn('⚠️ Erro ao limpar scope, mas continuando...', clearResponse.status);
+        }
+      } catch (clearError) {
+        console.warn('⚠️ Erro na requisição clear-scope, mas continuando...', clearError);
+      }
+
+      // ✅ PASSO 3: Processar aprovação em background
+      console.log('📡 PASSO 3: Processando aprovação em background...');
+      
+      // USAR O CONTEXT PARA GERENCIAR APROVAÇÃO
+      // Isso irá confirmar o polling e garantir que tudo está correto
+      await handleApproval(planning.id, selectedTasksArray);
+      
+      console.log('✅ Aprovação processada com sucesso em background');
       
     } catch (error) {
       console.error('❌ Erro ao aprovar tarefas:', error);
-      // Reabilitar botões em caso de erro
+      // ✅ CORREÇÃO: Reabilitar botões apenas em caso de erro
       setButtonsDisabled(false);
-    } finally {
-      setIsApproving(false);
+      
+      // Em caso de erro, parar o polling que foi iniciado
+      stopPolling();
     }
+    // ✅ REMOVIDO: finally com setIsApproving(false) - não há mais loading
   };
 
   // Handler para cancelar no modal
@@ -237,12 +270,7 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
             disabled={selectedCount === 0 || buttonsDisabled}
             className="flex items-center gap-2 px-6 py-2 bg-sgbus-green text-night rounded-lg hover:bg-sgbus-green/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
-            {isApproving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              '✅'
-            )}
-            Aprovar selecionadas ({selectedCount})
+            ✅ Aprovar selecionadas
           </button>
         </div>
       </div>
@@ -277,12 +305,7 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
             disabled={selectedCount === 0 || buttonsDisabled}
             className="flex items-center gap-2 px-6 py-2 bg-sgbus-green text-night rounded-lg hover:bg-sgbus-green/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
-            {isApproving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              '✅'
-            )}
-            Aprovar selecionadas
+            ✅ Aprovar selecionadas
           </button>
         </div>
       </div>
@@ -296,7 +319,6 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
         title="Confirmar Aprovação"
         confirmText="Sim"
         cancelText="Cancelar"
-        isLoading={isApproving}
       />
 
       {/* Modais de Edição */}
