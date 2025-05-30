@@ -1,8 +1,8 @@
 'use client';
 
-import { Check, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { Check, Loader2, Sparkles, AlertCircle, Clock } from 'lucide-react';
 
-type TabState = 'generating' | 'ready' | 'new' | 'error';
+type TabState = 'generating' | 'ready' | 'new' | 'error' | 'waiting';
 
 interface TabStatusIndicatorProps {
   state: TabState;
@@ -29,6 +29,12 @@ export function TabStatusIndicator({ state, message, className = '' }: TabStatus
       icon: <Sparkles className="h-4 w-4" />,
       text: message || "Novo",
       className: "bg-sgbus-green/20 text-sgbus-green border border-sgbus-green/30",
+      animation: ""
+    },
+    waiting: {
+      icon: <Clock className="h-4 w-4" />,
+      text: message || "Aguardando",
+      className: "bg-amber-500/20 text-amber-400 border border-amber-500/30",
       animation: ""
     },
     error: {

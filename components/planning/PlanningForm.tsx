@@ -24,7 +24,7 @@ interface PlanningFormProps {
   client: Client;
   onSubmit: (data: PlanningFormData) => void;
   onSaveDraft: (data: PlanningFormData) => void;
-  onTabChangeRef?: (setTabFunction: (tab: number) => void) => void;
+  onTabChangeRef?: React.MutableRefObject<(tab: number) => void>;
 }
 
 interface Tab {
@@ -116,12 +116,17 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
     setCurrentTab(tabIndex);
   }, [setCurrentTab]);
 
-  // Disponibilizar função de mudança de aba para componente pai
-  useEffect(() => {
+  // Disponibilizar função de mudança de aba para componente pai usando useRef pattern
+  const tabChangeRef = useCallback((callback: (tab: number) => void) => {
     if (onTabChangeRef) {
-      onTabChangeRef(safeSetCurrentTab);
+      onTabChangeRef.current = callback;
     }
-  }, [onTabChangeRef, safeSetCurrentTab]);
+  }, [onTabChangeRef]);
+
+  // Chamar o callback quando a função estiver pronta (após primeiro render)
+  useEffect(() => {
+    tabChangeRef(safeSetCurrentTab);
+  }, [tabChangeRef, safeSetCurrentTab]);
 
   // Auto-save para localStorage com throttling
   useEffect(() => {

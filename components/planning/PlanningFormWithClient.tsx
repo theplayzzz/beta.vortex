@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { PlanningForm } from './PlanningForm';
 import { Client, useClientFormContext } from './ClientFormContext';
@@ -100,7 +100,7 @@ export function PlanningFormWithClient({
   const createPlanningMutation = useCreatePlanning();
   const [sessionId] = useState(() => generateUUID());
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentTabRef, setCurrentTabRef] = useState<(tab: number) => void>(() => {});
+  const currentTabRef = useRef<(tab: number) => void>(() => {});
 
   // Validar cliente antes de mostrar o formulário
   const clientValidation = validateClientForForm(client);
@@ -314,7 +314,7 @@ export function PlanningFormWithClient({
               client={client}
               onSubmit={handleFormSubmit}
               onSaveDraft={handleSaveDraft}
-              onTabChangeRef={setCurrentTabRef}
+              onTabChangeRef={currentTabRef}
             />
           </div>
         </div>

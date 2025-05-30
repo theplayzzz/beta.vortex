@@ -6,6 +6,7 @@ import { TaskRefinementList } from './TaskRefinementList';
 import { EditTaskModal } from './EditTaskModal';
 import { AddContextModal } from './AddContextModal';
 import { ConfirmationModal } from '../ui/ConfirmationModal';
+import { useRefinedPlanning } from '../../contexts/RefinedPlanningContext';
 import type { TarefaAI, Planning } from '@/types/planning';
 
 interface TaskRefinementInterfaceProps {
@@ -25,6 +26,9 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [buttonsDisabled, setButtonsDisabled] = useState(false);
 
+  // Hook do Context para gerenciar estado da aba refinada
+  const { handleApproval, setTabState, error, clearError } = useRefinedPlanning();
+
   // Extrair tarefas do specificObjectives
   useEffect(() => {
     if (planning.specificObjectives) {
@@ -40,6 +44,13 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
       }
     }
   }, [planning.specificObjectives]);
+
+  // Limpar erros quando componente monta
+  useEffect(() => {
+    if (error) {
+      clearError();
+    }
+  }, [error, clearError]);
 
   const handleSelectAll = () => {
     if (selectedTasks.size === tasks.length) {
@@ -130,42 +141,34 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
     setButtonsDisabled(true);
   };
 
-  // Handler para confirmar no modal
+  // Handler para confirmar no modal - INTEGRADO COM CONTEXT
   const handleConfirm = async () => {
     setIsModalOpen(false);
-    // MANTER botões desabilitados até webhook responder
     setIsApproving(true);
 
     try {
+      console.log('🚀 Iniciando aprovação de tarefas...');
+      
+      // Preparar tarefas selecionadas
       const selectedTasksArray = tasks
         .map((task, index) => selectedTasks.has(index) ? { ...task, selecionada: true } : null)
         .filter(Boolean);
 
-      const response = await fetch(`/api/planning/${planning.id}/approve-tasks`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          approvedTasks: selectedTasksArray
-        }),
-      });
+      console.log('📋 Tarefas selecionadas:', selectedTasksArray.length);
 
-      if (!response.ok) {
-        throw new Error('Falha ao aprovar tarefas');
-      }
-
-      // Aqui vai ser implementada a criação da nova aba "Planejamento Refinado"
-      // TODO: Implementar createRefinedPlanningTab()
+      // USAR O CONTEXT PARA GERENCIAR APROVAÇÃO
+      // Isso irá disparar o polling automaticamente e mudar o estado da aba
+      await handleApproval(planning.id, selectedTasksArray);
       
-      // Mostrar notificação de sucesso
-      // TODO: Implementar sistema de notificações
-      console.log('Tarefas aprovadas com sucesso!');
+      console.log('✅ Aprovação disparada via Context');
       
+      // Ativar aba imediatamente
       onCreateRefinedTab?.();
+      
+      console.log('🎯 Aba "Planejamento Refinado" ativada');
+      
     } catch (error) {
-      console.error('Erro ao aprovar tarefas:', error);
-      // TODO: Implementar notificação de erro
+      console.error('❌ Erro ao aprovar tarefas:', error);
       // Reabilitar botões em caso de erro
       setButtonsDisabled(false);
     } finally {
@@ -183,6 +186,24 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
 
   return (
     <div className="space-y-6">
+      {/* Exibir erro se houver */}
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4">
+          <h3 className="text-lg font-semibold text-red-400 mb-2">
+            Erro na Aprovação
+          </h3>
+          <p className="text-red-400/80 text-sm mb-4">
+            {error.message}
+          </p>
+          <button
+            onClick={clearError}
+            className="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
       {/* Cabeçalho */}
       <div className="flex items-center justify-between">
         <div>

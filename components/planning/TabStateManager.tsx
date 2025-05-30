@@ -18,6 +18,18 @@ function hasValidRefinedTasks(scopeContent: any): boolean {
          scopeContent.tarefas_refinadas.length > 0;
 }
 
+// Função para verificar se specificObjectives contém tarefas estruturadas
+function hasStructuredTasks(specificObjectives?: string): boolean {
+  if (!specificObjectives) return false;
+  
+  try {
+    const parsed = JSON.parse(specificObjectives);
+    return parsed.tarefas && Array.isArray(parsed.tarefas) && parsed.tarefas.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 export function TabStateManager({ planning, onTabChange, currentTab }: TabStateManagerProps) {
   const { 
     tabState, 
@@ -28,6 +40,11 @@ export function TabStateManager({ planning, onTabChange, currentTab }: TabStateM
     markAsViewed,
     startPolling
   } = useRefinedPlanning();
+  
+  // Verificar se deve mostrar a aba (SEMPRE se tem tarefas estruturadas)
+  const shouldShowTab = useMemo(() => {
+    return hasStructuredTasks(planning.specificObjectives);
+  }, [planning.specificObjectives]);
   
   // Lógica de determinação de estado baseada em props + context
   const computedState = useMemo(() => {
@@ -46,8 +63,13 @@ export function TabStateManager({ planning, onTabChange, currentTab }: TabStateM
       return 'ready';
     }
     
+    // Estado de espera - tem tarefas estruturadas mas não foi aprovado ainda
+    if (hasStructuredTasks(planning.specificObjectives)) {
+      return 'waiting';
+    }
+    
     return 'hidden';
-  }, [error, isPolling, planning.status, scopeContent]);
+  }, [error, isPolling, planning.status, scopeContent, planning.specificObjectives]);
   
   // Sync com context quando computed state muda
   useEffect(() => {
@@ -66,6 +88,11 @@ export function TabStateManager({ planning, onTabChange, currentTab }: TabStateM
 
   // Marcar como visualizado quando aba é clicada
   const handleTabClick = () => {
+    // Só permitir clique se não estiver em estado waiting
+    if (tabState === 'waiting') {
+      return; // Não clicável no estado de espera
+    }
+    
     if (tabState === 'new') {
       markAsViewed();
     }
@@ -76,6 +103,11 @@ export function TabStateManager({ planning, onTabChange, currentTab }: TabStateM
   const getTabClasses = () => {
     const baseClasses = 'pb-3 border-b-2 font-medium text-sm transition-colors relative tab-refined-planning tab-state-transition';
     
+    // Estado waiting - semi-transparente e não clicável
+    if (tabState === 'waiting') {
+      return `${baseClasses} border-transparent text-seasalt/40 cursor-not-allowed opacity-60`;
+    }
+    
     if (currentTab === 'planejamento-refinado') {
       return `${baseClasses} border-sgbus-green text-sgbus-green state-${tabState}`;
     }
@@ -83,8 +115,8 @@ export function TabStateManager({ planning, onTabChange, currentTab }: TabStateM
     return `${baseClasses} border-transparent text-periwinkle hover:text-seasalt hover:border-seasalt/40 state-${tabState}`;
   };
 
-  // Não renderizar se estado é hidden
-  if (tabState === 'hidden') {
+  // SEMPRE renderizar se deve mostrar a aba (quando há tarefas estruturadas)
+  if (!shouldShowTab) {
     return null;
   }
 
@@ -92,6 +124,7 @@ export function TabStateManager({ planning, onTabChange, currentTab }: TabStateM
     <button
       onClick={handleTabClick}
       className={getTabClasses()}
+      disabled={tabState === 'waiting'}
     >
       <span className="flex items-center space-x-2">
         {/* Ícone baseado no estado */}
@@ -107,6 +140,12 @@ export function TabStateManager({ planning, onTabChange, currentTab }: TabStateM
           </svg>
         )}
         
+        {tabState === 'waiting' && (
+          <svg className="h-4 w-4 text-seasalt/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        )}
+        
         {tabState === 'error' && (
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.96-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -116,16 +155,19 @@ export function TabStateManager({ planning, onTabChange, currentTab }: TabStateM
         <span>Planejamento Refinado</span>
         
         {/* Indicador de status */}
-        <TabStatusIndicator 
-          state={tabState}
-          message={
-            tabState === 'generating' ? 'IA Gerando...' :
-            tabState === 'ready' ? 'Pronto' :
-            tabState === 'new' ? 'Novo' :
-            tabState === 'error' ? 'Erro' :
-            undefined
-          }
-        />
+        {tabState !== 'hidden' && (
+          <TabStatusIndicator 
+            state={tabState}
+            message={
+              tabState === 'generating' ? 'IA Gerando...' :
+              tabState === 'ready' ? 'Pronto' :
+              tabState === 'new' ? 'Novo' :
+              tabState === 'waiting' ? 'Aguardando Aprovação' :
+              tabState === 'error' ? 'Erro' :
+              undefined
+            }
+          />
+        )}
       </span>
     </button>
   );
