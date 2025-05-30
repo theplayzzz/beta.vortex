@@ -5,18 +5,25 @@ import { ProposalCard } from './ProposalCard';
 interface Client {
   id: string;
   name: string;
-  industry?: string;
+  industry: string | null;
   richnessScore: number;
+  businessDetails?: string | null;
+  contactEmail?: string | null;
+  website?: string | null;
 }
 
 interface Proposal {
   id: string;
   title: string;
+  generatedContent: string | null;
   status: 'DRAFT' | 'SENT' | 'VIEWED' | 'ACCEPTED' | 'REJECTED' | 'NEGOTIATION' | 'ARCHIVED';
   version: number;
+  clientId: string | null;
+  userId: string;
   createdAt: string;
   updatedAt: string;
   Client?: Client;
+  parsedContent?: any;
 }
 
 interface ProposalsListProps {
