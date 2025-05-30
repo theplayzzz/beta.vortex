@@ -12,7 +12,8 @@ import {
   Users,
   ChevronDown,
   Menu,
-  X
+  X,
+  FileCheck
 } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 
@@ -46,6 +47,11 @@ const menuItems: MenuItem[] = [
     icon: FileText,
     label: "Planejamentos",
     href: "/planejamentos",
+  },
+  {
+    icon: FileCheck,
+    label: "Propostas",
+    href: "/propostas",
   },
   {
     icon: BarChart2,
