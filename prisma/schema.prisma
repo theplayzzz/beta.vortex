@@ -120,11 +120,19 @@ model CommercialProposal {
   userId           String
   createdAt        DateTime       @default(now())
   updatedAt        DateTime
+  
+  // 🆕 NOVOS CAMPOS PARA CONTEÚDO DA IA
+  aiGeneratedContent Json?        // Estrutura completa da resposta da IA
+  proposalHtml       String?      // HTML formatado da proposta
+  proposalMarkdown   String?      // Markdown da proposta para edição
+  aiMetadata         Json?        // Metadados da geração (tokens, modelo, etc)
+  
   Client           Client?        @relation(fields: [clientId], references: [id])
   User             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([userId])
+  @@index([userId, status])      // 🆕 Índice para filtros por status
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

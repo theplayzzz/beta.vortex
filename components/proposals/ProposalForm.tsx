@@ -1,30 +1,39 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, ArrowRight, Send, Eye } from 'lucide-react';
-import { proposalFormSchema, ProposalFormSchema, calculateTabProgress, validateTab } from '@/lib/proposals/formSchema';
-import { Client } from '@/lib/proposals/types';
-import { ProposalProgress } from './ProposalProgress';
+import { proposalFormSchema, validateTab, calculateTabProgress, type ProposalFormSchema } from '@/lib/proposals/formSchema';
 import { BasicInfoTab } from './tabs/BasicInfoTab';
 import { ScopeTab } from './tabs/ScopeTab';
 import { CommercialTab } from './tabs/CommercialTab';
-import { ClientHeader } from '@/components/planning/ClientHeader';
+import { ProposalProgress } from './ProposalProgress';
+import { useGenerateProposal } from '@/hooks/use-proposals';
+import { useToast, toast } from '@/components/ui/toast';
+import { useRouter } from 'next/navigation';
+
+interface Client {
+  id: string;
+  name: string;
+  industry?: string;
+  richnessScore: number;
+}
 
 interface ProposalFormProps {
   client: Client;
-  onBack: () => void;
 }
 
-export function ProposalForm({ client, onBack }: ProposalFormProps) {
+export function ProposalForm({ client }: ProposalFormProps) {
   const [currentTab, setCurrentTab] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const router = useRouter();
+  const { addToast } = useToast();
+  
+  // Hook para gerar proposta via IA
+  const generateProposal = useGenerateProposal();
 
   const form = useForm<ProposalFormSchema>({
     resolver: zodResolver(proposalFormSchema),
-    mode: 'onChange',
     defaultValues: {
       titulo_proposta: '',
       tipo_proposta: '',
@@ -37,263 +46,226 @@ export function ProposalForm({ client, onBack }: ProposalFormProps) {
       concorrentes_considerados: '',
       urgencia_projeto: '',
       tomador_decisao: '',
-      contexto_adicional: ''
-    }
+      contexto_adicional: '',
+    },
+    mode: 'onChange',
   });
 
-  const { watch, trigger, formState: { isValid } } = form;
-  const formData = watch();
-
-  // Calcular progresso geral
-  const [overallProgress, setOverallProgress] = useState(0);
-  useEffect(() => {
-    const tab0Progress = calculateTabProgress(0, formData);
-    const tab1Progress = calculateTabProgress(1, formData);
-    const tab2Progress = calculateTabProgress(2, formData);
-    const total = Math.round((tab0Progress + tab1Progress + tab2Progress) / 3);
-    setOverallProgress(total);
-  }, [formData]);
-
   const tabs = [
-    { 
-      id: 'basic', 
-      title: 'Informações Básicas', 
-      component: <BasicInfoTab form={form} />,
-      isValid: () => validateTab(0, formData).isValid
-    },
-    { 
-      id: 'scope', 
-      title: 'Escopo de Serviços', 
-      component: <ScopeTab form={form} />,
-      isValid: () => validateTab(1, formData).isValid
-    },
-    { 
-      id: 'commercial', 
-      title: 'Contexto Comercial', 
-      component: <CommercialTab form={form} />,
-      isValid: () => validateTab(2, formData).isValid
-    }
+    { id: 'basic', title: 'Informações Básicas', component: BasicInfoTab },
+    { id: 'scope', title: 'Escopo de Serviços', component: ScopeTab },
+    { id: 'commercial', title: 'Contexto Comercial', component: CommercialTab }
   ];
 
-  const handleNext = async () => {
-    // Trigger validação da aba atual
-    const fieldsToValidate = getFieldsForTab(currentTab);
-    const currentTabValid = await trigger(fieldsToValidate);
-    
-    if (currentTabValid && currentTab < tabs.length - 1) {
+  const currentTabData = form.watch();
+  const currentTabProgress = calculateTabProgress(currentTab, currentTabData);
+  const isCurrentTabValid = validateTab(currentTab, currentTabData).isValid;
+
+  const handleNextTab = async () => {
+    const isValid = await form.trigger();
+    if (isValid && currentTab < tabs.length - 1) {
       setCurrentTab(currentTab + 1);
     }
   };
 
-  const handlePrevious = () => {
+  const handlePrevTab = () => {
     if (currentTab > 0) {
       setCurrentTab(currentTab - 1);
     }
   };
 
-  const handleTabClick = async (tabIndex: number) => {
-    // Permite navegar para abas anteriores sempre
-    if (tabIndex <= currentTab) {
-      setCurrentTab(tabIndex);
-    } else {
-      // Para avançar, valida a aba atual
-      const fieldsToValidate = getFieldsForTab(currentTab);
-      const currentTabValid = await trigger(fieldsToValidate);
-      if (currentTabValid) {
-        setCurrentTab(tabIndex);
-      }
-    }
-  };
-
-  // Função para obter os campos de cada aba
-  const getFieldsForTab = (tabIndex: number): (keyof ProposalFormSchema)[] => {
-    switch (tabIndex) {
-      case 0:
-        return ['titulo_proposta', 'tipo_proposta', 'descricao_objetivo', 'prazo_estimado'];
-      case 1:
-        return ['modalidade_entrega', 'servicos_incluidos', 'requisitos_especiais'];
-      case 2:
-        return ['orcamento_estimado', 'concorrentes_considerados', 'urgencia_projeto', 'tomador_decisao', 'contexto_adicional'];
-      default:
-        return [];
-    }
-  };
-
-  const onSubmit = async (data: ProposalFormSchema) => {
-    setIsSubmitting(true);
+  const handleSubmit = async (data: ProposalFormSchema) => {
     try {
-      console.log('Proposta a ser enviada:', { client, formData: data });
-      // TODO: Implementar envio para API na Fase 3
-      alert('Proposta criada com sucesso! (Mock - será implementado na Fase 3)');
-    } catch (error) {
-      console.error('Erro ao criar proposta:', error);
-    } finally {
-      setIsSubmitting(false);
+      // Mostrar toast de início do processo
+      addToast(toast.info(
+        'Gerando proposta',
+        'Enviando dados para nossa IA especializada...',
+        { duration: 3000 }
+      ));
+
+      const proposalData = {
+        ...data,
+        clientId: client.id,
+      };
+
+      const result = await generateProposal.mutateAsync(proposalData);
+
+      // Mostrar toast de sucesso
+      addToast(toast.success(
+        'Proposta gerada com sucesso!',
+        'A IA criou uma proposta personalizada para seu cliente.',
+        { duration: 5000 }
+      ));
+
+      // Redirecionar para a lista de propostas
+      router.push('/propostas');
+
+    } catch (error: any) {
+      console.error('Erro ao gerar proposta:', error);
+      
+      // Mostrar toast de erro
+      addToast(toast.error(
+        'Erro ao gerar proposta',
+        error.message || 'Tente novamente em alguns instantes.',
+        { duration: 5000 }
+      ));
     }
   };
 
-  const PreviewModal = () => {
-    if (!showPreview) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        <div className="bg-eerie-black rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="p-6 border-b border-accent/20">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-seasalt">Preview da Proposta</h3>
-              <button
-                onClick={() => setShowPreview(false)}
-                className="text-seasalt/70 hover:text-seasalt"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-          <div className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-semibold text-seasalt mb-2">Cliente</h4>
-                <p className="text-seasalt/70">{client.name}</p>
-                <p className="text-seasalt/70 text-sm">{client.industry}</p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-seasalt mb-2">Título</h4>
-                <p className="text-seasalt/70">{formData.titulo_proposta || 'Não definido'}</p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-seasalt mb-2">Tipo</h4>
-                <p className="text-seasalt/70">{formData.tipo_proposta || 'Não definido'}</p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-seasalt mb-2">Modalidade</h4>
-                <p className="text-seasalt/70">{formData.modalidade_entrega || 'Não definido'}</p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-seasalt mb-2">Serviços</h4>
-                <p className="text-seasalt/70">{formData.servicos_incluidos?.length || 0} selecionados</p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-seasalt mb-2">Urgência</h4>
-                <p className="text-seasalt/70">{formData.urgencia_projeto || 'Não definido'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  const handlePreview = () => {
+    setShowPreview(true);
   };
+
+  const isFormComplete = tabs.every((_, index) => validateTab(index, currentTabData).isValid);
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Header com informações do cliente */}
-      <div className="mb-6">
-        <div className="flex items-center gap-4 mb-4">
-          <button
-            onClick={onBack}
-            className="p-2 text-seasalt/70 hover:text-seasalt transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-seasalt">Nova Proposta Comercial</h1>
-            <p className="text-seasalt/70">
-              Complete as informações abaixo para gerar sua proposta
-            </p>
-          </div>
-        </div>
-        
-        <ClientHeader client={client} />
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="border-b border-accent/20 pb-4">
+        <h1 className="text-2xl font-bold text-seasalt">Nova Proposta Comercial</h1>
+        <p className="text-seasalt/70 mt-2">
+          Preencha as informações para gerar uma proposta personalizada com IA
+        </p>
       </div>
 
-      {/* Progress indicator */}
-      <ProposalProgress currentProgress={overallProgress} currentTab={currentTab} />
+      {/* Progress */}
+      <ProposalProgress currentTab={currentTab} currentProgress={currentTabProgress} />
 
-      {/* Navegação por abas */}
-      <div className="flex mb-6 bg-eerie-black rounded-lg p-1 border border-accent/20">
-        {tabs.map((tab, index) => (
-          <button
-            key={tab.id}
-            onClick={() => handleTabClick(index)}
-            className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
-              index === currentTab
-                ? 'bg-sgbus-green text-night'
-                : index < currentTab
-                  ? 'text-seasalt hover:bg-white/5'
-                  : 'text-seasalt/50'
-            }`}
-          >
-            {tab.title}
-            {index < currentTab && (
-              <span className="ml-2 text-sgbus-green">✓</span>
-            )}
-          </button>
-        ))}
+      {/* Tabs Navigation */}
+      <div className="flex space-x-1 bg-night p-1 rounded-lg border border-accent/20">
+        {tabs.map((tab, index) => {
+          const tabProgress = calculateTabProgress(index, currentTabData);
+          const tabValid = validateTab(index, currentTabData).isValid;
+          
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setCurrentTab(index)}
+              disabled={index > currentTab && !isCurrentTabValid}
+              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                currentTab === index
+                  ? 'bg-sgbus-green text-night'
+                  : tabValid
+                    ? 'text-seasalt hover:text-sgbus-green'
+                    : 'text-seasalt/50'
+              } ${
+                index > currentTab && !isCurrentTabValid
+                  ? 'cursor-not-allowed opacity-50'
+                  : 'cursor-pointer'
+              }`}
+            >
+              <div className="flex items-center justify-center space-x-2">
+                <span>{tab.title}</span>
+                {tabValid && (
+                  <svg className="w-4 h-4 text-sgbus-green" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Conteúdo da aba atual */}
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="bg-eerie-black rounded-lg p-6 border border-accent/20 mb-6">
-          {tabs[currentTab].component}
+      {/* Form */}
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <div className="bg-night rounded-lg p-6 border border-accent/20">
+          {currentTab === 0 && <BasicInfoTab form={form} />}
+          {currentTab === 1 && <ScopeTab form={form} />}
+          {currentTab === 2 && <CommercialTab form={form} />}
         </div>
 
-        {/* Navegação entre abas */}
-        <div className="flex items-center justify-between">
-          <div className="flex gap-3">
-            {currentTab > 0 && (
+        {/* Actions */}
+        <div className="flex justify-between">
+          <button
+            type="button"
+            onClick={handlePrevTab}
+            disabled={currentTab === 0}
+            className="px-6 py-2 border border-accent/20 text-seasalt/70 rounded-lg hover:border-accent/40 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Voltar
+          </button>
+
+          <div className="flex space-x-3">
+            {isFormComplete && (
               <button
                 type="button"
-                onClick={handlePrevious}
-                className="flex items-center gap-2 px-4 py-2 text-seasalt/70 hover:text-seasalt transition-colors"
+                onClick={handlePreview}
+                className="px-6 py-2 border border-sgbus-green text-sgbus-green rounded-lg hover:bg-sgbus-green/10"
               >
-                <ArrowLeft className="h-4 w-4" />
-                Anterior
+                Visualizar
               </button>
             )}
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => setShowPreview(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-night hover:bg-night/80 text-seasalt border border-accent/20 rounded-lg transition-colors"
-            >
-              <Eye className="h-4 w-4" />
-              Preview
-            </button>
 
             {currentTab < tabs.length - 1 ? (
               <button
                 type="button"
-                onClick={handleNext}
-                className="flex items-center gap-2 px-4 py-2 bg-sgbus-green hover:bg-sgbus-green/90 text-night rounded-lg font-medium transition-colors"
+                onClick={handleNextTab}
+                disabled={!isCurrentTabValid}
+                className="px-6 py-2 bg-sgbus-green text-night rounded-lg hover:bg-sgbus-green/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Próximo
-                <ArrowRight className="h-4 w-4" />
               </button>
             ) : (
               <button
                 type="submit"
-                disabled={isSubmitting || !isValid}
-                className="flex items-center gap-2 px-6 py-2 bg-sgbus-green hover:bg-sgbus-green/90 disabled:bg-sgbus-green/50 text-night rounded-lg font-medium transition-colors"
+                disabled={!isFormComplete || generateProposal.isPending}
+                className="px-6 py-2 bg-sgbus-green text-night rounded-lg hover:bg-sgbus-green/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-night border-t-transparent rounded-full animate-spin" />
-                    Enviando...
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-4 w-4" />
-                    Criar Proposta
-                  </>
+                {generateProposal.isPending && (
+                  <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-night" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
                 )}
+                <span>
+                  {generateProposal.isPending ? 'Gerando...' : 'Gerar Proposta'}
+                </span>
               </button>
             )}
           </div>
         </div>
       </form>
 
-      <PreviewModal />
+      {/* Preview Modal */}
+      {showPreview && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-night rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-accent/20">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-seasalt">Prévia da Proposta</h3>
+              <button
+                onClick={() => setShowPreview(false)}
+                className="text-seasalt/50 hover:text-seasalt"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="space-y-4 text-seasalt">
+              <div>
+                <h4 className="font-medium text-sgbus-green">Informações Básicas</h4>
+                <p><strong>Título:</strong> {currentTabData.titulo_proposta}</p>
+                <p><strong>Tipo:</strong> {currentTabData.tipo_proposta}</p>
+                <p><strong>Prazo:</strong> {currentTabData.prazo_estimado}</p>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-sgbus-green">Escopo</h4>
+                <p><strong>Modalidade:</strong> {currentTabData.modalidade_entrega}</p>
+                <p><strong>Serviços:</strong> {currentTabData.servicos_incluidos?.length || 0} selecionados</p>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-sgbus-green">Contexto Comercial</h4>
+                <p><strong>Urgência:</strong> {currentTabData.urgencia_projeto}</p>
+                <p><strong>Tomador de Decisão:</strong> {currentTabData.tomador_decisao}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

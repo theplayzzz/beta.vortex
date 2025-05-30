@@ -68,4 +68,92 @@ export interface ProposalWebhookPayload {
     businessDetails?: string;
   };
   proposal_requirements: ProposalFormData;
+}
+
+// 🆕 INTERFACES PARA CONTEÚDO DA IA
+export interface AIGeneratedContent {
+  proposta_html: string;
+  proposta_markdown: string;
+  dados_extras: {
+    valor_total: number;
+    prazo_total_dias: number;
+    nivel_complexidade: string;
+    personalizacao_score: number;
+    fatores_decisao: string[];
+    riscos_identificados: string[];
+    next_steps: string[];
+  };
+  ai_insights: {
+    personalization_score: number;
+    industry_match: string;
+    urgency_consideration: string;
+    budget_alignment: string;
+    confidence_level: number;
+    recommended_approach: string;
+    follow_up_strategy: string[];
+  };
+  metadata: {
+    generated_at: string;
+    model_version: string;
+    tokens_used: number;
+    processing_complexity: string;
+    quality_score: number;
+  };
+}
+
+export interface AIMetadata {
+  generated_at: string;
+  model_version: string;
+  tokens_used: number;
+  processing_complexity: string;
+  quality_score: number;
+}
+
+export interface AIInsights {
+  personalization_score: number;
+  industry_match: string;
+  urgency_consideration: string;
+  budget_alignment: string;
+  confidence_level: number;
+  recommended_approach: string;
+  follow_up_strategy: string[];
+}
+
+export interface DadosExtras {
+  valor_total: number;
+  prazo_total_dias: number;
+  nivel_complexidade: string;
+  personalizacao_score: number;
+  fatores_decisao: string[];
+  riscos_identificados: string[];
+  next_steps: string[];
+}
+
+// Interface para proposta com conteúdo da IA
+export interface ProposalWithAI {
+  id: string;
+  title: string;
+  generatedContent: string | null;
+  status: 'DRAFT' | 'SENT' | 'VIEWED' | 'ACCEPTED' | 'REJECTED' | 'NEGOTIATION' | 'ARCHIVED';
+  version: number;
+  clientId: string | null;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  
+  // Novos campos da IA
+  aiGeneratedContent: AIGeneratedContent | null;
+  proposalHtml: string | null;
+  proposalMarkdown: string | null;
+  aiMetadata: AIMetadata | null;
+  
+  Client?: {
+    id: string;
+    name: string;
+    industry: string | null;
+    richnessScore: number;
+    businessDetails?: string | null;
+    contactEmail?: string | null;
+    website?: string | null;
+  };
 } 
