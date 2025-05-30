@@ -16,6 +16,13 @@ export interface BacklogAI {
   tarefas: TarefaAI[];
 }
 
+export interface TarefaRefinada {
+  nome: string;
+  descricao: string;
+  prioridade: 'alta' | 'média' | 'normal';
+  output: string;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -36,5 +43,6 @@ export interface Planning {
   formDataJSON?: any;
   clientSnapshot?: any;
   specificObjectives?: string;
+  scope?: string;
   Client: Client;
 } 

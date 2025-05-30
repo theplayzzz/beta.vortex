@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   ArrowLeft, 
@@ -10,12 +10,15 @@ import {
   Clock,
   Target,
   FileText,
-  Loader2
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import { FormDataDisplay } from './FormDataDisplay';
 import { RichnessScoreBadge } from './RichnessScoreBadge';
 import { TaskRefinementInterface } from './TaskRefinementInterface';
-import type { Planning } from '@/types/planning';
+import { RefinedTaskList } from './RefinedTaskList';
+import { TaskDetailModal } from './TaskDetailModal';
+import type { Planning, TarefaRefinada } from '@/types/planning';
 
 interface Client {
   id: string;
@@ -62,6 +65,11 @@ const statusConfig = {
     label: 'Backlog IA Gerado',
     color: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
     icon: '🎯'
+  },
+  PENDING_AI_REFINED_LIST: {
+    label: 'Aguardando Lista Refinada',
+    color: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+    icon: '⚙️'
   }
 };
 
@@ -100,10 +108,116 @@ function hasStructuredTasks(specificObjectives?: string): boolean {
   }
 }
 
-export function PlanningDetails({ planning, isLoading = false }: PlanningDetailsProps) {
-  const [currentTab, setCurrentTab] = useState<'form_data' | 'objectives'>('form_data');
-  const [currentPlanning, setCurrentPlanning] = useState(planning);
+// Função para verificar se scope contém tarefas refinadas
+function hasRefinedTasks(scope?: string): boolean {
+  if (!scope) return false;
   
+  try {
+    const parsed = JSON.parse(scope);
+    return parsed.tarefas_refinadas && Array.isArray(parsed.tarefas_refinadas) && parsed.tarefas_refinadas.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+export function PlanningDetails({ planning, isLoading = false }: PlanningDetailsProps) {
+  const [currentTab, setCurrentTab] = useState<'form_data' | 'objectives' | 'planejamento-refinado'>('form_data');
+  const [currentPlanning, setCurrentPlanning] = useState(planning);
+  const [isPolling, setIsPolling] = useState(false);
+  
+  // Estados para modal de detalhes da tarefa
+  const [selectedTask, setSelectedTask] = useState<TarefaRefinada | null>(null);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  
+  // Sistema de polling para atualização automática
+  useEffect(() => {
+    const isWaitingForWebhook = currentPlanning.status === 'PENDING_AI_REFINED_LIST';
+    const alreadyHasRefinedTasks = hasRefinedTasks(currentPlanning.scope);
+    
+    // Se não está aguardando webhook OU já tem dados refinados, não fazer polling
+    if (!isWaitingForWebhook || alreadyHasRefinedTasks) {
+      setIsPolling(false);
+      
+      // Se já tem dados refinados mas status ainda é PENDING, ativar aba automaticamente
+      if (alreadyHasRefinedTasks && isWaitingForWebhook) {
+        console.log('🎯 Dados refinados já existem! Ativando aba automaticamente...');
+        setCurrentTab('planejamento-refinado');
+      }
+      
+      return;
+    }
+
+    setIsPolling(true);
+    console.log('🔄 Iniciando polling para verificar atualização do webhook...', {
+      planningId: currentPlanning.id,
+      currentStatus: currentPlanning.status,
+      hasScope: !!currentPlanning.scope,
+      hasParsedTasks: alreadyHasRefinedTasks
+    });
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        console.log('🔍 Verificando atualizações...');
+        const response = await fetch(`/api/plannings/${currentPlanning.id}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+          },
+        });
+        
+        if (response.ok) {
+          const updatedPlanning = await response.json();
+          
+          // Verificar se o status mudou ou se dados foram adicionados/atualizados
+          const statusChanged = updatedPlanning.status !== currentPlanning.status;
+          const scopeAdded = updatedPlanning.scope && !currentPlanning.scope;
+          const scopeUpdated = updatedPlanning.scope !== currentPlanning.scope;
+          const hasNewRefinedTasks = hasRefinedTasks(updatedPlanning.scope);
+          
+          if (statusChanged || scopeAdded || scopeUpdated || hasNewRefinedTasks) {
+            console.log('✅ Dados atualizados detectados! Atualizando interface...', {
+              statusChanged,
+              scopeAdded,
+              scopeUpdated,
+              hasNewRefinedTasks,
+              oldStatus: currentPlanning.status,
+              newStatus: updatedPlanning.status,
+              hasScope: !!updatedPlanning.scope,
+              scopeLength: updatedPlanning.scope?.length || 0
+            });
+            
+            setCurrentPlanning(updatedPlanning);
+            setIsPolling(false);
+            
+            // Se foi criado/atualizado o planejamento refinado, ativar a aba automaticamente
+            if (hasNewRefinedTasks) {
+              console.log('🎯 Ativando aba "Planejamento Refinado" automaticamente');
+              setCurrentTab('planejamento-refinado');
+            }
+          } else {
+            console.log('⏳ Ainda aguardando dados refinados...');
+          }
+        } else {
+          console.error('❌ Erro na resposta do polling:', response.status);
+        }
+      } catch (error) {
+        console.error('❌ Erro no polling:', error);
+      }
+    }, 10000); // Verificar a cada 10 segundos conforme solicitado
+
+    // Cleanup do intervalo
+    return () => {
+      console.log('🛑 Parando polling...');
+      setIsPolling(false);
+      clearInterval(pollInterval);
+    };
+  }, [currentPlanning.status, currentPlanning.id, currentPlanning.scope]);
+
+  // Atualizar estado quando prop planning mudar
+  useEffect(() => {
+    setCurrentPlanning(planning);
+  }, [planning]);
+
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -118,13 +232,47 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
 
   const status = statusConfig[currentPlanning.status as keyof typeof statusConfig] || statusConfig.DRAFT;
   
-  // Verificar se os objetivos específicos estão disponíveis
+  // Verificar estados das abas
   const hasSpecificObjectives = currentPlanning.specificObjectives && currentPlanning.specificObjectives.trim().length > 0;
   const hasTasksForRefinement = hasStructuredTasks(currentPlanning.specificObjectives);
   const isObjectivesProcessing = currentPlanning.status === 'PENDING_AI_BACKLOG_GENERATION';
+  
+  // Estados da nova aba de Planejamento Refinado
+  const hasRefinedPlanningTasks = hasRefinedTasks(currentPlanning.scope);
+  const isRefinedListProcessing = currentPlanning.status === 'PENDING_AI_REFINED_LIST' && !hasRefinedPlanningTasks;
+  const showRefinedPlanningTab = isRefinedListProcessing || hasRefinedPlanningTasks;
 
   const handlePlanningUpdate = (updatedPlanning: Planning) => {
     setCurrentPlanning(updatedPlanning);
+  };
+
+  // Callback para ativar automaticamente a aba "Planejamento Refinado"
+  const handleCreateRefinedTab = () => {
+    setCurrentTab('planejamento-refinado');
+  };
+
+  // Handler para abrir modal de detalhes da tarefa
+  const handleTaskClick = (task: TarefaRefinada, index: number) => {
+    setSelectedTask(task);
+    setIsTaskModalOpen(true);
+  };
+
+  // Handler para fechar modal de detalhes
+  const handleCloseTaskModal = () => {
+    setSelectedTask(null);
+    setIsTaskModalOpen(false);
+  };
+
+  // Função para parsear tarefas refinadas do campo scope
+  const getRefinedTasks = (): TarefaRefinada[] => {
+    if (!currentPlanning.scope) return [];
+    
+    try {
+      const parsed = JSON.parse(currentPlanning.scope);
+      return parsed.tarefas_refinadas || [];
+    } catch {
+      return [];
+    }
   };
 
   return (
@@ -211,7 +359,7 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
           <button
             onClick={() => (hasSpecificObjectives || hasTasksForRefinement) && setCurrentTab('objectives')}
             disabled={!hasSpecificObjectives && !hasTasksForRefinement && !isObjectivesProcessing}
-            className={`pb-3 border-b-2 font-medium text-sm transition-colors ${
+            className={`pb-3 border-b-2 font-medium text-sm transition-colors mr-8 ${
               currentTab === 'objectives'
                 ? 'border-sgbus-green text-sgbus-green'
                 : (hasSpecificObjectives || hasTasksForRefinement)
@@ -231,13 +379,54 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
               )}
             </span>
           </button>
+
+          {/* Nova Aba "Planejamento Refinado" */}
+          {showRefinedPlanningTab && (
+            <button
+              onClick={() => setCurrentTab('planejamento-refinado')}
+              className={`pb-3 border-b-2 font-medium text-sm transition-colors relative ${
+                currentTab === 'planejamento-refinado'
+                  ? 'border-sgbus-green text-sgbus-green'
+                  : 'border-transparent text-periwinkle hover:text-seasalt hover:border-seasalt/40'
+              } ${isRefinedListProcessing || isPolling ? 'animate-pulse' : ''}`}
+            >
+              <span className="flex items-center space-x-2">
+                {isRefinedListProcessing || isPolling ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-sgbus-green" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                <span>Planejamento Refinado</span>
+                {isRefinedListProcessing && !isPolling && (
+                  <span className="text-xs bg-sgbus-green/20 text-sgbus-green px-2 py-1 rounded animate-pulse">
+                    IA Gerando...
+                  </span>
+                )}
+                {isPolling && (
+                  <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded animate-pulse">
+                    Verificando...
+                  </span>
+                )}
+                {hasRefinedPlanningTasks && !isRefinedListProcessing && !isPolling && (
+                  <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
+                    Pronto
+                  </span>
+                )}
+              </span>
+              
+              {/* Destaque visual para nova aba */}
+              {(isRefinedListProcessing || isPolling || hasRefinedPlanningTasks) && (
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-sgbus-green rounded-full animate-ping"></div>
+              )}
+            </button>
+          )}
         </nav>
 
         {/* Tab Content */}
         <div className="p-6">
           {currentTab === 'form_data' ? (
             <FormDataDisplay formData={currentPlanning.formDataJSON} />
-          ) : (
+          ) : currentTab === 'objectives' ? (
             <div className="space-y-4">
               {isObjectivesProcessing ? (
                 <div className="text-center py-12">
@@ -255,6 +444,7 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
                 <TaskRefinementInterface 
                   planning={currentPlanning} 
                   onUpdate={handlePlanningUpdate}
+                  onCreateRefinedTab={handleCreateRefinedTab}
                 />
               ) : hasSpecificObjectives ? (
                 // Exibição simples (fallback para objetivos não estruturados)
@@ -284,9 +474,64 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
                 </div>
               )}
             </div>
-          )}
+          ) : currentTab === 'planejamento-refinado' ? (
+            <div className="space-y-4">
+              {isRefinedListProcessing ? (
+                <div className="text-center py-12">
+                  <div className="relative">
+                    <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-sgbus-green" />
+                    <div className="absolute -inset-4 bg-sgbus-green/20 rounded-full animate-ping"></div>
+                  </div>
+                  <div className="bg-sgbus-green/10 border border-sgbus-green/20 rounded-lg p-4 mb-4 inline-block">
+                    <h3 className="text-lg font-semibold text-sgbus-green mb-2">
+                      IA está gerando...
+                    </h3>
+                    <p className="text-sgbus-green/80 text-sm">
+                      Aguarde enquanto nossa IA processa as tarefas aprovadas e cria o planejamento refinado.
+                    </p>
+                  </div>
+                </div>
+              ) : hasRefinedPlanningTasks ? (
+                // Lista de tarefas refinadas estilo ClickUp
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Sparkles className="h-6 w-6 text-sgbus-green" />
+                    <h3 className="text-xl font-semibold text-seasalt">
+                      Planejamento Refinado
+                    </h3>
+                    <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
+                      Planejamento refinado pronto
+                    </span>
+                  </div>
+                  
+                  {/* Lista de tarefas refinadas */}
+                  <RefinedTaskList
+                    tasks={getRefinedTasks()}
+                    onTaskClick={handleTaskClick}
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Sparkles className="h-8 w-8 mx-auto mb-4 text-seasalt/40" />
+                  <h3 className="text-lg font-semibold text-seasalt/70 mb-2">
+                    Planejamento Refinado Não Disponível
+                  </h3>
+                  <p className="text-seasalt/50">
+                    Esta aba será ativada após a aprovação de tarefas.
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : null}
         </div>
       </div>
+
+      {/* Modal de Detalhes da Tarefa */}
+      <TaskDetailModal
+        task={selectedTask}
+        isOpen={isTaskModalOpen}
+        onClose={handleCloseTaskModal}
+      />
     </div>
   );
 } 

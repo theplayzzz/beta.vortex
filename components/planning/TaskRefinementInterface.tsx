@@ -5,19 +5,25 @@ import { Target, CheckSquare, Square, MoreVertical, Edit3, MessageSquare, Loader
 import { TaskRefinementList } from './TaskRefinementList';
 import { EditTaskModal } from './EditTaskModal';
 import { AddContextModal } from './AddContextModal';
+import { ConfirmationModal } from '../ui/ConfirmationModal';
 import type { TarefaAI, Planning } from '@/types/planning';
 
 interface TaskRefinementInterfaceProps {
   planning: Planning;
   onUpdate?: (updatedPlanning: Planning) => void;
+  onCreateRefinedTab?: () => void;
 }
 
-export function TaskRefinementInterface({ planning, onUpdate }: TaskRefinementInterfaceProps) {
+export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab }: TaskRefinementInterfaceProps) {
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
   const [tasks, setTasks] = useState<TarefaAI[]>([]);
   const [isApproving, setIsApproving] = useState(false);
   const [editingTask, setEditingTask] = useState<{ index: number; task: TarefaAI } | null>(null);
   const [addingContextTask, setAddingContextTask] = useState<{ index: number; task: TarefaAI } | null>(null);
+  
+  // Estados para modal de confirmação
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [buttonsDisabled, setButtonsDisabled] = useState(false);
 
   // Extrair tarefas do specificObjectives
   useEffect(() => {
@@ -113,13 +119,23 @@ export function TaskRefinementInterface({ planning, onUpdate }: TaskRefinementIn
     }
   };
 
-  const handleApprove = async () => {
+  // Handler para clicar no botão de aprovação (abre modal)
+  const handleApprovalClick = () => {
     if (selectedTasks.size === 0) {
       alert('Selecione pelo menos uma tarefa para aprovar.');
       return;
     }
 
+    setIsModalOpen(true);
+    setButtonsDisabled(true);
+  };
+
+  // Handler para confirmar no modal
+  const handleConfirm = async () => {
+    setIsModalOpen(false);
+    // MANTER botões desabilitados até webhook responder
     setIsApproving(true);
+
     try {
       const selectedTasksArray = tasks
         .map((task, index) => selectedTasks.has(index) ? { ...task, selecionada: true } : null)
@@ -139,16 +155,28 @@ export function TaskRefinementInterface({ planning, onUpdate }: TaskRefinementIn
         throw new Error('Falha ao aprovar tarefas');
       }
 
+      // Aqui vai ser implementada a criação da nova aba "Planejamento Refinado"
+      // TODO: Implementar createRefinedPlanningTab()
+      
       // Mostrar notificação de sucesso
       // TODO: Implementar sistema de notificações
       console.log('Tarefas aprovadas com sucesso!');
       
+      onCreateRefinedTab?.();
     } catch (error) {
       console.error('Erro ao aprovar tarefas:', error);
       // TODO: Implementar notificação de erro
+      // Reabilitar botões em caso de erro
+      setButtonsDisabled(false);
     } finally {
       setIsApproving(false);
     }
+  };
+
+  // Handler para cancelar no modal
+  const handleCancel = () => {
+    setIsModalOpen(false);
+    setButtonsDisabled(false);
   };
 
   const selectedCount = selectedTasks.size;
@@ -172,7 +200,8 @@ export function TaskRefinementInterface({ planning, onUpdate }: TaskRefinementIn
         <div className="flex items-center gap-3">
           <button
             onClick={handleSelectAll}
-            className="flex items-center gap-2 px-4 py-2 bg-periwinkle/20 text-periwinkle rounded-lg hover:bg-periwinkle/30 transition-colors"
+            disabled={buttonsDisabled}
+            className="flex items-center gap-2 px-4 py-2 bg-periwinkle/20 text-periwinkle rounded-lg hover:bg-periwinkle/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {selectedTasks.size === tasks.length ? (
               <CheckSquare className="h-4 w-4" />
@@ -183,8 +212,8 @@ export function TaskRefinementInterface({ planning, onUpdate }: TaskRefinementIn
           </button>
           
           <button
-            onClick={handleApprove}
-            disabled={selectedCount === 0 || isApproving}
+            onClick={handleApprovalClick}
+            disabled={selectedCount === 0 || buttonsDisabled}
             className="flex items-center gap-2 px-6 py-2 bg-sgbus-green text-night rounded-lg hover:bg-sgbus-green/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
             {isApproving ? (
@@ -216,14 +245,15 @@ export function TaskRefinementInterface({ planning, onUpdate }: TaskRefinementIn
         <div className="flex items-center gap-3">
           <button
             onClick={() => window.history.back()}
-            className="px-4 py-2 bg-seasalt/10 text-seasalt rounded-lg hover:bg-seasalt/20 transition-colors"
+            disabled={buttonsDisabled}
+            className="px-4 py-2 bg-seasalt/10 text-seasalt rounded-lg hover:bg-seasalt/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Voltar
           </button>
           
           <button
-            onClick={handleApprove}
-            disabled={selectedCount === 0 || isApproving}
+            onClick={handleApprovalClick}
+            disabled={selectedCount === 0 || buttonsDisabled}
             className="flex items-center gap-2 px-6 py-2 bg-sgbus-green text-night rounded-lg hover:bg-sgbus-green/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
             {isApproving ? (
@@ -236,7 +266,19 @@ export function TaskRefinementInterface({ planning, onUpdate }: TaskRefinementIn
         </div>
       </div>
 
-      {/* Modais */}
+      {/* Modal de Confirmação */}
+      <ConfirmationModal
+        isOpen={isModalOpen}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+        message="Tem certeza que deseja aprovar estes planejamentos? Os créditos serão descontados"
+        title="Confirmar Aprovação"
+        confirmText="Sim"
+        cancelText="Cancelar"
+        isLoading={isApproving}
+      />
+
+      {/* Modais de Edição */}
       {editingTask && (
         <EditTaskModal
           task={editingTask.task}
