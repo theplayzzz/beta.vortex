@@ -132,10 +132,6 @@ export function QuestionField({ question, value, onChange, error }: QuestionFiel
       )}
       
       {renderField()}
-      
-      {error && (
-        <p className="text-red-400 text-sm mt-1">{error}</p>
-      )}
     </div>
   );
 } 

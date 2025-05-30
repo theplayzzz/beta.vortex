@@ -78,11 +78,6 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
   const [currentTabState, setCurrentTabState] = useState<number>(0);
   const [tabsWithErrors, setTabsWithErrors] = useState<Set<number>>(new Set());
   const [pendingTabNavigation, setPendingTabNavigation] = useState<number | null>(null);
-  const [feedbackMessage, setFeedbackMessage] = useState<{
-    type: 'error' | 'success' | 'info';
-    message: string;
-    details?: string[];
-  } | null>(null);
   
   // Getter que sempre retorna um valor válido
   const currentTab = normalizeTabIndex(currentTabState);
@@ -108,7 +103,7 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
   const form = useForm<PlanningFormData>({
     resolver: zodResolver(planningFormSchema),
     defaultValues: getDefaultValues(client.industry),
-    mode: 'onSubmit'
+    mode: 'onBlur'
   });
 
   // Função para mudança segura de aba
@@ -169,11 +164,6 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
   }, [formData, form]);
 
   const handleFieldChange = useCallback((field: string, value: any) => {
-    // Limpar mensagem de feedback quando usuário começar a corrigir
-    if (feedbackMessage?.type === 'error') {
-      setFeedbackMessage(null);
-    }
-    
     // currentTab já é normalizado, mas vamos ser extra cuidadosos
     const safeCurrentTab = normalizeTabIndex(currentTab);
     const currentTabId = TABS[safeCurrentTab].id;
@@ -197,9 +187,9 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
         fieldPath = field;
     }
 
-    form.setValue(fieldPath as any, value, { shouldValidate: true, shouldDirty: true });
+    form.setValue(fieldPath as any, value, { shouldValidate: false, shouldDirty: true });
     console.log(`📝 Campo atualizado: ${fieldPath} = ${value}`);
-  }, [form, currentTab, feedbackMessage]);
+  }, [form, currentTab]);
 
   const handleSaveDraft = useCallback(() => {
     const currentData = form.getValues();
@@ -336,13 +326,6 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
           console.log(`🎯 ${errorMessage}`);
           console.log('📋 Detalhes dos erros:', firstErrorTab.errors);
           
-          // Definir mensagem de feedback
-          setFeedbackMessage({
-            type: 'error',
-            message: errorMessage,
-            details: firstErrorTab.errors
-          });
-          
           // Usar estado pendente para navegação de aba (corrige o erro de React)
           console.log(`🎯 Programando navegação para aba com erro: ${firstErrorTab.tabIndex}`);
           setPendingTabNavigation(firstErrorTab.tabIndex);
@@ -356,18 +339,12 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
       } else {
         // Limpar erros das abas se tudo estiver válido
         setTabsWithErrors(new Set());
-        setFeedbackMessage(null);
         console.log('✅ Validação passou - todas as abas estão válidas');
       }
       
       // Se chegou aqui, formulário está válido ou não tem erros específicos
       console.log('✅ PROSSEGUINDO COM SUBMISSÃO - Formulário considerado válido');
       console.log('📤 Dados finais para submissão:', data);
-      
-      setFeedbackMessage({
-        type: 'success',
-        message: 'Formulário válido! Enviando planejamento...'
-      });
       
       console.log('📞 Chamando onSubmit com dados:', data);
       onSubmit(data);
@@ -378,20 +355,12 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
       
       // Em caso de erro, tentar submeter mesmo assim
       console.log('🔄 Tentando submissão de emergência...');
-      setFeedbackMessage({
-        type: 'error',
-        message: 'Erro na validação, mas tentando enviar mesmo assim...'
-      });
       
       try {
         onSubmit(data);
         console.log('✅ Submissão de emergência bem-sucedida');
       } catch (emergencyError) {
         console.error('❌ Falha na submissão de emergência:', emergencyError);
-        setFeedbackMessage({
-          type: 'error',
-          message: 'Erro crítico na submissão. Verifique o console.'
-        });
       }
     }
   }, [onSubmit, form]);
@@ -418,51 +387,6 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
         return {};
     }
   }, [form, currentTab]);
-
-  const getCurrentTabErrors = useCallback(() => {
-    const errors = form.formState.errors;
-    const safeCurrentTab = normalizeTabIndex(currentTab);
-    const currentTabId = TABS[safeCurrentTab].id;
-    
-    // Função helper para extrair mensagens de erro de forma segura
-    const extractErrorMessages = (errorObj: any): Record<string, string> => {
-      if (!errorObj || typeof errorObj !== 'object') return {};
-      
-      const result: Record<string, string> = {};
-      
-      try {
-        Object.keys(errorObj).forEach(key => {
-          const error = errorObj[key];
-          if (error) {
-            if (typeof error === 'string') {
-              result[key] = error;
-            } else if (error && typeof error === 'object' && error.message) {
-              result[key] = String(error.message);
-            } else if (error) {
-              result[key] = 'Erro de validação';
-            }
-          }
-        });
-      } catch (e) {
-        console.warn('Erro ao processar erros de validação:', e);
-      }
-      
-      return result;
-    };
-    
-    switch (currentTabId) {
-      case 'informacoes_basicas':
-        return extractErrorMessages(errors.informacoes_basicas);
-      case 'detalhes_setor':
-        return extractErrorMessages(errors.detalhes_do_setor);
-      case 'marketing':
-        return extractErrorMessages(errors.marketing);
-      case 'comercial':
-        return extractErrorMessages(errors.comercial);
-      default:
-        return {};
-    }
-  }, [form.formState.errors, currentTab]);
 
   const renderCurrentTab = () => {
     // currentTab já é normalizado, mas vamos garantir mais uma vez
@@ -504,15 +428,13 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
     }
 
     const tabData = getCurrentTabData();
-    const tabErrors = getCurrentTabErrors();
 
     console.log(`🔍 Dados da aba ${currentTabConfig.id}:`, tabData);
-    console.log(`🔍 Erros da aba ${currentTabConfig.id}:`, tabErrors);
 
     const commonProps = {
       formData: tabData || {},
       onFieldChange: handleFieldChange,
-      errors: tabErrors || {}
+      errors: {} // Sempre vazio agora que removemos as mensagens
     };
 
     try {
@@ -587,43 +509,6 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
             );
           })}
         </nav>
-
-        {/* Feedback Message */}
-        {feedbackMessage && (
-          <div className={`mx-6 mt-4 p-4 rounded-lg border ${
-            feedbackMessage.type === 'error' 
-              ? 'bg-red-500/10 border-red-500/30 text-red-400' 
-              : feedbackMessage.type === 'success'
-                ? 'bg-green-500/10 border-green-500/30 text-green-400'
-                : 'bg-blue-500/10 border-blue-500/30 text-blue-400'
-          }`}>
-            <div className="flex items-start space-x-3">
-              <span className="text-lg">
-                {feedbackMessage.type === 'error' ? '⚠️' : 
-                 feedbackMessage.type === 'success' ? '✅' : 'ℹ️'}
-              </span>
-              <div className="flex-1">
-                <p className="font-medium">{feedbackMessage.message}</p>
-                {feedbackMessage.details && feedbackMessage.details.length > 0 && (
-                  <ul className="mt-2 text-sm space-y-1">
-                    {feedbackMessage.details.map((detail, index) => (
-                      <li key={index} className="flex items-start space-x-2">
-                        <span className="text-red-400 mt-0.5">•</span>
-                        <span>{detail}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              <button
-                onClick={() => setFeedbackMessage(null)}
-                className="text-current hover:opacity-70 transition-opacity"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Form Content */}
         <form onSubmit={form.handleSubmit(handleFormSubmit)} className="p-6">

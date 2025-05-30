@@ -75,10 +75,6 @@ export function CommercialTab({ formData, onFieldChange, errors }: CommercialTab
             </option>
           ))}
         </select>
-        
-        {errors.maturidade_comercial && (
-          <p className="text-red-400 text-sm">{errors.maturidade_comercial}</p>
-        )}
       </div>
 
       {/* Descrição da Maturidade Selecionada */}
@@ -109,10 +105,6 @@ export function CommercialTab({ formData, onFieldChange, errors }: CommercialTab
               </option>
             ))}
           </select>
-          
-          {errors.meta_comercial && (
-            <p className="text-red-400 text-sm">{errors.meta_comercial}</p>
-          )}
         </div>
       )}
 
@@ -131,10 +123,6 @@ export function CommercialTab({ formData, onFieldChange, errors }: CommercialTab
             rows={3}
             className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20 resize-none"
           />
-          
-          {errors.meta_comercial_personalizada && (
-            <p className="text-red-400 text-sm">{errors.meta_comercial_personalizada}</p>
-          )}
         </div>
       )}
 
