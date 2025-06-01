@@ -1,21 +1,24 @@
+import { Plus } from "lucide-react";
+
 export default function TarefasPage() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="container mx-auto px-4 py-8">
       {/* Header da Página */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-seasalt">Lista Refinada</h1>
-          <p className="text-seasalt/70 mt-1">
+          <h1 className="text-3xl font-bold text-seasalt">Lista Refinada</h1>
+          <p className="text-periwinkle mt-2">
             Gerencie suas tarefas e acompanhe o progresso
           </p>
         </div>
-        <button className="bg-periwinkle hover:bg-periwinkle/90 text-night px-4 py-2 rounded-lg font-medium transition-colors">
+        <button className="flex items-center px-4 py-2 bg-periwinkle hover:bg-periwinkle/90 text-night font-medium rounded-lg transition-colors">
+          <Plus className="h-4 w-4 mr-2" />
           Nova Tarefa
         </button>
       </div>
 
       {/* Filtros e Visualização */}
-      <div className="bg-eerie-black rounded-lg p-4 border border-accent/20">
+      <div className="bg-eerie-black rounded-lg p-4 border border-accent/20 mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <select className="bg-[#2A1B45] text-seasalt border border-accent/20 rounded-lg px-3 py-2 text-sm">

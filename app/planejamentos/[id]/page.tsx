@@ -19,16 +19,19 @@ export default function PlanejamentoPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Link
-            href="/planejamentos"
-            className="p-2 text-seasalt/70 hover:text-seasalt transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <div className="h-8 bg-eerie-black rounded w-64 animate-pulse"></div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/planejamentos"
+              className="p-2 text-seasalt/70 hover:text-seasalt transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <div>
+              <div className="h-8 bg-eerie-black rounded w-64 animate-pulse"></div>
+              <div className="h-4 bg-eerie-black rounded w-48 animate-pulse mt-2"></div>
+            </div>
           </div>
         </div>
         
@@ -48,16 +51,19 @@ export default function PlanejamentoPage() {
   // Error state
   if (error) {
     return (
-      <div className="p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Link
-            href="/planejamentos"
-            className="p-2 text-seasalt/70 hover:text-seasalt transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-seasalt">Erro ao Carregar</h1>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/planejamentos"
+              className="p-2 text-seasalt/70 hover:text-seasalt transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold text-seasalt">Erro ao Carregar</h1>
+              <p className="text-periwinkle mt-2">Falha ao buscar dados do planejamento</p>
+            </div>
           </div>
         </div>
         
@@ -91,16 +97,19 @@ export default function PlanejamentoPage() {
   // Not found state
   if (!planning) {
     return (
-      <div className="p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Link
-            href="/planejamentos"
-            className="p-2 text-seasalt/70 hover:text-seasalt transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-seasalt">Planejamento Não Encontrado</h1>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/planejamentos"
+              className="p-2 text-seasalt/70 hover:text-seasalt transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold text-seasalt">Planejamento Não Encontrado</h1>
+              <p className="text-periwinkle mt-2">O planejamento solicitado não existe</p>
+            </div>
           </div>
         </div>
         
@@ -126,5 +135,9 @@ export default function PlanejamentoPage() {
   }
 
   // Success state - render planning details
-  return <PlanningDetails planning={planning} isLoading={isLoading} />;
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <PlanningDetails planning={planning} isLoading={isLoading} />
+    </div>
+  );
 } 

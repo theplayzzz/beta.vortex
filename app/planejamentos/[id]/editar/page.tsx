@@ -6,7 +6,7 @@ import { useUpdatePlanning } from '@/lib/react-query/hooks/usePlanningMutations'
 import { PlanningForm } from '@/components/planning';
 import { PlanningFormData } from '@/lib/planning/formSchema';
 import Link from 'next/link';
-import { ArrowLeft, AlertTriangle, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Loader2, Save, X } from 'lucide-react';
 import { useState } from 'react';
 import React from 'react';
 
@@ -24,19 +24,26 @@ export default function EditarPlanejamentoPage() {
 
   const updatePlanningMutation = useUpdatePlanning();
 
+  const handleCancel = () => {
+    router.push(`/planejamentos/${planningId}`);
+  };
+
   // Loading state
   if (isLoading) {
     return (
-      <div className="p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Link
-            href={`/planejamentos/${planningId}`}
-            className="p-2 text-seasalt/70 hover:text-seasalt transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <div className="h-8 bg-eerie-black rounded w-64 animate-pulse"></div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Link
+              href={`/planejamentos/${planningId}`}
+              className="p-2 text-seasalt/70 hover:text-seasalt transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <div>
+              <div className="h-8 bg-eerie-black rounded w-64 animate-pulse"></div>
+              <div className="h-4 bg-eerie-black rounded w-48 animate-pulse mt-2"></div>
+            </div>
           </div>
         </div>
         
@@ -56,16 +63,19 @@ export default function EditarPlanejamentoPage() {
   // Error state
   if (error) {
     return (
-      <div className="p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Link
-            href="/planejamentos"
-            className="p-2 text-seasalt/70 hover:text-seasalt transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-seasalt">Erro ao Carregar</h1>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/planejamentos"
+              className="p-2 text-seasalt/70 hover:text-seasalt transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold text-seasalt">Erro ao Carregar</h1>
+              <p className="text-periwinkle mt-2">Falha ao buscar dados para edição</p>
+            </div>
           </div>
         </div>
         
@@ -99,16 +109,19 @@ export default function EditarPlanejamentoPage() {
   // Not found state
   if (!planning) {
     return (
-      <div className="p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Link
-            href="/planejamentos"
-            className="p-2 text-seasalt/70 hover:text-seasalt transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-seasalt">Planejamento Não Encontrado</h1>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/planejamentos"
+              className="p-2 text-seasalt/70 hover:text-seasalt transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold text-seasalt">Planejamento Não Encontrado</h1>
+              <p className="text-periwinkle mt-2">O planejamento solicitado não existe</p>
+            </div>
           </div>
         </div>
         
@@ -253,9 +266,9 @@ export default function EditarPlanejamentoPage() {
   const initialFormData = convertToFormData(planning);
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header da Página */}
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <Link
             href={`/planejamentos/${planningId}`}
@@ -265,20 +278,21 @@ export default function EditarPlanejamentoPage() {
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-seasalt">Editar Planejamento</h1>
-            <p className="text-seasalt/70 mt-1">
+            <h1 className="text-3xl font-bold text-seasalt">Editar Planejamento</h1>
+            <p className="text-periwinkle mt-2">
               {planning.title} • Cliente: {planning.Client.name}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link
-            href={`/planejamentos/${planningId}`}
-            className="bg-eerie-black hover:bg-eerie-black/80 text-seasalt px-4 py-2 rounded-lg font-medium transition-colors border border-accent/20"
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={handleCancel}
+            className="px-4 py-2 border border-seasalt/20 text-seasalt rounded-lg hover:bg-seasalt/10 transition-colors"
           >
+            <X className="h-4 w-4 mr-2 inline" />
             Cancelar
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -298,7 +312,7 @@ export default function EditarPlanejamentoPage() {
       )}
 
       {/* Info sobre edição */}
-      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-8">
         <div className="flex items-center gap-3">
           <Save className="h-5 w-5 text-blue-400 flex-shrink-0" />
           <div>
