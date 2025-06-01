@@ -26,7 +26,7 @@ export default function HomePage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 flex items-center justify-center">
+      <div className="container mx-auto px-4 py-8 flex items-center justify-center">
         <div className="text-seasalt">Carregando...</div>
       </div>
     );
@@ -37,14 +37,14 @@ export default function HomePage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="container mx-auto px-4 py-8">
       {/* Header da Página */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-seasalt">
-            Bem-vindo, {user.firstName || "Usuário"}!
+          <h1 className="text-3xl font-bold text-seasalt">
+            Dashboard - Bem-vindo, {user.firstName || "Usuário"}!
           </h1>
-          <p className="text-seasalt/70 mt-1">
+          <p className="text-periwinkle mt-2">
             Aqui está um resumo das suas atividades no Vortex Vault
           </p>
         </div>
@@ -57,7 +57,7 @@ export default function HomePage() {
       </div>
 
       {/* Grid de Widgets */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {/* Widget Planejamentos */}
         <div className="bg-eerie-black rounded-lg p-6 border border-accent/20">
           <div className="flex items-center justify-between mb-4">
@@ -117,7 +117,7 @@ export default function HomePage() {
       </div>
 
       {/* Seção de Ações Rápidas */}
-      <div className="bg-eerie-black rounded-lg p-6 border border-accent/20">
+      <div className="bg-eerie-black rounded-lg p-6 border border-accent/20 mb-8">
         <h3 className="text-lg font-semibold text-seasalt mb-4">Ações Rápidas</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link href="/planejamentos/novo" className="p-4 bg-sgbus-green/10 hover:bg-sgbus-green/20 rounded-lg border border-sgbus-green/20 transition-colors group">

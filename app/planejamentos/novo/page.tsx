@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Users, Plus } from "lucide-react";
+import { ArrowLeft, Users, Plus, X } from "lucide-react";
 import Link from "next/link";
 import { PlanningFormWithClient } from "@/components/planning";
 import ClientFlowModal from "@/components/shared/client-flow-modal";
@@ -47,9 +47,13 @@ export default function NovoPlnejamentoPage() {
     setSelectedClient(null);
   };
 
+  const handleCancel = () => {
+    router.push('/planejamentos');
+  };
+
   if (step === 'form' && selectedClient) {
     return (
-      <div className="p-6">
+      <div className="container mx-auto px-4 py-8">
         <PlanningFormWithClient
           client={selectedClient}
           onBack={handleBackToClient}
@@ -59,20 +63,31 @@ export default function NovoPlnejamentoPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header com breadcrumb */}
-      <div className="flex items-center gap-4">
-        <Link
-          href="/planejamentos"
-          className="p-2 text-seasalt/70 hover:text-seasalt transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-seasalt">Novo Planejamento</h1>
-          <p className="text-seasalt/70">
-            Selecione um cliente para começar
-          </p>
+    <div className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center">
+          <Link
+            href="/planejamentos"
+            className="p-2 text-seasalt/70 hover:text-seasalt transition-colors mr-2"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold text-seasalt">Novo Planejamento</h1>
+            <p className="text-periwinkle mt-2">
+              Selecione um cliente para começar o planejamento estratégico
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-4">
+          <button 
+            onClick={handleCancel}
+            className="px-4 py-2 border border-seasalt/20 text-seasalt rounded-lg hover:bg-seasalt/10 transition-colors"
+          >
+            <X className="h-4 w-4 mr-2 inline" />
+            Cancelar
+          </button>
         </div>
       </div>
 
