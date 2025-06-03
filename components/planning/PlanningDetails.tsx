@@ -204,7 +204,7 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-seasalt">{currentPlanning.title}</h1>
+              <h1 className="text-3xl font-bold text-seasalt">{currentPlanning.title}</h1>
               <div className="flex items-center gap-3 mt-2">
                 <div className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${status.color}`}>
                   <span className="mr-1">{status.icon}</span>

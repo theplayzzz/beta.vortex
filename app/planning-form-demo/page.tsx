@@ -64,19 +64,17 @@ export default function PlanningFormDemo() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-seasalt">
-            📋 Formulário de Planejamento Estratégico
-          </h1>
-          <p className="text-periwinkle mt-2">
-            Demonstração completa do formulário multi-etapas com validação e persistência.
-          </p>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-seasalt">
+          📋 Formulário de Planejamento Estratégico
+        </h1>
+        <p className="text-periwinkle mt-2">
+          Demonstração completa do formulário multi-etapas com validação e persistência.
+        </p>
       </div>
 
       {/* Client Selector */}
-      <div className="mb-6 p-6 bg-eerie-black rounded-lg border border-accent/20">
+      <div className="mb-8 p-6 bg-eerie-black rounded-lg border border-accent/20">
         <h2 className="text-xl font-semibold text-seasalt mb-4">
           Selecionar Cliente para Demonstração
         </h2>
@@ -108,7 +106,7 @@ export default function PlanningFormDemo() {
 
       {/* Status Indicators */}
       {(draftSaved || submissionResult) && (
-        <div className="mb-6 flex items-center space-x-4">
+        <div className="mb-8 flex items-center space-x-4">
           {draftSaved && (
             <div className="px-4 py-2 bg-sgbus-green/20 border border-sgbus-green/40 rounded-lg">
               <span className="text-sgbus-green text-sm">💾 Rascunho salvo automaticamente</span>
@@ -124,11 +122,13 @@ export default function PlanningFormDemo() {
       )}
 
       {/* Main Form */}
-      <PlanningForm
-        client={selectedClient}
-        onSubmit={handleSubmit}
-        onSaveDraft={handleSaveDraft}
-      />
+      <div className="mb-8">
+        <PlanningForm
+          client={selectedClient}
+          onSubmit={handleSubmit}
+          onSaveDraft={handleSaveDraft}
+        />
+      </div>
 
       {/* Debug Information */}
       <div className="mt-12 p-6 bg-eerie-black rounded-lg">
