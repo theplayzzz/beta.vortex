@@ -117,6 +117,7 @@ export function prepareFinalSubmissionPayload(
 
 /**
  * Função para validar se o cliente é compatível com o formulário
+ * SIMPLIFICADA: verifica apenas ID e nome (validação completa já feita na criação)
  */
 export function validateClientForForm(client: Client): {
   isValid: boolean;
@@ -126,26 +127,13 @@ export function validateClientForForm(client: Client): {
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  // Validações obrigatórias
-  if (!client.id) {
+  // Validações essenciais - apenas ID e nome
+  if (!client.id || client.id.trim().length === 0) {
     errors.push('Cliente deve ter um ID válido');
   }
 
   if (!client.name || client.name.trim().length === 0) {
-    errors.push('Cliente deve ter um nome');
-  }
-
-  if (!client.industry || client.industry.trim().length === 0) {
-    errors.push('Cliente deve ter um setor/indústria definido');
-  }
-
-  // Validações de aviso
-  if (client.richnessScore < 50) {
-    warnings.push('Cliente com baixa qualificação (richness score < 30). Considere coletar mais informações.');
-  }
-
-  if (!client.businessDetails || client.businessDetails.trim().length === 0) {
-    warnings.push('Cliente sem detalhes de negócio. Isso pode afetar a qualidade das perguntas do setor.');
+    errors.push('Cliente deve ter um nome válido');
   }
 
   return {
