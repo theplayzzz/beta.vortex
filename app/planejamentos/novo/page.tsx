@@ -66,10 +66,10 @@ export default function NovoPlnejamentoPage() {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center">
+        <div className="flex items-center gap-3">
           <Link
             href="/planejamentos"
-            className="p-2 text-seasalt/70 hover:text-seasalt transition-colors mr-2"
+            className="p-2 text-seasalt/70 hover:text-seasalt transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>

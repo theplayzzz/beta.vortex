@@ -123,9 +123,9 @@ export default function PropostasPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         {statsCards.map((stat, index) => (
-          <div key={index} className="bg-eerie-black rounded-lg p-6 border border-accent/20">
+          <div key={index} className="bg-eerie-black rounded-lg p-4 border border-accent/20">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-seasalt/70 text-sm font-medium">{stat.title}</p>
@@ -133,8 +133,8 @@ export default function PropostasPage() {
                   {statsLoading ? '...' : stat.value}
                 </p>
               </div>
-              <div className={`w-12 h-12 rounded-lg ${stat.bgColor} flex items-center justify-center ml-4`}>
-                <span className="text-xl">{stat.icon}</span>
+              <div className={`w-10 h-10 rounded-lg ${stat.bgColor} flex items-center justify-center ml-3`}>
+                <span className="text-lg">{stat.icon}</span>
               </div>
             </div>
           </div>
