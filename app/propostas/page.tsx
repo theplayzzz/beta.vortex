@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { ProposalsList } from '@/components/proposals/ProposalsList';
 import { useProposals, useProposalStats } from '@/hooks/use-proposals';
 
@@ -88,89 +88,36 @@ export default function PropostasPage() {
         </Link>
       </div>
 
-      {/* Unified Search Header */}
+      {/* Status Filters */}
       <div className="bg-eerie-black rounded-lg p-6 border border-accent/20 mb-8">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          {/* Título e Descrição */}
+        <div className="flex flex-col gap-4">
           <div>
-            <h2 className="text-xl font-semibold text-seasalt">Buscar e Filtrar Propostas</h2>
-            <p className="text-periwinkle text-sm mt-1">Encontre propostas por nome, status ou cliente</p>
+            <h2 className="text-lg font-semibold text-seasalt mb-2">Filtrar por Status</h2>
+            <p className="text-periwinkle text-sm">Visualize propostas por status específico</p>
           </div>
           
-          {/* Controles de Busca */}
-          <div className="flex flex-col sm:flex-row gap-4 min-w-0 lg:flex-1 lg:max-w-2xl">
-            {/* Filtros de Status */}
-            <div className="flex flex-wrap gap-2">
-              {[
-                { key: 'DRAFT', label: 'Rascunho' },
-                { key: 'SENT', label: 'Enviada' },
-                { key: 'VIEWED', label: 'Visualizada' },
-                { key: 'NEGOTIATION', label: 'Negociação' },
-                { key: 'ACCEPTED', label: 'Aceita' },
-                { key: 'REJECTED', label: 'Rejeitada' },
-              ].slice(0, 3).map((status) => (
-                <button
-                  key={status.key}
-                  onClick={() => handleStatusFilter(status.key)}
-                  className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
-                    statusFilter === status.key
-                      ? 'bg-sgbus-green text-night border-sgbus-green'
-                      : 'text-seasalt/70 border-accent/20 hover:border-accent/40'
-                  }`}
-                >
-                  {status.label}
-                </button>
-              ))}
-            </div>
-            
-            {/* Campo de Busca */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-seasalt/50" />
-              <input
-                type="text"
-                placeholder="Buscar propostas..."
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-night border border-accent/20 rounded-lg text-seasalt placeholder-seasalt/50 focus:border-sgbus-green focus:outline-none"
-              />
-            </div>
-            
-            {/* Botão de Ação */}
-            <Link 
-              href="/propostas/nova"
-              className="px-4 py-2.5 bg-sgbus-green text-night font-medium rounded-lg hover:bg-sgbus-green/90 transition-colors shrink-0"
-            >
-              <Plus className="h-4 w-4 mr-2 inline" />
-              Criar Novo
-            </Link>
-          </div>
-        </div>
-        
-        {/* Filtros Adicionais */}
-        <div className="mt-4 pt-4 border-t border-accent/20">
-          <div className="flex items-center gap-2 text-sm">
-            <Filter className="h-4 w-4 text-seasalt/50" />
-            <span className="text-seasalt/70">Filtros extras:</span>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { key: 'VIEWED', label: 'Visualizada' },
-                { key: 'NEGOTIATION', label: 'Negociação' },
-                { key: 'ACCEPTED', label: 'Aceita' },
-                { key: 'REJECTED', label: 'Rejeitada' },
-              ].map((status) => (
-                <button
-                  key={status.key}
-                  onClick={() => handleStatusFilter(status.key)}
-                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                    statusFilter === status.key
-                      ? 'bg-sgbus-green text-night border-sgbus-green'
-                      : 'text-seasalt/70 border-accent/20 hover:border-accent/40'
-                  }`}
-                >
-                  {status.label}
-                </button>
-              ))}
-            </div>
+          <div className="flex flex-wrap gap-3">
+            {[
+              { key: '', label: 'Todas' },
+              { key: 'DRAFT', label: 'Rascunho' },
+              { key: 'SENT', label: 'Enviada' },
+              { key: 'VIEWED', label: 'Visualizada' },
+              { key: 'NEGOTIATION', label: 'Negociação' },
+              { key: 'ACCEPTED', label: 'Aceita' },
+              { key: 'REJECTED', label: 'Rejeitada' },
+            ].map((status) => (
+              <button
+                key={status.key}
+                onClick={() => handleStatusFilter(status.key)}
+                className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
+                  statusFilter === status.key
+                    ? 'bg-sgbus-green text-night border-sgbus-green'
+                    : 'text-seasalt/70 border-accent/20 hover:border-accent/40 hover:text-seasalt'
+                }`}
+              >
+                {status.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
