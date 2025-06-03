@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Plus, Star, Search, Filter } from "lucide-react";
+import { Plus, Star } from "lucide-react";
 import { usePlannings } from "@/lib/react-query/hooks/usePlannings";
 import { useClients } from "@/lib/react-query/hooks/useClients";
 import { PlanningList, PlanningFilters } from "@/components/planning";
@@ -104,46 +104,6 @@ export default function PlanejamentosPage() {
           <Plus className="h-4 w-4 mr-2" />
           Novo Planejamento
         </Link>
-      </div>
-
-      {/* Unified Search Header */}
-      <div className="bg-eerie-black rounded-lg p-6 border border-accent/20 mb-8">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          {/* Título e Descrição */}
-          <div>
-            <h2 className="text-xl font-semibold text-seasalt">Buscar e Filtrar Planejamentos</h2>
-            <p className="text-periwinkle text-sm mt-1">Encontre planejamentos por nome, status ou cliente</p>
-          </div>
-          
-          {/* Controles de Busca */}
-          <div className="flex flex-col sm:flex-row gap-4 min-w-0 lg:flex-1 lg:max-w-2xl">
-            {/* Status de filtros ativos */}
-            <div className="flex flex-wrap gap-2">
-              {activeFiltersCount > 0 && (
-                <span className="px-2 py-1 bg-sgbus-green/20 text-sgbus-green text-xs rounded-full">
-                  {activeFiltersCount} filtro{activeFiltersCount > 1 ? 's' : ''} ativo{activeFiltersCount > 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-            
-            {/* Indicação de busca */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-seasalt/50" />
-              <div className="pl-10 pr-4 py-2.5 bg-night border border-accent/20 rounded-lg text-seasalt/70">
-                Busca e filtros detalhados abaixo
-              </div>
-            </div>
-            
-            {/* Botão de Ação */}
-            <Link 
-              href="/planejamentos/novo"
-              className="px-4 py-2.5 bg-sgbus-green text-night font-medium rounded-lg hover:bg-sgbus-green/90 transition-colors shrink-0"
-            >
-              <Plus className="h-4 w-4 mr-2 inline" />
-              Criar Novo
-            </Link>
-          </div>
-        </div>
       </div>
 
       {/* Indicador de planejamentos novos */}
