@@ -1,14 +1,30 @@
+import { memo, useState, useEffect } from 'react';
 import { Question } from '@/lib/planning/sectorQuestions';
 
 interface QuestionFieldProps {
   question: Question;
   value: any;
   onChange: (value: any) => void;
+  onBlur: () => void;
   error?: string;
 }
 
-export function QuestionField({ question, value, onChange, error }: QuestionFieldProps) {
+export const QuestionField = memo(function QuestionField({ question, value, onChange, onBlur, error }: QuestionFieldProps) {
   const { label, type, options = [], required, placeholder, description } = question;
+  
+  // Estado local para evitar re-renderizações durante a digitação
+  const [localValue, setLocalValue] = useState(value);
+
+  // Sincronizar estado local com value quando value mudar (ex: carregamento do localStorage)
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  // Função para atualizar campo no formulário e salvar no localStorage
+  const handleFieldBlur = (newValue: any) => {
+    onChange(newValue);
+    onBlur();
+  };
 
   const renderField = () => {
     switch (type) {
@@ -16,8 +32,9 @@ export function QuestionField({ question, value, onChange, error }: QuestionFiel
         return (
           <input
             type="text"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
+            value={localValue || ''}
+            onChange={(e) => setLocalValue(e.target.value)}
+            onBlur={(e) => handleFieldBlur(e.target.value)}
             placeholder={placeholder}
             className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
           />
@@ -27,8 +44,9 @@ export function QuestionField({ question, value, onChange, error }: QuestionFiel
         return (
           <input
             type="number"
-            value={value || ''}
-            onChange={(e) => onChange(Number(e.target.value))}
+            value={localValue || ''}
+            onChange={(e) => setLocalValue(Number(e.target.value))}
+            onBlur={(e) => handleFieldBlur(Number(e.target.value))}
             placeholder={placeholder}
             className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
           />
@@ -37,8 +55,9 @@ export function QuestionField({ question, value, onChange, error }: QuestionFiel
       case 'textarea':
         return (
           <textarea
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
+            value={localValue || ''}
+            onChange={(e) => setLocalValue(e.target.value)}
+            onBlur={(e) => handleFieldBlur(e.target.value)}
             placeholder={placeholder}
             rows={3}
             className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20 resize-none"
@@ -57,8 +76,12 @@ export function QuestionField({ question, value, onChange, error }: QuestionFiel
                   type="radio"
                   name={question.field}
                   value={option}
-                  checked={value === option}
-                  onChange={(e) => onChange(e.target.value)}
+                  checked={localValue === option}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    setLocalValue(newValue);
+                    handleFieldBlur(newValue);
+                  }}
                   className="w-4 h-4 text-sgbus-green bg-night border-seasalt/20 focus:ring-sgbus-green focus:ring-2"
                 />
                 <span className="text-seasalt group-hover:text-sgbus-green transition-colors">
@@ -80,14 +103,14 @@ export function QuestionField({ question, value, onChange, error }: QuestionFiel
                 <input
                   type="checkbox"
                   value={option}
-                  checked={Array.isArray(value) && value.includes(option)}
+                  checked={Array.isArray(localValue) && localValue.includes(option)}
                   onChange={(e) => {
-                    const currentValue = Array.isArray(value) ? value : [];
-                    if (e.target.checked) {
-                      onChange([...currentValue, option]);
-                    } else {
-                      onChange(currentValue.filter((v: string) => v !== option));
-                    }
+                    const currentValue = Array.isArray(localValue) ? localValue : [];
+                    const newValue = e.target.checked
+                      ? [...currentValue, option]
+                      : currentValue.filter((v: string) => v !== option);
+                    setLocalValue(newValue);
+                    handleFieldBlur(newValue);
                   }}
                   className="w-4 h-4 text-sgbus-green bg-night border-seasalt/20 rounded focus:ring-sgbus-green focus:ring-2"
                 />
@@ -102,8 +125,12 @@ export function QuestionField({ question, value, onChange, error }: QuestionFiel
       case 'select':
         return (
           <select
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
+            value={localValue || ''}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              setLocalValue(newValue);
+              handleFieldBlur(newValue);
+            }}
             className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
           >
             <option value="">Selecione uma opção...</option>
@@ -134,4 +161,4 @@ export function QuestionField({ question, value, onChange, error }: QuestionFiel
       {renderField()}
     </div>
   );
-} 
+}); 

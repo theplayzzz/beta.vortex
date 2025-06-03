@@ -1,5 +1,6 @@
 'use client';
 
+import { memo, useState, useEffect } from 'react';
 import { SetorPermitido } from '@/lib/planning/sectorConfig';
 
 interface Client {
@@ -14,10 +15,31 @@ interface BasicInfoTabProps {
   client: Client;
   formData: Record<string, any>;
   onFieldChange: (field: string, value: any) => void;
+  onFieldBlur: () => void;
   errors: Record<string, string>;
 }
 
-export function BasicInfoTab({ client, formData, onFieldChange, errors }: BasicInfoTabProps) {
+export const BasicInfoTab = memo(function BasicInfoTab({ client, formData, onFieldChange, onFieldBlur, errors }: BasicInfoTabProps) {
+  // Estado local para evitar re-renderizações durante a digitação
+  const [localValues, setLocalValues] = useState({
+    titulo_planejamento: formData.titulo_planejamento || '',
+    descricao_objetivo: formData.descricao_objetivo || ''
+  });
+
+  // Sincronizar estado local com formData quando formData mudar (ex: carregamento do localStorage)
+  useEffect(() => {
+    setLocalValues({
+      titulo_planejamento: formData.titulo_planejamento || '',
+      descricao_objetivo: formData.descricao_objetivo || ''
+    });
+  }, [formData.titulo_planejamento, formData.descricao_objetivo]);
+
+  // Função para atualizar campo no formulário e salvar no localStorage
+  const handleFieldBlur = (field: string, value: string) => {
+    onFieldChange(field, value);
+    onFieldBlur();
+  };
+
   return (
     <div className="space-y-6">
       <div className="mb-6">
@@ -38,8 +60,9 @@ export function BasicInfoTab({ client, formData, onFieldChange, errors }: BasicI
         
         <input
           type="text"
-          value={formData.titulo_planejamento || ''}
-          onChange={(e) => onFieldChange('titulo_planejamento', e.target.value)}
+          value={localValues.titulo_planejamento}
+          onChange={(e) => setLocalValues(prev => ({ ...prev, titulo_planejamento: e.target.value }))}
+          onBlur={(e) => handleFieldBlur('titulo_planejamento', e.target.value)}
           placeholder="Ex: Expansão Digital 2024, Crescimento de Vendas Q1..."
           className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
         />
@@ -53,8 +76,9 @@ export function BasicInfoTab({ client, formData, onFieldChange, errors }: BasicI
         </label>
         
         <textarea
-          value={formData.descricao_objetivo || ''}
-          onChange={(e) => onFieldChange('descricao_objetivo', e.target.value)}
+          value={localValues.descricao_objetivo}
+          onChange={(e) => setLocalValues(prev => ({ ...prev, descricao_objetivo: e.target.value }))}
+          onBlur={(e) => handleFieldBlur('descricao_objetivo', e.target.value)}
           placeholder="Descreva qual é o principal objetivo que você deseja alcançar com este planejamento..."
           rows={4}
           className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20 resize-none"
@@ -62,4 +86,4 @@ export function BasicInfoTab({ client, formData, onFieldChange, errors }: BasicI
       </div>
     </div>
   );
-} 
+}); 

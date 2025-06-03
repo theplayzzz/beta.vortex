@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { 
   MATURIDADE_MARKETING, 
   METAS_MARKETING, 
@@ -12,37 +12,70 @@ import {
 interface MarketingTabProps {
   formData: Record<string, any>;
   onFieldChange: (field: string, value: any) => void;
+  onFieldBlur: () => void;
   errors: Record<string, string>;
 }
 
-export function MarketingTab({ formData, onFieldChange, errors }: MarketingTabProps) {
-  const [selectedMaturidade, setSelectedMaturidade] = useState<string>(
-    formData.maturidade_marketing || ""
-  );
+export const MarketingTab = memo(function MarketingTab({ formData, onFieldChange, onFieldBlur, errors }: MarketingTabProps) {
+  // Estado local para evitar re-renderizações durante a digitação
+  const [localValues, setLocalValues] = useState({
+    maturidade_marketing: formData.maturidade_marketing || "",
+    meta_marketing: formData.meta_marketing || "",
+    meta_marketing_personalizada: formData.meta_marketing_personalizada || ""
+  });
 
-  const metas = selectedMaturidade ? getMetasForMaturidadeMarketing(selectedMaturidade as MaturidadeMarketing) : [];
-  const descricao = selectedMaturidade ? DESCRICOES_MATURIDADE_MARKETING[selectedMaturidade as MaturidadeMarketing] : "";
+  // Sincronizar estado local com formData quando formData mudar
+  useEffect(() => {
+    setLocalValues({
+      maturidade_marketing: formData.maturidade_marketing || "",
+      meta_marketing: formData.meta_marketing || "",
+      meta_marketing_personalizada: formData.meta_marketing_personalizada || ""
+    });
+  }, [formData.maturidade_marketing, formData.meta_marketing, formData.meta_marketing_personalizada]);
+
+  const metas = localValues.maturidade_marketing ? getMetasForMaturidadeMarketing(localValues.maturidade_marketing as MaturidadeMarketing) : [];
+  const descricao = localValues.maturidade_marketing ? DESCRICOES_MATURIDADE_MARKETING[localValues.maturidade_marketing as MaturidadeMarketing] : "";
+
+  // Função para atualizar campo no formulário e salvar no localStorage
+  const handleFieldBlur = (field: string, value: any) => {
+    onFieldChange(field, value);
+    onFieldBlur();
+  };
 
   const handleMaturidadeChange = (value: string) => {
-    setSelectedMaturidade(value);
+    setLocalValues(prev => ({ 
+      ...prev, 
+      maturidade_marketing: value,
+      // Reset meta when maturity changes
+      meta_marketing: "",
+      meta_marketing_personalizada: ""
+    }));
+  };
+
+  const handleMaturidadeBlur = (value: string) => {
     onFieldChange("maturidade_marketing", value);
-    
     // Reset meta when maturity changes
-    if (formData.meta_marketing) {
-      onFieldChange("meta_marketing", "");
-    }
-    if (formData.meta_marketing_personalizada) {
-      onFieldChange("meta_marketing_personalizada", "");
-    }
+    onFieldChange("meta_marketing", "");
+    onFieldChange("meta_marketing_personalizada", "");
+    onFieldBlur();
   };
 
   const handleMetaChange = (value: string) => {
+    setLocalValues(prev => ({ 
+      ...prev, 
+      meta_marketing: value,
+      // Clear custom meta if not "Outro"
+      meta_marketing_personalizada: value !== "Outro" ? "" : prev.meta_marketing_personalizada
+    }));
+  };
+
+  const handleMetaBlur = (value: string) => {
     onFieldChange("meta_marketing", value);
-    
     // Clear custom meta if not "Outro"
-    if (value !== "Outro" && formData.meta_marketing_personalizada) {
+    if (value !== "Outro") {
       onFieldChange("meta_marketing_personalizada", "");
     }
+    onFieldBlur();
   };
 
   return (
@@ -64,8 +97,9 @@ export function MarketingTab({ formData, onFieldChange, errors }: MarketingTabPr
         </label>
         
         <select
-          value={selectedMaturidade}
+          value={localValues.maturidade_marketing}
           onChange={(e) => handleMaturidadeChange(e.target.value)}
+          onBlur={(e) => handleMaturidadeBlur(e.target.value)}
           className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
         >
           <option value="">Selecione o nível de maturidade...</option>
@@ -78,7 +112,7 @@ export function MarketingTab({ formData, onFieldChange, errors }: MarketingTabPr
       </div>
 
       {/* Descrição da Maturidade Selecionada */}
-      {selectedMaturidade && descricao && (
+      {localValues.maturidade_marketing && descricao && (
         <div className="bg-eerie-black rounded-lg p-4">
           <h4 className="text-seasalt font-medium mb-2">📊 Sua situação atual</h4>
           <p className="text-periwinkle text-sm">{descricao}</p>
@@ -94,8 +128,9 @@ export function MarketingTab({ formData, onFieldChange, errors }: MarketingTabPr
           </label>
           
           <select
-            value={formData.meta_marketing || ""}
+            value={localValues.meta_marketing}
             onChange={(e) => handleMetaChange(e.target.value)}
+            onBlur={(e) => handleMetaBlur(e.target.value)}
             className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
           >
             <option value="">Selecione uma meta...</option>
@@ -109,7 +144,7 @@ export function MarketingTab({ formData, onFieldChange, errors }: MarketingTabPr
       )}
 
       {/* Campo Personalizado (quando "Outro" é selecionado) */}
-      {formData.meta_marketing === "Outro" && (
+      {localValues.meta_marketing === "Outro" && (
         <div className="space-y-3">
           <label className="block text-sm font-medium text-seasalt">
             Especifique sua meta personalizada:
@@ -117,8 +152,9 @@ export function MarketingTab({ formData, onFieldChange, errors }: MarketingTabPr
           </label>
           
           <textarea
-            value={formData.meta_marketing_personalizada || ""}
-            onChange={(e) => onFieldChange("meta_marketing_personalizada", e.target.value)}
+            value={localValues.meta_marketing_personalizada}
+            onChange={(e) => setLocalValues(prev => ({ ...prev, meta_marketing_personalizada: e.target.value }))}
+            onBlur={(e) => handleFieldBlur("meta_marketing_personalizada", e.target.value)}
             placeholder="Descreva qual é sua meta específica de marketing..."
             rows={3}
             className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20 resize-none"
@@ -145,4 +181,4 @@ export function MarketingTab({ formData, onFieldChange, errors }: MarketingTabPr
       </div>
     </div>
   );
-} 
+}); 
