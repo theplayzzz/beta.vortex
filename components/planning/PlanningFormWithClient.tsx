@@ -22,6 +22,20 @@ interface PlanningFormWithClientProps {
 
 // Componente para informações do cliente
 function ClientInfoSidebar({ client }: { client: Client }) {
+  // Função para determinar cor da barra baseada no score (seguindo padrão do sistema)
+  const getScoreBarColor = (score: number) => {
+    if (score >= 80) return 'bg-sgbus-green';
+    if (score >= 50) return 'bg-yellow-400';
+    return 'bg-red-400';
+  };
+
+  // Função para determinar cor do texto baseada no score  
+  const getScoreTextColor = (score: number) => {
+    if (score >= 80) return 'text-sgbus-green';
+    if (score >= 50) return 'text-yellow-400';
+    return 'text-red-400';
+  };
+
   return (
     <div className="space-y-6">
       {/* Header da Sidebar */}
@@ -57,17 +71,17 @@ function ClientInfoSidebar({ client }: { client: Client }) {
             </p>
           </div>
 
-          {/* Score de Dados */}
+          {/* Score de Dados - ATUALIZADO com cores dinâmicas */}
           <div>
             <h3 className="font-medium text-seasalt text-sm mb-2">Score de Dados</h3>
             <div className="flex items-center gap-2">
               <div className="flex-1 bg-night rounded-full h-2">
                 <div 
-                  className="bg-sgbus-green rounded-full h-2 transition-all duration-300"
+                  className={`${getScoreBarColor(client.richnessScore)} rounded-full h-2 transition-all duration-300`}
                   style={{ width: `${client.richnessScore}%` }}
                 />
               </div>
-              <span className="text-seasalt/90 text-sm font-medium">
+              <span className={`text-sm font-medium ${getScoreTextColor(client.richnessScore)}`}>
                 {client.richnessScore}%
               </span>
             </div>
