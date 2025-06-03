@@ -140,7 +140,7 @@ export function validateClientForForm(client: Client): {
   }
 
   // Validações de aviso
-  if (client.richnessScore < 30) {
+  if (client.richnessScore < 50) {
     warnings.push('Cliente com baixa qualificação (richness score < 30). Considere coletar mais informações.');
   }
 

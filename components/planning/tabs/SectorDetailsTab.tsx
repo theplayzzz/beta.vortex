@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { getQuestionsForSector } from '@/lib/planning/sectorQuestions';
 import { SetorPermitido } from '@/lib/planning/sectorConfig';
 import { QuestionField } from '../QuestionField';
@@ -6,13 +7,15 @@ interface SectorDetailsTabProps {
   sector: SetorPermitido;
   formData: Record<string, any>;
   onFieldChange: (field: string, value: any) => void;
+  onFieldBlur: () => void;
   errors: Record<string, string>;
 }
 
-export function SectorDetailsTab({ 
+export const SectorDetailsTab = memo(function SectorDetailsTab({ 
   sector, 
   formData, 
   onFieldChange, 
+  onFieldBlur,
   errors 
 }: SectorDetailsTabProps) {
   const questions = getQuestionsForSector(sector);
@@ -44,6 +47,7 @@ export function SectorDetailsTab({
           question={question}
           value={formData[question.field]}
           onChange={(value) => onFieldChange(question.field, value)}
+          onBlur={onFieldBlur}
           error={errors[question.field]}
         />
       ))}
@@ -66,4 +70,4 @@ export function SectorDetailsTab({
       </div>
     </div>
   );
-} 
+}); 

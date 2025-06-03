@@ -103,7 +103,7 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
   const form = useForm<PlanningFormData>({
     resolver: zodResolver(planningFormSchema),
     defaultValues: getDefaultValues(client.industry),
-    mode: 'onBlur'
+    mode: 'onSubmit'
   });
 
   // Função para mudança segura de aba
@@ -123,23 +123,12 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
     tabChangeRef(safeSetCurrentTab);
   }, [tabChangeRef, safeSetCurrentTab]);
 
-  // Auto-save para localStorage com throttling
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    
-    const subscription = form.watch((data) => {
-      // Debounce para evitar muitas atualizações
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        updateFormData(data as Partial<PlanningFormData>);
-      }, 500);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeoutId);
-    };
-  }, [updateFormData, form]);
+  // Função para auto-save no onBlur
+  const handleSaveOnBlur = useCallback(() => {
+    const currentFormData = form.getValues();
+    updateFormData(currentFormData as Partial<PlanningFormData>);
+    console.log('💾 Auto-save executado no onBlur');
+  }, [form, updateFormData]);
 
   // Carregar dados salvos do localStorage apenas uma vez
   useEffect(() => {
@@ -434,6 +423,7 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
     const commonProps = {
       formData: tabData || {},
       onFieldChange: handleFieldChange,
+      onFieldBlur: handleSaveOnBlur,
       errors: {} // Sempre vazio agora que removemos as mensagens
     };
 
