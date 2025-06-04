@@ -2,6 +2,111 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+/* Garantir que dropdowns funcionem corretamente */
+.dropdown-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* Estilo para dropdowns que podem aparecer fora do container pai */
+.dropdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9998;
+  background-color: transparent;
+  pointer-events: auto;
+}
+
+/* Garantir que containers não cortem dropdowns */
+.form-container,
+.tab-container,
+.modal-container {
+  overflow: visible !important;
+}
+
+/* Estilo específico para multiselect dropdowns */
+.multiselect-dropdown {
+  position: absolute;
+  z-index: 9999;
+  min-width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8px);
+  background-color: #0e0f0f !important; /* Garantir fundo sólido */
+  border: 1px solid rgba(249, 251, 252, 0.2) !important;
+  contain: layout !important;
+  display: block !important;
+}
+
+/* Evitar que elementos pai interfiram com dropdowns */
+.form-section {
+  position: relative;
+  z-index: 1;
+}
+
+.form-section:has(.multiselect-dropdown) {
+  z-index: 9998;
+}
+
+/* Estilos para scroll suave em dropdowns */
+.multiselect-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.multiselect-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.multiselect-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 3px;
+}
+
+.multiselect-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+/* Garantir que botões do dropdown tenham precedência */
+.multiselect-dropdown button {
+  background-color: transparent !important;
+  border: none !important;
+  position: relative;
+  z-index: 10000;
+  pointer-events: auto !important;
+}
+
+.multiselect-dropdown button:hover {
+  background-color: #1a1b23 !important;
+}
+
 /* Customizações para componentes Clerk */
 .cl-formButtonPrimary {
   background-color: #6be94c !important;
@@ -175,4 +280,81 @@
 
 .cl-formField + .cl-formField {
   margin-top: 1rem !important;
+}
+
+/* Forçar estilos específicos para multiselect dropdown */
+.multiselect-dropdown,
+div[style*="backgroundColor: #0e0f0f"] {
+  background-color: #0e0f0f !important;
+  border: 1px solid rgba(249, 251, 252, 0.2) !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+  position: fixed !important;
+  box-sizing: border-box !important;
+  min-width: auto !important;
+  max-width: none !important;
+  width: auto !important; /* Permitir que seja definido pelo style inline */
+}
+
+/* Forçar estilos para overlay */
+div[style*="zIndex: 9998"] {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 9998 !important;
+  pointer-events: auto !important;
+  background-color: rgba(0, 0, 0, 0.001) !important;
+}
+
+/* Garantir que botões do dropdown tenham precedência absoluta */
+.multiselect-dropdown button,
+button[style*="zIndex: 10000"] {
+  background-color: transparent !important;
+  border: none !important;
+  position: relative !important;
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  text-align: left !important;
+}
+
+.multiselect-dropdown button:hover,
+button[style*="zIndex: 10000"]:hover {
+  background-color: #1a1b23 !important;
+}
+
+/* Prevenir que qualquer elemento interfira */
+.multiselect-dropdown * {
+  pointer-events: auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Garantir que o texto não quebre e use truncate corretamente */
+.multiselect-dropdown button span {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: calc(100% - 2rem) !important;
+}
+
+/* Forçar z-index hierárquico */
+.dropdown-container {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Garantir que o dropdown tenha exatamente a largura do campo original */
+.multiselect-dropdown[style] {
+  width: var(--dropdown-width) !important;
+  min-width: var(--dropdown-width) !important;
+  max-width: var(--dropdown-width) !important;
+}
+
+/* Prevenir qualquer expansão indesejada */
+.multiselect-dropdown {
+  contain: layout !important;
+  display: block !important;
 }
