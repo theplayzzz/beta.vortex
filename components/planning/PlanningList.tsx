@@ -17,6 +17,7 @@ interface Planning {
   title: string;
   description?: string;
   status: string;
+  specificObjectives?: string | null;
   createdAt: string;
   updatedAt: string;
   Client: Client;

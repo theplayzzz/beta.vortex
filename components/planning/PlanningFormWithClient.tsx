@@ -212,11 +212,11 @@ export function PlanningFormWithClient({
 
       // Mostrar toast de processo iniciado
       addToast(toast.info(
-        'Criando planejamento...',
-        'Salvando dados no banco de dados'
+        'Salvando planejamento...',
+        'Processando dados no sistema'
       ));
 
-      // ✅ AÇÃO 1: SALVAR NO BANCO (PRIORITÁRIA)
+      // ✅ AÇÃO 1: SALVAR NO BANCO (PRIORITÁRIA - ÚNICA AÇÃO QUE BLOQUEIA O FLUXO)
       const createdPlanning = await createPlanningMutation.mutateAsync({
         title: submissionPayload.title,
         description: submissionPayload.description,
@@ -227,9 +227,10 @@ export function PlanningFormWithClient({
 
       console.log('✅ Planejamento criado:', createdPlanning);
 
-      // ✅ AÇÃO 2: WEBHOOK INDEPENDENTE (FIRE-AND-FORGET)
-      // Nota: O webhook já é enviado automaticamente pela API /api/plannings
-      console.log('📡 Webhook será processado de forma independente pela API');
+      // ✅ AÇÃO 2: WEBHOOK FIRE-AND-FORGET (TOTALMENTE INDEPENDENTE)
+      // O webhook é disparado automaticamente pela API de forma assíncrona
+      // Não afeta o fluxo do usuário nem o redirecionamento
+      console.log('📡 Webhook disparado automaticamente em background pela API');
 
       // Limpar localStorage após sucesso
       localStorage.removeItem(`planning-form-draft-${client.id}`);
@@ -242,7 +243,7 @@ export function PlanningFormWithClient({
       // ✅ SUCESSO IMEDIATO + REDIRECIONAMENTO
       addToast(toast.success(
         'Planejamento criado com sucesso!',
-        `"${createdPlanning.title}" foi salvo e está sendo processado.`,
+        `"${createdPlanning.title}" foi salvo. Os objetivos específicos serão gerados automaticamente.`,
         {
           duration: 4000,
           action: {
@@ -259,10 +260,10 @@ export function PlanningFormWithClient({
     } catch (error) {
       console.error('❌ Erro ao criar planejamento:', error);
       
-      // ✅ APENAS ERRO DE BANCO AFETA O USUÁRIO
+      // ✅ APENAS ERRO DE BANCO AFETA O USUÁRIO (webhook é independente)
       addToast(toast.error(
-        'Erro ao criar planejamento',
-        error instanceof Error ? error.message : 'Ocorreu um erro inesperado. Tente novamente.',
+        'Erro ao salvar planejamento',
+        error instanceof Error ? error.message : 'Ocorreu um erro inesperado ao salvar no banco de dados. Tente novamente.',
         {
           duration: 10000,
           action: {
@@ -344,10 +345,13 @@ export function PlanningFormWithClient({
               <div className="bg-eerie-black rounded-lg p-8 text-center border border-accent/20">
                 <div className="w-12 h-12 border-4 border-sgbus-green/20 border-t-sgbus-green rounded-full animate-spin mx-auto mb-4"></div>
                 <h3 className="text-lg font-semibold text-seasalt mb-2">
-                  Criando Planejamento...
+                  Salvando Planejamento...
                 </h3>
                 <p className="text-seasalt/70 text-sm">
-                  Salvando no banco de dados
+                  Processando dados no sistema
+                </p>
+                <p className="text-seasalt/50 text-xs mt-2">
+                  Você será redirecionado automaticamente
                 </p>
               </div>
             </div>

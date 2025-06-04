@@ -24,6 +24,7 @@ Implementar fluxo otimizado de submissão de formulários de planejamento com a�
 
 ## ⚙️ Non-Functional Requirements
 
+- **Performance**: Salvamento no banco deve ser <2 segundos para redirecionamento imediato
 - **UX**: Usuário nunca aguarda resposta de API externa para navegação
 - **Confiabilidade**: Sistema funciona independente do status da API externa
 - **Responsividade**: Polling só ativo quando necessário (specificObjectives vazio)
@@ -47,7 +48,7 @@ Implementar fluxo otimizado de submissão de formulários de planejamento com a�
 
 ## 🔢 Execution Plan
 
-### 1. **Análise e Refatoração do Submit Atual** ✅ CONCLUÍDO
+### 1. **Análise e Refatoração do Submit Atual**
 ```142:195:components/planning/PlanningFormWithClient.tsx
 const handleFormSubmit = async (formData: PlanningFormData) => {
   try {
@@ -76,291 +77,202 @@ const handleFormSubmit = async (formData: PlanningFormData) => {
 };
 ```
 
-**✅ PROBLEMAS IDENTIFICADOS NO FLUXO ATUAL:**
-
-#### **❌ Validação Inadequada**
-- **Localização**: ```160:246:components/planning/PlanningFormWithClient.tsx```
-- **Problema**: `handleFormSubmit` apenas chama `onSubmit(data)` sem validação prévia
-- **Impacto**: Usuário pode submeter formulário incompleto sem feedback imediato
-
-#### **❌ Validação Complexa Sem Navegação**
-- **Localização**: ```234:377:components/planning/PlanningForm.tsx```
-- **Problema**: Validação existente é complexa mas não navega automaticamente
-- **Código atual**: 
-```typescript
-// Mapear erros para abas mas não navega automaticamente
-const tabsWithErrorsData = [];
-const errorTabIndices = new Set<number>();
-setTabsWithErrors(errorTabIndices); // Apenas marca visualmente
-setPendingTabNavigation(firstErrorTab.tabIndex); // Não funciona efetivamente
-```
-- **Impacto**: Estado `tabsWithErrors` existe mas não resulta em navegação automática
-
-#### **✅ Webhook Já Independente**
-- **Localização**: ```app/api/plannings/route.ts``` (linhas 117-263)
-- **Status**: ✅ **JÁ IMPLEMENTADO CORRETAMENTE**
-- **Implementação atual**:
-```typescript
-// Webhook é executado de forma independente na API
-try {
-  const webhookPayload = { ... };
-  if (process.env.PLANNING_WEBHOOK_URL) {
-    await fetch(process.env.PLANNING_WEBHOOK_URL, { ... });
-  }
-} catch (webhookError) {
-  console.error('Webhook dispatch failed:', webhookError);
-  // ✅ Não falhar a criação do planejamento por erro no webhook
-}
-```
-- **Conclusão**: Webhook não bloqueia o fluxo principal
-
-#### **⚠️ Redirecionamento Adequado**
-- **Status**: ✅ **FUNCIONAMENTO CORRETO**
-- **Análise**: Redirecionamento ocorre após `createPlanningMutation.mutateAsync`, que é adequado
-- **Webhook**: Executado de forma independente na API, não afeta timing
-
-#### **🔍 Funções de Validação Existentes**
-- **validateCompleteForm**: ```20:65:lib/planning/formValidation.ts``` ✅ Disponível
-- **validateTab**: ```67:85:lib/planning/formValidation.ts``` ✅ Disponível  
-- **navigateToFirstError**: ```220:247:lib/planning/formValidation.ts``` ✅ Disponível
-
-**📊 CONCLUSÃO DA INVESTIGAÇÃO:**
-1. **Webhook**: ✅ Já implementado corretamente (independente)
-2. **Redirecionamento**: ✅ Funcionamento adequado  
-3. **Validação**: ❌ Principal problema - falta validação prévia eficaz
-4. **Navegação**: ❌ Sistema existente não navega automaticamente
+**Problemas identificados no fluxo atual:**
+- Não há validação prévia com navegação para erros
+- Webhook não está separado da submissão principal
+- Redirecionamento pode estar aguardando mais que necessário
 
 ### 2. **Implementar Validação com Navegação Automática** ✅ CONCLUÍDO
 
-#### **✅ IMPLEMENTAÇÃO REALIZADA:**
+**Implementado:**
+- ✅ **Nova função `validateFormWithNavigation()`** em `lib/planning/formValidation.ts` (linhas 264-320)
+- ✅ **Interface `FormValidationWithNavigationResult`** com dados de erro e navegação
+- ✅ **Função `executeAutoNavigation()`** (linhas 322-340) para navegação automática
+- ✅ **Integração no submit** em `PlanningFormWithClient.tsx` com validação prévia
+- ✅ **Navegação automática** para primeira aba com erro
+- ✅ **Destaque visual** do campo problemático (outline verde por 2s)
+- ✅ **Feedback inteligente** via toast com quantidade de erros e nome da aba
+- ✅ **Interrupção segura** - submit só prossegue se formulário válido
 
-**🔧 Nova Função de Validação**
-- **Localização**: ```lib/planning/formValidation.ts``` (linhas 264-320)
-- **Função**: `validateFormWithNavigation(formData: PlanningFormData)`
-- **Retorno**: Interface `FormValidationWithNavigationResult` com informações de erro e navegação
+**Problema corrigido:** Removido `resolver: zodResolver(planningFormSchema)` do React Hook Form que estava bloqueando a validação personalizada.
 
+### 3. **Separar Ações de Banco e Webhook**
 ```typescript
-interface FormValidationWithNavigationResult {
-  isValid: boolean;
-  totalErrors: number;
-  errorTab?: number;        // Índice da aba com erro (0-3)
-  errorTabName?: string;    // Nome amigável da aba
-  errorField?: string;      // Nome do primeiro campo com erro
-  errorMessage?: string;    // Mensagem de erro do campo
-  errors: ValidationError[];
-}
+const handleFormSubmit = async (formData: PlanningFormData) => {
+  // 1. Validação com navegação automática
+  const validationResult = validateFormWithNavigation(formData);
+  if (!validationResult.isValid) {
+    navigateToErrorTab(validationResult.errorTab);
+    highlightErrorField(validationResult.errorField);
+    return;
+  }
+
+  try {
+    setIsSubmitting(true);
+    
+    const submissionPayload = prepareFinalSubmissionPayload(client, formData, sessionId);
+
+    // AÇÃO 1: Salvar no banco (prioritária)
+    const createdPlanning = await createPlanningMutation.mutateAsync({
+      title: submissionPayload.title,
+      description: submissionPayload.description,
+      clientId: submissionPayload.clientId,
+      formDataJSON: submissionPayload.formDataJSON,
+      clientSnapshot: submissionPayload.clientSnapshot,
+    });
+
+    // AÇÃO 2: Webhook independente (fire-and-forget)
+    triggerWebhookAsync(submissionPayload, createdPlanning.id);
+
+    // Sucesso imediato + redirecionamento
+    toast.success("Planejamento criado com sucesso!");
+    localStorage.removeItem(`planning-form-draft-${client.id}`);
+    router.push(`/planejamentos?highlight=${createdPlanning.id}`);
+    
+  } catch (error) {
+    // Apenas erro de banco afeta o usuário
+  }
+};
 ```
 
-**🎯 Função de Navegação Automática**
-- **Localização**: ```lib/planning/formValidation.ts``` (linhas 322-340)
-- **Função**: `executeAutoNavigation(result, navigateToTab)`
-- **Funcionalidade**: 
-  - Navega automaticamente para aba com erro
-  - Destaca visualmente o campo problemático (outline verde)
-  - Faz scroll suave até o campo
+### 4. **Implementar Webhook Fire-and-Forget**
+- **Função Independente**: `triggerWebhookAsync()` não bloqueia fluxo
+- **URL**: Utilizar `PLANNING_WEBHOOK_URL` configurada
+- **Payload**: Enviar submissionPayload + planningId
+- **Tratamento**: Logs internos apenas, sem afetar UX
+- **Retry**: Sistema interno de retry se necessário
 
-**🔄 Integração no Submit**
-- **Localização**: ```components/planning/PlanningFormWithClient.tsx``` (linhas 160-200)
-- **Fluxo implementado**:
-  1. **Validação Prévia**: Executa `validateFormWithNavigation()` antes de submeter
-  2. **Navegação Automática**: Se há erros, executa `executeAutoNavigation()`
-  3. **Feedback Visual**: Toast explicativo com nome da aba e quantidade de erros
-  4. **Interrupção**: Para a submissão se há erros (return statement)
+### 5. **Otimizar Lista de Planejamentos**
+- **Source Única**: Buscar dados apenas do banco de dados
+- **Cache Atualizado**: TanStack Query invalidar cache após criação
+- **Highlight**: Funcionalidade existente para destacar item criado
+- **Status Visual**: Badge opcional para "Processando IA" baseado em specificObjectives
 
+### 6. **Implementar Sistema de Polling Condicional**
 ```typescript
-// ✅ ETAPA 1: VALIDAÇÃO PRÉVIA COM NAVEGAÇÃO AUTOMÁTICA
-const validationResult = validateFormWithNavigation(formData);
+const useSpecificObjectivesPolling = (planningId: string, initialData: any) => {
+  const [shouldPoll, setShouldPoll] = useState(false);
 
-if (!validationResult.isValid) {
-  // Executar navegação automática para erro
-  executeAutoNavigation(validationResult, (tabIndex: number) => {
-    if (currentTabRef.current) {
-      currentTabRef.current(tabIndex);
+  useEffect(() => {
+    // Só inicia polling se:
+    // 1. Planejamento carregado
+    // 2. specificObjectives está vazio/null
+    if (planningId && !initialData?.specificObjectives) {
+      setShouldPoll(true);
     }
+  }, [planningId, initialData]);
+
+  const { data } = useQuery({
+    queryKey: ['planning-objectives', planningId],
+    queryFn: () => fetchPlanningObjectives(planningId),
+    enabled: shouldPoll,
+    refetchInterval: (data) => {
+      // Para polling se dados chegaram
+      if (data?.specificObjectives) {
+        setShouldPoll(false);
+        return false;
+      }
+      return 3000; // 3s interval
+    },
+    // Timeout de 90s
+    refetchIntervalInBackground: false,
   });
-  
-  // Toast explicativo
-  addToast(toast.error(
-    'Formulário incompleto',
-    `Há ${validationResult.totalErrors} erro(s). Navegando para "${validationResult.errorTabName}".`
-  ));
-  
-  return; // Parar execução
-}
+
+  // Timeout manual
+  useEffect(() => {
+    if (shouldPoll) {
+      const timeout = setTimeout(() => {
+        setShouldPoll(false);
+      }, 90000);
+      return () => clearTimeout(timeout);
+    }
+  }, [shouldPoll]);
+
+  return { data, isPolling: shouldPoll };
+};
 ```
 
-#### **🧪 INSTRUÇÕES DE TESTE MANUAL:**
+### 7. **Modificar Aba Objetivos Específicos**
+- **Estado Inicial**: Verificar se specificObjectives existe no carregamento
+- **Conditional Render**: 
+  - Se existe → Mostrar dados normalmente
+  - Se não existe → Mostrar loading + iniciar polling
+- **Transição Suave**: Animação quando dados chegam via polling
+- **Estado de Erro**: Após timeout, mostrar mensagem e botões de ação
 
-**📋 CENÁRIO 1: Erro na Primeira Aba (Informações Básicas)**
-1. Acesse: `/planejamentos/novo` com um cliente válido
-2. **Deixe campo obrigatório vazio**: "Título do Planejamento" em branco
-3. Navegue para qualquer outra aba (ex: Marketing, Comercial)
-4. Clique em **"🚀 Finalizar Planejamento"**
-5. **✅ Resultado esperado**:
-   - Toast vermelho: "Formulário incompleto" + "Navegando para Informações Básicas"
-   - Navegação automática para Aba 1
-   - Campo "Título" destacado com outline verde
-   - Scroll automático até o campo
-   - Submissão **NÃO** executada
-
-**📋 CENÁRIO 2: Erro na Terceira Aba (Marketing)**
-1. Preencha corretamente: "Informações Básicas" e "Detalhes do Setor"
-2. Na aba **Marketing**: deixe "Maturidade de Marketing" sem seleção
-3. Vá para aba **Comercial** e preencha corretamente
-4. Clique em **"🚀 Finalizar Planejamento"**
-5. **✅ Resultado esperado**:
-   - Toast: "Formulário incompleto" + "Navegando para Marketing"
-   - Navegação automática para Aba 3 (Marketing)
-   - Campo dropdown destacado
-   - Submissão **NÃO** executada
-
-**📋 CENÁRIO 3: Formulário Completamente Válido**
-1. Preencha **todas as abas** com dados válidos
-2. Clique em **"🚀 Finalizar Planejamento"**
-3. **✅ Resultado esperado**:
-   - **NÃO** há navegação automática
-   - Toast azul: "Criando planejamento..." + "Salvando dados no banco"
-   - Loading overlay aparece
-   - Submissão **É** executada
-   - Redirecionamento para `/planejamentos`
-   - Toast verde: "Planejamento criado com sucesso!"
-
-**📋 CENÁRIO 4: Múltiplos Erros em Várias Abas**
-1. Deixe campos obrigatórios vazios em **3 abas diferentes**:
-   - Aba 1: "Título do Planejamento" vazio
-   - Aba 3: "Maturidade Marketing" não selecionado  
-   - Aba 4: "Maturidade Comercial" não selecionado
-2. Clique em **"🚀 Finalizar Planejamento"**
-3. **✅ Resultado esperado**:
-   - Toast: "Há 3 erro(s)" + "Navegando para Informações Básicas"
-   - Navegação para **primeira aba com erro** (Informações Básicas)
-   - Campo "Título" destacado
-
-**🔍 LOGS DE DEBUG ESPERADOS:**
-Abra Developer Tools (F12) e monitore console:
-```
-🔍 validateFormWithNavigation: Iniciando validação completa...
-❌ validateFormWithNavigation: Erros encontrados: 1
-🎯 validateFormWithNavigation: Primeira aba com erro: Informações Básicas (índice 0)
-📍 validateFormWithNavigation: Primeiro campo com erro: titulo_planejamento
-🚫 Submissão cancelada devido a erros de validação
-```
-
-**⚠️ COMPORTAMENTOS A VERIFICAR:**
-- ✅ Validação **antes** de qualquer operação de banco
-- ✅ Navegação **imediata** para aba com erro  
-- ✅ Destaque visual do campo (outline verde por 2 segundos)
-- ✅ Toast explicativo com informações úteis
-- ✅ Submissão **totalmente interrompida** em caso de erro
-- ✅ Console logs detalhados para debugging
-
-#### **🎮 SCRIPT DE TESTE AUTOMÁTICO:**
-
-**Localização**: ```scripts/test-validation-navigation.js```
-
-**Como usar**:
-1. Acesse `/planejamentos/novo` com um cliente válido
-2. Abra Developer Tools (F12) 
-3. Execute no console: `testValidationNavigation()`
-4. Verifique os resultados dos testes automáticos
-
-## **📊 RESUMO DA IMPLEMENTAÇÃO (ETAPAS 1-2) ✅ CONCLUÍDO**
-
-### **🔧 ARQUIVOS MODIFICADOS:**
-1. **```lib/planning/formValidation.ts```** (linhas 264-356)
-   - ✅ Nova interface `FormValidationWithNavigationResult`
-   - ✅ Função `validateFormWithNavigation()` 
-   - ✅ Função `executeAutoNavigation()`
-
-2. **```components/planning/PlanningFormWithClient.tsx```** (linhas 11-14, 160-220)
-   - ✅ Importação das funções de validação
-   - ✅ Validação prévia no `handleFormSubmit`
-   - ✅ Navegação automática para erros
-   - ✅ Feedback visual otimizado
-
-3. **```scripts/test-validation-navigation.js```** (novo arquivo)
-   - ✅ Script de teste para validação das funções
-
-### **🚀 FUNCIONALIDADES IMPLEMENTADAS:**
-- ✅ **Validação Prévia**: Sistema valida formulário **antes** de qualquer submissão
-- ✅ **Navegação Automática**: Usuário é automaticamente levado para aba com erro
-- ✅ **Destaque Visual**: Campo problemático recebe outline verde por 2 segundos
-- ✅ **Feedback Inteligente**: Toast mostra quantidade de erros e nome da aba
-- ✅ **Interrupção Segura**: Submissão só prossegue se formulário válido
-- ✅ **Logs Detalhados**: Console mostra informações para debugging
-
-### **🔍 PROBLEMAS RESOLVIDOS:**
-- ❌ **ANTES**: Usuário podia submeter formulário incompleto sem feedback
-- ✅ **DEPOIS**: Validação prévia com navegação automática para erros
-
-- ❌ **ANTES**: Sistema de validação complexo mas ineficaz no PlanningForm.tsx
-- ✅ **DEPOIS**: Validação simplificada e eficaz com feedback imediato
-
-- ❌ **ANTES**: Webhook acoplado ao fluxo (na verdade já estava correto)
-- ✅ **CONFIRMADO**: Webhook já independente, funcionamento correto mantido
-
-### **🎯 STATUS ATUAL:**
-- ✅ **Etapa 1**: Análise e Refatoração do Submit Atual → **CONCLUÍDO**
-- ✅ **Etapa 2**: Implementar Validação com Navegação Automática → **CONCLUÍDO**
-- ⏳ **Etapa 3**: Separar Ações de Banco e Webhook → **PENDENTE** (webhook já independente)
-- ⏳ **Etapas 4-11**: Polling, sistema de timeout, etc. → **PENDENTE**
-
-**🏁 PRÓXIMOS PASSOS**: As próximas etapas focarão em implementar polling inteligente para "Objetivos Específicos" e otimizações do sistema de notificação.
-
----
-
-## **✅ CORREÇÃO DO PROBLEMA DE NAVEGAÇÃO AUTOMÁTICA** ✅ CONCLUÍDA
-
-### **❌ PROBLEMA REPORTADO:**
-- Validação funcionando (impede submit com campos vazios) ✅
-- **Navegação automática NÃO funcionando** ❌
-- **Campo não sendo destacado** ❌
-
-### **🔍 CAUSA RAIZ IDENTIFICADA:**
-A configuração do `currentTabRef` estava usando uma abordagem com `useCallback` desnecessariamente complexa que criava dependências circulares.
-
-### **✅ CORREÇÃO IMPLEMENTADA E TESTADA:**
-
-#### **🔧 1. Simplificação do currentTabRef** (`components/planning/PlanningForm.tsx`)
-**ANTES** (Complexo com callback):
+### 8. **Implementar Tratamento de Timeout**
 ```typescript
-const tabChangeRef = useCallback((callback: (tab: number) => void) => {
-  if (onTabChangeRef) {
-    onTabChangeRef.current = callback;
-  }
-}, [onTabChangeRef]);
+const ObjectivesTab = ({ planning }) => {
+  const { data, isPolling } = useSpecificObjectivesPolling(planning.id, planning);
+  const [hasTimedOut, setHasTimedOut] = useState(false);
 
-useEffect(() => {
-  tabChangeRef(safeSetCurrentTab);
-}, [tabChangeRef, safeSetCurrentTab]);
+  if (planning.specificObjectives || data?.specificObjectives) {
+    return <ObjectivesContent data={planning.specificObjectives || data.specificObjectives} />;
+  }
+
+  if (hasTimedOut) {
+    return (
+      <ErrorState 
+        message="Houve um problema na geração dos objetivos específicos"
+        actions={[
+          { label: "Atualizar Página", action: () => window.location.reload() },
+          { label: "Criar Novo Planejamento", action: () => router.push('/planejamentos/novo') }
+        ]}
+      />
+    );
+  }
+
+  if (isPolling) {
+    return <LoadingState message="Gerando objetivos específicos..." />;
+  }
+
+  return null;
+};
 ```
 
-**DEPOIS** (Direto e simples):
-```typescript
-useEffect(() => {
-  if (onTabChangeRef) {
-    onTabChangeRef.current = safeSetCurrentTab;
-  }
-}, [onTabChangeRef, safeSetCurrentTab]);
-```
+### 9. **Remover Dependências de Webhook do Fluxo Principal**
+**Itens a remover/ajustar:**
+- ❌ Loading que aguarda resposta de webhook
+- ❌ Redirecionamento condicionado a webhook
+- ❌ Estado de submissão dependente de API externa
+- ❌ Cache invalidation baseada em webhook response
+- ❌ Feedback de erro de webhook afetando submit
 
-#### **🔧 2. Otimização de Logs**
-- **Removidos**: Logs excessivos de debug após confirmação do funcionamento
-- **Mantidos**: Logs essenciais para manutenção futura
-- **Resultado**: Código mais limpo e performático
+**Manter apenas:**
+- ✅ Logs internos de webhook para debugging
+- ✅ Retry interno se webhook falhar
+- ✅ Metrics para monitoramento de webhook
 
-### **🎯 FUNCIONALIDADES CONFIRMADAS:**
-- ✅ **Validação Prévia**: Sistema valida formulário antes de qualquer submissão
-- ✅ **Navegação Automática**: Usuário é automaticamente levado para aba com erro
-- ✅ **Destaque Visual**: Campo problemático recebe outline verde por 2 segundos
-- ✅ **Feedback Inteligente**: Toast mostra quantidade de erros e nome da aba
-- ✅ **Interrupção Segura**: Submissão só prossegue se formulário válido
-- ✅ **Scroll Automático**: Página rola até o campo com erro
+### 10. **Testes Específicos do Novo Fluxo**
 
-### **📊 STATUS ATUALIZADO:**
-- ✅ **Etapa 1**: Análise e Refatoração do Submit Atual → **CONCLUÍDO**
-- ✅ **Etapa 2**: Implementar Validação com Navegação Automática → **CONCLUÍDO**
-- ✅ **Correção**: Problema de navegação automática → **CONCLUÍDA E TESTADA**
-- ✅ **Otimização**: Remoção de logs desnecessários → **CONCLUÍDA**
+#### **10.1. Testes de Validação e Navegação**
+- **Erro na Aba 1**: Verificar navegação automática e highlight
+- **Erro na Aba 3**: Testar navegação para aba específica
+- **Múltiplos Erros**: Validar navegação para primeiro erro encontrado
+- **Formulário Válido**: Confirmar passagem direto para submit
 
-**🏁 PRÓXIMOS PASSOS**: As etapas 1-2 estão totalmente funcionais. Pronto para implementar as etapas seguintes (3-11) conforme necessário.
+#### **10.2. Testes de Submissão Independente**
+- **Banco Sucesso + Webhook Sucesso**: Fluxo normal completo
+- **Banco Sucesso + Webhook Falha**: Usuário não deve ser afetado
+- **Banco Falha**: Usuário deve ver erro, webhook não executar
+- **Webhook Timeout**: Verificar que não afeta redirecionamento
+
+#### **10.3. Testes de Polling Condicional**
+- **specificObjectives Existe**: Polling não deve iniciar
+- **specificObjectives Vazio**: Polling deve iniciar automaticamente
+- **Dados Chegam (30s)**: Polling deve parar e mostrar dados
+- **Timeout (90s)**: Polling deve parar e mostrar erro
+- **Navegação Durante Polling**: Estado deve persistir
+
+#### **10.4. Testes de Integração PLANNING_WEBHOOK_URL**
+- **Payload Correto**: Verificar estrutura enviada para webhook
+- **Resposta de Sucesso**: Confirmar que dados chegam no banco
+- **Resposta de Erro**: Validar que aplicação continua funcionando
+- **Webhook Indisponível**: Sistema deve continuar normalmente
+
+### 11. **Monitoramento Independente**
+- **Métricas de Banco**: Taxa de sucesso de salvamento
+- **Métricas de Webhook**: Taxa de sucesso independente
+- **Tempo de Polling**: Média de tempo até recebimento de dados
+- **Taxa de Timeout**: Frequência de casos que excedem 90s
+- **Performance**: Tempo de redirecionamento após salvamento

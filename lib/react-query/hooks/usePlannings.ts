@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys, type PlanningFilters } from '../queryKeys';
 
 // Tipos para o retorno da API
@@ -7,6 +7,7 @@ export interface PlanningWithClient {
   title: string;
   description?: string;
   status: string;
+  specificObjectives?: string | null;
   createdAt: string;
   updatedAt: string;
   Client: {
@@ -55,6 +56,45 @@ export function usePlannings(filters: PlanningFilters = {}) {
     staleTime: 5 * 60 * 1000,  // 5 minutos
     gcTime: 10 * 60 * 1000,    // 10 minutos
   });
+}
+
+// ✅ NOVO: Hook otimizado com utilitários para lista de planejamentos
+export function usePlanningsOptimized(filters: PlanningFilters = {}) {
+  const queryClient = useQueryClient();
+  const query = useQuery({
+    queryKey: queryKeys.plannings.list(filters),
+    queryFn: () => fetchPlannings(filters),
+    staleTime: 5 * 60 * 1000,  // 5 minutos
+    gcTime: 10 * 60 * 1000,    // 10 minutos
+  });
+
+  // Utilitário para refresh manual da lista
+  const refreshList = () => {
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.plannings.lists(),
+    });
+    console.log('🔄 Lista de planejamentos sendo atualizada...');
+  };
+
+  // Utilitário para marcar planejamento como atualizado
+  const markPlanningAsUpdated = (planningId: string, updates: Partial<PlanningWithClient>) => {
+    // Atualizar cache específico
+    queryClient.setQueryData(
+      queryKeys.plannings.detail(planningId),
+      (old: PlanningWithClient | undefined) => old ? { ...old, ...updates } : undefined
+    );
+    
+    // Invalidar listas para refletir mudanças
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.plannings.lists(),
+    });
+  };
+
+  return {
+    ...query,
+    refreshList,
+    markPlanningAsUpdated,
+  };
 }
 
 // Hook para buscar planejamento específico

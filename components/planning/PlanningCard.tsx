@@ -16,6 +16,7 @@ interface Planning {
   title: string;
   description?: string;
   status: string;
+  specificObjectives?: string | null;
   createdAt: string;
   updatedAt: string;
   Client: Client;
@@ -162,11 +163,22 @@ export function PlanningCard({
           </div>
         </div>
 
-        {/* Status */}
-        <div className={`px-2 py-1 rounded text-xs font-medium border ${
-          statusColors[planning.status as keyof typeof statusColors] || statusColors.DRAFT
-        }`}>
-          {statusLabels[planning.status as keyof typeof statusLabels] || planning.status}
+        {/* Status e Badge de Processamento IA */}
+        <div className="flex items-center gap-2">
+          {/* Badge "Processando IA" - mostra quando specificObjectives está vazio */}
+          {(!planning.specificObjectives) && (
+            <div className="px-2 py-1 rounded text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center gap-1 animate-pulse">
+              <div className="w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
+              Processando IA
+            </div>
+          )}
+          
+          {/* Status do Planejamento */}
+          <div className={`px-2 py-1 rounded text-xs font-medium border ${
+            statusColors[planning.status as keyof typeof statusColors] || statusColors.DRAFT
+          }`}>
+            {statusLabels[planning.status as keyof typeof statusLabels] || planning.status}
+          </div>
         </div>
       </div>
 
