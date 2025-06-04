@@ -104,23 +104,6 @@ export function NewFieldTypesDemo() {
         </div>
       </div>
 
-      {/* Progress Bar */}
-      <div className="bg-eerie-black p-4 rounded-lg">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-seasalt font-medium">Progresso - {selectedSector}</span>
-          <span className="text-sgbus-green font-bold">{progress}%</span>
-        </div>
-        <div className="w-full bg-seasalt/10 rounded-full h-3">
-          <div 
-            className="bg-sgbus-green h-3 rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
-        <div className="mt-2 text-sm text-periwinkle">
-          {filledFields} campos preenchidos
-        </div>
-      </div>
-
       {/* Form */}
       <div className="bg-night border border-seasalt/20 rounded-lg p-6">
         <SectorDetailsTab
