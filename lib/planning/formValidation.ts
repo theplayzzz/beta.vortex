@@ -22,6 +22,9 @@ export interface FormValidationResult {
 export function validateCompleteForm(
   formData: Partial<PlanningFormData>
 ): FormValidationResult {
+  console.log('🔍 validateCompleteForm: Iniciando...');
+  console.log('🔍 DEBUG - formData:', formData);
+  
   const tabs: Array<{ key: TabKey; label: string }> = [
     { key: 'informacoes_basicas', label: 'Informações Básicas' },
     { key: 'detalhes_do_setor', label: 'Detalhes do Setor' },
@@ -34,8 +37,12 @@ export function validateCompleteForm(
   let totalErrors = 0;
 
   tabs.forEach((tab, index) => {
+    console.log(`🔍 DEBUG - Validando aba ${index}: ${tab.label}`);
     const tabData = formData[tab.key];
+    console.log(`🔍 DEBUG - Dados da aba ${tab.label}:`, tabData);
+    
     const validation = tabSchemas[tab.key].safeParse(tabData);
+    console.log(`🔍 DEBUG - Resultado validação ${tab.label}:`, validation);
     
     const tabError: ValidationError = {
       tab: tab.key,
@@ -46,7 +53,9 @@ export function validateCompleteForm(
     };
 
     if (!validation.success) {
+      console.log(`❌ DEBUG - Aba ${tab.label} tem erros:`, validation.error);
       const fieldErrors = validation.error.flatten().fieldErrors;
+      console.log(`🔍 DEBUG - Field errors ${tab.label}:`, fieldErrors);
       
       // Converter array de strings para strings únicas com tipagem segura
       Object.entries(fieldErrors).forEach(([field, errorMessages]) => {
@@ -54,23 +63,30 @@ export function validateCompleteForm(
           tabError.fieldErrors[field] = errorMessages[0];
           tabError.hasErrors = true;
           totalErrors++;
+          console.log(`❌ DEBUG - Campo ${field} tem erro: ${errorMessages[0]}`);
         }
       });
 
       if (tabError.hasErrors && firstErrorTab === undefined) {
         firstErrorTab = index;
+        console.log(`🎯 DEBUG - Primeira aba com erro definida: ${index} (${tab.label})`);
       }
+    } else {
+      console.log(`✅ DEBUG - Aba ${tab.label} está válida`);
     }
 
     errors.push(tabError);
   });
 
-  return {
+  const result = {
     isValid: totalErrors === 0,
     errors,
     firstErrorTab,
     totalErrors,
   };
+  
+  console.log('🔍 DEBUG - Resultado final validateCompleteForm:', result);
+  return result;
 }
 
 /**
@@ -261,4 +277,110 @@ export function validatePreviousTabs(
   }
   
   return { isValid: true };
+}
+
+/**
+ * Interface para resultado de validação com navegação automática
+ */
+export interface FormValidationWithNavigationResult {
+  isValid: boolean;
+  totalErrors: number;
+  errorTab?: number;
+  errorTabName?: string;
+  errorField?: string;
+  errorMessage?: string;
+  errors: ValidationError[];
+}
+
+/**
+ * Valida formulário completo e retorna informações para navegação automática
+ * Otimizada para o fluxo de submissão com navegação imediata para erros
+ */
+export function validateFormWithNavigation(
+  formData: PlanningFormData
+): FormValidationWithNavigationResult {
+  console.log('🔍 validateFormWithNavigation: Iniciando validação completa...');
+  console.log('🔍 DEBUG - formData recebido:', formData);
+  
+  // 🔍 DEBUG: Verificar se os dados básicos existem
+  console.log('🔍 DEBUG - informacoes_basicas:', formData?.informacoes_basicas);
+  console.log('🔍 DEBUG - titulo_planejamento:', formData?.informacoes_basicas?.titulo_planejamento);
+  console.log('🔍 DEBUG - titulo vazio?:', !formData?.informacoes_basicas?.titulo_planejamento || formData?.informacoes_basicas?.titulo_planejamento === '');
+  
+  // Usar a função existente de validação completa
+  const completeValidation = validateCompleteForm(formData);
+  
+  console.log('🔍 DEBUG - Resultado validateCompleteForm:', completeValidation);
+  
+  if (completeValidation.isValid) {
+    console.log('✅ validateFormWithNavigation: Formulário totalmente válido');
+    return {
+      isValid: true,
+      totalErrors: 0,
+      errors: completeValidation.errors,
+    };
+  }
+
+  console.log('❌ validateFormWithNavigation: Erros encontrados:', completeValidation.totalErrors);
+  console.log('🔍 DEBUG - Detalhes dos erros:', completeValidation.errors);
+
+  // Encontrar primeira aba com erro
+  const firstErrorTab = completeValidation.errors.find(error => error.hasErrors);
+  
+  if (!firstErrorTab) {
+    console.log('⚠️ validateFormWithNavigation: Nenhuma aba específica com erro encontrada');
+    return {
+      isValid: false,
+      totalErrors: completeValidation.totalErrors,
+      errors: completeValidation.errors,
+    };
+  }
+
+  console.log(`🎯 validateFormWithNavigation: Primeira aba com erro: ${firstErrorTab.tabLabel} (índice ${firstErrorTab.tabIndex})`);
+  console.log('🔍 DEBUG - Erros da aba:', firstErrorTab.fieldErrors);
+
+  // Encontrar primeiro campo com erro na aba
+  const firstFieldWithError = Object.keys(firstErrorTab.fieldErrors)[0];
+  const firstErrorMessage = firstErrorTab.fieldErrors[firstFieldWithError];
+
+  console.log(`📍 validateFormWithNavigation: Primeiro campo com erro: ${firstFieldWithError}`);
+  console.log(`📍 validateFormWithNavigation: Mensagem do erro: ${firstErrorMessage}`);
+
+  return {
+    isValid: false,
+    totalErrors: completeValidation.totalErrors,
+    errorTab: firstErrorTab.tabIndex,
+    errorTabName: firstErrorTab.tabLabel,
+    errorField: firstFieldWithError,
+    errorMessage: firstErrorMessage,
+    errors: completeValidation.errors,
+  };
+}
+
+/**
+ * Executa navegação automática para erro e destaque do campo
+ */
+export function executeAutoNavigation(
+  result: FormValidationWithNavigationResult,
+  navigateToTab: (tabIndex: number) => void
+): boolean {
+  if (result.isValid || result.errorTab === undefined) {
+    return false;
+  }
+
+  console.log(`🎯 executeAutoNavigation: Navegando para aba ${result.errorTab}`);
+  
+  // Navegar para aba com erro
+  navigateToTab(result.errorTab);
+
+  // Aguardar renderização e destacar campo se existir
+  if (result.errorField) {
+    const fieldName = result.errorField;
+    setTimeout(() => {
+      console.log(`📍 executeAutoNavigation: Destacando campo ${fieldName}`);
+      scrollToField(fieldName);
+    }, 150);
+  }
+
+  return true;
 } 
