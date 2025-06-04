@@ -23,6 +23,7 @@ export { QuestionField } from './QuestionField';
 export { ComponentsDemo } from './ComponentsDemo';
 export { SectorQuestionsDemo } from './SectorQuestionsDemo';
 export { MarketingCommercialDemo } from './MarketingCommercialDemo';
+export { NewFieldTypesDemo } from './demo/NewFieldTypesDemo';
 
 // Export task refinement components
 export { TaskRefinementInterface } from './TaskRefinementInterface';
