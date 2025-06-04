@@ -163,13 +163,10 @@ export function PlanningFormWithClient({
 
   const handleFormSubmit = async (formData: PlanningFormData) => {
     console.log('🚨 INÍCIO - PlanningFormWithClient.handleFormSubmit CHAMADO!');
-    console.log('🚨 Dados recebidos:', formData);
     
     // ✅ ETAPA 1: VALIDAÇÃO PRÉVIA COM NAVEGAÇÃO AUTOMÁTICA
     console.log('🔍 Executando validação prévia...');
     const validationResult = validateFormWithNavigation(formData);
-    
-    console.log('🔍 DEBUG - Resultado da validação:', validationResult);
     
     if (!validationResult.isValid) {
       console.log('❌ Validação falhou, executando navegação automática...');
@@ -178,17 +175,11 @@ export function PlanningFormWithClient({
       const navigationSuccess = executeAutoNavigation(
         validationResult, 
         (tabIndex: number) => {
-          console.log('🎯 DEBUG - Tentando navegar para aba:', tabIndex);
           if (currentTabRef.current) {
             currentTabRef.current(tabIndex);
-            console.log('✅ DEBUG - Navegação executada via currentTabRef');
-          } else {
-            console.log('❌ DEBUG - currentTabRef.current não disponível');
           }
         }
       );
-      
-      console.log('🎯 DEBUG - Resultado da navegação:', navigationSuccess);
       
       // Mostrar toast explicativo
       addToast(toast.error(
@@ -200,7 +191,6 @@ export function PlanningFormWithClient({
       ));
       
       console.log('🚫 Submissão cancelada devido a erros de validação');
-      console.log('🚫 DEBUG - RETURN executado, função deve parar aqui');
       return; // Parar execução
     }
     
@@ -208,7 +198,6 @@ export function PlanningFormWithClient({
     
     try {
       setIsSubmitting(true);
-      console.log('🚨 setIsSubmitting(true) executado');
       
       console.log('📤 Formulário válido recebido, preparando submissão:', formData);
 
@@ -226,10 +215,8 @@ export function PlanningFormWithClient({
         'Criando planejamento...',
         'Salvando dados no banco de dados'
       ));
-      console.log('🚨 Toast de início exibido');
 
       // ✅ AÇÃO 1: SALVAR NO BANCO (PRIORITÁRIA)
-      console.log('🚨 Chamando createPlanningMutation.mutateAsync...');
       const createdPlanning = await createPlanningMutation.mutateAsync({
         title: submissionPayload.title,
         description: submissionPayload.description,
@@ -271,7 +258,6 @@ export function PlanningFormWithClient({
       
     } catch (error) {
       console.error('❌ Erro ao criar planejamento:', error);
-      console.error('🚨 Stack trace completo:', error);
       
       // ✅ APENAS ERRO DE BANCO AFETA O USUÁRIO
       addToast(toast.error(
@@ -286,7 +272,6 @@ export function PlanningFormWithClient({
         }
       ));
     } finally {
-      console.log('🚨 Executando finally - setIsSubmitting(false)');
       setIsSubmitting(false);
     }
   };

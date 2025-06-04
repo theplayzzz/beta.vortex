@@ -110,16 +110,11 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
   }, [setCurrentTab]);
 
   // Disponibilizar função de mudança de aba para componente pai usando useRef pattern
-  const tabChangeRef = useCallback((callback: (tab: number) => void) => {
-    if (onTabChangeRef) {
-      onTabChangeRef.current = callback;
-    }
-  }, [onTabChangeRef]);
-
-  // Chamar o callback quando a função estiver pronta (após primeiro render)
   useEffect(() => {
-    tabChangeRef(safeSetCurrentTab);
-  }, [tabChangeRef, safeSetCurrentTab]);
+    if (onTabChangeRef) {
+      onTabChangeRef.current = safeSetCurrentTab;
+    }
+  }, [onTabChangeRef, safeSetCurrentTab]);
 
   // Função para auto-save no onBlur
   const handleSaveOnBlur = useCallback(() => {
@@ -325,7 +320,7 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-component="planning-form">
       {/* Tab Navigation */}
       <div className="bg-eerie-black rounded-lg border border-accent/20">
         <nav className="flex space-x-8 border-b border-seasalt/20 p-4">
@@ -337,6 +332,7 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(index)}
+                role="tab"
                 className={`pb-3 border-b-2 font-medium text-sm transition-colors ${
                   isActive
                     ? hasError 

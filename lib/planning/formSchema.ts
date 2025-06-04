@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { MATURIDADE_MARKETING } from './marketingConfig';
 import { MATURIDADE_COMERCIAL } from './commercialConfig';
+import { getQuestionsForSector } from './sectorQuestions';
+import { SetorPermitido } from './sectorConfig';
 
 /**
  * Schema para a aba de informações básicas
@@ -19,10 +21,62 @@ const informacoesBasicasSchema = z.object({
 });
 
 /**
- * Schema para detalhes específicos do setor
- * Será validado dinamicamente baseado no setor selecionado
+ * Cria schema dinâmico para detalhes do setor baseado no setor selecionado
+ */
+function createDetalhesSetorSchema(setor?: string): z.ZodSchema<any> {
+  if (!setor) {
+    // Se não há setor definido, aceitar qualquer coisa
+    return z.record(z.any());
+  }
+
+  const questions = getQuestionsForSector(setor as SetorPermitido);
+  const schemaObject: Record<string, z.ZodSchema<any>> = {};
+
+  questions.forEach(question => {
+    if (question.required) {
+      // Campo obrigatório
+      switch (question.type) {
+        case 'text':
+        case 'textarea':
+        case 'radio':
+        case 'select':
+          schemaObject[question.field] = z.string().min(1, `${question.label} é obrigatório`);
+          break;
+        case 'number':
+          schemaObject[question.field] = z.number({
+            required_error: `${question.label} é obrigatório`,
+            invalid_type_error: `${question.label} deve ser um número`
+          }).positive(`${question.label} deve ser maior que zero`);
+          break;
+        case 'checkbox':
+          schemaObject[question.field] = z.array(z.string()).min(1, `Selecione pelo menos uma opção para ${question.label}`);
+          break;
+        default:
+          schemaObject[question.field] = z.any().refine(
+            (val) => val !== undefined && val !== null && val !== '',
+            { message: `${question.label} é obrigatório` }
+          );
+      }
+    } else {
+      // Campo opcional
+      schemaObject[question.field] = z.any().optional();
+    }
+  });
+
+  return Object.keys(schemaObject).length > 0 
+    ? z.object(schemaObject)
+    : z.record(z.any());
+}
+
+/**
+ * Schema básico para detalhes do setor (usado como fallback)
  */
 const detalhesSetorSchema = z.record(z.any());
+
+/**
+ * Exportar a função para uso em validações
+ */
+export { createDetalhesSetorSchema };
 
 /**
  * Schema para a aba de marketing
