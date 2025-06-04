@@ -3,7 +3,7 @@ import { SetorPermitido } from './sectorConfig';
 export interface Question {
   label: string;
   field: string;
-  type: "text" | "textarea" | "radio" | "checkbox" | "number" | "select";
+  type: "text" | "textarea" | "radio" | "checkbox" | "number" | "select" | "multiselect" | "toggle";
   options?: string[];
   required?: boolean;
   conditional?: {
@@ -12,6 +12,7 @@ export interface Question {
   };
   placeholder?: string;
   description?: string;
+  formatCurrency?: boolean; // Para campos number que precisam de formatação de moeda
 }
 
 export const PERGUNTAS_POR_SETOR: Record<SetorPermitido, Question[]> = {
@@ -437,6 +438,17 @@ export const PERGUNTAS_POR_SETOR: Record<SetorPermitido, Question[]> = {
       required: true
     },
     {
+      label: "Especifique o tipo de produto:",
+      field: "tech_tipo_outro",
+      type: "text",
+      conditional: {
+        dependsOn: "tech_tipo",
+        showWhen: ["Outro"]
+      },
+      required: true,
+      placeholder: "Descreva seu tipo de produto/serviço"
+    },
+    {
       label: "Qual é o modelo de receita?",
       field: "tech_modelo",
       type: "radio",
@@ -448,7 +460,8 @@ export const PERGUNTAS_POR_SETOR: Record<SetorPermitido, Question[]> = {
       field: "tech_valor_cliente",
       type: "number",
       required: true,
-      placeholder: "Ex: 299.00"
+      placeholder: "Ex: 299.00",
+      formatCurrency: true
     },
     {
       label: "Quantos clientes/usuários têm atualmente?",
@@ -467,8 +480,26 @@ export const PERGUNTAS_POR_SETOR: Record<SetorPermitido, Question[]> = {
     {
       label: "Como adquirem novos clientes?",
       field: "tech_aquisicao",
-      type: "checkbox",
-      options: ["Inbound marketing", "Anúncios online", "Parcerias", "Vendas diretas", "Indicações", "Trial gratuito", "Outro"],
+      type: "multiselect",
+      options: ["Inbound marketing", "Anúncios online", "Parcerias", "Vendas diretas", "Indicações", "Trial gratuito", "SEO", "Redes sociais"],
+      required: true,
+      placeholder: "Selecione ou adicione canais de aquisição"
+    },
+    {
+      label: "Oferecem trial ou versão gratuita?",
+      field: "tech_trial_gratuito",
+      type: "toggle",
+      required: true
+    },
+    {
+      label: "Qual é a duração do trial?",
+      field: "tech_duracao_trial",
+      type: "select",
+      options: ["7 dias", "14 dias", "30 dias", "Ilimitado com limitações de recursos"],
+      conditional: {
+        dependsOn: "tech_trial_gratuito",
+        showWhen: ["true"]
+      },
       required: true
     },
     {

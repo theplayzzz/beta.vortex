@@ -1,5 +1,8 @@
 import { memo, useState, useEffect } from 'react';
 import { Question } from '@/lib/planning/sectorQuestions';
+import { MultiSelectWithTagsField } from './fields/MultiSelectWithTagsField';
+import { ToggleSwitchField } from './fields/ToggleSwitchField';
+import { NumericInputField } from './fields/NumericInputField';
 
 interface QuestionFieldProps {
   question: Question;
@@ -10,7 +13,7 @@ interface QuestionFieldProps {
 }
 
 export const QuestionField = memo(function QuestionField({ question, value, onChange, onBlur, error }: QuestionFieldProps) {
-  const { label, type, options = [], required, placeholder, description } = question;
+  const { label, type, options = [], required, placeholder, description, formatCurrency } = question;
   
   // Estado local para evitar re-renderizações durante a digitação
   const [localValue, setLocalValue] = useState(value);
@@ -42,13 +45,15 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
 
       case 'number':
         return (
-          <input
-            type="number"
-            value={localValue || ''}
-            onChange={(e) => setLocalValue(Number(e.target.value))}
-            onBlur={(e) => handleFieldBlur(Number(e.target.value))}
+          <NumericInputField
+            value={localValue || 0}
+            onChange={(newValue) => {
+              setLocalValue(newValue);
+              handleFieldBlur(newValue);
+            }}
+            onBlur={() => {}}
             placeholder={placeholder}
-            className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+            formatCurrency={formatCurrency}
           />
         );
 
@@ -122,6 +127,34 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
           </div>
         );
 
+      case 'multiselect':
+        return (
+          <MultiSelectWithTagsField
+            value={Array.isArray(localValue) ? localValue : []}
+            onChange={(newValue) => {
+              setLocalValue(newValue);
+              handleFieldBlur(newValue);
+            }}
+            onBlur={() => {}}
+            options={options}
+            placeholder={placeholder}
+            allowCustomTags={true}
+          />
+        );
+
+      case 'toggle':
+        return (
+          <ToggleSwitchField
+            value={Boolean(localValue)}
+            onChange={(newValue) => {
+              setLocalValue(newValue);
+              handleFieldBlur(newValue);
+            }}
+            onBlur={() => {}}
+            labels={{ on: 'Sim', off: 'Não' }}
+          />
+        );
+
       case 'select':
         return (
           <select
@@ -159,6 +192,10 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
       )}
       
       {renderField()}
+      
+      {error && (
+        <p className="text-red-400 text-sm mt-1">{error}</p>
+      )}
     </div>
   );
 }); 
