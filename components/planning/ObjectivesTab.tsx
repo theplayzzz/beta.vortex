@@ -179,14 +179,18 @@ export function ObjectivesTab({ planning }: ObjectivesTabProps) {
   // Usar dados do polling se disponíveis, senão usar dados iniciais
   const currentData = pollingData || planning;
   
+  // ✅ DETERMINAR ESTADO MAIS ROBUSTO
+  const hasObjectives = currentData.specificObjectives && currentData.specificObjectives.trim().length > 0;
+  const shouldShowPolling = !hasObjectives && !hasTimedOut;
+  
   // Determinar o estado atual
-  if (currentData.specificObjectives) {
-    // Dados disponíveis - mostrar conteúdo
-    return <ObjectivesContent data={currentData.specificObjectives} planning={currentData} />;
+  if (hasObjectives) {
+    // ✅ Dados disponíveis - mostrar conteúdo
+    return <ObjectivesContent data={currentData.specificObjectives!} planning={currentData} />;
   }
   
   if (hasTimedOut) {
-    // Timeout - mostrar estado de erro
+    // ⏰ Timeout - mostrar estado de erro
     return (
       <ErrorState 
         message="O processamento dos objetivos específicos não foi concluído no tempo esperado. Isso pode acontecer durante períodos de alta demanda."
@@ -207,20 +211,37 @@ export function ObjectivesTab({ planning }: ObjectivesTabProps) {
   }
   
   if (isPolling) {
-    // Polling ativo - mostrar loading
+    // 🔄 Polling ativo - mostrar loading com countdown
     return <LoadingState timeLeft={timeLeft} planning={planning} />;
   }
   
-  // Estado inicial - não há dados e não iniciou polling ainda
+  // 🎯 Estado inicial/aguardando - mostrar que a IA está para processar
   return (
     <div className="text-center py-12">
-      <Target className="h-12 w-12 mx-auto mb-4 text-seasalt/40" />
-      <h3 className="text-lg font-semibold text-seasalt/70 mb-2">
-        Objetivos Específicos Não Disponíveis
+      <div className="relative inline-block mb-6">
+        <Target className="h-12 w-12 text-sgbus-green/60" />
+        <div className="absolute -inset-2 border-2 border-sgbus-green/20 rounded-full animate-pulse"></div>
+      </div>
+      
+      <h3 className="text-xl font-semibold text-seasalt mb-3">
+        Objetivos Específicos
       </h3>
-      <p className="text-seasalt/50">
-        Esta funcionalidade estará disponível após o processamento do webhook.
+      
+      <p className="text-seasalt/70 mb-6 max-w-md mx-auto">
+        Os objetivos específicos para <strong className="text-seasalt">{planning.Client.name}</strong> 
+        serão gerados automaticamente pela nossa IA com base nos dados do formulário.
       </p>
+      
+      <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 inline-block">
+        <div className="flex items-center gap-2 text-sm">
+          <div className="w-2 h-2 bg-amber-400 rounded-full animate-ping"></div>
+          <span className="text-amber-400 font-medium">Aguardando processamento da IA</span>
+        </div>
+      </div>
+      
+      <div className="mt-6 text-xs text-seasalt/50">
+        O processamento será iniciado automaticamente em breve
+      </div>
     </div>
   );
 } 

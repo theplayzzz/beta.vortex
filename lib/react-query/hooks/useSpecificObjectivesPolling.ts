@@ -33,23 +33,36 @@ export function useSpecificObjectivesPolling(
 
   // Decidir se deve iniciar polling
   useEffect(() => {
+    // ✅ LÓGICA MAIS ROBUSTA: Iniciar polling se não há dados, independentemente do status
+    const hasData = initialData?.specificObjectives && initialData.specificObjectives.trim().length > 0;
+    
     const shouldStartPolling = 
       planningId && 
       initialData && 
-      !initialData.specificObjectives && 
-      !hasTimedOut;
+      !hasData && // Não tem dados ainda
+      !hasTimedOut && // Não teve timeout ainda
+      !shouldPoll; // Não está já fazendo polling
 
-    if (shouldStartPolling && !shouldPoll) {
-      console.log(`🔄 [Polling ${planningId}] Iniciando polling de objetivos específicos`);
+    if (shouldStartPolling) {
+      console.log(`🔄 [Polling ${planningId}] Iniciando polling de objetivos específicos`, {
+        hasData,
+        hasTimedOut,
+        currentlyPolling: shouldPoll,
+        objectivesValue: initialData.specificObjectives
+      });
       setShouldPoll(true);
       setStartTime(Date.now());
       setTimeLeft(90);
-    } else if (!shouldStartPolling && shouldPoll) {
-      console.log(`🛑 [Polling ${planningId}] Parando polling - condições não atendidas`);
+      setHasTimedOut(false); // Reset timeout quando iniciar novo polling
+    }
+    
+    // ✅ PARAR POLLING quando dados chegam
+    if (hasData && shouldPoll) {
+      console.log(`✅ [Polling ${planningId}] Dados encontrados - parando polling`);
       setShouldPoll(false);
       setStartTime(null);
     }
-  }, [planningId, initialData, hasTimedOut, shouldPoll]);
+  }, [planningId, initialData?.specificObjectives, hasTimedOut, shouldPoll]);
 
   // Query de polling
   const pollingQuery = useQuery({

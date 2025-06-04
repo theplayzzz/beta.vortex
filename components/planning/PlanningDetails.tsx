@@ -159,6 +159,19 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
   const hasTasksForRefinement = hasStructuredTasks(currentPlanning.specificObjectives);
   const isObjectivesProcessing = currentPlanning.status === 'PENDING_AI_BACKLOG_GENERATION';
 
+  // ✅ NOVO: Estado da aba Objetivos Específicos (sempre visível)
+  const getObjectivesTabState = () => {
+    if (hasSpecificObjectives || hasTasksForRefinement) {
+      return 'ready'; // Dados disponíveis
+    }
+    if (isObjectivesProcessing) {
+      return 'generating'; // IA está processando
+    }
+    return 'waiting'; // Aguardando processamento da IA
+  };
+  
+  const objectivesTabState = getObjectivesTabState();
+
   const handlePlanningUpdate = (updatedPlanning: Planning) => {
     setCurrentPlanning(updatedPlanning);
   };
@@ -275,27 +288,46 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
             </button>
             
             <button
-              onClick={() => (hasSpecificObjectives || hasTasksForRefinement) && setCurrentTab('objectives')}
-              disabled={!hasSpecificObjectives && !hasTasksForRefinement && !isObjectivesProcessing}
-              className={`pb-3 border-b-2 font-medium text-sm transition-colors mr-8 ${
+              onClick={() => setCurrentTab('objectives')}
+              className={`pb-3 border-b-2 font-medium text-sm transition-colors mr-8 relative ${
                 currentTab === 'objectives'
                   ? 'border-sgbus-green text-sgbus-green'
-                  : (hasSpecificObjectives || hasTasksForRefinement)
-                    ? 'border-transparent text-periwinkle hover:text-seasalt hover:border-seasalt/40'
-                    : 'border-transparent text-seasalt/40 cursor-not-allowed'
+                  : 'border-transparent text-periwinkle hover:text-seasalt hover:border-seasalt/40'
               }`}
             >
               <span className="flex items-center space-x-2">
-                {isObjectivesProcessing ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                {/* Ícone baseado no estado */}
+                {objectivesTabState === 'generating' ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-sgbus-green" />
+                ) : objectivesTabState === 'waiting' ? (
+                  <Target className="h-4 w-4 text-seasalt/60" />
                 ) : (
                   <Target className="h-4 w-4" />
                 )}
                 <span>Objetivos Específicos</span>
-                {!hasSpecificObjectives && !hasTasksForRefinement && !isObjectivesProcessing && (
-                  <span className="text-xs bg-seasalt/20 px-2 py-1 rounded">Aguardando IA</span>
+                
+                {/* Indicador de status */}
+                {objectivesTabState === 'generating' && (
+                  <span className="text-xs bg-sgbus-green/20 text-sgbus-green px-2 py-1 rounded animate-pulse">
+                    IA Processando...
+                  </span>
+                )}
+                {objectivesTabState === 'waiting' && (
+                  <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-1 rounded">
+                    Aguardando IA
+                  </span>
+                )}
+                {objectivesTabState === 'ready' && (
+                  <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
+                    ✨ Processado
+                  </span>
                 )}
               </span>
+              
+              {/* Destaque visual para aba com atividade */}
+              {objectivesTabState === 'generating' && (
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-sgbus-green rounded-full animate-ping"></div>
+              )}
             </button>
 
             {/* Nova Aba "Planejamento Refinado" - Substituindo código bugado */}

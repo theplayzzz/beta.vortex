@@ -82,6 +82,12 @@ export function MarketingCommercialDemo() {
 
   const progress = getProgress();
 
+  // Função para simular salvamento automático (onBlur)
+  const handleFieldBlur = () => {
+    console.log('💾 Campo perdeu foco - salvamento automático ativado');
+    // Aqui normalmente salvaria no localStorage ou faria debounce
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       <div className="text-center mb-8">
@@ -153,6 +159,7 @@ export function MarketingCommercialDemo() {
             <MarketingTab
               formData={formData}
               onFieldChange={handleFieldChange}
+              onFieldBlur={handleFieldBlur}
               errors={errors}
             />
           )}
@@ -161,6 +168,7 @@ export function MarketingCommercialDemo() {
             <CommercialTab
               formData={formData}
               onFieldChange={handleFieldChange}
+              onFieldBlur={handleFieldBlur}
               errors={errors}
             />
           )}
