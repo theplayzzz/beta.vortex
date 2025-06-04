@@ -19,6 +19,7 @@ import { TaskRefinementInterface } from './TaskRefinementInterface';
 import { RefinedTaskList } from './RefinedTaskList';
 import { TaskDetailModal } from './TaskDetailModal';
 import { TabStateManager } from './TabStateManager';
+import { ObjectivesTab } from './ObjectivesTab';
 import { RefinedPlanningProvider } from '../../contexts/RefinedPlanningContext';
 import { RefinedPlanningContent } from './RefinedPlanningContent';
 import type { Planning, TarefaRefinada } from '@/types/planning';
@@ -310,53 +311,7 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
             {currentTab === 'form_data' ? (
               <FormDataDisplay formData={currentPlanning.formDataJSON} />
             ) : currentTab === 'objectives' ? (
-              <div className="space-y-4">
-                {isObjectivesProcessing ? (
-                  <div className="text-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-sgbus-green" />
-                    <h3 className="text-lg font-semibold text-seasalt mb-2">
-                      Processando Objetivos Específicos
-                    </h3>
-                    <p className="text-seasalt/70">
-                      Nossa IA está analisando os dados do formulário para gerar objetivos específicos personalizados.
-                      Isso pode levar alguns minutos.
-                    </p>
-                  </div>
-                ) : hasTasksForRefinement ? (
-                  // Interface de refinamento de tarefas
-                  <TaskRefinementInterface 
-                    planning={currentPlanning} 
-                    onUpdate={handlePlanningUpdate}
-                    onCreateRefinedTab={handleCreateRefinedTab}
-                  />
-                ) : hasSpecificObjectives ? (
-                  // Exibição simples (fallback para objetivos não estruturados)
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Target className="h-6 w-6 text-sgbus-green" />
-                      <h3 className="text-xl font-semibold text-seasalt">
-                        Objetivos Específicos Gerados pela IA
-                      </h3>
-                    </div>
-                    <div className="bg-night rounded-lg p-6 border border-accent/20">
-                      <div 
-                        className="text-seasalt/90 prose prose-invert max-w-none"
-                        dangerouslySetInnerHTML={{ __html: currentPlanning.specificObjectives || '' }}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <Target className="h-8 w-8 mx-auto mb-4 text-seasalt/40" />
-                    <h3 className="text-lg font-semibold text-seasalt/70 mb-2">
-                      Objetivos Específicos Não Disponíveis
-                    </h3>
-                    <p className="text-seasalt/50">
-                      Esta funcionalidade estará disponível após o processamento do webhook.
-                    </p>
-                  </div>
-                )}
-              </div>
+              <ObjectivesTab planning={currentPlanning} />
             ) : currentTab === 'planejamento-refinado' ? (
               <RefinedPlanningContent
                 tasks={getRefinedTasks()}
