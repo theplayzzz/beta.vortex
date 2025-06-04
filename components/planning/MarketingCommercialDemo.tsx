@@ -99,28 +99,9 @@ export function MarketingCommercialDemo() {
         </p>
       </div>
 
-      {/* Progress and Controls */}
+      {/* Controls */}
       <div className="bg-eerie-black rounded-lg p-4 space-y-4">
         <h3 className="text-seasalt font-medium">Controles de Demonstração</h3>
-        
-        <div className="grid grid-cols-2 gap-4 text-center">
-          <div className="bg-night rounded-lg p-3">
-            <div className="text-sgbus-green font-bold text-lg">{progress}%</div>
-            <div className="text-periwinkle text-sm">Progresso Global</div>
-          </div>
-          <div className="bg-night rounded-lg p-3">
-            <div className="text-seasalt font-bold text-lg">{Object.keys(formData).length}</div>
-            <div className="text-periwinkle text-sm">Campos Preenchidos</div>
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="w-full bg-night rounded-full h-2">
-          <div 
-            className="bg-sgbus-green h-2 rounded-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
       </div>
 
       {/* Tab Navigation */}

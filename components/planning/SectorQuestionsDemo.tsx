@@ -91,29 +91,6 @@ export function SectorQuestionsDemo() {
             ))}
           </select>
         </div>
-
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div className="bg-night rounded-lg p-3">
-            <div className="text-sgbus-green font-bold text-lg">{totalQuestions}</div>
-            <div className="text-periwinkle text-sm">Total de Perguntas</div>
-          </div>
-          <div className="bg-night rounded-lg p-3">
-            <div className="text-seasalt font-bold text-lg">{answeredQuestions}</div>
-            <div className="text-periwinkle text-sm">Respondidas</div>
-          </div>
-          <div className="bg-night rounded-lg p-3">
-            <div className="text-yellow-400 font-bold text-lg">{progress}%</div>
-            <div className="text-periwinkle text-sm">Progresso</div>
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="w-full bg-night rounded-full h-2">
-          <div 
-            className="bg-sgbus-green h-2 rounded-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
       </div>
 
       {/* Sector Questions */}

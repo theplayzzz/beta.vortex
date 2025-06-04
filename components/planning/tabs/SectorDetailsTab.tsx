@@ -1,8 +1,8 @@
 import { memo, useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { getQuestionsForSector } from '@/lib/planning/sectorQuestions';
+import { getQuestionsForSector, Question } from '@/lib/planning/sectorQuestions';
 import { SetorPermitido } from '@/lib/planning/sectorConfig';
 import { QuestionField } from '../QuestionField';
-import { ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { EyeOff } from 'lucide-react';
 
 interface SectorDetailsTabProps {
   sector: SetorPermitido;
@@ -28,18 +28,6 @@ export const SectorDetailsTab = memo(function SectorDetailsTab({
   useEffect(() => {
     visibleFieldsRef.current = visibleFields;
   }, [visibleFields]);
-
-  // Memoizar cálculos pesados
-  const { totalQuestions, conditionalQuestions, mainQuestions } = useMemo(() => {
-    const conditional = questions.filter(q => q.conditional);
-    const main = questions.filter(q => !q.conditional);
-    
-    return {
-      totalQuestions: questions.length,
-      conditionalQuestions: conditional,
-      mainQuestions: main
-    };
-  }, [questions]);
 
   // Estabilizar a função onFieldChange
   const stableOnFieldChange = useCallback((field: string, value: any) => {
@@ -100,20 +88,38 @@ export const SectorDetailsTab = memo(function SectorDetailsTab({
     }
   }, [questions, formData, stableOnFieldChange]);
 
-  // Calcular progresso
-  const { filledFields, progress } = useMemo(() => {
-    const visibleQuestions = questions.filter(q => visibleFields.has(q.field));
-    const filled = visibleQuestions.filter(q => {
-      const value = formData[q.field];
-      return value !== undefined && value !== '' && value !== null && 
-             (!Array.isArray(value) || value.length > 0);
-    }).length;
+  // Organizar perguntas na ordem correta (principais com suas condicionais logo após)
+  const organizedQuestions = useMemo(() => {
+    const result: Question[] = [];
+    const processedConditionals = new Set<string>();
     
-    return {
-      filledFields: filled,
-      progress: visibleQuestions.length > 0 ? Math.round((filled / visibleQuestions.length) * 100) : 0
-    };
-  }, [questions, visibleFields, formData]);
+    // Para cada pergunta principal
+    questions.filter(q => !q.conditional).forEach(mainQuestion => {
+      // Adicionar pergunta principal
+      result.push(mainQuestion);
+      
+      // Procurar perguntas condicionais que dependem desta
+      const relatedConditionals = questions.filter(q => 
+        q.conditional && 
+        q.conditional.dependsOn === mainQuestion.field &&
+        !processedConditionals.has(q.field)
+      );
+      
+      relatedConditionals.forEach(conditional => {
+        result.push(conditional);
+        processedConditionals.add(conditional.field);
+      });
+    });
+    
+    // Adicionar perguntas condicionais órfãs (que dependem de campos não encontrados)
+    questions.filter(q => 
+      q.conditional && !processedConditionals.has(q.field)
+    ).forEach(orphan => {
+      result.push(orphan);
+    });
+    
+    return result;
+  }, [questions]);
 
   if (questions.length === 0) {
     return (
@@ -131,143 +137,39 @@ export const SectorDetailsTab = memo(function SectorDetailsTab({
     );
   }
 
-  // Filtrar e ordenar perguntas visíveis
-  const visibleQuestions = questions.filter(q => visibleFields.has(q.field));
-  const groupedQuestions = {
-    main: visibleQuestions.filter(q => !q.conditional),
-    conditional: visibleQuestions.filter(q => q.conditional)
-  };
-
   return (
-    <div className="space-y-8 form-container">
-      {/* Header com estatísticas */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-xl font-semibold text-seasalt mb-2">
-              Detalhes Específicos - {sector}
-            </h3>
-            <p className="text-periwinkle text-sm">
-              Responda as perguntas abaixo para personalizarmos melhor o seu planejamento estratégico.
-            </p>
+    <div className="space-y-6 form-container">
+      {/* Renderizar perguntas na ordem organizada */}
+      {organizedQuestions.map((question, index) => {
+        const isVisible = !question.conditional || visibleFields.has(question.field);
+        
+        if (!isVisible) return null;
+        
+        const isConditional = !!question.conditional;
+        
+        return (
+          <div 
+            key={question.field}
+            className={`
+              transform transition-all duration-300 ease-out
+              ${isConditional ? 'ml-6 pl-4 border-l-2 border-orange-400/30' : ''}
+              ${animatingFields.has(question.field) ? 'animate-pulse scale-105' : ''}
+            `}
+            style={{ 
+              animationDelay: `${index * 50}ms`,
+              opacity: animatingFields.has(question.field) ? 0.7 : 1 
+            }}
+          >
+            <QuestionField
+              question={question}
+              value={formData[question.field]}
+              onChange={(value) => stableOnFieldChange(question.field, value)}
+              onBlur={onFieldBlur}
+              error={errors[question.field]}
+            />
           </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-sgbus-green">{progress}%</div>
-            <div className="text-xs text-periwinkle">Completo</div>
-          </div>
-        </div>
-
-        {/* Barra de progresso principal */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-seasalt font-medium">Progresso da Seção</span>
-            <span className="text-periwinkle">
-              {filledFields} de {visibleQuestions.length} perguntas
-            </span>
-          </div>
-          <div className="w-full bg-seasalt/10 rounded-full h-3 overflow-hidden">
-            <div 
-              className="bg-gradient-to-r from-sgbus-green to-sgbus-green/80 h-3 rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${progress}%` }}
-            >
-              <div className="h-full bg-white/20 rounded-full animate-pulse" />
-            </div>
-          </div>
-        </div>
-
-        {/* Estatísticas */}
-        <div className="grid grid-cols-3 gap-4 p-4 bg-eerie-black rounded-lg">
-          <div className="text-center">
-            <div className="text-lg font-bold text-seasalt">{mainQuestions.length}</div>
-            <div className="text-xs text-periwinkle">Principais</div>
-          </div>
-          <div className="text-center">
-            <div className="text-lg font-bold text-sgbus-green">{conditionalQuestions.length}</div>
-            <div className="text-xs text-periwinkle">Condicionais</div>
-          </div>
-          <div className="text-center">
-            <div className="text-lg font-bold text-orange-400">{visibleQuestions.length}</div>
-            <div className="text-xs text-periwinkle">Visíveis</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Perguntas principais */}
-      {groupedQuestions.main.length > 0 && (
-        <section className="space-y-6 form-section">
-          <div className="flex items-center gap-2">
-            <div className="w-1 h-6 bg-sgbus-green rounded-full" />
-            <h4 className="text-lg font-medium text-seasalt">Informações Principais</h4>
-            <span className="text-sm text-periwinkle">({groupedQuestions.main.length})</span>
-          </div>
-          
-          {groupedQuestions.main.map((question, index) => (
-            <div 
-              key={question.field}
-              className="transform transition-all duration-300 ease-out"
-              style={{ 
-                animationDelay: `${index * 50}ms`,
-                opacity: animatingFields.has(question.field) ? 0.7 : 1 
-              }}
-            >
-              <QuestionField
-                question={question}
-                value={formData[question.field]}
-                onChange={(value) => stableOnFieldChange(question.field, value)}
-                onBlur={onFieldBlur}
-                error={errors[question.field]}
-              />
-            </div>
-          ))}
-        </section>
-      )}
-
-      {/* Perguntas condicionais */}
-      {groupedQuestions.conditional.length > 0 && (
-        <section className="space-y-6 form-section">
-          <div className="flex items-center gap-2">
-            <div className="w-1 h-6 bg-orange-400 rounded-full" />
-            <h4 className="text-lg font-medium text-seasalt">Perguntas Dinâmicas</h4>
-            <span className="text-sm text-periwinkle">({groupedQuestions.conditional.length})</span>
-            <Eye className="w-4 h-4 text-orange-400" />
-          </div>
-          
-          {groupedQuestions.conditional.map((question, index) => (
-            <div 
-              key={question.field}
-              className={`
-                transform transition-all duration-300 ease-out border-l-2 border-orange-400/30 pl-6 ml-2
-                ${animatingFields.has(question.field) ? 'animate-pulse scale-105' : ''}
-              `}
-              style={{ animationDelay: `${(groupedQuestions.main.length + index) * 50}ms` }}
-            >
-              <QuestionField
-                question={question}
-                value={formData[question.field]}
-                onChange={(value) => stableOnFieldChange(question.field, value)}
-                onBlur={onFieldBlur}
-                error={errors[question.field]}
-              />
-              
-              {/* Indicador de dependência */}
-              <div className="mt-3 p-3 bg-orange-400/10 rounded-lg border border-orange-400/20">
-                <div className="flex items-start space-x-3">
-                  <ChevronRight className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-xs text-orange-400 font-medium">
-                      Campo condicional
-                    </p>
-                    <p className="text-xs text-periwinkle mt-1">
-                      Aparece quando <strong>"{question.conditional?.dependsOn}"</strong> está em: 
-                      <span className="text-orange-400"> {question.conditional?.showWhen.join(', ')}</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </section>
-      )}
+        );
+      })}
 
       {/* Dica final */}
       <div className="mt-8 p-6 bg-gradient-to-r from-eerie-black to-night rounded-lg border border-sgbus-green/20">
@@ -283,16 +185,6 @@ export const SectorDetailsTab = memo(function SectorDetailsTab({
               Quanto mais detalhadas forem suas respostas, mais personalizado e eficaz será 
               o planejamento estratégico gerado pela IA. 
             </p>
-            {conditionalQuestions.length > 0 && (
-              <div className="mt-3 p-3 bg-orange-400/10 rounded border border-orange-400/20">
-                <div className="flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-orange-400" />
-                  <span className="text-xs text-orange-400 font-medium">
-                    {conditionalQuestions.length} perguntas aparecem baseadas nas suas respostas anteriores
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

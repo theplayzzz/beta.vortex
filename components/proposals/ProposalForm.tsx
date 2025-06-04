@@ -7,7 +7,6 @@ import { proposalFormSchema, validateTab, calculateTabProgress, type ProposalFor
 import { BasicInfoTab } from './tabs/BasicInfoTab';
 import { ScopeTab } from './tabs/ScopeTab';
 import { CommercialTab } from './tabs/CommercialTab';
-import { ProposalProgress } from './ProposalProgress';
 import { useGenerateProposal } from '@/hooks/use-proposals';
 import { useToast, toast } from '@/components/ui/toast';
 import { useRouter } from 'next/navigation';
@@ -127,9 +126,6 @@ export function ProposalForm({ client }: ProposalFormProps) {
           Preencha as informações para gerar uma proposta personalizada com IA
         </p>
       </div>
-
-      {/* Progress */}
-      <ProposalProgress currentTab={currentTab} currentProgress={currentTabProgress} />
 
       {/* Tabs Navigation */}
       <div className="flex space-x-1 bg-night p-1 rounded-lg border border-accent/20">
