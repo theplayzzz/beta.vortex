@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { BasicInfoTab } from './tabs/BasicInfoTab';
 import { SectorDetailsTab } from './tabs/SectorDetailsTab';
 import { MarketingTab } from './tabs/MarketingTab';
 import { CommercialTab } from './tabs/CommercialTab';
-import { planningFormSchema, PlanningFormData, getDefaultValues } from '@/lib/planning/formSchema';
+import { PlanningFormData, getDefaultValues } from '@/lib/planning/formSchema';
 import { usePlanningForm } from '@/hooks/usePlanningForm';
 
 interface Client {
@@ -101,7 +100,6 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
   const { formData, updateFormData } = usePlanningForm(client);
 
   const form = useForm<PlanningFormData>({
-    resolver: zodResolver(planningFormSchema),
     defaultValues: getDefaultValues(client.industry),
     mode: 'onSubmit'
   });
@@ -220,138 +218,9 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
       errors: form.formState.errors
     });
     
-    try {
-      // Validar todo o formulário
-      console.log('🔍 Iniciando validação completa do formulário...');
-      const isValid = await form.trigger();
-      console.log('🔍 Resultado da validação:', isValid);
-      
-      if (!isValid) {
-        console.log('❌ Formulário tem erros, verificando abas...');
-        
-        // Obter todos os erros
-        const errors = form.formState.errors;
-        console.log('🔍 Erros encontrados:', errors);
-        
-        // Mapear erros para abas
-        const tabsWithErrorsData: { tabIndex: number; tabName: string; errors: string[] }[] = [];
-        const errorTabIndices = new Set<number>();
-        
-        // Verificar aba 1: Informações Básicas
-        if (errors.informacoes_basicas) {
-          const basicErrors = Object.entries(errors.informacoes_basicas).map(([field, error]) => {
-            return `${getFieldDisplayName(field)}: ${extractErrorMessage(error)}`;
-          });
-          
-          if (basicErrors.length > 0) {
-            tabsWithErrorsData.push({
-              tabIndex: 0,
-              tabName: 'Informações Básicas',
-              errors: basicErrors
-            });
-            errorTabIndices.add(0);
-          }
-        }
-        
-        // Verificar aba 2: Detalhes do Setor
-        if (errors.detalhes_do_setor) {
-          const sectorErrors = Object.entries(errors.detalhes_do_setor).map(([field, error]) => {
-            return `${getFieldDisplayName(field)}: ${extractErrorMessage(error)}`;
-          });
-          
-          if (sectorErrors.length > 0) {
-            tabsWithErrorsData.push({
-              tabIndex: 1,
-              tabName: 'Detalhes do Setor',
-              errors: sectorErrors
-            });
-            errorTabIndices.add(1);
-          }
-        }
-        
-        // Verificar aba 3: Marketing
-        if (errors.marketing) {
-          const marketingErrors = Object.entries(errors.marketing).map(([field, error]) => {
-            return `${getFieldDisplayName(field)}: ${extractErrorMessage(error)}`;
-          });
-          
-          if (marketingErrors.length > 0) {
-            tabsWithErrorsData.push({
-              tabIndex: 2,
-              tabName: 'Marketing',
-              errors: marketingErrors
-            });
-            errorTabIndices.add(2);
-          }
-        }
-        
-        // Verificar aba 4: Comercial
-        if (errors.comercial) {
-          const commercialErrors = Object.entries(errors.comercial).map(([field, error]) => {
-            return `${getFieldDisplayName(field)}: ${extractErrorMessage(error)}`;
-          });
-          
-          if (commercialErrors.length > 0) {
-            tabsWithErrorsData.push({
-              tabIndex: 3,
-              tabName: 'Comercial',
-              errors: commercialErrors
-            });
-            errorTabIndices.add(3);
-          }
-        }
-        
-        // Atualizar estado das abas com erro
-        setTabsWithErrors(errorTabIndices);
-        
-        if (tabsWithErrorsData.length > 0) {
-          const firstErrorTab = tabsWithErrorsData[0];
-          
-          // Mostrar mensagem de erro específica
-          const errorMessage = tabsWithErrorsData.length === 1 
-            ? `Há ${firstErrorTab.errors.length} erro(s) na aba "${firstErrorTab.tabName}"`
-            : `Há erros em ${tabsWithErrorsData.length} abas. Navegando para "${firstErrorTab.tabName}"`;
-          
-          console.log(`🎯 ${errorMessage}`);
-          console.log('📋 Detalhes dos erros:', firstErrorTab.errors);
-          
-          // Usar estado pendente para navegação de aba (corrige o erro de React)
-          console.log(`🎯 Programando navegação para aba com erro: ${firstErrorTab.tabIndex}`);
-          setPendingTabNavigation(firstErrorTab.tabIndex);
-          
-          console.log('❌ SUBMISSÃO CANCELADA - Erros de validação encontrados');
-          return;
-        } else {
-          // Se não há erros específicos mas validação falhou, permitir submissão mesmo assim
-          console.log('⚠️ Validação falhou mas não foram encontrados erros específicos, prosseguindo...');
-        }
-      } else {
-        // Limpar erros das abas se tudo estiver válido
-        setTabsWithErrors(new Set());
-        console.log('✅ Validação passou - todas as abas estão válidas');
-      }
-      
-      // Se chegou aqui, formulário está válido ou não tem erros específicos
-      console.log('✅ PROSSEGUINDO COM SUBMISSÃO - Formulário considerado válido');
-      console.log('📤 Dados finais para submissão:', data);
-      
-      console.log('📞 Chamando onSubmit com dados:', data);
-      onSubmit(data);
-      console.log('✅ onSubmit chamado com sucesso');
-      
-    } catch (error) {
-      console.error('❌ ERRO NA SUBMISSÃO:', error);
-      
-      // Em caso de erro, tentar submeter mesmo assim
-      console.log('🔄 Tentando submissão de emergência...');
-      
-      try {
-        onSubmit(data);
-        console.log('✅ Submissão de emergência bem-sucedida');
-      } catch (emergencyError) {
-        console.error('❌ Falha na submissão de emergência:', emergencyError);
-      }
-    }
+    console.log('📞 Chamando onSubmit com dados:', data);
+    onSubmit(data);
+    console.log('✅ onSubmit chamado com sucesso');
   }, [onSubmit, form]);
 
   const handleTabChange = useCallback((tabIndex: number) => {

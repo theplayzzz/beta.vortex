@@ -10,6 +10,10 @@ import {
   initializeFormWithClient,
   validateClientForForm 
 } from '@/lib/planning/clientContextMapping';
+import { 
+  validateFormWithNavigation, 
+  executeAutoNavigation 
+} from '@/lib/planning/formValidation';
 import { useCreatePlanning } from '@/lib/react-query/hooks/usePlanningMutations';
 import { generateUUID } from '@/lib/utils/uuid';
 import { ArrowLeft, AlertTriangle, User, Building, BarChart3, Calendar } from 'lucide-react';
@@ -160,9 +164,47 @@ export function PlanningFormWithClient({
   const handleFormSubmit = async (formData: PlanningFormData) => {
     console.log('🚨 INÍCIO - PlanningFormWithClient.handleFormSubmit CHAMADO!');
     console.log('🚨 Dados recebidos:', formData);
-    console.log('🚨 Cliente:', client);
-    console.log('🚨 SessionId:', sessionId);
-    console.log('🚨 isSubmitting atual:', isSubmitting);
+    
+    // ✅ ETAPA 1: VALIDAÇÃO PRÉVIA COM NAVEGAÇÃO AUTOMÁTICA
+    console.log('🔍 Executando validação prévia...');
+    const validationResult = validateFormWithNavigation(formData);
+    
+    console.log('🔍 DEBUG - Resultado da validação:', validationResult);
+    
+    if (!validationResult.isValid) {
+      console.log('❌ Validação falhou, executando navegação automática...');
+      
+      // Executar navegação automática para erro
+      const navigationSuccess = executeAutoNavigation(
+        validationResult, 
+        (tabIndex: number) => {
+          console.log('🎯 DEBUG - Tentando navegar para aba:', tabIndex);
+          if (currentTabRef.current) {
+            currentTabRef.current(tabIndex);
+            console.log('✅ DEBUG - Navegação executada via currentTabRef');
+          } else {
+            console.log('❌ DEBUG - currentTabRef.current não disponível');
+          }
+        }
+      );
+      
+      console.log('🎯 DEBUG - Resultado da navegação:', navigationSuccess);
+      
+      // Mostrar toast explicativo
+      addToast(toast.error(
+        'Formulário incompleto',
+        validationResult.errorTabName 
+          ? `Há ${validationResult.totalErrors} erro(s) que precisam ser corrigidos. Navegando para "${validationResult.errorTabName}".`
+          : `Há ${validationResult.totalErrors} erro(s) que precisam ser corrigidos.`,
+        { duration: 6000 }
+      ));
+      
+      console.log('🚫 Submissão cancelada devido a erros de validação');
+      console.log('🚫 DEBUG - RETURN executado, função deve parar aqui');
+      return; // Parar execução
+    }
+    
+    console.log('✅ Validação prévia passou - formulário está válido');
     
     try {
       setIsSubmitting(true);
@@ -182,11 +224,11 @@ export function PlanningFormWithClient({
       // Mostrar toast de processo iniciado
       addToast(toast.info(
         'Criando planejamento...',
-        'Validando dados e preparando o planejamento estratégico'
+        'Salvando dados no banco de dados'
       ));
       console.log('🚨 Toast de início exibido');
 
-      // Criar planejamento no banco
+      // ✅ AÇÃO 1: SALVAR NO BANCO (PRIORITÁRIA)
       console.log('🚨 Chamando createPlanningMutation.mutateAsync...');
       const createdPlanning = await createPlanningMutation.mutateAsync({
         title: submissionPayload.title,
@@ -198,6 +240,10 @@ export function PlanningFormWithClient({
 
       console.log('✅ Planejamento criado:', createdPlanning);
 
+      // ✅ AÇÃO 2: WEBHOOK INDEPENDENTE (FIRE-AND-FORGET)
+      // Nota: O webhook já é enviado automaticamente pela API /api/plannings
+      console.log('📡 Webhook será processado de forma independente pela API');
+
       // Limpar localStorage após sucesso
       localStorage.removeItem(`planning-form-draft-${client.id}`);
 
@@ -206,10 +252,10 @@ export function PlanningFormWithClient({
       newPlannings.push(createdPlanning.id);
       localStorage.setItem('new-plannings', JSON.stringify(newPlannings));
 
-      // Mostrar toast de sucesso
+      // ✅ SUCESSO IMEDIATO + REDIRECIONAMENTO
       addToast(toast.success(
         'Planejamento criado com sucesso!',
-        `"${createdPlanning.title}" foi salvo e está sendo processado. O webhook irá preencher os objetivos específicos.`,
+        `"${createdPlanning.title}" foi salvo e está sendo processado.`,
         {
           duration: 4000,
           action: {
@@ -227,7 +273,7 @@ export function PlanningFormWithClient({
       console.error('❌ Erro ao criar planejamento:', error);
       console.error('🚨 Stack trace completo:', error);
       
-      // Mostrar toast de erro detalhado
+      // ✅ APENAS ERRO DE BANCO AFETA O USUÁRIO
       addToast(toast.error(
         'Erro ao criar planejamento',
         error instanceof Error ? error.message : 'Ocorreu um erro inesperado. Tente novamente.',
@@ -316,7 +362,7 @@ export function PlanningFormWithClient({
                   Criando Planejamento...
                 </h3>
                 <p className="text-seasalt/70 text-sm">
-                  Validando dados, salvando no banco e configurando webhook
+                  Salvando no banco de dados
                 </p>
               </div>
             </div>
