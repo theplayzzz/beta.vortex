@@ -1,4 +1,4 @@
-import { planningFormSchema, tabSchemas, type PlanningFormData, type TabKey } from './formSchema';
+import { planningFormSchema, tabSchemas, type PlanningFormData, type TabKey, createDetalhesSetorSchema } from './formSchema';
 import { z } from 'zod';
 
 export interface ValidationError {
@@ -41,7 +41,31 @@ export function validateCompleteForm(
     const tabData = formData[tab.key];
     console.log(`🔍 DEBUG - Dados da aba ${tab.label}:`, tabData);
     
-    const validation = tabSchemas[tab.key].safeParse(tabData);
+    let validation: any;
+    
+    // Validação especial para detalhes do setor
+    if (tab.key === 'detalhes_do_setor') {
+      const setor = formData.informacoes_basicas?.setor;
+      console.log(`🔍 DEBUG - Setor detectado para validação: ${setor}`);
+      
+      if (setor) {
+        // Usar validação dinâmica baseada no setor
+        try {
+          const dynamicSchema = createDetalhesSetorSchema(setor);
+          validation = dynamicSchema.safeParse(tabData);
+          console.log(`🔍 DEBUG - Usando schema dinâmico para setor ${setor}`);
+        } catch (error) {
+          console.log(`⚠️ DEBUG - Erro ao criar schema dinâmico, usando schema padrão:`, error);
+          validation = tabSchemas[tab.key].safeParse(tabData);
+        }
+      } else {
+        console.log(`🔍 DEBUG - Setor não definido, usando schema padrão`);
+        validation = tabSchemas[tab.key].safeParse(tabData);
+      }
+    } else {
+      validation = tabSchemas[tab.key].safeParse(tabData);
+    }
+    
     console.log(`🔍 DEBUG - Resultado validação ${tab.label}:`, validation);
     
     const tabError: ValidationError = {
@@ -58,8 +82,8 @@ export function validateCompleteForm(
       console.log(`🔍 DEBUG - Field errors ${tab.label}:`, fieldErrors);
       
       // Converter array de strings para strings únicas com tipagem segura
-      Object.entries(fieldErrors).forEach(([field, errorMessages]) => {
-        if (errorMessages && errorMessages.length > 0) {
+      Object.entries(fieldErrors || {}).forEach(([field, errorMessages]) => {
+        if (errorMessages && Array.isArray(errorMessages) && errorMessages.length > 0) {
           tabError.fieldErrors[field] = errorMessages[0];
           tabError.hasErrors = true;
           totalErrors++;
@@ -300,17 +324,9 @@ export function validateFormWithNavigation(
   formData: PlanningFormData
 ): FormValidationWithNavigationResult {
   console.log('🔍 validateFormWithNavigation: Iniciando validação completa...');
-  console.log('🔍 DEBUG - formData recebido:', formData);
-  
-  // 🔍 DEBUG: Verificar se os dados básicos existem
-  console.log('🔍 DEBUG - informacoes_basicas:', formData?.informacoes_basicas);
-  console.log('🔍 DEBUG - titulo_planejamento:', formData?.informacoes_basicas?.titulo_planejamento);
-  console.log('🔍 DEBUG - titulo vazio?:', !formData?.informacoes_basicas?.titulo_planejamento || formData?.informacoes_basicas?.titulo_planejamento === '');
   
   // Usar a função existente de validação completa
   const completeValidation = validateCompleteForm(formData);
-  
-  console.log('🔍 DEBUG - Resultado validateCompleteForm:', completeValidation);
   
   if (completeValidation.isValid) {
     console.log('✅ validateFormWithNavigation: Formulário totalmente válido');
@@ -322,13 +338,11 @@ export function validateFormWithNavigation(
   }
 
   console.log('❌ validateFormWithNavigation: Erros encontrados:', completeValidation.totalErrors);
-  console.log('🔍 DEBUG - Detalhes dos erros:', completeValidation.errors);
 
   // Encontrar primeira aba com erro
   const firstErrorTab = completeValidation.errors.find(error => error.hasErrors);
   
   if (!firstErrorTab) {
-    console.log('⚠️ validateFormWithNavigation: Nenhuma aba específica com erro encontrada');
     return {
       isValid: false,
       totalErrors: completeValidation.totalErrors,
@@ -337,14 +351,10 @@ export function validateFormWithNavigation(
   }
 
   console.log(`🎯 validateFormWithNavigation: Primeira aba com erro: ${firstErrorTab.tabLabel} (índice ${firstErrorTab.tabIndex})`);
-  console.log('🔍 DEBUG - Erros da aba:', firstErrorTab.fieldErrors);
 
   // Encontrar primeiro campo com erro na aba
   const firstFieldWithError = Object.keys(firstErrorTab.fieldErrors)[0];
   const firstErrorMessage = firstErrorTab.fieldErrors[firstFieldWithError];
-
-  console.log(`📍 validateFormWithNavigation: Primeiro campo com erro: ${firstFieldWithError}`);
-  console.log(`📍 validateFormWithNavigation: Mensagem do erro: ${firstErrorMessage}`);
 
   return {
     isValid: false,
@@ -370,8 +380,13 @@ export function executeAutoNavigation(
 
   console.log(`🎯 executeAutoNavigation: Navegando para aba ${result.errorTab}`);
   
-  // Navegar para aba com erro
-  navigateToTab(result.errorTab);
+  try {
+    // Navegar para aba com erro
+    navigateToTab(result.errorTab);
+  } catch (error) {
+    console.error('❌ executeAutoNavigation: Erro ao chamar navigateToTab:', error);
+    return false;
+  }
 
   // Aguardar renderização e destacar campo se existir
   if (result.errorField) {
