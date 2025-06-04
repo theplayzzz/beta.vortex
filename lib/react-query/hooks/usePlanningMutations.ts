@@ -45,11 +45,26 @@ export function useCreatePlanning() {
 
       return response.json();
     },
-    onSuccess: () => {
-      // Invalidar todas as queries de listagem de planejamentos
+    onSuccess: (newPlanning) => {
+      // ✅ OTIMIZAÇÃO: Invalidação específica e atualização otimista
+      
+      // 1. Invalidar todas as queries de listagem de planejamentos
       queryClient.invalidateQueries({
         queryKey: queryKeys.plannings.lists(),
       });
+      
+      // 2. Atualizar cache específico do novo planejamento
+      queryClient.setQueryData(
+        queryKeys.plannings.detail(newPlanning.id),
+        newPlanning
+      );
+      
+      // 3. Invalidar estatísticas se existirem
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.plannings.stats(),
+      });
+      
+      console.log('✅ Cache atualizado para novo planejamento:', newPlanning.id);
     },
   });
 }
