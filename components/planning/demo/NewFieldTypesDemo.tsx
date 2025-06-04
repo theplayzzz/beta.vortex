@@ -2,10 +2,19 @@
 
 import { useState } from 'react';
 import { SectorDetailsTab } from '../tabs/SectorDetailsTab';
+import { SETORES_PERMITIDOS } from '@/lib/planning/sectorConfig';
+import type { SetorPermitido } from '@/lib/planning/sectorConfig';
 
 export function NewFieldTypesDemo() {
+  const [selectedSector, setSelectedSector] = useState<SetorPermitido>('Tecnologia / SaaS');
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleSectorChange = (newSector: SetorPermitido) => {
+    setSelectedSector(newSector);
+    setFormData({}); // Reset form data when changing sector
+    setErrors({});
+  };
 
   const handleFieldChange = (field: string, value: any) => {
     setFormData(prev => ({
@@ -30,32 +39,21 @@ export function NewFieldTypesDemo() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
-    // Simulação de validação para alguns campos
-    if (!formData.tech_tipo) {
-      newErrors.tech_tipo = 'Tipo de produto é obrigatório';
-    }
-    if (formData.tech_tipo === 'Outro' && !formData.tech_tipo_outro) {
-      newErrors.tech_tipo_outro = 'Especifique o tipo de produto';
-    }
-    if (!formData.tech_valor_cliente || formData.tech_valor_cliente === 0) {
-      newErrors.tech_valor_cliente = 'Valor médio é obrigatório';
-    }
-    if (!formData.tech_aquisicao || formData.tech_aquisicao.length === 0) {
-      newErrors.tech_aquisicao = 'Selecione pelo menos um canal';
-    }
+    // Validação genérica para campos obrigatórios
+    Object.entries(formData).forEach(([field, value]) => {
+      if (!value || (Array.isArray(value) && value.length === 0)) {
+        // Não implementar validação específica no demo, apenas mostrar dados
+      }
+    });
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = () => {
-    if (validateForm()) {
-      console.log('✅ Formulário válido!');
-      console.log('📊 Dados:', JSON.stringify(formData, null, 2));
-      alert('Formulário válido! Veja o console para os dados.');
-    } else {
-      console.log('❌ Formulário com erros:', errors);
-    }
+    console.log('✅ Dados do setor:', selectedSector);
+    console.log('📊 Dados do formulário:', JSON.stringify(formData, null, 2));
+    alert(`Dados coletados para ${selectedSector}! Veja o console para detalhes.`);
   };
 
   const clearData = () => {
@@ -64,30 +62,52 @@ export function NewFieldTypesDemo() {
   };
 
   // Calculate progress
-  const totalFields = 11; // Número total de campos visíveis inicialmente
+  const totalFieldsEstimate = 8; // Estimativa de campos por setor
   const filledFields = Object.values(formData).filter(value => 
     value !== undefined && value !== '' && value !== null && 
     (!Array.isArray(value) || value.length > 0)
   ).length;
-  const progress = Math.round((filledFields / totalFields) * 100);
+  const progress = Math.round((filledFields / totalFieldsEstimate) * 100);
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       {/* Header */}
       <div className="text-center space-y-4">
         <h1 className="text-3xl font-bold text-seasalt">
-          Demo: Novos Tipos de Campo
+          Demo: Formulários Dinâmicos por Setor
         </h1>
         <p className="text-periwinkle">
-          Demonstração dos novos tipos de campo: <strong>multiselect</strong>, <strong>toggle</strong>, 
-          <strong>number com moeda</strong> e <strong>campos condicionais</strong>
+          Teste os formulários implementados com <strong>campos condicionais</strong>, 
+          <strong> multiselect</strong>, <strong>toggle</strong> e <strong>formatação de moeda</strong>
         </p>
+      </div>
+
+      {/* Sector Selector */}
+      <div className="bg-eerie-black p-6 rounded-lg">
+        <h3 className="text-seasalt font-medium mb-4">Selecionar Setor para Teste:</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {SETORES_PERMITIDOS.map((sector) => (
+            <button
+              key={sector}
+              onClick={() => handleSectorChange(sector)}
+              className={`
+                p-3 text-sm rounded-lg border transition-all duration-200
+                ${selectedSector === sector 
+                  ? 'bg-sgbus-green text-white border-sgbus-green' 
+                  : 'bg-night text-seasalt border-seasalt/20 hover:border-sgbus-green/50'
+                }
+              `}
+            >
+              {sector}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Progress Bar */}
       <div className="bg-eerie-black p-4 rounded-lg">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-seasalt font-medium">Progresso Geral</span>
+          <span className="text-seasalt font-medium">Progresso - {selectedSector}</span>
           <span className="text-sgbus-green font-bold">{progress}%</span>
         </div>
         <div className="w-full bg-seasalt/10 rounded-full h-3">
@@ -97,14 +117,14 @@ export function NewFieldTypesDemo() {
           ></div>
         </div>
         <div className="mt-2 text-sm text-periwinkle">
-          {filledFields} de {totalFields} campos preenchidos
+          {filledFields} campos preenchidos
         </div>
       </div>
 
       {/* Form */}
       <div className="bg-night border border-seasalt/20 rounded-lg p-6">
         <SectorDetailsTab
-          sector="Tecnologia / SaaS"
+          sector={selectedSector}
           formData={formData}
           onFieldChange={handleFieldChange}
           onFieldBlur={handleFieldBlur}
@@ -118,7 +138,7 @@ export function NewFieldTypesDemo() {
           onClick={handleSubmit}
           className="px-6 py-3 bg-sgbus-green text-white rounded-lg hover:bg-sgbus-green/90 transition-colors font-medium"
         >
-          Validar Formulário
+          Ver Dados Coletados
         </button>
         
         <button
@@ -129,42 +149,42 @@ export function NewFieldTypesDemo() {
         </button>
         
         <button
-          onClick={() => console.log('📊 Estado atual:', { formData, errors })}
+          onClick={() => console.log('📊 Estado atual:', { selectedSector, formData, errors })}
           className="px-6 py-3 bg-night text-periwinkle border border-seasalt/20 rounded-lg hover:bg-seasalt/5 transition-colors"
         >
-          Ver Estado (Console)
+          Debug (Console)
         </button>
       </div>
 
-      {/* Data Display */}
+      {/* Real-time Data Display */}
       <div className="bg-eerie-black p-4 rounded-lg">
-        <h3 className="text-seasalt font-medium mb-3">Dados em Tempo Real:</h3>
-        <pre className="text-periwinkle text-sm overflow-x-auto bg-night p-3 rounded border border-seasalt/10">
+        <h3 className="text-seasalt font-medium mb-3">Dados em Tempo Real ({selectedSector}):</h3>
+        <pre className="text-periwinkle text-sm overflow-x-auto bg-night p-3 rounded border border-seasalt/10 max-h-60">
           {JSON.stringify(formData, null, 2)}
         </pre>
       </div>
 
-      {/* Features Showcase */}
+      {/* Features Summary */}
       <div className="grid md:grid-cols-2 gap-6">
         <div className="bg-eerie-black p-4 rounded-lg">
-          <h4 className="text-seasalt font-medium mb-2">✨ Recursos Implementados</h4>
-          <ul className="text-periwinkle text-sm space-y-1">
-            <li>• <strong>MultiSelect:</strong> Canal de aquisição com tags</li>
-            <li>• <strong>Toggle:</strong> Trial gratuito (Sim/Não)</li>
-            <li>• <strong>Currency:</strong> Valor médio com formatação R$</li>
-            <li>• <strong>Conditional:</strong> Duração trial aparece se trial = Sim</li>
-            <li>• <strong>Validation:</strong> Validação dinâmica de campos</li>
+          <h4 className="text-seasalt font-medium mb-3">✨ Recursos Implementados (Etapas 1-4)</h4>
+          <ul className="text-periwinkle text-sm space-y-2">
+            <li>• <strong>Novos Tipos de Campo:</strong> multiselect, toggle, number com moeda</li>
+            <li>• <strong>Campos Condicionais:</strong> aparecem/desaparecem baseado em respostas</li>
+            <li>• <strong>Renderização Dinâmica:</strong> animações e feedback visual</li>
+            <li>• <strong>Setores Mapeados:</strong> {SETORES_PERMITIDOS.length} setores com perguntas específicas</li>
+            <li>• <strong>Validação Integrada:</strong> validação automática por tipo</li>
           </ul>
         </div>
         
         <div className="bg-eerie-black p-4 rounded-lg">
-          <h4 className="text-seasalt font-medium mb-2">🔧 Próximos Passos</h4>
-          <ul className="text-periwinkle text-sm space-y-1">
-            <li>• Implementar dados para outros setores</li>
-            <li>• Integrar com sistema de validação</li>
-            <li>• Testar salvamento automático</li>
-            <li>• Adicionar mais tipos condicionais</li>
-            <li>• Otimizar performance</li>
+          <h4 className="text-seasalt font-medium mb-3">🔧 Testando por Setor</h4>
+          <ul className="text-periwinkle text-sm space-y-2">
+            <li>• <strong>Tecnologia:</strong> Campos condicionais (trial → duração)</li>
+            <li>• <strong>Saúde:</strong> Multiselect para especialidades</li>
+            <li>• <strong>Educação:</strong> Toggle e valores monetários</li>
+            <li>• <strong>Varejo:</strong> Programas de fidelidade condicionais</li>
+            <li>• <strong>Alimentação:</strong> Plataformas de delivery condicionais</li>
           </ul>
         </div>
       </div>

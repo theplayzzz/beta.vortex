@@ -18,237 +18,349 @@ export interface Question {
 export const PERGUNTAS_POR_SETOR: Record<SetorPermitido, Question[]> = {
   "Alimentação": [
     {
-      label: "O negócio é:",
-      field: "alim_tipo_negocio",
+      label: "Quais pratos, produtos ou linhas de produtos têm maior saída ou lucratividade?",
+      field: "alimentacao_produtos_principais",
+      type: "multiselect",
+      options: ["Pizza Calabresa", "Hambúrguer Artesanal", "Prato Executivo", "Sobremesas", "Bebidas", "Massas", "Carnes", "Frutos do Mar", "Pratos Veganos"],
+      required: true,
+      placeholder: "Ex: Pizza Calabresa, Hambúrguer Artesanal X, Prato Executivo Y"
+    },
+    {
+      label: "Vocês trabalham com combos, promoções especiais ou sugestões de complementos de venda?",
+      field: "alimentacao_combos_promocoes",
       type: "radio",
-      options: ["Restaurante", "Lanchonete", "Food truck", "Delivery", "Indústria de alimentos", "Outro"],
+      options: ["Não costumamos trabalhar com essas estratégias", "Trabalhamos informalmente, dependendo da ocasião", "Temos uma estratégia estruturada de combos, promoções e complementos", "Outro"],
       required: true
     },
     {
-      label: "Qual é o ticket médio por pedido?",
-      field: "alim_ticket_medio",
+      label: "Especifique a estratégia de combos e promoções:",
+      field: "alimentacao_combos_promocoes_outro",
+      type: "text",
+      conditional: {
+        dependsOn: "alimentacao_combos_promocoes",
+        showWhen: ["Outro"]
+      },
+      required: true,
+      placeholder: "Descreva sua estratégia de combos e promoções"
+    },
+    {
+      label: "A empresa atua principalmente como:",
+      field: "alimentacao_tipo_atuacao",
+      type: "checkbox",
+      options: ["Restaurante/Lanchonete/Bar com atendimento presencial", "Delivery com frota/entregadores próprios", "Delivery terceirizado por aplicativos (ex: iFood, Rappi)", "Indústria de alimentos / Fornecedor para outros estabelecimentos", "Food Truck / Barraca em eventos", "Outro"],
+      required: true
+    },
+    {
+      label: "Especifique outro tipo de atuação:",
+      field: "alimentacao_tipo_atuacao_outro",
+      type: "text",
+      conditional: {
+        dependsOn: "alimentacao_tipo_atuacao",
+        showWhen: ["Outro"]
+      },
+      required: true,
+      placeholder: "Descreva seu tipo de atuação"
+    },
+    {
+      label: "Qual é o ticket médio por cliente/pedido?",
+      field: "alimentacao_ticket_medio",
       type: "number",
       required: true,
-      placeholder: "Ex: 25.00"
+      placeholder: "Ex: 45.00",
+      formatCurrency: true
     },
     {
-      label: "Quantos clientes vocês atendem por dia/semana?",
-      field: "alim_volume_clientes",
-      type: "text",
-      required: true,
-      placeholder: "Ex: 100 por dia"
-    },
-    {
-      label: "Qual é o principal diferencial do seu negócio?",
-      field: "alim_diferencial",
-      type: "textarea",
-      required: true,
-      placeholder: "Ex: Ingredientes orgânicos, receita familiar..."
-    },
-    {
-      label: "Vocês fazem delivery próprio?",
-      field: "alim_delivery",
-      type: "radio",
-      options: ["Sim, com equipe própria", "Sim, via apps (iFood, Uber)", "Não fazemos delivery", "Estamos considerando"],
+      label: "Utilizam plataformas de delivery de terceiros (iFood, Rappi, etc.)?",
+      field: "alimentacao_delivery_terceiros",
+      type: "toggle",
       required: true
     },
     {
-      label: "Qual é o horário de funcionamento?",
-      field: "alim_horario",
-      type: "text",
+      label: "Quais plataformas?",
+      field: "alimentacao_plataformas_delivery",
+      type: "multiselect",
+      options: ["iFood", "Rappi", "Uber Eats", "99Food", "Aiqfome", "James Delivery", "Loggi"],
+      conditional: {
+        dependsOn: "alimentacao_delivery_terceiros",
+        showWhen: ["true"]
+      },
       required: true,
-      placeholder: "Ex: Seg a Sex 8h-18h, Sáb 8h-14h"
+      placeholder: "Selecione as plataformas utilizadas"
     },
     {
-      label: "Quem é o seu público principal?",
-      field: "alim_publico",
+      label: "Quais estratégias de marketing ou fidelização são mais comuns?",
+      field: "alimentacao_estrategias_marketing",
+      type: "checkbox",
+      options: ["Combos e promoções diárias/semanais", "Programas de fidelização (cartão fidelidade, descontos progressivos)", "Presença ativa em redes sociais", "Anúncios locais (online ou offline)", "Nenhum específico no momento", "Outro"],
+      required: true
+    },
+    {
+      label: "Especifique outras estratégias de marketing:",
+      field: "alimentacao_estrategias_marketing_outro",
+      type: "text",
+      conditional: {
+        dependsOn: "alimentacao_estrategias_marketing",
+        showWhen: ["Outro"]
+      },
+      required: true,
+      placeholder: "Descreva outras estratégias de marketing"
+    },
+    {
+      label: "Quais são os dias ou horários de maior movimento?",
+      field: "alimentacao_horarios_movimento",
       type: "textarea",
       required: true,
-      placeholder: "Ex: Famílias, executivos, jovens..."
-    },
-    {
-      label: "Qual é a sua principal dificuldade no negócio?",
-      field: "alim_dificuldade",
-      type: "select",
-      options: ["Atrair novos clientes", "Fidelizar clientes", "Controlar custos", "Gestão de estoque", "Marketing", "Concorrência", "Outro"],
-      required: true
+      placeholder: "Ex: Fins de semana à noite, Horário de almoço durante a semana"
     }
   ],
 
   "Saúde e Bem-estar": [
     {
-      label: "Qual é a área de atuação?",
-      field: "saude_area",
+      label: "Quais dos serviços ou procedimentos oferecidos têm maior procura ou geram mais lucro?",
+      field: "saude_servicos_principais",
+      type: "multiselect",
+      options: ["Consultas", "Exames de Imagem", "Cirurgias Eletivas", "Tratamentos Estéticos", "Fisioterapia", "Psicologia", "Cardiologia", "Dermatologia"],
+      required: true,
+      placeholder: "Digite e adicione serviços/procedimentos"
+    },
+    {
+      label: "Sua clínica/consultório oferece outros serviços complementares no mesmo atendimento?",
+      field: "saude_servicos_complementares",
       type: "radio",
-      options: ["Clínica médica", "Odontologia", "Psicologia", "Fisioterapia", "Nutrição", "Estética", "Academia/Fitness", "Outro"],
+      options: ["Não costumamos oferecer complementares", "Oferecemos ocasionalmente, sem um padrão definido", "Temos práticas frequentes, mas informais", "Temos estratégias estruturadas de serviços complementares", "Outro"],
       required: true
     },
     {
-      label: "Quantos profissionais trabalham no negócio?",
-      field: "saude_profissionais",
-      type: "number",
-      required: true,
-      placeholder: "Número de profissionais"
-    },
-    {
-      label: "Qual é o valor médio de uma consulta/sessão?",
-      field: "saude_valor_consulta",
-      type: "number",
-      required: true,
-      placeholder: "Ex: 150.00"
-    },
-    {
-      label: "Quantos pacientes/clientes atendem por dia?",
-      field: "saude_volume_pacientes",
+      label: "Especifique os serviços complementares:",
+      field: "saude_servicos_complementares_outro",
       type: "text",
+      conditional: {
+        dependsOn: "saude_servicos_complementares",
+        showWhen: ["Outro"]
+      },
       required: true,
-      placeholder: "Ex: 20 por dia"
+      placeholder: "Descreva os serviços complementares"
     },
     {
-      label: "Trabalham com convênios médicos?",
-      field: "saude_convenios",
+      label: "A empresa atende:",
+      field: "saude_tipo_atendimento",
       type: "radio",
-      options: ["Sim, a maioria dos pacientes", "Sim, alguns convênios", "Não, só particular", "Estamos considerando"],
+      options: ["Apenas particular", "Apenas convênio(s)", "Ambos (particular e convênio(s))"],
       required: true
     },
     {
-      label: "Como os pacientes agendam consultas?",
+      label: "Quais especialidades ou principais serviços são oferecidos?",
+      field: "saude_especialidades",
+      type: "multiselect",
+      options: ["Cardiologia", "Dermatologia", "Fisioterapia", "Odontologia Geral", "Psicologia", "Pediatria", "Ginecologia", "Ortopedia", "Neurologia", "Oftalmologia"],
+      required: true,
+      placeholder: "Selecione especialidades oferecidas"
+    },
+    {
+      label: "Como os pacientes costumam marcar consultas/procedimentos?",
       field: "saude_agendamento",
       type: "checkbox",
-      options: ["Telefone", "WhatsApp", "Site próprio", "Aplicativo", "Presencialmente", "Redes sociais"],
+      options: ["Telefone", "WhatsApp", "Site próprio / Portal do paciente", "Aplicativos especializados (ex: Doctoralia, BoaConsulta)", "Presencialmente / Recepção", "Outro"],
       required: true
     },
     {
-      label: "Qual é o principal desafio do negócio?",
-      field: "saude_desafio",
-      type: "select",
-      options: ["Agendar mais consultas", "Reduzir faltas", "Atrair novos pacientes", "Fidelizar pacientes", "Gestão financeira", "Marketing", "Outro"],
+      label: "Especifique outros métodos de agendamento:",
+      field: "saude_agendamento_outro",
+      type: "text",
+      conditional: {
+        dependsOn: "saude_agendamento",
+        showWhen: ["Outro"]
+      },
+      required: true,
+      placeholder: "Descreva outros métodos de agendamento"
+    },
+    {
+      label: "Existe alguma sazonalidade ou pico de demanda em determinados períodos?",
+      field: "saude_sazonalidade",
+      type: "radio",
+      options: ["Sim, temos períodos específicos com alta procura (Ex: inverno para doenças respiratórias)", "Não, a demanda é relativamente constante ao longo do ano", "Sim, mas é difícil prever"],
       required: true
     },
     {
-      label: "Qual é o diferencial do seu atendimento?",
-      field: "saude_diferencial",
+      label: "Como vocês se comunicam ou se relacionam com os pacientes fora do momento do atendimento?",
+      field: "saude_comunicacao_pacientes",
       type: "textarea",
       required: true,
-      placeholder: "Ex: Tecnologia avançada, atendimento humanizado..."
+      placeholder: "Ex: Lembretes de consulta, campanhas de prevenção, newsletters, redes sociais com dicas de saúde."
     }
   ],
 
   "Educação": [
     {
-      label: "Qual é o tipo de instituição?",
-      field: "edu_tipo",
+      label: "Quais cursos, programas ou níveis de ensino têm mais procura ou são mais lucrativos?",
+      field: "educacao_cursos_principais",
+      type: "multiselect",
+      options: ["Ensino Fundamental", "Ensino Médio", "Curso de Inglês Avançado", "Pós-graduação em Gestão", "Treinamento Corporativo", "Educação Infantil", "Curso Técnico", "Preparatório para Concursos"],
+      required: true,
+      placeholder: "Ex: Ensino Fundamental, Curso de Inglês Avançado, Pós-graduação em Gestão"
+    },
+    {
+      label: "Vocês costumam oferecer serviços ou pacotes complementares (ex: material didático extra, aulas de reforço, atividades extracurriculares, eventos)?",
+      field: "educacao_servicos_complementares",
       type: "radio",
-      options: ["Escola particular", "Curso técnico", "Ensino superior", "Curso de idiomas", "Cursos livres", "EAD", "Outro"],
+      options: ["Não oferecemos complementares", "Sim, mas sem uma padronização ou estratégia clara", "Sim, oferecemos de forma estruturada e estratégica", "Outro"],
       required: true
     },
     {
-      label: "Quantos alunos vocês atendem?",
-      field: "edu_numero_alunos",
+      label: "Especifique os serviços complementares:",
+      field: "educacao_servicos_complementares_outro",
+      type: "text",
+      conditional: {
+        dependsOn: "educacao_servicos_complementares",
+        showWhen: ["Outro"]
+      },
+      required: true,
+      placeholder: "Descreva os serviços complementares oferecidos"
+    },
+    {
+      label: "A instituição opera predominantemente de forma:",
+      field: "educacao_modalidade",
+      type: "radio",
+      options: ["Presencial", "Online (EAD)", "Híbrida (Presencial e Online)"],
+      required: true
+    },
+    {
+      label: "Qual o ticket médio por aluno/matrícula (mensalidade, valor do curso, etc.)?",
+      field: "educacao_ticket_medio",
+      type: "number",
+      required: true,
+      placeholder: "Ex: 450.00",
+      formatCurrency: true
+    },
+    {
+      label: "Quantos alunos estão ativos atualmente?",
+      field: "educacao_alunos_ativos",
       type: "number",
       required: true,
       placeholder: "Número de alunos ativos"
     },
     {
-      label: "Qual é a faixa etária principal dos alunos?",
-      field: "edu_faixa_etaria",
+      label: "Como vocês atraem novos alunos hoje? (Principais canais/estratégias)",
+      field: "educacao_canais_atracao",
+      type: "multiselect",
+      options: ["Redes Sociais", "Anúncios Google", "Indicações", "Feiras Educacionais", "Parcerias com Escolas/Empresas", "Marketing de Conteúdo", "Eventos Presenciais"],
+      required: true,
+      placeholder: "Ex: Redes Sociais, Anúncios Google, Indicações"
+    },
+    {
+      label: "Como a instituição lida com a evasão de alunos?",
+      field: "educacao_retencao_alunos",
       type: "radio",
-      options: ["Infantil (0-6 anos)", "Fundamental (7-14 anos)", "Médio (15-17 anos)", "Adultos (18+ anos)", "Todas as idades"],
+      options: ["Não temos estratégias específicas para retenção/evasão", "Realizamos acompanhamento individualizado e comunicação direta (e-mail, telefone, WhatsApp)", "Temos um plano de retenção estruturado (programas de apoio, tutoria, renegociação, etc.)", "Outro"],
       required: true
     },
     {
-      label: "Qual é a mensalidade média?",
-      field: "edu_mensalidade",
-      type: "number",
+      label: "Especifique a estratégia de retenção:",
+      field: "educacao_retencao_alunos_outro",
+      type: "text",
+      conditional: {
+        dependsOn: "educacao_retencao_alunos",
+        showWhen: ["Outro"]
+      },
       required: true,
-      placeholder: "Ex: 450.00"
-    },
-    {
-      label: "Como os alunos conhecem a instituição?",
-      field: "edu_aquisicao",
-      type: "checkbox",
-      options: ["Indicação", "Redes sociais", "Site", "Anúncios online", "Marketing local", "Parcerias", "Outro"],
-      required: true
-    },
-    {
-      label: "Qual é a principal metodologia de ensino?",
-      field: "edu_metodologia",
-      type: "textarea",
-      required: true,
-      placeholder: "Ex: Montessori, tradicional, híbrida..."
-    },
-    {
-      label: "Qual é o maior desafio da instituição?",
-      field: "edu_desafio",
-      type: "select",
-      options: ["Captar novos alunos", "Reduzir evasão", "Melhorar qualidade", "Competir com preços", "Marketing", "Gestão financeira", "Outro"],
-      required: true
-    },
-    {
-      label: "Qual é o diferencial competitivo?",
-      field: "edu_diferencial",
-      type: "textarea",
-      required: true,
-      placeholder: "Ex: Professores especializados, infraestrutura moderna..."
+      placeholder: "Descreva sua estratégia de retenção"
     }
   ],
 
   "Varejo físico": [
     {
-      label: "Qual é o tipo de loja?",
-      field: "varejo_tipo",
+      label: "Quais produtos ou categorias de produtos têm maior giro ou melhor margem de lucro?",
+      field: "varejo_produtos_principais",
+      type: "multiselect",
+      options: ["Roupas e Acessórios", "Eletrônicos", "Casa e Decoração", "Alimentação", "Beleza e Cosméticos", "Esportes", "Livros", "Móveis"],
+      required: true,
+      placeholder: "Selecione categorias de produtos"
+    },
+    {
+      label: "Sua loja/empresa costuma trabalhar com produtos complementares ou sugestões no atendimento/checkout (upsell/cross-sell)?",
+      field: "varejo_upsell_crosssell",
       type: "radio",
-      options: ["Roupas e acessórios", "Eletrônicos", "Casa e decoração", "Alimentação", "Farmácia", "Supermercado", "Outro"],
+      options: ["Não, raramente ou nunca", "Sim, mas de forma informal, dependendo do vendedor/situação", "Sim, temos uma estratégia definida e/ou sistema para isso", "Outro"],
       required: true
     },
     {
-      label: "Quantos metros quadrados tem a loja?",
-      field: "varejo_tamanho",
-      type: "number",
+      label: "Especifique a estratégia de upsell/cross-sell:",
+      field: "varejo_upsell_crosssell_outro",
+      type: "text",
+      conditional: {
+        dependsOn: "varejo_upsell_crosssell",
+        showWhen: ["Outro"]
+      },
       required: true,
-      placeholder: "Metros quadrados"
+      placeholder: "Descreva sua estratégia de produtos complementares"
     },
     {
-      label: "Qual é o ticket médio de venda?",
+      label: "Como sua empresa opera principalmente?",
+      field: "varejo_canais_operacao",
+      type: "checkbox",
+      options: ["Loja Física Própria", "Loja Física Franqueada", "E-commerce (Site próprio)", "Marketplaces (ex: Mercado Livre, Amazon, Magazine Luiza)", "Venda por Redes Sociais / WhatsApp", "Outro"],
+      required: true
+    },
+    {
+      label: "Especifique outros canais de operação:",
+      field: "varejo_canais_operacao_outro",
+      type: "text",
+      conditional: {
+        dependsOn: "varejo_canais_operacao",
+        showWhen: ["Outro"]
+      },
+      required: true,
+      placeholder: "Descreva outros canais de operação"
+    },
+    {
+      label: "Qual é o ticket médio de venda por cliente/pedido?",
       field: "varejo_ticket_medio",
       type: "number",
       required: true,
-      placeholder: "Ex: 75.00"
+      placeholder: "Ex: 150.00",
+      formatCurrency: true
     },
     {
-      label: "Quantos clientes atendem por dia?",
-      field: "varejo_clientes_dia",
-      type: "number",
+      label: "Vocês oferecem algum programa de fidelidade ou clube de vantagens?",
+      field: "varejo_programa_fidelidade",
+      type: "toggle",
+      required: true
+    },
+    {
+      label: "Descreva brevemente seu programa de fidelidade:",
+      field: "varejo_programa_fidelidade_descricao",
+      type: "textarea",
+      conditional: {
+        dependsOn: "varejo_programa_fidelidade",
+        showWhen: ["true"]
+      },
       required: true,
-      placeholder: "Número de clientes por dia"
+      placeholder: "Descreva como funciona seu programa de fidelidade"
     },
     {
-      label: "A loja fica em:",
-      field: "varejo_localizacao",
-      type: "radio",
-      options: ["Shopping center", "Rua comercial", "Bairro residencial", "Centro da cidade", "Galeria", "Outro"],
+      label: "Quais tipos de campanhas de marketing/promoção vocês mais utilizam?",
+      field: "varejo_campanhas_marketing",
+      type: "multiselect",
+      options: ["Promoções Locais (bairro/região)", "Anúncios Digitais (Google/Redes Sociais)", "Email Marketing", "Influenciadores", "Eventos na Loja", "Desconto por Volume", "Liquidações Sazonais"],
+      required: true,
+      placeholder: "Ex: Promoções Locais, Anúncios Digitais, Email Marketing"
+    },
+    {
+      label: "Existe sistema para acompanhar estoque e/ou comportamento de compra dos clientes (CRM, ERP, plataforma de e-commerce com analytics)?",
+      field: "varejo_sistema_gestao",
+      type: "toggle",
       required: true
     },
     {
-      label: "Vocês vendem online também?",
-      field: "varejo_online",
-      type: "radio",
-      options: ["Sim, temos e-commerce", "Sim, via redes sociais", "Não, só físico", "Estamos implementando"],
-      required: true
-    },
-    {
-      label: "Como controlam o estoque?",
-      field: "varejo_estoque",
-      type: "radio",
-      options: ["Sistema integrado", "Planilhas", "Anotações manuais", "Sistema simples", "Não controlamos"],
-      required: true
-    },
-    {
-      label: "Qual é o principal desafio do varejo?",
-      field: "varejo_desafio",
-      type: "select",
-      options: ["Aumentar vendas", "Controlar estoque", "Atrair clientes", "Competir com online", "Gestão financeira", "Marketing local", "Outro"],
-      required: true
+      label: "Quais sistemas/ferramentas vocês utilizam?",
+      field: "varejo_sistema_gestao_descricao",
+      type: "textarea",
+      conditional: {
+        dependsOn: "varejo_sistema_gestao",
+        showWhen: ["true"]
+      },
+      required: true,
+      placeholder: "Descreva os sistemas que utilizam (CRM, ERP, analytics, etc.)"
     }
   ],
 
@@ -372,149 +484,163 @@ export const PERGUNTAS_POR_SETOR: Record<SetorPermitido, Question[]> = {
 
   "Serviços B2B": [
     {
-      label: "Qual é o tipo de serviço B2B?",
-      field: "b2b_tipo",
-      type: "radio",
-      options: ["Consultoria", "Marketing/Publicidade", "Tecnologia", "Contabilidade", "Jurídico", "RH", "Logística", "Outro"],
-      required: true
-    },
-    {
-      label: "Qual é o valor médio dos contratos?",
-      field: "b2b_valor_contrato",
-      type: "number",
+      label: "Quais são as principais áreas ou tipos de consultoria/serviços B2B oferecidos pela sua empresa?",
+      field: "b2b_areas_principais",
+      type: "multiselect",
+      options: ["Consultoria Financeira", "Consultoria de RH", "Consultoria de Marketing", "Consultoria em TI", "Consultoria Estratégica", "Consultoria Jurídica", "Consultoria Operacional", "Serviços de TI", "Marketing Digital"],
       required: true,
-      placeholder: "Ex: 5000.00"
+      placeholder: "Ex: Consultoria Financeira, Consultoria de RH, Consultoria de Marketing"
     },
     {
-      label: "Qual é a duração média dos contratos?",
-      field: "b2b_duracao",
+      label: "Sua empresa oferece serviços complementares aos projetos principais (ex: treinamentos, implementação de soluções, acompanhamento)?",
+      field: "b2b_servicos_complementares",
       type: "radio",
-      options: ["Projeto único", "1-3 meses", "6 meses", "1 ano", "Mais de 1 ano", "Contrato recorrente"],
+      options: ["Não, focamos exclusivamente no serviço principal", "Sim, oferecemos pontualmente ou conforme a necessidade do cliente", "Sim, temos um portfólio estruturado de serviços complementares", "Outro"],
       required: true
     },
     {
-      label: "Quantos clientes atendem simultaneamente?",
-      field: "b2b_clientes_ativos",
-      type: "number",
+      label: "Especifique os serviços complementares:",
+      field: "b2b_servicos_complementares_outro",
+      type: "text",
+      conditional: {
+        dependsOn: "b2b_servicos_complementares",
+        showWhen: ["Outro"]
+      },
       required: true,
-      placeholder: "Número de clientes ativos"
+      placeholder: "Descreva os serviços complementares oferecidos"
     },
     {
-      label: "Como captam novos clientes?",
-      field: "b2b_captacao",
-      type: "checkbox",
-      options: ["Indicações", "Networking", "LinkedIn", "Site próprio", "Anúncios online", "Eventos", "Cold email", "Outro"],
-      required: true
-    },
-    {
-      label: "Qual é o porte dos clientes?",
-      field: "b2b_porte_clientes",
+      label: "Qual é o perfil predominante dos seus clientes?",
+      field: "b2b_perfil_clientes",
       type: "radio",
-      options: ["Micro empresas", "Pequenas empresas", "Médias empresas", "Grandes empresas", "Todos os portes"],
+      options: ["Pequenas empresas (até 20 funcionários)", "Médias empresas (21 a 100 funcionários)", "Grandes empresas (acima de 100 funcionários)", "Pessoas Físicas", "Organizações do Terceiro Setor / ONGs", "Outro"],
       required: true
     },
     {
-      label: "Qual é o maior desafio no B2B?",
-      field: "b2b_desafio",
+      label: "Especifique o perfil de clientes:",
+      field: "b2b_perfil_clientes_outro",
+      type: "text",
+      conditional: {
+        dependsOn: "b2b_perfil_clientes",
+        showWhen: ["Outro"]
+      },
+      required: true,
+      placeholder: "Descreva o perfil dos seus clientes"
+    },
+    {
+      label: "Qual é a duração média de um projeto/contrato?",
+      field: "b2b_duracao_projeto",
       type: "select",
-      options: ["Prospectar clientes", "Fechar vendas", "Manter clientes", "Precificar serviços", "Competir", "Escalar negócio", "Outro"],
+      options: ["Até 1 mês", "1 a 3 meses", "3 a 6 meses", "6 meses a 1 ano", "Mais de 1 ano / Contínuo"],
       required: true
     },
     {
-      label: "Qual é o diferencial competitivo?",
-      field: "b2b_diferencial",
+      label: "Como sua empresa geralmente precifica os serviços?",
+      field: "b2b_modelo_precificacao",
+      type: "radio",
+      options: ["Hora/Homem", "Pacote fechado por projeto", "Success Fee (Taxa de êxito)", "Mensalidade (retainer)", "Outro"],
+      required: true
+    },
+    {
+      label: "Especifique o modelo de precificação:",
+      field: "b2b_modelo_precificacao_outro",
+      type: "text",
+      conditional: {
+        dependsOn: "b2b_modelo_precificacao",
+        showWhen: ["Outro"]
+      },
+      required: true,
+      placeholder: "Descreva seu modelo de precificação"
+    },
+    {
+      label: "Quais são os principais canais para aquisição de novos clientes?",
+      field: "b2b_canais_aquisicao",
+      type: "multiselect",
+      options: ["Indicações (Networking)", "Prospecção Ativa", "Marketing de Conteúdo", "Eventos e Palestras", "Parcerias Estratégicas", "LinkedIn", "Site próprio"],
+      required: true,
+      placeholder: "Ex: Indicações (Networking), Prospecção Ativa, Marketing de Conteúdo"
+    },
+    {
+      label: "Qual o maior diferencial da sua empresa em relação aos concorrentes?",
+      field: "b2b_diferencial_competitivo",
       type: "textarea",
       required: true,
-      placeholder: "Ex: Especialização, resultados, metodologia..."
+      placeholder: "Descreva qual é o principal diferencial da sua empresa"
     }
   ],
 
   "Tecnologia / SaaS": [
     {
-      label: "Qual é o tipo de produto/serviço?",
-      field: "tech_tipo",
+      label: "Qual funcionalidade, produto ou plano é mais procurado ou mais rentável?",
+      field: "tecnologia_funcionalidade_principal",
+      type: "textarea",
+      required: true,
+      placeholder: "Descreva detalhadamente..."
+    },
+    {
+      label: "Sua empresa oferece planos complementares, módulos adicionais ou upgrades?",
+      field: "tecnologia_planos_complementares",
       type: "radio",
-      options: ["SaaS (Software como Serviço)", "Desenvolvimento personalizado", "Consultoria em TI", "E-commerce/Marketplace", "App mobile", "Outro"],
+      options: ["Não oferecemos", "Sim, pontualmente ou sob demanda", "Sim, temos uma esteira estruturada de upsell/add-ons", "Outro"],
       required: true
     },
     {
-      label: "Especifique o tipo de produto:",
-      field: "tech_tipo_outro",
+      label: "Especifique os planos complementares:",
+      field: "tecnologia_planos_complementares_outro",
       type: "text",
       conditional: {
-        dependsOn: "tech_tipo",
+        dependsOn: "tecnologia_planos_complementares",
         showWhen: ["Outro"]
       },
       required: true,
-      placeholder: "Descreva seu tipo de produto/serviço"
+      placeholder: "Descreva seus planos complementares"
     },
     {
-      label: "Qual é o modelo de receita?",
-      field: "tech_modelo",
+      label: "O produto/serviço é voltado para:",
+      field: "tecnologia_publico_alvo",
       type: "radio",
-      options: ["Assinatura mensal", "Assinatura anual", "Licença única", "Freemium", "Por projeto", "Comissão", "Outro"],
+      options: ["Empresas (B2B)", "Consumidor final (B2C)", "Ambos"],
       required: true
     },
     {
-      label: "Qual é o valor médio mensal por cliente?",
-      field: "tech_valor_cliente",
-      type: "number",
-      required: true,
-      placeholder: "Ex: 299.00",
-      formatCurrency: true
-    },
-    {
-      label: "Quantos clientes/usuários têm atualmente?",
-      field: "tech_usuarios",
-      type: "number",
-      required: true,
-      placeholder: "Número de clientes/usuários ativos"
-    },
-    {
-      label: "Qual é o perfil dos clientes?",
-      field: "tech_perfil_clientes",
-      type: "radio",
-      options: ["Pessoas físicas", "Micro empresas", "Pequenas empresas", "Médias empresas", "Grandes empresas", "Misto"],
+      label: "Qual o modelo de cobrança principal?",
+      field: "tecnologia_modelo_cobranca",
+      type: "select",
+      options: ["Assinatura mensal/anual", "Licença vitalícia/perpétua", "Freemium (modelo gratuito com recursos pagos)", "Por uso/consumo", "Projeto/Serviço pontual", "Outro"],
       required: true
     },
     {
-      label: "Como adquirem novos clientes?",
-      field: "tech_aquisicao",
+      label: "Especifique o modelo de cobrança:",
+      field: "tecnologia_modelo_cobranca_outro",
+      type: "text",
+      conditional: {
+        dependsOn: "tecnologia_modelo_cobranca",
+        showWhen: ["Outro"]
+      },
+      required: true,
+      placeholder: "Descreva seu modelo de cobrança"
+    },
+    {
+      label: "Qual é o canal principal de aquisição de novos clientes?",
+      field: "tecnologia_canal_aquisicao",
       type: "multiselect",
-      options: ["Inbound marketing", "Anúncios online", "Parcerias", "Vendas diretas", "Indicações", "Trial gratuito", "SEO", "Redes sociais"],
+      options: ["Marketing de Conteúdo", "Anúncios Pagos (Google/Social)", "Vendas Diretas", "Parcerias", "Indicação", "Eventos"],
       required: true,
       placeholder: "Selecione ou adicione canais de aquisição"
     },
     {
-      label: "Oferecem trial ou versão gratuita?",
-      field: "tech_trial_gratuito",
-      type: "toggle",
+      label: "Existe uma esteira de nutrição para trial, demonstrações ou leads frios?",
+      field: "tecnologia_esteira_nutricao",
+      type: "radio",
+      options: ["Sim, totalmente automatizada (ex: via CRM/e-mail marketing)", "Sim, mas realizada de forma manual ou semi-manual", "Não temos uma esteira de nutrição formal", "Estamos estruturando isso atualmente"],
       required: true
     },
     {
-      label: "Qual é a duração do trial?",
-      field: "tech_duracao_trial",
-      type: "select",
-      options: ["7 dias", "14 dias", "30 dias", "Ilimitado com limitações de recursos"],
-      conditional: {
-        dependsOn: "tech_trial_gratuito",
-        showWhen: ["true"]
-      },
-      required: true
-    },
-    {
-      label: "Qual é o maior desafio?",
-      field: "tech_desafio",
-      type: "select",
-      options: ["Adquirir usuários", "Reduzir churn", "Precificação", "Desenvolvimento", "Competição", "Escalabilidade", "Outro"],
-      required: true
-    },
-    {
-      label: "Qual é o diferencial técnico/de mercado?",
-      field: "tech_diferencial",
+      label: "Como é feito o onboarding (integração) de novos clientes?",
+      field: "tecnologia_onboarding",
       type: "textarea",
       required: true,
-      placeholder: "Ex: Tecnologia proprietária, UX superior, integração..."
+      placeholder: "Descrever o processo, se é automatizado, manual, com documentação, vídeos, suporte dedicado, etc."
     }
   ],
 
