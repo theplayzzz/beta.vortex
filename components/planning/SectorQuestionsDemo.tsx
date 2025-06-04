@@ -26,6 +26,12 @@ export function SectorQuestionsDemo() {
     }
   };
 
+  // Função para simular salvamento automático (onBlur)
+  const handleFieldBlur = () => {
+    console.log('💾 Campo perdeu foco - salvamento automático ativado');
+    // Aqui normalmente salvaria no localStorage ou faria debounce
+  };
+
   const handleSectorChange = (sector: SetorPermitido) => {
     setSelectedSector(sector);
     setFormData({}); // Reset form data when sector changes
@@ -116,6 +122,7 @@ export function SectorQuestionsDemo() {
           sector={selectedSector}
           formData={formData}
           onFieldChange={handleFieldChange}
+          onFieldBlur={handleFieldBlur}
           errors={errors}
         />
       </div>
