@@ -167,7 +167,7 @@ export function SectorQuestionsDemo() {
           <div>
             <h4 className="text-sgbus-green font-medium">✅ QuestionField.tsx</h4>
             <p className="text-periwinkle">
-              Componente para renderizar diferentes tipos de campos (text, textarea, radio, checkbox, select, number)
+              Componente para renderizar diferentes tipos de campos (text, textarea, radio, multiselect, number, toggle, select)
             </p>
           </div>
           

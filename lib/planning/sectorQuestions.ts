@@ -3,7 +3,7 @@ import { SetorPermitido } from './sectorConfig';
 export interface Question {
   label: string;
   field: string;
-  type: "text" | "textarea" | "radio" | "checkbox" | "number" | "select" | "multiselect" | "toggle";
+  type: "text" | "textarea" | "radio" | "multiselect" | "number" | "select" | "toggle";
   options?: string[];
   required?: boolean;
   conditional?: {
@@ -46,9 +46,10 @@ export const PERGUNTAS_POR_SETOR: Record<SetorPermitido, Question[]> = {
     {
       label: "A empresa atua principalmente como:",
       field: "alimentacao_tipo_atuacao",
-      type: "checkbox",
+      type: "multiselect",
       options: ["Restaurante/Lanchonete/Bar com atendimento presencial", "Delivery com frota/entregadores próprios", "Delivery terceirizado por aplicativos (ex: iFood, Rappi)", "Indústria de alimentos / Fornecedor para outros estabelecimentos", "Food Truck / Barraca em eventos", "Outro"],
-      required: true
+      required: true,
+      placeholder: "Selecione todas as formas de atuação"
     },
     {
       label: "Especifique outro tipo de atuação:",
@@ -90,9 +91,10 @@ export const PERGUNTAS_POR_SETOR: Record<SetorPermitido, Question[]> = {
     {
       label: "Quais estratégias de marketing ou fidelização são mais comuns?",
       field: "alimentacao_estrategias_marketing",
-      type: "checkbox",
+      type: "multiselect",
       options: ["Combos e promoções diárias/semanais", "Programas de fidelização (cartão fidelidade, descontos progressivos)", "Presença ativa em redes sociais", "Anúncios locais (online ou offline)", "Nenhum específico no momento", "Outro"],
-      required: true
+      required: true,
+      placeholder: "Selecione as estratégias utilizadas"
     },
     {
       label: "Especifique outras estratégias de marketing:",
@@ -159,9 +161,10 @@ export const PERGUNTAS_POR_SETOR: Record<SetorPermitido, Question[]> = {
     {
       label: "Como os pacientes costumam marcar consultas/procedimentos?",
       field: "saude_agendamento",
-      type: "checkbox",
+      type: "multiselect",
       options: ["Telefone", "WhatsApp", "Site próprio / Portal do paciente", "Aplicativos especializados (ex: Doctoralia, BoaConsulta)", "Presencialmente / Recepção", "Outro"],
-      required: true
+      required: true,
+      placeholder: "Selecione os métodos de agendamento"
     },
     {
       label: "Especifique outros métodos de agendamento:",
@@ -297,9 +300,10 @@ export const PERGUNTAS_POR_SETOR: Record<SetorPermitido, Question[]> = {
     {
       label: "Como sua empresa opera principalmente?",
       field: "varejo_canais_operacao",
-      type: "checkbox",
+      type: "multiselect",
       options: ["Loja Física Própria", "Loja Física Franqueada", "E-commerce (Site próprio)", "Marketplaces (ex: Mercado Livre, Amazon, Magazine Luiza)", "Venda por Redes Sociais / WhatsApp", "Outro"],
-      required: true
+      required: true,
+      placeholder: "Selecione todas as formas de operação"
     },
     {
       label: "Especifique outros canais de operação:",
@@ -389,9 +393,10 @@ export const PERGUNTAS_POR_SETOR: Record<SetorPermitido, Question[]> = {
     {
       label: "Em quais plataformas vendem?",
       field: "ecom_plataformas",
-      type: "checkbox",
+      type: "multiselect",
       options: ["Site próprio", "Mercado Livre", "Amazon", "Shopee", "Magazine Luiza", "Americanas", "Instagram", "Outro"],
-      required: true
+      required: true,
+      placeholder: "Selecione as plataformas utilizadas"
     },
     {
       label: "Como fazem a logística?",
@@ -455,9 +460,10 @@ export const PERGUNTAS_POR_SETOR: Record<SetorPermitido, Question[]> = {
     {
       label: "Como os clientes agendam?",
       field: "local_agendamento",
-      type: "checkbox",
+      type: "multiselect",
       options: ["Telefone", "WhatsApp", "Aplicativo", "Redes sociais", "Presencialmente", "Site"],
-      required: true
+      required: true,
+      placeholder: "Selecione os métodos de agendamento"
     },
     {
       label: "Qual é a área de cobertura?",
@@ -676,16 +682,18 @@ export const PERGUNTAS_POR_SETOR: Record<SetorPermitido, Question[]> = {
     {
       label: "Como captam imóveis?",
       field: "imob_captacao",
-      type: "checkbox",
+      type: "multiselect",
       options: ["Indicações", "Prospecção ativa", "Site próprio", "Parcerias", "Anúncios", "Redes sociais", "Outro"],
-      required: true
+      required: true,
+      placeholder: "Selecione as formas de captar imóveis"
     },
     {
       label: "Como divulgam os imóveis?",
       field: "imob_divulgacao",
-      type: "checkbox",
+      type: "multiselect",
       options: ["Site próprio", "Portais (Viva Real, ZAP)", "Redes sociais", "Placa na rua", "Indicações", "Anúncios", "Outro"],
-      required: true
+      required: true,
+      placeholder: "Selecione as formas de divulgar imóveis"
     },
     {
       label: "Qual é o maior desafio?",
@@ -742,9 +750,10 @@ export const PERGUNTAS_POR_SETOR: Record<SetorPermitido, Question[]> = {
     {
       label: "Como vendem os produtos?",
       field: "ind_venda",
-      type: "checkbox",
+      type: "multiselect",
       options: ["Venda direta", "Representantes", "Distribuidores", "E-commerce", "Licitações", "Exportação", "Outro"],
-      required: true
+      required: true,
+      placeholder: "Selecione as formas de venda"
     },
     {
       label: "Qual é o maior desafio operacional?",

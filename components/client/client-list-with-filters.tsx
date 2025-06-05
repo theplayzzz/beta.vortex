@@ -202,166 +202,290 @@ export default function ClientListWithFilters() {
 
   return (
     <div className="space-y-6">
-      {/* Header com busca e filtros */}
-      <div className="bg-eerie-black rounded-xl border border-seasalt/10 p-6">
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Busca */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-periwinkle" />
-            <input
-              type="text"
-              placeholder="Buscar clientes por nome..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
-            />
+      {/* Header com busca e filtros - Layout Responsivo */}
+      <div className="mb-8">
+        {/* Container com agrupamento visual */}
+        <div className="bg-[#171818] rounded-lg p-4 border border-accent/20 transition-all duration-300 ease-in-out hover:border-accent/30">
+          {/* Mobile Layout (≤768px): Empilhado */}
+          <div className="block lg:hidden space-y-4 transition-all duration-300 ease-in-out">
+            {/* Barra de Pesquisa */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-seasalt/50 transition-colors duration-200" />
+              <input
+                type="text"
+                placeholder="Pesquisar clientes..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                disabled={loading}
+                className="w-full bg-[#2A1B45] text-seasalt border border-accent/20 rounded-lg pl-10 pr-4 py-3 text-sm placeholder:text-seasalt/50 focus:outline-none focus:ring-2 focus:ring-sgbus-green/50 focus:border-sgbus-green/50 disabled:opacity-50 transition-all duration-200 ease-in-out"
+              />
+            </div>
+            
+            {/* Filtros em Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Filtros Button */}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                disabled={loading}
+                className={`bg-[#2A1B45] text-seasalt border border-accent/20 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sgbus-green/50 focus:border-sgbus-green/50 disabled:opacity-50 transition-all duration-200 ease-in-out hover:border-accent/40 ${
+                  showFilters || activeFiltersCount > 0 ? 'border-sgbus-green/50' : ''
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <SlidersHorizontal className="w-4 h-4" />
+                  <span>Filtros</span>
+                  {activeFiltersCount > 0 && (
+                    <span className="bg-sgbus-green text-night text-xs px-1.5 py-0.5 rounded-full animate-fade-in">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </div>
+              </button>
+              
+              {/* Ordenação */}
+              <select
+                value={`${sortBy}-${sortOrder}`}
+                onChange={(e) => {
+                  const [newSortBy, newSortOrder] = e.target.value.split('-');
+                  setSortBy(newSortBy);
+                  setSortOrder(newSortOrder);
+                }}
+                disabled={loading}
+                className="bg-[#2A1B45] text-seasalt border border-accent/20 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sgbus-green/50 focus:border-sgbus-green/50 disabled:opacity-50 transition-all duration-200 ease-in-out hover:border-accent/40"
+              >
+                <option value="createdAt-desc">Mais recentes</option>
+                <option value="createdAt-asc">Mais antigos</option>
+                <option value="name-asc">Nome A-Z</option>
+                <option value="name-desc">Nome Z-A</option>
+                <option value="richnessScore-desc">Maior completude</option>
+                <option value="richnessScore-asc">Menor completude</option>
+              </select>
+            </div>
+
+            {/* Reset Button - Mobile */}
+            {activeFiltersCount > 0 && (
+              <div className="flex justify-center animate-fade-in">
+                <button
+                  onClick={clearFilters}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-4 py-2 text-seasalt/70 hover:text-seasalt transition-all duration-200 ease-in-out disabled:opacity-50 text-sm hover:bg-accent/10 rounded-lg"
+                  title="Limpar filtros"
+                >
+                  <X className="h-4 w-4" />
+                  Resetar filtros
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Botões de ação */}
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
-                showFilters || activeFiltersCount > 0
-                  ? 'bg-sgbus-green text-night border-sgbus-green'
-                  : 'bg-night border-seasalt/20 text-seasalt hover:border-sgbus-green'
-              }`}
-            >
-              <SlidersHorizontal className="w-5 h-5" />
-              Filtros
+          {/* Desktop Layout (≥1024px): Horizontal */}
+          <div className="hidden lg:flex lg:items-center lg:gap-4 transition-all duration-300 ease-in-out">
+            {/* Barra de Pesquisa */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-seasalt/50 transition-colors duration-200" />
+              <input
+                type="text"
+                placeholder="Pesquisar clientes..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                disabled={loading}
+                className="w-full bg-[#2A1B45] text-seasalt border border-accent/20 rounded-lg pl-10 pr-4 py-2 text-sm placeholder:text-seasalt/50 focus:outline-none focus:ring-2 focus:ring-sgbus-green/50 focus:border-sgbus-green/50 disabled:opacity-50 transition-all duration-200 ease-in-out"
+              />
+            </div>
+            
+            {/* Filtros em linha */}
+            <div className="flex items-center gap-3">
+              {/* Filtros Button */}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                disabled={loading}
+                className={`flex items-center gap-2 bg-[#2A1B45] text-seasalt border border-accent/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sgbus-green/50 focus:border-sgbus-green/50 disabled:opacity-50 min-w-[100px] transition-all duration-200 ease-in-out hover:border-accent/40 ${
+                  showFilters || activeFiltersCount > 0 ? 'border-sgbus-green/50' : ''
+                }`}
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                <span>Filtros</span>
+                {activeFiltersCount > 0 && (
+                  <span className="bg-sgbus-green text-night text-xs px-1.5 py-0.5 rounded-full animate-fade-in">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </button>
+              
+              {/* Ordenação */}
+              <select
+                value={`${sortBy}-${sortOrder}`}
+                onChange={(e) => {
+                  const [newSortBy, newSortOrder] = e.target.value.split('-');
+                  setSortBy(newSortBy);
+                  setSortOrder(newSortOrder);
+                }}
+                disabled={loading}
+                className="bg-[#2A1B45] text-seasalt border border-accent/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sgbus-green/50 focus:border-sgbus-green/50 disabled:opacity-50 min-w-[140px] transition-all duration-200 ease-in-out hover:border-accent/40"
+              >
+                <option value="createdAt-desc">Mais recentes</option>
+                <option value="createdAt-asc">Mais antigos</option>
+                <option value="name-asc">Nome A-Z</option>
+                <option value="name-desc">Nome Z-A</option>
+                <option value="richnessScore-desc">Maior completude</option>
+                <option value="richnessScore-asc">Menor completude</option>
+              </select>
+
+              {/* Reset Button - Desktop */}
               {activeFiltersCount > 0 && (
-                <span className="bg-night text-sgbus-green text-xs px-2 py-1 rounded-full">
-                  {activeFiltersCount}
-                </span>
+                <button
+                  onClick={clearFilters}
+                  disabled={loading}
+                  className="flex items-center gap-1 px-3 py-2 text-seasalt/70 hover:text-seasalt transition-all duration-200 ease-in-out disabled:opacity-50 text-sm whitespace-nowrap hover:bg-accent/10 rounded-lg animate-fade-in"
+                  title="Limpar filtros"
+                >
+                  <X className="h-4 w-4" />
+                  Resetar
+                </button>
               )}
-            </button>
-
-            {/* Ordenação */}
-            <select
-              value={`${sortBy}-${sortOrder}`}
-              onChange={(e) => {
-                const [newSortBy, newSortOrder] = e.target.value.split('-');
-                setSortBy(newSortBy);
-                setSortOrder(newSortOrder);
-              }}
-              className="px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt focus:outline-none focus:border-sgbus-green"
-            >
-              <option value="createdAt-desc">Mais recentes</option>
-              <option value="createdAt-asc">Mais antigos</option>
-              <option value="name-asc">Nome A-Z</option>
-              <option value="name-desc">Nome Z-A</option>
-              <option value="richnessScore-desc">Maior completude</option>
-              <option value="richnessScore-asc">Menor completude</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Indicador de clientes novos */}
-        {newClientsCount > 0 && (
-          <div className="mt-4 p-3 bg-sgbus-green/10 border border-sgbus-green/20 rounded-lg flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Star className="w-4 h-4 text-sgbus-green animate-pulse" />
-              <span className="text-sgbus-green font-medium text-sm">
-                {newClientsCount} cliente{newClientsCount > 1 ? 's' : ''} novo{newClientsCount > 1 ? 's' : ''} aguardando visualização
-              </span>
             </div>
           </div>
-        )}
-
-        {/* Painel de filtros */}
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden"
-            >
-              <div className="pt-6 border-t border-seasalt/10 mt-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Filtro por setor */}
-                  <div>
-                    <label className="block text-sm font-medium text-seasalt mb-3">
-                      Setores
-                    </label>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {availableIndustries.map((industry) => (
-                        <label key={industry} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={selectedIndustries.includes(industry)}
-                            onChange={() => toggleIndustry(industry)}
-                            className="w-4 h-4 text-sgbus-green bg-night border-seasalt/20 rounded focus:ring-sgbus-green focus:ring-2"
-                          />
-                          <span className="ml-2 text-sm text-seasalt">{industry}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Filtro por completude */}
-                  <div>
-                    <label className="block text-sm font-medium text-seasalt mb-3">
-                      Completude do Perfil
-                    </label>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-xs text-periwinkle mb-2">
-                          Mínimo: {richnessScoreRange.min}%
-                        </label>
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={richnessScoreRange.min}
-                          onChange={(e) => setRichnessScoreRange(prev => ({ 
-                            ...prev, 
-                            min: Number(e.target.value) 
-                          }))}
-                          className="w-full h-2 bg-night rounded-lg appearance-none cursor-pointer slider"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-periwinkle mb-2">
-                          Máximo: {richnessScoreRange.max}%
-                        </label>
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={richnessScoreRange.max}
-                          onChange={(e) => setRichnessScoreRange(prev => ({ 
-                            ...prev, 
-                            max: Number(e.target.value) 
-                          }))}
-                          className="w-full h-2 bg-night rounded-lg appearance-none cursor-pointer slider"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Ações dos filtros */}
-                  <div className="flex flex-col justify-end">
-                    <button
-                      onClick={clearFilters}
-                      className="px-4 py-2 bg-seasalt/10 text-seasalt rounded-lg hover:bg-seasalt/20 transition-colors"
-                    >
-                      Limpar Filtros
-                    </button>
-                  </div>
+          
+          {/* Footer com Estatísticas */}
+          <div className="flex items-center justify-between mt-4 pt-4 border-t border-accent/20">
+            <div className="text-sm text-seasalt/70">
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-sgbus-green/20 border-t-sgbus-green rounded-full animate-spin"></div>
+                  Carregando...
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              ) : (
+                `${pagination?.totalCount || 0} cliente${(pagination?.totalCount || 0) !== 1 ? 's' : ''} encontrado${(pagination?.totalCount || 0) !== 1 ? 's' : ''}`
+              )}
+            </div>
+            <div className="flex items-center gap-2 text-sm text-seasalt/70">
+              <Filter className="h-4 w-4" />
+              {activeFiltersCount > 0 ? (
+                <span>
+                  {activeFiltersCount} filtro{activeFiltersCount !== 1 ? 's' : ''} ativo{activeFiltersCount !== 1 ? 's' : ''}
+                </span>
+              ) : (
+                <span>Nenhum filtro ativo</span>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
+      {/* Indicador de clientes novos */}
+      {newClientsCount > 0 && (
+        <div className="bg-sgbus-green/10 border border-sgbus-green/20 rounded-lg p-4 flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <Star className="w-5 h-5 text-sgbus-green animate-pulse" />
+            <div>
+              <h3 className="font-medium text-sgbus-green">
+                {newClientsCount} cliente{newClientsCount > 1 ? 's' : ''} novo{newClientsCount > 1 ? 's' : ''}!
+              </h3>
+              <p className="text-sgbus-green/80 text-sm">
+                Aguardando sua visualização
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Painel de filtros */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden mb-6"
+          >
+            <div className="bg-[#171818] rounded-lg p-4 border border-accent/20 transition-all duration-300 ease-in-out hover:border-accent/30">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Filtro por setor */}
+                <div>
+                  <label className="block text-sm font-medium text-seasalt mb-3">
+                    Setores
+                  </label>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {availableIndustries.map((industry) => (
+                      <label key={industry} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedIndustries.includes(industry)}
+                          onChange={() => toggleIndustry(industry)}
+                          className="w-4 h-4 text-sgbus-green bg-[#2A1B45] border-accent/20 rounded focus:ring-sgbus-green focus:ring-2"
+                        />
+                        <span className="ml-2 text-sm text-seasalt">{industry}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Filtro por completude */}
+                <div>
+                  <label className="block text-sm font-medium text-seasalt mb-3">
+                    Completude do Perfil
+                  </label>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs text-seasalt/70 mb-2">
+                        Mínimo: {richnessScoreRange.min}%
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={richnessScoreRange.min}
+                        onChange={(e) => setRichnessScoreRange(prev => ({ 
+                          ...prev, 
+                          min: Number(e.target.value) 
+                        }))}
+                        className="w-full h-2 bg-[#2A1B45] rounded-lg appearance-none cursor-pointer slider"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-seasalt/70 mb-2">
+                        Máximo: {richnessScoreRange.max}%
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={richnessScoreRange.max}
+                        onChange={(e) => setRichnessScoreRange(prev => ({ 
+                          ...prev, 
+                          max: Number(e.target.value) 
+                        }))}
+                        className="w-full h-2 bg-[#2A1B45] rounded-lg appearance-none cursor-pointer slider"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ações dos filtros */}
+                <div className="flex flex-col justify-end">
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 px-4 py-2 text-seasalt/70 hover:text-seasalt transition-all duration-200 ease-in-out hover:bg-accent/10 rounded-lg"
+                  >
+                    <X className="h-4 w-4" />
+                    Limpar Filtros
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Resultados */}
-      <div className="bg-eerie-black rounded-xl border border-seasalt/10 p-6">
+      <div className="bg-[#171818] rounded-lg border border-accent/20 p-6 transition-all duration-300 ease-in-out hover:border-accent/30">
         {/* Header dos resultados */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -415,7 +539,7 @@ export default function ClientListWithFilters() {
                       transition={{ duration: 0.2 }}
                     >
                       <Link href={`/clientes/${client.id}`}>
-                        <div className={`bg-eerie-black rounded-xl border p-6 hover:border-sgbus-green/50 transition-colors cursor-pointer h-full relative ${
+                        <div className={`bg-eerie-black rounded-lg border p-6 hover:border-sgbus-green/50 transition-colors cursor-pointer h-full relative ${
                           isNewClient(client) 
                             ? 'border-sgbus-green/30 shadow-lg shadow-sgbus-green/10' 
                             : 'border-seasalt/10'

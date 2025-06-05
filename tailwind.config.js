@@ -30,6 +30,8 @@ module.exports = {
         // Fade up and down
         "fade-up": "fade-up 0.5s",
         "fade-down": "fade-down 0.5s",
+        // Fade in
+        "fade-in": "fade-in 0.3s ease-in-out",
         // Tooltip
         "slide-up-fade": "slide-up-fade 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
         "slide-down-fade": "slide-down-fade 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -67,6 +69,11 @@ module.exports = {
             opacity: 1,
             transform: "translateY(0px)",
           },
+        },
+        // Fade in
+        "fade-in": {
+          "0%": { opacity: 0 },
+          "100%": { opacity: 1 },
         },
         // Tooltip
         "slide-up-fade": {
