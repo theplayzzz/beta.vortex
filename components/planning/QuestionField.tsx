@@ -97,36 +97,6 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
           </div>
         );
 
-      case 'checkbox':
-        return (
-          <div className="space-y-3">
-            {options.map((option) => (
-              <label
-                key={option}
-                className="flex items-center space-x-3 cursor-pointer group"
-              >
-                <input
-                  type="checkbox"
-                  value={option}
-                  checked={Array.isArray(localValue) && localValue.includes(option)}
-                  onChange={(e) => {
-                    const currentValue = Array.isArray(localValue) ? localValue : [];
-                    const newValue = e.target.checked
-                      ? [...currentValue, option]
-                      : currentValue.filter((v: string) => v !== option);
-                    setLocalValue(newValue);
-                    handleFieldBlur(newValue);
-                  }}
-                  className="w-4 h-4 text-sgbus-green bg-night border-seasalt/20 rounded focus:ring-sgbus-green focus:ring-2"
-                />
-                <span className="text-seasalt group-hover:text-sgbus-green transition-colors">
-                  {option}
-                </span>
-              </label>
-            ))}
-          </div>
-        );
-
       case 'multiselect':
         return (
           <MultiSelectWithTagsField

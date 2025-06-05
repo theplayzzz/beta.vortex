@@ -89,21 +89,43 @@ export default function PlanejamentosPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header da Página */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-seasalt">Planejamentos</h1>
-          <p className="text-periwinkle mt-2">
+      {/* Header da Página - Layout Responsivo */}
+      <div className="mb-8">
+        {/* Mobile Layout (≤768px): Empilhado */}
+        <div className="block lg:hidden transition-all duration-300 ease-in-out">
+          <h1 className="text-3xl font-bold text-seasalt mb-2">Planejamentos</h1>
+          <p className="text-periwinkle mb-6">
             Gerencie todos os seus planejamentos estratégicos
           </p>
+          <div className="flex justify-center">
+            <Link 
+              href="/planejamentos/novo"
+              className="flex items-center px-6 py-3 bg-sgbus-green hover:bg-sgbus-green/90 text-night font-medium rounded-lg transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-lg"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Planejamento
+            </Link>
+          </div>
         </div>
-        <Link 
-          href="/planejamentos/novo"
-          className="flex items-center px-4 py-2 bg-sgbus-green hover:bg-sgbus-green/90 text-night font-medium rounded-lg transition-colors"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Planejamento
-        </Link>
+
+        {/* Desktop Layout (≥1024px): 2 Colunas Horizontais */}
+        <div className="hidden lg:flex lg:items-start lg:justify-between transition-all duration-300 ease-in-out">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-seasalt">Planejamentos</h1>
+            <p className="text-periwinkle mt-2">
+              Gerencie todos os seus planejamentos estratégicos
+            </p>
+          </div>
+          <div className="ml-8 flex-shrink-0">
+            <Link 
+              href="/planejamentos/novo"
+              className="flex items-center px-4 py-2 bg-sgbus-green hover:bg-sgbus-green/90 text-night font-medium rounded-lg transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-lg"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Planejamento
+            </Link>
+          </div>
+        </div>
       </div>
 
       {/* Indicador de planejamentos novos */}
