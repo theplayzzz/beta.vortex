@@ -277,6 +277,15 @@ model User {
   creditBalance                              Int                  @default(0)
   createdAt                                  DateTime             @default(now())
   updatedAt                                  DateTime
+  
+  // 🆕 CAMPOS DO SISTEMA DE APROVAÇÃO (Plan-018)
+  approvalStatus                             ApprovalStatus       @default(PENDING)
+  approvedAt                                 DateTime?
+  approvedBy                                 String?              // clerkId do admin que aprovou
+  rejectedAt                                 DateTime?
+  rejectedBy                                 String?              // clerkId do admin que rejeitou
+  rejectionReason                            String?
+  version                                    Int                  @default(0)       // Para optimistic concurrency control
   AgentInteraction                           AgentInteraction[]
   Client                                     Client[]
   ClientAttachment                           ClientAttachment[]
@@ -289,6 +298,39 @@ model User {
   StrategicPlanning                          StrategicPlanning[]
   TaskAttachment                             TaskAttachment[]
   TaskComment                                TaskComment[]
+  
+  // 🆕 RELACIONAMENTOS PARA AUDIT TRAIL (Plan-018)
+  ModeratedUsers                             UserModerationLog[] @relation("UserModerationLog_userId")
+  ModerationActions                          UserModerationLog[] @relation("UserModerationLog_moderatorId")
+
+  // 🆕 ÍNDICES PARA SISTEMA DE APROVAÇÃO (Plan-018)
+  @@index([approvalStatus])                  // Para filtrar por status
+  @@index([approvalStatus, createdAt])       // Para paginação de usuários pendentes
+  @@index([approvedBy])                      // Para auditoria por moderador
+  @@index([rejectedBy])                      // Para auditoria por moderador
+}
+
+/// 🆕 MODELO PARA AUDIT TRAIL DO SISTEMA DE APROVAÇÃO (Plan-018)
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model UserModerationLog {
+  id                String             @id @default(cuid())
+  userId            String             // Usuário que foi moderado
+  moderatorId       String             // Admin que fez a ação
+  action            ModerationAction   // APPROVE, REJECT, SUSPEND, etc
+  previousStatus    ApprovalStatus     // Status anterior
+  newStatus         ApprovalStatus     // Novo status
+  reason            String?            // Motivo da ação
+  metadata          Json?              // Dados adicionais (IP, user agent, etc)
+  createdAt         DateTime           @default(now())
+  
+  // Relacionamentos
+  User              User               @relation("UserModerationLog_userId", fields: [userId], references: [id], onDelete: Cascade)
+  Moderator         User               @relation("UserModerationLog_moderatorId", fields: [moderatorId], references: [id], onDelete: Cascade)
+
+  @@index([userId])                    // Para histórico de um usuário
+  @@index([moderatorId])               // Para ações de um moderador  
+  @@index([action])                    // Para filtrar por tipo de ação
+  @@index([createdAt])                 // Para ordenação temporal
 }
 
 enum CreditTransactionType {
@@ -346,4 +388,20 @@ enum TaskStatus {
   REVIEW
   DONE
   BLOCKED
+}
+
+// 🆕 ENUMS PARA SISTEMA DE APROVAÇÃO (Plan-018)
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum ModerationAction {
+  APPROVE
+  REJECT
+  SUSPEND
+  UNSUSPEND
+  RESET_TO_PENDING
 }

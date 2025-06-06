@@ -1,0 +1,115 @@
+---
+description: Use esta regra sempre que a tarefa envolver decisões sobre cores, estilos visuais, temas, criação ou alteração de componentes de interface, ou qualquer ajuste em CSS/SCSS. Não é necessário consultar esta regra para tarefas exclusivamente de lógica, backend, manipulação de dados ou funcionalidades sem impacto visual.
+globs: 
+alwaysApply: false
+---
+# Regras de Design e Cores - Dashboard App
+
+## Paleta de Cores Obrigatória
+
+### Cores Principais
+- **Night**: `#0e0f0f` - Fundo principal da aplicação
+- **Eerie Black**: `#171818` - Sidebar, cards, containers
+- **SGBUS Green**: `#6be94c` - Cor primária da marca, botões principais, elementos de destaque
+- **Seasalt**: `#f9fbfc` - Texto principal, ícones
+- **Periwinkle**: `#cfc6fe` - Elementos secundários, acentos
+
+### Variáveis CSS Obrigatórias
+```css
+:root {
+  --night: #0e0f0f;
+  --eerie-black: #171818;
+  --sgbus-green: #6be94c;
+  --seasalt: #f9fbfc;
+  --periwinkle: #cfc6fe;
+}
+```
+
+## Regras de Uso de Cores
+
+### Hierarquia de Fundos
+1. **Fundo Principal**: Sempre usar `--night` (#0e0f0f)
+2. **Containers/Cards**: Sempre usar `--eerie-black` (#171818)
+3. **Elementos Elevados**: Gradiente entre Night e Eerie Black
+
+### Elementos Interativos
+1. **Botões Primários**: `--sgbus-green` com texto `--night`
+2. **Botões Secundários**: Border `--periwinkle` com texto `--periwinkle`
+3. **Estados Hover**: Aumentar brightness em 110%
+4. **Estados Ativos**: `--sgbus-green` como fundo
+
+### Texto e Tipografia
+1. **Texto Principal**: `--seasalt` (#f9fbfc)
+2. **Texto Secundário**: `--periwinkle` (#cfc6fe)
+3. **Texto de Destaque**: `--sgbus-green` (#6be94c)
+4. **Texto sobre fundo verde**: `--night` (#0e0f0f)
+
+### Estados de Feedback
+- **Sucesso**: `--sgbus-green`
+- **Informação**: `--periwinkle`
+- **Neutro**: `--seasalt`
+- **Foco**: Border `--sgbus-green` com box-shadow rgba(107, 233, 76, 0.3)
+
+## Regras de Componentes
+
+### Cards
+```css
+.card {
+  background-color: var(--eerie-black);
+  border: 1px solid rgba(249, 251, 252, 0.1);
+  border-radius: 0.75rem;
+}
+```
+
+### Botões
+```css
+.btn-primary {
+  background-color: var(--sgbus-green);
+  color: var(--night);
+  border-radius: 0.5rem;
+}
+
+.btn-secondary {
+  border: 1px solid var(--periwinkle);
+  color: var(--periwinkle);
+  background: transparent;
+}
+```
+
+### Inputs
+```css
+.input {
+  background-color: var(--night);
+  border: 1px solid rgba(249, 251, 252, 0.2);
+  color: var(--seasalt);
+}
+
+.input:focus {
+  border-color: var(--sgbus-green);
+  box-shadow: 0 0 0 3px rgba(107, 233, 76, 0.1);
+}
+```
+
+## Regras de Transições
+- **Padrão**: `transition: all 0.2s ease`
+- **Suave**: `transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)`
+- **Hover em cards**: `transform: translateY(-1px)` + box-shadow
+
+## Regras de Acessibilidade
+- Contraste mínimo 7:1 para texto principal
+- Estados de foco sempre visíveis com `--sgbus-green`
+- Usar `outline: 2px solid var(--sgbus-green)` para foco
+
+## Proibições
+❌ **NUNCA** usar cores hardcoded - sempre usar variáveis CSS
+❌ **NUNCA** usar cores fora da paleta definida
+❌ **NUNCA** comprometer o contraste - sempre testar legibilidade
+❌ **NUNCA** misturar múltiplas cores de destaque no mesmo elemento
+❌ **NUNCA** usar animações sem considerar `prefers-reduced-motion`
+
+## Diretrizes Obrigatórias
+✅ Sempre usar tema dark como padrão
+✅ Manter consistência visual em todos os componentes
+✅ Priorizar legibilidade e contraste adequado
+✅ Usar `--sgbus-green` apenas para elementos importantes
+✅ Aplicar bordas sutis com transparência para separação visual
