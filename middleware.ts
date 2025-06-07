@@ -7,15 +7,25 @@ const isPublicRoute = createRouteMatcher([
   '/sign-up(.*)',
   '/api/webhooks(.*)',
   '/api/proposals/webhook',
-  '/api/health'
+  '/api/health',
+  '/pending-approval',
+  '/account-rejected'
+])
+
+// Rotas que são acessíveis apenas para admins
+const isAdminRoute = createRouteMatcher([
+  '/admin(.*)'
 ])
 
 export default clerkMiddleware(async (auth, req) => {
   // Usar try/catch para lidar com warnings de APIs dinâmicas
   let userId = null
+  let sessionClaims = null
+  
   try {
     const authResult = await auth()
     userId = authResult.userId
+    sessionClaims = authResult.sessionClaims
   } catch (error) {
     // Se houver erro relacionado a APIs dinâmicas, continuar sem autenticação
     if (error instanceof Error && error.message.includes('headers()')) {
@@ -32,11 +42,66 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(signInUrl)
   }
 
-  // Se o usuário está autenticado, sincronizar com o banco de dados
-  if (userId) {
-    // Adicionar header com userId para uso nas API routes
+  // Se o usuário está autenticado, verificar status de aprovação
+  if (userId && sessionClaims) {
+    const publicMetadata = sessionClaims.publicMetadata as any || {}
+    const approvalStatus = publicMetadata.approvalStatus
+    const userRole = publicMetadata.role
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN'
+    
+    // Verificar se está tentando acessar rota de admin sem ser admin
+    if (isAdminRoute(req) && !isAdmin) {
+      return NextResponse.redirect(new URL('/', req.url))
+    }
+
+    // Proteger rotas baseado no status de aprovação (exceto admins)
+    if (!isAdmin && !isPublicRoute(req)) {
+      const currentPath = req.nextUrl.pathname
+
+      switch (approvalStatus) {
+        case 'PENDING':
+          // Usuários pendentes só podem acessar a página de aguardo
+          if (currentPath !== '/pending-approval') {
+            return NextResponse.redirect(new URL('/pending-approval', req.url))
+          }
+          break
+
+        case 'REJECTED':
+          // Usuários rejeitados são redirecionados para página de conta rejeitada
+          if (currentPath !== '/account-rejected') {
+            return NextResponse.redirect(new URL('/account-rejected', req.url))
+          }
+          break
+
+        case 'SUSPENDED':
+          // Usuários suspensos são redirecionados para página de conta suspensa
+          if (currentPath !== '/account-suspended') {
+            return NextResponse.redirect(new URL('/account-suspended', req.url))
+          }
+          break
+
+        case 'APPROVED':
+          // Usuários aprovados têm acesso livre
+          // Se estão em páginas de estado, redirecionar para home
+          if (['/pending-approval', '/account-rejected', '/account-suspended'].includes(currentPath)) {
+            return NextResponse.redirect(new URL('/', req.url))
+          }
+          break
+
+        default:
+          // Se não tem status definido, assumir como PENDING
+          if (currentPath !== '/pending-approval') {
+            return NextResponse.redirect(new URL('/pending-approval', req.url))
+          }
+          break
+      }
+    }
+
+    // Adicionar headers com informações do usuário para uso nas API routes
     const requestHeaders = new Headers(req.headers)
     requestHeaders.set('x-user-id', userId)
+    requestHeaders.set('x-approval-status', approvalStatus || 'PENDING')
+    requestHeaders.set('x-user-role', userRole || 'USER')
 
     return NextResponse.next({
       request: {

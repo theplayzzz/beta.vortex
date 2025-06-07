@@ -1,0 +1,34 @@
+{
+  "timestamp": "2025-06-07T13:34:45.846Z",
+  "overallScore": 87,
+  "results": {
+    "Middleware Security": {
+      "securityScore": 8,
+      "maxScore": 8
+    },
+    "Admin API Security": {
+      "securityScore": 9,
+      "maxScore": 10
+    },
+    "Prisma Schema": {
+      "securityScore": 6,
+      "maxScore": 6
+    },
+    "Configuration Security": {
+      "securityScore": 4,
+      "maxScore": 8
+    },
+    "Bypass Analysis": {
+      "securityScore": 6,
+      "maxScore": 6
+    }
+  },
+  "riskLevel": "MEDIUM",
+  "recommendations": [
+    "Implementar rate limiting nas APIs críticas",
+    "Adicionar logging de tentativas de bypass",
+    "Configurar alertas de segurança",
+    "Realizar pentests periódicos",
+    "Monitorar logs de auditoria"
+  ]
+}
