@@ -5,10 +5,11 @@
 
 import { clerkClient } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma/client'
+import { ApprovalStatus } from '@prisma/client'
 import { 
   getBaseUrl, 
   getEnvironment, 
-  APPROVAL_STATUS, 
+  APPROVAL_STATUS,
   MODERATION_ACTION,
   logApprovalAction 
 } from './approval-system'
@@ -124,7 +125,7 @@ export async function updateUserApprovalStatus(
         version: user.version // Optimistic locking
       },
       data: {
-        approvalStatus: newStatus,
+        approvalStatus: newStatus as ApprovalStatus,
         version: user.version + 1,
         ...(newStatus === APPROVAL_STATUS.APPROVED && {
           approvedAt: new Date(),
@@ -191,7 +192,7 @@ export async function updateUserApprovalStatus(
                newStatus === APPROVAL_STATUS.SUSPENDED ? MODERATION_ACTION.SUSPEND :
                MODERATION_ACTION.RESET_TO_PENDING,
         previousStatus,
-        newStatus,
+        newStatus: newStatus as ApprovalStatus,
         reason,
         metadata: {
           environment: getEnvironment(),
@@ -205,7 +206,7 @@ export async function updateUserApprovalStatus(
 
   } catch (error) {
     console.error(`[APPROVAL_ERROR] Failed to update approval status:`, error)
-    return { success: false, error: error.message }
+    return { success: false, error: (error as Error).message }
   }
 }
 
@@ -263,7 +264,7 @@ export async function syncAllUsersMetadata(): Promise<{
       }
     } catch (error) {
       failed++
-      errors.push(`Error syncing user ${user.clerkId}: ${error.message}`)
+      errors.push(`Error syncing user ${user.clerkId}: ${(error as Error).message}`)
     }
   }
 
@@ -351,7 +352,7 @@ export async function testWebhookConnectivity(): Promise<{
       success: false,
       url: config.webhookUrl,
       environment: config.environment,
-      error: error.message
+      error: (error as Error).message
     }
   }
 }

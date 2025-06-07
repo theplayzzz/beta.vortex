@@ -1,7 +1,7 @@
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma/client';
-import { ApprovalStatus, ModerationAction, PrismaClient } from '@prisma/client';
+import { ApprovalStatus, ModerationAction } from '@prisma/client';
 
 interface ModerationRequest {
   action: 'APPROVE' | 'REJECT' | 'SUSPEND';
@@ -11,7 +11,7 @@ interface ModerationRequest {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     const { userId: moderatorClerkId } = await auth();
@@ -29,7 +29,7 @@ export async function POST(
     }
 
     const { action, reason, version }: ModerationRequest = await request.json();
-    const targetUserId = params.userId;
+    const { userId: targetUserId } = await params;
 
     // Validações
     if (!['APPROVE', 'REJECT', 'SUSPEND'].includes(action)) {
@@ -118,7 +118,7 @@ export async function POST(
     }
 
     // Executar transação
-    const result = await prisma.$transaction(async (tx: PrismaClient) => {
+    const result = await prisma.$transaction(async (tx) => {
       // 1. Atualizar usuário
       const updatedUser = await tx.user.update({
         where: { 

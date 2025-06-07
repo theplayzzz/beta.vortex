@@ -279,6 +279,7 @@ model User {
   updatedAt                                  DateTime
   
   // 🆕 CAMPOS DO SISTEMA DE APROVAÇÃO (Plan-018)
+  role                                       UserRole             @default(USER)
   approvalStatus                             ApprovalStatus       @default(PENDING)
   approvedAt                                 DateTime?
   approvedBy                                 String?              // clerkId do admin que aprovou
@@ -391,6 +392,12 @@ enum TaskStatus {
 }
 
 // 🆕 ENUMS PARA SISTEMA DE APROVAÇÃO (Plan-018)
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
 enum ApprovalStatus {
   PENDING
   APPROVED
