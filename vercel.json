@@ -1,0 +1,75 @@
+{
+  "functions": {
+    "app/api/webhooks/clerk/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/admin/users/[userId]/moderate/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/admin/users/route.ts": {
+      "maxDuration": 15
+    },
+    "app/api/admin/moderation-log/route.ts": {
+      "maxDuration": 15
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/health/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "Pragma",
+          "value": "no-cache"
+        },
+        {
+          "key": "Expires",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "source": "/api/webhooks/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/admin",
+      "destination": "/admin/moderate",
+      "permanent": false
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/admin/moderate",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/health",
+      "destination": "/api/health/webhook"
+    }
+  ]
+} 
