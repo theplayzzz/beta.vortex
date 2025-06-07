@@ -48,7 +48,7 @@ function createDetalhesSetorSchema(setor?: string): z.ZodSchema<any> {
             invalid_type_error: `${question.label} deve ser um número`
           }).positive(`${question.label} deve ser maior que zero`);
           break;
-        case 'checkbox':
+        case 'multiselect':
           schemaObject[question.field] = z.array(z.string()).min(1, `Selecione pelo menos uma opção para ${question.label}`);
           break;
         default:

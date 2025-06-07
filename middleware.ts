@@ -8,8 +8,10 @@ const isPublicRoute = createRouteMatcher([
   '/api/webhooks(.*)',
   '/api/proposals/webhook',
   '/api/health',
+  '/api/debug(.*)',
   '/pending-approval',
-  '/account-rejected'
+  '/account-rejected',
+  '/account-suspended'
 ])
 
 // Rotas que são acessíveis apenas para admins
@@ -18,95 +20,159 @@ const isAdminRoute = createRouteMatcher([
 ])
 
 export default clerkMiddleware(async (auth, req) => {
-  // Usar try/catch para lidar com warnings de APIs dinâmicas
-  let userId = null
-  let sessionClaims = null
+  const currentPath = req.nextUrl.pathname
   
-  try {
-    const authResult = await auth()
-    userId = authResult.userId
-    sessionClaims = authResult.sessionClaims
-  } catch (error) {
-    // Se houver erro relacionado a APIs dinâmicas, continuar sem autenticação
-    if (error instanceof Error && error.message.includes('headers()')) {
-      console.warn('Warning: Dynamic API usage detected in middleware, continuing without auth')
-    } else {
-      throw error
-    }
+  // Pular processamento para rotas estáticas e APIs
+  if (currentPath.startsWith('/_next') || 
+      currentPath.includes('.') ||
+      currentPath.startsWith('/api/webhooks') ||
+      currentPath.startsWith('/api/health')) {
+    return NextResponse.next()
   }
 
-  // Se a rota não é pública e o usuário não está autenticado, redirecionar para nossa página de sign-in
-  if (!isPublicRoute(req) && !userId) {
+  // Verificar autenticação - método compatível com Next.js 15
+  let userId = null
+  let sessionClaims = null
+  let isAuthenticated = false
+  
+  try {
+    const authResult = auth()
+    userId = authResult.userId
+    sessionClaims = authResult.sessionClaims
+    isAuthenticated = !!userId
+  } catch (error) {
+    // Em caso de erro de auth, permitir acesso apenas a rotas públicas
+    if (isPublicRoute(req)) {
+      return NextResponse.next()
+    }
+    
+    console.warn('[MIDDLEWARE] Auth error:', error instanceof Error ? error.message : 'Unknown error')
     const signInUrl = new URL('/sign-in', req.url)
     signInUrl.searchParams.set('redirect_url', req.url)
     return NextResponse.redirect(signInUrl)
   }
 
-  // Se o usuário está autenticado, verificar status de aprovação
-  if (userId && sessionClaims) {
-    const publicMetadata = sessionClaims.publicMetadata as any || {}
-    const approvalStatus = publicMetadata.approvalStatus
-    const userRole = publicMetadata.role
+  // Se não autenticado e rota não é pública, redirecionar para login
+  if (!userId && !isPublicRoute(req)) {
+    const signInUrl = new URL('/sign-in', req.url)
+    signInUrl.searchParams.set('redirect_url', req.url)
+    return NextResponse.redirect(signInUrl)
+  }
+
+  // Se autenticado, verificar permissões
+  if (userId) {
+    let publicMetadata = {}
+    let approvalStatus = null
+    let userRole = null
+    
+    // Tentar obter dados do sessionClaims primeiro
+    if (sessionClaims?.publicMetadata) {
+      publicMetadata = (sessionClaims.publicMetadata as any) || {}
+      approvalStatus = (publicMetadata as any).approvalStatus
+      userRole = (publicMetadata as any).role
+    }
+    
+    // Se não temos dados na sessão, buscar diretamente do Clerk (fallback)
+    if (!userRole || !approvalStatus) {
+      try {
+        const { createClerkClient } = await import('@clerk/backend')
+        const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! })
+        const user = await clerkClient.users.getUser(userId)
+        const clerkMetadata = user.publicMetadata || {}
+        
+        approvalStatus = clerkMetadata.approvalStatus || approvalStatus
+        userRole = clerkMetadata.role || userRole
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[MIDDLEWARE] Fallback to Clerk API - Role: ${userRole}, Status: ${approvalStatus}`)
+        }
+      } catch (clerkError) {
+        console.warn('[MIDDLEWARE] Clerk API fallback failed:', clerkError instanceof Error ? clerkError.message : 'Unknown error')
+      }
+    }
+    
     const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN'
     
-    // Verificar se está tentando acessar rota de admin sem ser admin
+    // Log para debug (remover em produção)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[MIDDLEWARE] User: ${userId}, Role: ${userRole}, Status: ${approvalStatus}, Path: ${currentPath}, IsAdmin: ${isAdmin}`)
+    }
+    
+    // Verificar acesso admin
     if (isAdminRoute(req) && !isAdmin) {
+      console.warn(`[MIDDLEWARE] Non-admin trying to access admin route: ${currentPath}`)
       return NextResponse.redirect(new URL('/', req.url))
     }
 
-    // Proteger rotas baseado no status de aprovação (exceto admins)
-    if (!isAdmin && !isPublicRoute(req)) {
-      const currentPath = req.nextUrl.pathname
+    // IMPORTANTE: Admins podem acessar qualquer coisa
+    if (isAdmin) {
+      // Se admin está em página de pending, redirecionar para home
+      if (currentPath === '/pending-approval') {
+        console.log('[MIDDLEWARE] Admin redirected from pending-approval to home')
+        return NextResponse.redirect(new URL('/', req.url))
+      }
+      
+      // Admins têm acesso livre a tudo
+      return NextResponse.next({
+        request: {
+          headers: new Headers({
+            ...Object.fromEntries(req.headers.entries()),
+            'x-user-id': userId,
+            'x-approval-status': approvalStatus || 'APPROVED',
+            'x-user-role': userRole || 'ADMIN',
+            'x-is-admin': 'true'
+          })
+        }
+      })
+    }
 
+    // Para não-admins, verificar status de aprovação
+    if (!isPublicRoute(req)) {
       switch (approvalStatus) {
-        case 'PENDING':
-          // Usuários pendentes só podem acessar a página de aguardo
-          if (currentPath !== '/pending-approval') {
-            return NextResponse.redirect(new URL('/pending-approval', req.url))
+        case 'APPROVED':
+          // Usuários aprovados: se estão em páginas de estado, redirecionar para home
+          if (['/pending-approval', '/account-rejected', '/account-suspended'].includes(currentPath)) {
+            console.log(`[MIDDLEWARE] Approved user redirected from ${currentPath} to home`)
+            return NextResponse.redirect(new URL('/', req.url))
           }
           break
 
         case 'REJECTED':
-          // Usuários rejeitados são redirecionados para página de conta rejeitada
           if (currentPath !== '/account-rejected') {
+            console.log(`[MIDDLEWARE] Rejected user redirected to account-rejected`)
             return NextResponse.redirect(new URL('/account-rejected', req.url))
           }
           break
 
         case 'SUSPENDED':
-          // Usuários suspensos são redirecionados para página de conta suspensa
           if (currentPath !== '/account-suspended') {
+            console.log(`[MIDDLEWARE] Suspended user redirected to account-suspended`)
             return NextResponse.redirect(new URL('/account-suspended', req.url))
           }
           break
 
-        case 'APPROVED':
-          // Usuários aprovados têm acesso livre
-          // Se estão em páginas de estado, redirecionar para home
-          if (['/pending-approval', '/account-rejected', '/account-suspended'].includes(currentPath)) {
-            return NextResponse.redirect(new URL('/', req.url))
-          }
-          break
-
+        case 'PENDING':
         default:
-          // Se não tem status definido, assumir como PENDING
+          // Usuários pending ou sem status: redirecionar para pending-approval
           if (currentPath !== '/pending-approval') {
+            console.log(`[MIDDLEWARE] Pending user redirected to pending-approval`)
             return NextResponse.redirect(new URL('/pending-approval', req.url))
           }
           break
       }
     }
 
-    // Adicionar headers com informações do usuário para uso nas API routes
-    const requestHeaders = new Headers(req.headers)
-    requestHeaders.set('x-user-id', userId)
-    requestHeaders.set('x-approval-status', approvalStatus || 'PENDING')
-    requestHeaders.set('x-user-role', userRole || 'USER')
-
+    // Passar informações via headers
     return NextResponse.next({
       request: {
-        headers: requestHeaders,
-      },
+        headers: new Headers({
+          ...Object.fromEntries(req.headers.entries()),
+          'x-user-id': userId,
+          'x-approval-status': approvalStatus || 'PENDING',
+          'x-user-role': userRole || 'USER',
+          'x-is-admin': isAdmin ? 'true' : 'false'
+        })
+      }
     })
   }
 
@@ -115,9 +181,7 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    // Pular arquivos estáticos e internos do Next.js
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Sempre executar para rotas de API
-    '/(api|trpc)(.*)',
+    // Incluir todas as rotas exceto arquivos estáticos
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 } 
