@@ -103,7 +103,15 @@ export async function GET(
       client.isViewed = true
     }
 
-    return NextResponse.json({ client })
+    // Serializar datas para strings para evitar problemas no Next.js 13+
+    const serializedClient = {
+      ...client,
+      createdAt: client.createdAt.toISOString(),
+      updatedAt: client.updatedAt.toISOString(),
+      deletedAt: client.deletedAt?.toISOString() || null,
+    }
+
+    return NextResponse.json({ client: serializedClient })
   } catch (error) {
     console.error('Erro ao buscar cliente:', error)
     return NextResponse.json(
@@ -208,7 +216,15 @@ export async function PUT(
       },
     })
 
-    return NextResponse.json({ client: updatedClient })
+    // Serializar datas para strings para evitar problemas no Next.js 13+
+    const serializedClient = {
+      ...updatedClient,
+      createdAt: updatedClient.createdAt.toISOString(),
+      updatedAt: updatedClient.updatedAt.toISOString(),
+      deletedAt: updatedClient.deletedAt?.toISOString() || null,
+    }
+
+    return NextResponse.json({ client: serializedClient })
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error('❌ Erro de validação Zod:', error.errors);
@@ -285,9 +301,17 @@ export async function DELETE(
       },
     })
 
+    // Serializar datas para strings para evitar problemas no Next.js 13+
+    const serializedClient = {
+      ...deletedClient,
+      createdAt: deletedClient.createdAt.toISOString(),
+      updatedAt: deletedClient.updatedAt.toISOString(),
+      deletedAt: deletedClient.deletedAt?.toISOString() || null,
+    }
+
     return NextResponse.json({ 
       message: 'Cliente arquivado com sucesso',
-      client: deletedClient 
+      client: serializedClient 
     })
   } catch (error) {
     console.error('Erro ao arquivar cliente:', error)

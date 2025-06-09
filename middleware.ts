@@ -9,6 +9,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/proposals/webhook',
   '/api/health',
   '/api/debug(.*)',
+  '/api/external(.*)', // APIs externas com autenticação via API key
   '/pending-approval',
   '/account-rejected',
   '/account-suspended'
@@ -26,6 +27,7 @@ export default clerkMiddleware(async (auth, req) => {
   if (currentPath.startsWith('/_next') || 
       currentPath.includes('.') ||
       currentPath.startsWith('/api/webhooks') ||
+      currentPath.startsWith('/api/external') ||
       currentPath.startsWith('/api/health')) {
     return NextResponse.next()
   }

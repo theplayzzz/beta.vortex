@@ -193,8 +193,15 @@ export async function GET(request: NextRequest) {
 
     const hasPreviousPage = validatedFilters.page > 1
 
+    // Serializar datas para strings para evitar problemas no Next.js 13+
+    const serializedClients = clients.map(client => ({
+      ...client,
+      createdAt: client.createdAt.toISOString(),
+      updatedAt: client.updatedAt.toISOString(),
+    }))
+
     return NextResponse.json({
-      clients,
+      clients: serializedClients,
       pagination: {
         page: validatedFilters.page,
         limit: validatedFilters.limit,
@@ -276,7 +283,14 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ client }, { status: 201 })
+    // Serializar datas para strings para evitar problemas no Next.js 13+
+    const serializedClient = {
+      ...client,
+      createdAt: client.createdAt.toISOString(),
+      updatedAt: client.updatedAt.toISOString(),
+    }
+
+    return NextResponse.json({ client: serializedClient }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
