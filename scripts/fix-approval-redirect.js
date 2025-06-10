@@ -48,11 +48,10 @@ function showSolution() {
   log('\n🔧 FERRAMENTAS DE DEBUG CRIADAS:', 'cyan');
   log('✓ /api/debug/auth - Ver sessionClaims atuais', 'green');
   log('✓ /api/debug/force-refresh - Status detalhado', 'green');
-  log('✓ /debug-status - Página visual de debug', 'green');
   log('✓ Middleware com logs detalhados', 'green');
   
   log('\n🧪 COMO TESTAR SE FUNCIONOU:', 'yellow');
-  log('1. Acesse /debug-status após login', 'white');
+  log('1. Faça login após aprovação', 'white');
   log('2. Verifique se approvalStatus mostra "APPROVED"', 'white');
   log('3. Teste acesso a /dashboard', 'white');
   log('4. Verifique logs do middleware no terminal', 'white');
@@ -129,12 +128,7 @@ async function createImprovements() {
             🔄 Atualizar Status (Logout + Login)
           </button>
           
-          <a
-            href="/debug-status"
-            className="group relative w-full flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            🔍 Verificar Status Detalhado
-          </a>
+
         </div>
         
         <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
@@ -183,9 +177,35 @@ async function main() {
   log('\n🚀 PRÓXIMOS PASSOS IMEDIATOS:', 'cyan');
   log('1. Instrua usuários aprovados a fazer logout/login', 'white');
   log('2. Teste com uma das contas aprovadas', 'white');
-  log('3. Acesse /debug-status para verificar', 'white');
-  log('4. Verifique logs do middleware no terminal', 'white');
+  log('3. Verifique logs do middleware no terminal', 'white');
   log('5. Documente processo para futuros usuários', 'white');
+
+  // Verificar arquivos criados
+  const filesToCheck = [
+    'app/pending-approval/page.tsx',
+    'app/account-rejected/page.tsx',
+    'app/account-suspended/page.tsx'
+  ];
+
+  log('\n🔍 Verificando arquivos criados:', 'blue');
+  let allFilesExist = true;
+  
+  filesToCheck.forEach(file => {
+    if (fs.existsSync(file)) {
+      log(`✓ ${file} - Página criada`, 'green');
+    } else {
+      log(`✗ ${file} - Arquivo faltando`, 'red');
+      allFilesExist = false;
+    }
+  });
+
+  if (allFilesExist) {
+    log('\n🎉 INSTALAÇÃO CONCLUÍDA COM SUCESSO!', 'green');
+    log('\n📋 PRÓXIMOS PASSOS:', 'blue');
+    log('1. Inicie o servidor: npm run dev', 'white');
+    log('2. Teste o login com usuário pendente', 'white');
+    log('3. Verificar redirecionamentos', 'white');
+  }
 }
 
 if (require.main === module) {

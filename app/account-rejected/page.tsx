@@ -1,11 +1,10 @@
 'use client'
 
-import { useUser, useClerk } from '@clerk/nextjs'
+import { useUser, SignOutButton } from '@clerk/nextjs'
 import { XCircle, Mail, Phone, MessageCircle, AlertTriangle } from 'lucide-react'
 
 export default function AccountRejectedPage() {
   const { user } = useUser()
-  const { signOut } = useClerk()
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" 
@@ -137,17 +136,17 @@ export default function AccountRejectedPage() {
             <Mail className="w-4 h-4 mr-2" />
             Solicitar Revisão
           </a>
-          <button
-            onClick={() => signOut()}
-            className="w-full px-4 py-2 rounded-md font-medium transition-all duration-200 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-opacity-50"
-            style={{ 
-              border: '1px solid var(--periwinkle, #cfc6fe)',
-              color: 'var(--periwinkle, #cfc6fe)',
-              backgroundColor: 'transparent'
-            }}
-          >
-            Sair da Conta
-          </button>
+          <SignOutButton redirectUrl="/sign-in">
+            <button className="w-full px-4 py-2 rounded-md font-medium transition-all duration-200 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+              style={{ 
+                border: '1px solid var(--periwinkle, #cfc6fe)',
+                color: 'var(--periwinkle, #cfc6fe)',
+                backgroundColor: 'transparent'
+              }}
+            >
+              Sair da Conta
+            </button>
+          </SignOutButton>
         </div>
 
         {/* Rodapé */}

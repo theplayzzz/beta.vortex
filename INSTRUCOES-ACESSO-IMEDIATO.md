@@ -84,7 +84,7 @@ Abra o console do servidor e veja logs como:
 
 ### Teste 3: APIs de Debug
 - `/api/debug/auth` - Ver sessionClaims
-- `/debug-status` - Interface visual de debug
+
 
 ## 💡 COMO FUNCIONA O MIDDLEWARE FALLBACK
 

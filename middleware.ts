@@ -2,6 +2,16 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { createClerkClient } from '@clerk/backend'
 
+// ⚡ CACHE: Cache in-memory para reduzir chamadas à API do Clerk
+const userStatusCache = new Map<string, {
+  approvalStatus: string;
+  role: string;
+  isAdmin: boolean;
+  timestamp: number;
+}>()
+
+const CACHE_TTL = 60000 // 1 minuto
+
 // Definir rotas públicas que não precisam de autenticação
 const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
@@ -27,9 +37,24 @@ const isAdminRoute = createRouteMatcher([
   '/api/admin(.*)'  // Incluir APIs de admin também
 ])
 
-// 🚀 FALLBACK: Se sessionClaims falharem, consultar Clerk diretamente
+// 🚀 FALLBACK: Se sessionClaims falharem, consultar Clerk diretamente (COM CACHE)
 async function getApprovalStatusDirect(userId: string): Promise<{ approvalStatus: string; role: string; isAdmin: boolean }> {
   try {
+    // ⚡ VERIFICAR CACHE PRIMEIRO
+    const cached = userStatusCache.get(userId);
+    const now = Date.now();
+    
+    if (cached && (now - cached.timestamp) < CACHE_TTL) {
+      console.log('[MIDDLEWARE CACHE] Hit para usuário:', userId);
+      return {
+        approvalStatus: cached.approvalStatus,
+        role: cached.role,
+        isAdmin: cached.isAdmin
+      };
+    }
+    
+    // 🔥 CACHE MISS: Consultar Clerk API
+    console.log('[MIDDLEWARE CACHE] Miss para usuário:', userId);
     const clerkClient = createClerkClient({ 
       secretKey: process.env.CLERK_SECRET_KEY! 
     });
@@ -37,17 +62,26 @@ async function getApprovalStatusDirect(userId: string): Promise<{ approvalStatus
     const user = await clerkClient.users.getUser(userId);
     const metadata = user.publicMetadata as any;
     
-    console.log('[MIDDLEWARE FALLBACK] Direct Clerk query:', {
-      userId,
-      metadata,
-      timestamp: new Date().toISOString()
-    });
-    
-    return {
+    const result = {
       approvalStatus: metadata?.approvalStatus || 'PENDING',
       role: metadata?.role || 'USER',
       isAdmin: metadata?.role === 'ADMIN' || metadata?.role === 'SUPER_ADMIN'
     };
+    
+    // ⚡ SALVAR NO CACHE
+    userStatusCache.set(userId, {
+      ...result,
+      timestamp: now
+    });
+    
+    console.log('[MIDDLEWARE FALLBACK] Direct Clerk query:', {
+      userId,
+      metadata,
+      cached: false,
+      timestamp: new Date().toISOString()
+    });
+    
+    return result;
   } catch (error) {
     console.error('[MIDDLEWARE FALLBACK] Error:', error);
     return {
@@ -241,7 +275,7 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    // Incluir todas as rotas exceto arquivos estáticos
-    '/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // ⚡ OTIMIZADO: Matcher simples que funciona com Next.js
+    '/((?!api/webhooks|api/health|api/external|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)',
   ],
 }

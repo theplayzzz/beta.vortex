@@ -93,15 +93,7 @@ async function verifyFixes() {
         sessionClaims: 'sessionClaims'
       }
     },
-    {
-      name: 'Página de debug criada',
-      file: 'app/debug-status/page.tsx',
-      searchTerms: {
-        debugComponent: 'DebugUserStatus',
-        instructions: 'Instruções para Resolver',
-        testLinks: 'Teste Rápido'
-      }
-    }
+
   ];
   
   let allPassed = true;
@@ -158,7 +150,6 @@ async function showNextSteps() {
   log('6. Teste acesso ao dashboard', 'white');
   
   log('\n📋 PÁGINAS DE DEBUG DISPONÍVEIS:', 'yellow');
-  log('• /debug-status - Interface visual completa', 'white');
   log('• /api/debug/auth - JSON dos sessionClaims', 'white');
   log('• /api/debug/force-refresh - Status detalhado', 'white');
   
