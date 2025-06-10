@@ -29,7 +29,7 @@ export async function POST(
     }
 
     const { action, reason, version }: ModerationRequest = await request.json();
-    const { userId: targetUserId } = await params;
+    const { userId: targetUserClerkId } = await params;
 
     // Validações
     if (!['APPROVE', 'REJECT', 'SUSPEND'].includes(action)) {
@@ -40,159 +40,174 @@ export async function POST(
       return NextResponse.json({ error: 'Motivo é obrigatório para rejeição' }, { status: 400 });
     }
 
-    // Buscar usuário alvo e moderador no banco
-    const [targetUser, moderatorDbUser] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: targetUserId },
-        select: {
-          id: true,
-          clerkId: true,
-          email: true,
-          approvalStatus: true,
-          version: true
-        }
-      }),
-      prisma.user.findUnique({
-        where: { clerkId: moderatorClerkId },
-        select: { id: true }
-      })
-    ]);
-
+    // **CLERK-FIRST**: Buscar usuário do Clerk como fonte de verdade
+    const targetUser = await clerkClient.users.getUser(targetUserClerkId);
     if (!targetUser) {
-      return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
+      return NextResponse.json({ error: 'Usuário não encontrado no Clerk' }, { status: 404 });
     }
 
-    if (!moderatorDbUser) {
-      return NextResponse.json({ error: 'Moderador não encontrado no banco' }, { status: 404 });
-    }
+    const currentMetadata = targetUser.publicMetadata || {};
+    const currentStatus = currentMetadata.approvalStatus || 'PENDING';
+    const currentVersion = currentMetadata.version || 1;
 
     // Verificar versão para optimistic concurrency control
-    if (targetUser.version !== version) {
+    if (currentVersion !== version) {
       return NextResponse.json({ 
         error: 'Conflito de concorrência - usuário foi modificado por outro admin',
-        currentVersion: targetUser.version 
+        currentVersion 
       }, { status: 409 });
     }
 
-    // Determinar novo status e dados da atualização
+    // Determinar novo status e metadata
     let newStatus: ApprovalStatus;
-    let updateData: any = {
-      version: { increment: 1 }
-    };
-
     const now = new Date();
+    let newMetadata: any = {
+      ...currentMetadata,
+      version: currentVersion + 1,
+      lastModerated: now.toISOString(),
+      moderatedBy: moderatorClerkId
+    };
 
     switch (action) {
       case 'APPROVE':
         newStatus = ApprovalStatus.APPROVED;
-        updateData.approvalStatus = newStatus;
-        updateData.approvedAt = now;
-        updateData.approvedBy = moderatorClerkId;
-        updateData.creditBalance = 100; // Liberar créditos iniciais
+        newMetadata.approvalStatus = newStatus;
+        newMetadata.approvedAt = now.toISOString();
+        newMetadata.approvedBy = moderatorClerkId;
+        newMetadata.creditBalance = 100; // Liberar créditos iniciais
         // Limpar dados de rejeição se existirem
-        updateData.rejectedAt = null;
-        updateData.rejectedBy = null;
-        updateData.rejectionReason = null;
+        delete newMetadata.rejectedAt;
+        delete newMetadata.rejectedBy;
+        delete newMetadata.rejectionReason;
         break;
 
       case 'REJECT':
         newStatus = ApprovalStatus.REJECTED;
-        updateData.approvalStatus = newStatus;
-        updateData.rejectedAt = now;
-        updateData.rejectedBy = moderatorClerkId;
-        updateData.rejectionReason = reason;
-        updateData.creditBalance = 0; // Zerar créditos
+        newMetadata.approvalStatus = newStatus;
+        newMetadata.rejectedAt = now.toISOString();
+        newMetadata.rejectedBy = moderatorClerkId;
+        newMetadata.rejectionReason = reason;
+        newMetadata.creditBalance = 0; // Zerar créditos
         // Limpar dados de aprovação se existirem
-        updateData.approvedAt = null;
-        updateData.approvedBy = null;
+        delete newMetadata.approvedAt;
+        delete newMetadata.approvedBy;
         break;
 
       case 'SUSPEND':
         newStatus = ApprovalStatus.SUSPENDED;
-        updateData.approvalStatus = newStatus;
-        updateData.creditBalance = 0; // Zerar créditos na suspensão
+        newMetadata.approvalStatus = newStatus;
+        newMetadata.creditBalance = 0; // Zerar créditos na suspensão
         break;
 
       default:
         return NextResponse.json({ error: 'Ação não implementada' }, { status: 400 });
     }
 
-    // Executar transação
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Atualizar usuário
-      const updatedUser = await tx.user.update({
-        where: { 
-          id: targetUserId,
-          version: version // Garantir que a versão ainda é a mesma
-        },
-        data: updateData,
-        select: {
-          id: true,
-          clerkId: true,
-          email: true,
-          approvalStatus: true,
-          creditBalance: true,
-          version: true,
-          approvedAt: true,
-          approvedBy: true,
-          rejectedAt: true,
-          rejectedBy: true,
-          rejectionReason: true
-        }
-      });
-
-      // 2. Criar log de auditoria
-      await tx.userModerationLog.create({
-        data: {
-          userId: targetUserId,
-          moderatorId: moderatorDbUser.id,
-          action: action as ModerationAction,
-          previousStatus: targetUser.approvalStatus,
-          newStatus: newStatus,
-          reason: reason || null,
-          metadata: {
-            moderatorClerkId,
-            targetUserEmail: targetUser.email,
-            timestamp: now.toISOString(),
-            userAgent: request.headers.get('user-agent'),
-            ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip')
-          }
-        }
-      });
-
-      return updatedUser;
-    });
-
-    // 3. Atualizar metadata no Clerk
+    // **CLERK-FIRST**: Atualizar metadata no Clerk como ação primária
     try {
-      await clerkClient.users.updateUserMetadata(targetUser.clerkId, {
-        publicMetadata: {
-          ...moderatorUser.publicMetadata,
-          approvalStatus: newStatus,
-          dbUserId: targetUser.id,
-          lastModerated: now.toISOString(),
-          moderatedBy: moderatorClerkId
-        }
+      await clerkClient.users.updateUserMetadata(targetUserClerkId, {
+        publicMetadata: newMetadata
       });
 
-      // 4. Se rejeitado, banir no Clerk
+      // Se rejeitado, banir no Clerk
       if (action === 'REJECT') {
-        await clerkClient.users.banUser(targetUser.clerkId);
+        await clerkClient.users.banUser(targetUserClerkId);
       }
 
     } catch (clerkError) {
-      console.error('Erro ao atualizar Clerk:', clerkError);
-      // Continuar mesmo se houver erro no Clerk - o banco é a fonte da verdade
+      console.error('Erro ao atualizar Clerk (ação primária):', clerkError);
+      return NextResponse.json({ 
+        error: 'Erro ao atualizar dados no Clerk' 
+      }, { status: 500 });
     }
+
+    // **SUPABASE OPCIONAL**: Salvar auditoria no Supabase apenas para histórico
+    try {
+      // Buscar IDs do banco para auditoria (se existirem)
+      const [targetDbUser, moderatorDbUser] = await Promise.all([
+        prisma.user.findUnique({
+          where: { clerkId: targetUserClerkId },
+          select: { id: true, email: true }
+        }),
+        prisma.user.findUnique({
+          where: { clerkId: moderatorClerkId },
+          select: { id: true }
+        })
+      ]);
+
+      // Criar log de auditoria (opcional - não afeta o funcionamento se falhar)
+      if (targetDbUser && moderatorDbUser) {
+        await prisma.userModerationLog.create({
+          data: {
+            userId: targetDbUser.id,
+            moderatorId: moderatorDbUser.id,
+            action: action as ModerationAction,
+            previousStatus: currentStatus as ApprovalStatus,
+            newStatus: newStatus,
+            reason: reason || null,
+            metadata: {
+              moderatorClerkId,
+              targetUserClerkId,
+              targetUserEmail: targetDbUser.email,
+              timestamp: now.toISOString(),
+              userAgent: request.headers.get('user-agent'),
+              ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+              source: 'clerk-first-moderation'
+            }
+          }
+        });
+
+        // Sincronizar dados do usuário no Supabase (opcional)
+        await prisma.user.update({
+          where: { clerkId: targetUserClerkId },
+          data: {
+            approvalStatus: newStatus,
+            creditBalance: newMetadata.creditBalance,
+            approvedAt: newMetadata.approvedAt ? new Date(newMetadata.approvedAt) : null,
+            approvedBy: newMetadata.approvedBy || null,
+            rejectedAt: newMetadata.rejectedAt ? new Date(newMetadata.rejectedAt) : null,
+            rejectedBy: newMetadata.rejectedBy || null,
+            rejectionReason: newMetadata.rejectionReason || null,
+            version: newMetadata.version
+          }
+        });
+      }
+
+    } catch (supabaseError) {
+      console.warn('Erro ao salvar auditoria no Supabase (não crítico):', supabaseError);
+      // Continuar mesmo se falhar - Clerk é a fonte de verdade
+    }
+
+    // **CLERK-FIRST**: Buscar dados atualizados do Clerk para resposta
+    const updatedUser = await clerkClient.users.getUser(targetUserClerkId);
+    const finalMetadata = updatedUser.publicMetadata || {};
+
+    const responseUser = {
+      id: finalMetadata.dbUserId || targetUserClerkId,
+      clerkId: targetUserClerkId,
+      email: updatedUser.emailAddresses?.[0]?.emailAddress || '',
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      profileImageUrl: updatedUser.imageUrl,
+      approvalStatus: finalMetadata.approvalStatus,
+      creditBalance: finalMetadata.creditBalance || 0,
+      version: finalMetadata.version,
+      approvedAt: finalMetadata.approvedAt || null,
+      approvedBy: finalMetadata.approvedBy || null,
+      rejectedAt: finalMetadata.rejectedAt || null,
+      rejectedBy: finalMetadata.rejectedBy || null,
+      rejectionReason: finalMetadata.rejectionReason || null
+    };
 
     return NextResponse.json({
       success: true,
-      user: result,
-      message: `Usuário ${action === 'APPROVE' ? 'aprovado' : action === 'REJECT' ? 'rejeitado' : 'suspenso'} com sucesso`
+      user: responseUser,
+      message: `Usuário ${action === 'APPROVE' ? 'aprovado' : action === 'REJECT' ? 'rejeitado' : 'suspenso'} com sucesso`,
+      source: 'clerk-first'
     });
 
   } catch (error) {
-    console.error('Erro na moderação:', error);
+    console.error('Erro na moderação Clerk-First:', error);
 
     // Verificar se é erro de concorrência
     if (error instanceof Error && error.message.includes('version')) {
