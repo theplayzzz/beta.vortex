@@ -1,6 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-import { createClerkClient } from '@clerk/backend'
 
 // Definir rotas públicas que não precisam de autenticação
 const isPublicRoute = createRouteMatcher([
@@ -26,37 +25,6 @@ const isAdminRoute = createRouteMatcher([
   '/admin(.*)',
   '/api/admin(.*)'  // Incluir APIs de admin também
 ])
-
-// 🚀 FALLBACK: Se sessionClaims falharem, consultar Clerk diretamente
-async function getApprovalStatusDirect(userId: string): Promise<{ approvalStatus: string; role: string; isAdmin: boolean }> {
-  try {
-    const clerkClient = createClerkClient({ 
-      secretKey: process.env.CLERK_SECRET_KEY! 
-    });
-    
-    const user = await clerkClient.users.getUser(userId);
-    const metadata = user.publicMetadata as any;
-    
-    console.log('[MIDDLEWARE FALLBACK] Direct Clerk query:', {
-      userId,
-      metadata,
-      timestamp: new Date().toISOString()
-    });
-    
-    return {
-      approvalStatus: metadata?.approvalStatus || 'PENDING',
-      role: metadata?.role || 'USER',
-      isAdmin: metadata?.role === 'ADMIN' || metadata?.role === 'SUPER_ADMIN'
-    };
-  } catch (error) {
-    console.error('[MIDDLEWARE FALLBACK] Error:', error);
-    return {
-      approvalStatus: 'PENDING',
-      role: 'USER',
-      isAdmin: false
-    };
-  }
-}
 
 export default clerkMiddleware(async (auth, req) => {
   const currentPath = req.nextUrl.pathname
@@ -118,27 +86,9 @@ export default clerkMiddleware(async (auth, req) => {
   if (userId) {
     // Extrair dados diretamente do sessionClaims para máxima performance
     const publicMetadata = (sessionClaims?.publicMetadata as any) || {}
-    let approvalStatus = publicMetadata.approvalStatus || 'PENDING'
-    let userRole = publicMetadata.role || 'USER'
-    let isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN'
-    
-    // 🚀 FALLBACK: Se sessionClaims estão vazios, consultar Clerk diretamente
-    if (Object.keys(publicMetadata).length === 0 || !approvalStatus || approvalStatus === 'PENDING') {
-      console.log('[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk');
-      
-      const directStatus = await getApprovalStatusDirect(userId);
-      approvalStatus = directStatus.approvalStatus;
-      userRole = directStatus.role;
-      isAdmin = directStatus.isAdmin;
-      
-      console.log('[MIDDLEWARE] Fallback result:', {
-        userId,
-        approvalStatus,
-        userRole,
-        isAdmin,
-        currentPath
-      });
-    }
+    const approvalStatus = publicMetadata.approvalStatus || 'PENDING'
+    const userRole = publicMetadata.role || 'USER'
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN'
     
     // 🔍 DEBUG: Log detalhado para identificar problema
     console.log('[MIDDLEWARE DEBUG]', {
@@ -149,9 +99,13 @@ export default clerkMiddleware(async (auth, req) => {
       approvalStatus,
       userRole,
       isAdmin,
-      usedFallback: Object.keys(publicMetadata).length === 0,
       timestamp: new Date().toISOString()
     })
+    
+    // ⚡ PERFORMANCE LOG: Log apenas em desenvolvimento e sem dados sensíveis
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[MIDDLEWARE] Fast Path - Role: ${userRole}, Status: ${approvalStatus}, Path: ${currentPath}`)
+    }
     
     // ⚡ ULTRA-FAST: Verificação de admin instantânea
     if (isAdminRoute(req) && !isAdmin) {
@@ -242,6 +196,6 @@ export default clerkMiddleware(async (auth, req) => {
 export const config = {
   matcher: [
     // Incluir todas as rotas exceto arquivos estáticos
-    '/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-}
+} 

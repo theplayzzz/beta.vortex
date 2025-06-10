@@ -2,9 +2,7 @@ import "./globals.css";
 import cx from "classnames";
 import { sfPro, inter } from "./fonts";
 import { ClerkProvider } from "@clerk/nextjs";
-import { auth } from "@/lib/auth/auth-wrapper";
-import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
+import DynamicLayout from "@/components/layout/dynamic-layout";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ToastProvider } from "@/components/ui/toast";
 
@@ -15,12 +13,11 @@ export const metadata = {
   metadataBase: new URL("https://vortex-vault.com"),
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { userId } = await auth();
 
   return (
     <ClerkProvider
@@ -33,21 +30,9 @@ export default async function RootLayout({
         <body className={cx(sfPro.variable, inter.variable, "bg-night text-seasalt")}>
           <QueryProvider>
             <ToastProvider>
-              {userId ? (
-                // Layout do Dashboard para usuários autenticados
-                <div className="flex h-screen overflow-hidden bg-background">
-                  <Sidebar />
-                  <main className="flex-1 flex flex-col">
-                    <Header />
-                    <div className="flex-1 overflow-auto">
-                      {children}
-                    </div>
-                  </main>
-                </div>
-              ) : (
-                // Layout simples para páginas de autenticação
-                children
-              )}
+              <DynamicLayout>
+                {children}
+              </DynamicLayout>
             </ToastProvider>
           </QueryProvider>
         </body>

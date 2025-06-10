@@ -1,0 +1,10 @@
+2025-06-10T19:44:04.054Z: {"type":"health_check","status":"OK","statusCode":200,"responseTime":107,"timestamp":"2025-06-10T19:44:04.054Z"}
+2025-06-10T19:44:04.106Z: {"type":"external_apis","status":"ERROR","statusCode":400,"responseTime":44,"timestamp":"2025-06-10T19:44:04.105Z"}
+2025-06-10T19:44:04.196Z: {"type":"security_check","status":"OK","protectedEndpoints":3,"totalEndpoints":3,"timestamp":"2025-06-10T19:44:04.196Z"}
+2025-06-10T19:44:04.250Z: {"type":"database_check","status":"OK","responseTime":52,"timestamp":"2025-06-10T19:44:04.249Z"}
+2025-06-10T19:44:04.251Z: {"type":"monitoring_summary","timestamp":"2025-06-10T19:44:03.947Z","checks":{"health":{"status":"OK","statusCode":200,"responseTime":107,"timestamp":"2025-06-10T19:44:04.054Z"},"externalAPIs":{"status":"ERROR","statusCode":400,"responseTime":44,"timestamp":"2025-06-10T19:44:04.105Z"},"security":{"status":"OK","protectedEndpoints":3,"totalEndpoints":3,"timestamp":"2025-06-10T19:44:04.196Z"},"database":{"status":"OK","responseTime":52,"timestamp":"2025-06-10T19:44:04.249Z"}},"overallStatus":"CRITICAL"}
+2025-06-10T19:44:24.983Z: {"type":"health_check","status":"OK","statusCode":200,"responseTime":55,"timestamp":"2025-06-10T19:44:24.982Z"}
+2025-06-10T19:44:26.496Z: {"type":"external_apis","status":"OK","statusCode":200,"responseTime":1508,"timestamp":"2025-06-10T19:44:26.496Z"}
+2025-06-10T19:44:26.562Z: {"type":"security_check","status":"OK","protectedEndpoints":3,"totalEndpoints":3,"timestamp":"2025-06-10T19:44:26.562Z"}
+2025-06-10T19:44:26.601Z: {"type":"database_check","status":"OK","responseTime":37,"timestamp":"2025-06-10T19:44:26.601Z"}
+2025-06-10T19:44:26.603Z: {"type":"monitoring_summary","timestamp":"2025-06-10T19:44:24.927Z","checks":{"health":{"status":"OK","statusCode":200,"responseTime":55,"timestamp":"2025-06-10T19:44:24.982Z"},"externalAPIs":{"status":"OK","statusCode":200,"responseTime":1508,"timestamp":"2025-06-10T19:44:26.496Z"},"security":{"status":"OK","protectedEndpoints":3,"totalEndpoints":3,"timestamp":"2025-06-10T19:44:26.562Z"},"database":{"status":"OK","responseTime":37,"timestamp":"2025-06-10T19:44:26.601Z"}},"overallStatus":"OK"}
