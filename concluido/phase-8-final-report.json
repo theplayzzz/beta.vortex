@@ -1,0 +1,260 @@
+{
+  "timestamp": "2025-06-10T23:17:16.155Z",
+  "duration": 11,
+  "stats": {
+    "total": 26,
+    "passed": 16,
+    "failed": 10,
+    "categories": {
+      "Infraestrutura": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0
+      },
+      "Autenticação": {
+        "total": 4,
+        "passed": 2,
+        "failed": 2
+      },
+      "Core Functionality": {
+        "total": 2,
+        "passed": 0,
+        "failed": 2
+      },
+      "Performance": {
+        "total": 4,
+        "passed": 2,
+        "failed": 2
+      },
+      "Segurança": {
+        "total": 4,
+        "passed": 2,
+        "failed": 2
+      },
+      "Integrações": {
+        "total": 4,
+        "passed": 2,
+        "failed": 2
+      },
+      "Deploy": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0
+      }
+    },
+    "startTime": 1749597424715,
+    "results": [
+      {
+        "category": "Infraestrutura",
+        "test": "Health Check",
+        "passed": true,
+        "message": "Sistema está saudável",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:05.711Z"
+      },
+      {
+        "category": "Infraestrutura",
+        "test": "Conexão Database",
+        "passed": true,
+        "message": "Endpoint não disponível (OK)",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:07.568Z"
+      },
+      {
+        "category": "Infraestrutura",
+        "test": "Variáveis de Ambiente",
+        "passed": true,
+        "message": "Endpoint não disponível (OK)",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:07.669Z"
+      },
+      {
+        "category": "Infraestrutura",
+        "test": "Tempo de Resposta",
+        "passed": true,
+        "message": "24ms (Excelente)",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:07.706Z"
+      },
+      {
+        "category": "Autenticação",
+        "test": "Rota Protegida sem Auth",
+        "passed": true,
+        "message": "Acesso negado corretamente",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:07.738Z"
+      },
+      {
+        "category": "Autenticação",
+        "test": "API Externa com Chave Válida",
+        "passed": false,
+        "message": "Falha na auth externa",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:08.610Z"
+      },
+      {
+        "category": "Autenticação",
+        "test": "API Externa com Chave Inválida",
+        "passed": true,
+        "message": "Chave inválida rejeitada",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:08.636Z"
+      },
+      {
+        "category": "Autenticação",
+        "test": "Bypass Rate Limiting Externo",
+        "passed": false,
+        "message": "Rate limit aplicado incorretamente",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:08.703Z"
+      },
+      {
+        "category": "Core Functionality",
+        "test": "Criação de Cliente",
+        "message": "Cliente criado: undefined",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:11.477Z"
+      },
+      {
+        "category": "Core Functionality",
+        "test": "Listagem de Clientes",
+        "passed": false,
+        "message": "Falha na listagem",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:11.502Z"
+      },
+      {
+        "category": "Performance",
+        "test": "Performance Database",
+        "passed": false,
+        "message": "Query em 17ms (Muito Rápido)",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:11.530Z"
+      },
+      {
+        "category": "Performance",
+        "test": "Requisições Concorrentes",
+        "passed": false,
+        "message": "0/5 sucesso em 41ms",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:11.578Z"
+      },
+      {
+        "category": "Performance",
+        "test": "Informações do Sistema",
+        "passed": true,
+        "message": "Endpoint não disponível (OK)",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:11.959Z"
+      },
+      {
+        "category": "Performance",
+        "test": "Otimização de Resposta",
+        "passed": true,
+        "message": "Resposta: 0.03KB (Otimizada)",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:11.960Z"
+      },
+      {
+        "category": "Segurança",
+        "test": "Proteção SQL Injection",
+        "passed": false,
+        "message": "Possível vulnerabilidade",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:11.971Z"
+      },
+      {
+        "category": "Segurança",
+        "test": "Proteção XSS",
+        "passed": false,
+        "message": "Possível vulnerabilidade XSS",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:13.933Z"
+      },
+      {
+        "category": "Segurança",
+        "test": "Headers CORS",
+        "passed": true,
+        "message": "CORS configurado",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:13.958Z"
+      },
+      {
+        "category": "Segurança",
+        "test": "Proteção API Key",
+        "passed": true,
+        "message": "API protegida corretamente",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:13.981Z"
+      },
+      {
+        "category": "Integrações",
+        "test": "Webhook Endpoint",
+        "passed": true,
+        "message": "Webhook não configurado (OK)",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:14.056Z"
+      },
+      {
+        "category": "Integrações",
+        "test": "Documentação APIs",
+        "passed": false,
+        "message": "Documentação faltando",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:14.056Z"
+      },
+      {
+        "category": "Integrações",
+        "test": "Compatibilidade N8N",
+        "passed": true,
+        "message": "N8N compatível",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:16.025Z"
+      },
+      {
+        "category": "Integrações",
+        "test": "Formato de Resposta API",
+        "passed": false,
+        "message": "Formato inconsistente",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:16.052Z"
+      },
+      {
+        "category": "Deploy",
+        "test": "Arquivos de Configuração",
+        "passed": true,
+        "message": "Todos os arquivos presentes",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:16.053Z"
+      },
+      {
+        "category": "Deploy",
+        "test": "Dependências de Produção",
+        "passed": true,
+        "message": "45 dependências",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:16.053Z"
+      },
+      {
+        "category": "Deploy",
+        "test": "Configuração Next.js",
+        "passed": true,
+        "message": "next.config.js presente",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:16.053Z"
+      },
+      {
+        "category": "Deploy",
+        "test": "Schema do Database",
+        "passed": true,
+        "message": "Schema verificado",
+        "details": null,
+        "timestamp": "2025-06-10T23:17:16.154Z"
+      }
+    ]
+  },
+  "overallStatus": "❌ REPROVADO",
+  "statusMessage": "Sistema não está pronto para produção. Correções necessárias.",
+  "successRate": 62,
+  "readyForProduction": false
+}

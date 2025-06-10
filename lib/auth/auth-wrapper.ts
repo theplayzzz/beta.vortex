@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma/client'
  */
 export async function auth() {
   try {
-    const clerkResult = await clerkAuth()
+    const clerkResult = clerkAuth()
     return clerkResult
   } catch (error) {
     // Se houver erro relacionado a APIs dinâmicas, retornar estado não autenticado

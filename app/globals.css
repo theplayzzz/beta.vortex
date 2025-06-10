@@ -3,27 +3,31 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  /* Design System Variables - Paleta de Cores Oficial */
+  --night: #0e0f0f;
+  --eerie-black: #171818;
+  --sgbus-green: #6be94c;
+  --seasalt: #f9fbfc;
+  --periwinkle: #cfc6fe;
+  
+  /* Legacy variables for compatibility */
+  --foreground-rgb: 249, 251, 252;
+  --background-start-rgb: 14, 15, 15;
+  --background-end-rgb: 14, 15, 15;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+    /* Design System Variables - sempre consistentes independente do tema */
+    --foreground-rgb: 249, 251, 252;
+    --background-start-rgb: 14, 15, 15;
+    --background-end-rgb: 14, 15, 15;
   }
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  color: var(--seasalt);
+  background-color: var(--night);
 }
 
 /* Garantir que dropdowns funcionem corretamente */
