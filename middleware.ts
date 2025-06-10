@@ -15,9 +15,15 @@ const isPublicRoute = createRouteMatcher([
   '/account-suspended'
 ])
 
+// APIs que devem retornar JSON errors em vez de redirecionar
+const isApiRoute = createRouteMatcher([
+  '/api/(.*)'
+])
+
 // Rotas que são acessíveis apenas para admins
 const isAdminRoute = createRouteMatcher([
-  '/admin(.*)'
+  '/admin(.*)',
+  '/api/admin(.*)'  // Incluir APIs de admin também
 ])
 
 export default clerkMiddleware(async (auth, req) => {
@@ -49,13 +55,30 @@ export default clerkMiddleware(async (auth, req) => {
     }
     
     console.warn('[MIDDLEWARE] Auth error:', error instanceof Error ? error.message : 'Unknown error')
+    
+    // Para APIs, retornar erro JSON
+    if (isApiRoute(req)) {
+      return NextResponse.json(
+        { error: 'Erro de autenticação' },
+        { status: 401 }
+      )
+    }
+    
     const signInUrl = new URL('/sign-in', req.url)
     signInUrl.searchParams.set('redirect_url', req.url)
     return NextResponse.redirect(signInUrl)
   }
 
-  // Se não autenticado e rota não é pública, redirecionar para login
+  // Se não autenticado e rota não é pública
   if (!userId && !isPublicRoute(req)) {
+    // Para APIs, retornar erro JSON em vez de redirecionar
+    if (isApiRoute(req)) {
+      return NextResponse.json(
+        { error: 'Não autorizado - Login necessário' },
+        { status: 401 }
+      )
+    }
+    
     const signInUrl = new URL('/sign-in', req.url)
     signInUrl.searchParams.set('redirect_url', req.url)
     return NextResponse.redirect(signInUrl)
@@ -103,6 +126,15 @@ export default clerkMiddleware(async (auth, req) => {
     // Verificar acesso admin
     if (isAdminRoute(req) && !isAdmin) {
       console.warn(`[MIDDLEWARE] Non-admin trying to access admin route: ${currentPath}`)
+      
+      // Para APIs de admin, retornar erro JSON
+      if (isApiRoute(req)) {
+        return NextResponse.json(
+          { error: 'Acesso negado - Apenas administradores' },
+          { status: 403 }
+        )
+      }
+      
       return NextResponse.redirect(new URL('/', req.url))
     }
 
