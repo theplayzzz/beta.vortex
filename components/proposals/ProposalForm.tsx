@@ -4,6 +4,12 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { proposalFormSchema, validateTab, calculateTabProgress, type ProposalFormSchema } from '@/lib/proposals/formSchema';
+import { 
+  validateProposalFormWithNavigation, 
+  executeProposalAutoNavigation,
+  getProposalValidationErrorSummary,
+  type ProposalFormValidationWithNavigationResult 
+} from '@/lib/proposals/proposalFormValidation';
 import { BasicInfoTab } from './tabs/BasicInfoTab';
 import { ScopeTab } from './tabs/ScopeTab';
 import { CommercialTab } from './tabs/CommercialTab';
@@ -25,6 +31,7 @@ interface ProposalFormProps {
 export function ProposalForm({ client }: ProposalFormProps) {
   const [currentTab, setCurrentTab] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<ProposalFormValidationWithNavigationResult | null>(null);
   const router = useRouter();
   const { addToast } = useToast();
   
@@ -73,6 +80,45 @@ export function ProposalForm({ client }: ProposalFormProps) {
 
   const handleSubmit = async (data: ProposalFormSchema) => {
     try {
+      // VALIDAÇÃO INTELIGENTE - Validar formulário completo com navegação
+      console.log('🔍 handleSubmit: Iniciando validação inteligente...');
+      const validationResult = validateProposalFormWithNavigation(data);
+      
+      if (!validationResult.isValid) {
+        console.log('❌ handleSubmit: Formulário inválido, navegando para erro...');
+        
+        // Armazenar erros para indicadores visuais
+        setValidationErrors(validationResult);
+        
+        // Navegar automaticamente para a primeira aba com erro
+        const navigationExecuted = executeProposalAutoNavigation(
+          validationResult, 
+          setCurrentTab
+        );
+        
+        // Mostrar toast com resumo dos erros
+        const errorSummary = getProposalValidationErrorSummary({
+          isValid: validationResult.isValid,
+          errors: validationResult.errors,
+          firstErrorTab: validationResult.errorTab,
+          totalErrors: validationResult.totalErrors,
+        });
+        
+        addToast(toast.error(
+          'Campos obrigatórios não preenchidos',
+          errorSummary.summary || `${validationResult.totalErrors} erro(s) encontrado(s)`,
+          { duration: 6000 }
+        ));
+        
+        console.log(`🎯 handleSubmit: Navegação automática ${navigationExecuted ? 'executada' : 'falhou'}`);
+        return; // Parar execução se houver erros
+      }
+      
+      console.log('✅ handleSubmit: Formulário válido, prosseguindo...');
+      
+      // Limpar erros de validação
+      setValidationErrors(null);
+      
       // Mostrar toast de início do processo
       addToast(toast.info(
         'Gerando proposta',
@@ -131,6 +177,9 @@ export function ProposalForm({ client }: ProposalFormProps) {
           const tabProgress = calculateTabProgress(index, currentTabData);
           const tabValid = validateTab(index, currentTabData).isValid;
           
+          // Verificar se há erros de validação para esta aba
+          const hasValidationError = validationErrors?.errors.find(error => error.tabIndex === index && error.hasErrors);
+          
           return (
             <button
               key={tab.id}
@@ -138,17 +187,27 @@ export function ProposalForm({ client }: ProposalFormProps) {
               className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
                 currentTab === index
                   ? 'bg-sgbus-green text-night'
-                  : 'text-seasalt hover:text-sgbus-green'
+                  : hasValidationError
+                    ? 'text-red-400 hover:text-red-300 border-red-400/50'
+                    : 'text-seasalt hover:text-sgbus-green'
               }`}
             >
               <div className="flex items-center justify-center space-x-2">
                 <span>{tab.title}</span>
-                {tabValid && (
+                {/* Ícone de erro de validação - prioridade máxima */}
+                {hasValidationError && (
+                  <svg className="w-4 h-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                )}
+                {/* Ícone de válido - apenas se não houver erro de validação */}
+                {!hasValidationError && tabValid && (
                   <svg className="w-4 h-4 text-sgbus-green" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 )}
-                {!tabValid && currentTab > index && (
+                {/* Ícone de alerta - apenas se não houver erro de validação e não for válido */}
+                {!hasValidationError && !tabValid && currentTab > index && (
                   <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>

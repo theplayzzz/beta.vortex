@@ -207,16 +207,130 @@ disabled={!isFormComplete || generateProposal.isPending}
 ✅ **VALIDAÇÃO FINAL PRESERVADA**
 ✅ **UX MELHORADA - SEM BLOQUEIOS INTERMEDIÁRIOS**
 
-### **ETAPA 2: VALIDAÇÃO INTELIGENTE** ⏳
+### **ETAPA 2: VALIDAÇÃO INTELIGENTE** ✅
 **Objetivo**: Implementar sistema de validação similar ao formulário de planejamento
 **Base**: Sistema já existe em `/lib/planning/formValidation.ts`
+**Status**: ✅ **CONCLUÍDA**
 
 #### Tarefas:
-- [ ] **2.1** Adaptar `validateFormWithNavigation()` para propostas
-- [ ] **2.2** Criar `proposalFormValidation.ts` baseado em planejamento
-- [ ] **2.3** Implementar retorno automático à etapa com erro
-- [ ] **2.4** Adicionar destacar de campos obrigatórios não preenchidos
-- [ ] **2.5** Testar fluxo de validação completo
+- [x] **2.1** ✅ Adaptar `validateFormWithNavigation()` para propostas
+- [x] **2.2** ✅ Criar `proposalFormValidation.ts` baseado em planejamento
+- [x] **2.3** ✅ Implementar retorno automático à etapa com erro
+- [x] **2.4** ✅ Adicionar destacar de campos obrigatórios não preenchidos
+- [x] **2.5** ✅ Testar fluxo de validação completo
+
+#### 🔧 **Implementações Realizadas**:
+
+##### **1. Sistema de Validação Completo** (`lib/proposals/proposalFormValidation.ts`)
+```typescript
+// Principais funções implementadas:
+- validateCompleteProposalForm() - Validação completa de todas as abas
+- validateProposalFormWithNavigation() - Validação com navegação automática
+- executeProposalAutoNavigation() - Navegação automática para erros
+- scrollToProposalField() - Scroll suave e destaque de campos
+- getProposalValidationErrorSummary() - Resumo de erros amigável
+```
+
+##### **2. Validação Por Abas Específicas**
+```typescript
+// Abas mapeadas individualmente:
+const proposalTabs = [
+  { key: 'basic', label: 'Informações Básicas' },     // Aba 0
+  { key: 'scope', label: 'Escopo de Serviços' },     // Aba 1 
+  { key: 'commercial', label: 'Contexto Comercial' }  // Aba 2
+];
+
+// Schemas individuais:
+tabSchemas = {
+  basic: basicInfoSchema,      // titulo_proposta, tipo_proposta, etc.
+  scope: scopeSchema,          // modalidade_entrega, servicos_incluidos, etc.
+  commercial: commercialSchema // urgencia_projeto, tomador_decisao, etc.
+}
+```
+
+##### **3. Integração no `ProposalForm.tsx`**
+```typescript
+// Import das funções de validação
+import { 
+  validateProposalFormWithNavigation, 
+  executeProposalAutoNavigation,
+  getProposalValidationErrorSummary
+} from '@/lib/proposals/proposalFormValidation';
+
+// Estado para armazenar erros
+const [validationErrors, setValidationErrors] = useState<ProposalFormValidationWithNavigationResult | null>(null);
+
+// Validação inteligente no handleSubmit
+const validationResult = validateProposalFormWithNavigation(data);
+if (!validationResult.isValid) {
+  // Navegação automática + Toast de erro + Indicadores visuais
+}
+```
+
+##### **4. Navegação Automática Implementada**
+- ✅ **Detecção automática** da primeira aba com erro
+- ✅ **Navegação imediata** para aba problemática (`setCurrentTab()`)
+- ✅ **Scroll suave** para o primeiro campo com erro
+- ✅ **Destaque visual** temporário (outline verde por 2s)
+- ✅ **Foco automático** em inputs/selects/textareas
+
+##### **5. Indicadores Visuais nas Abas**
+```typescript
+// Sistema de ícones por prioridade:
+🔴 Ícone VERMELHO (X) - Erro de validação detectado (prioridade máxima)
+✅ Ícone VERDE (✓) - Aba válida e preenchida corretamente
+⚠️ Ícone AMARELO (!) - Aba visitada mas não preenchida
+```
+
+##### **6. Toast Informativo Inteligente**
+```typescript
+// Mensagens contextuais:
+addToast(toast.error(
+  'Campos obrigatórios não preenchidos',
+  'Há campos obrigatórios não preenchidos na aba "Nome da Aba"',
+  { duration: 6000 }
+));
+```
+
+#### 🧪 **Fluxo de Validação Testado**:
+
+##### **Cenário 1: Formulário Vazio**
+1. Usuário clica "Gerar Proposta" sem preencher nada
+2. ✅ Sistema detecta erros na aba "Informações Básicas"
+3. ✅ Navega automaticamente para aba 0
+4. ✅ Destaca primeiro campo com erro (`titulo_proposta`)
+5. ✅ Mostra toast "Campos obrigatórios não preenchidos"
+6. ✅ Aba fica vermelha com ícone X
+
+##### **Cenário 2: Aba Intermediária com Erro**
+1. Usuário preenche aba 1, deixa aba 2 vazia, vai para aba 3
+2. Clica "Gerar Proposta"
+3. ✅ Sistema detecta erro na aba 2 "Escopo de Serviços"
+4. ✅ Navega automaticamente para aba 1
+5. ✅ Destaca campo `modalidade_entrega`
+6. ✅ Toast específico: "Há campos obrigatórios não preenchidos na aba 'Escopo de Serviços'"
+
+##### **Cenário 3: Múltiplas Abas com Erro**
+1. Erros nas abas 0, 1 e 2
+2. ✅ Sistema navega para primeira aba com erro (aba 0)
+3. ✅ Toast: "Há campos obrigatórios não preenchidos em 3 abas"
+4. ✅ Todas as abas ficam vermelhas com ícone X
+5. ✅ Usuário pode corrigir aba por aba
+
+#### 📋 **Comportamento Final**:
+1. **Validação rigorosa** apenas no botão "Gerar Proposta"
+2. **Navegação automática** para primeira aba com erro
+3. **Destaque visual** do primeiro campo problemático
+4. **Feedback contextual** via toast informativo
+5. **Indicadores visuais** nas abas (vermelho = erro, verde = ok)
+6. **Scroll suave** e foco automático para melhor UX
+7. **Log detalhado** no console para debugging
+
+#### 🎯 **Resultado**:
+✅ **VALIDAÇÃO INTELIGENTE IMPLEMENTADA COM SUCESSO** 
+✅ **NAVEGAÇÃO AUTOMÁTICA FUNCIONANDO**
+✅ **INDICADORES VISUAIS IMPLEMENTADOS**
+✅ **UX SIMILAR AO FORMULÁRIO DE PLANEJAMENTO**
 
 ### **ETAPA 3: INTEGRAÇÃO BANCO DE DADOS** ✅
 **Objetivo**: Salvar dados do formulário no banco
