@@ -25,6 +25,9 @@ export async function GET(
     // Await params to get the actual values
     const { id } = await params;
 
+    // 🔥 LOG PARA CONFIRMAR BUSCA FRESCA
+    console.log(`🔄 [API] Buscando proposta ${id} - dados frescos do banco de dados (${new Date().toISOString()})`);
+
     // Buscar usuário no banco
     const user = await prisma.user.findUnique({
       where: { clerkId: userId },
@@ -74,10 +77,19 @@ export async function GET(
       }
     }
 
-    return NextResponse.json({
+    // 🔥 HEADERS PARA EVITAR CACHE NO SERVIDOR E BROWSER
+    const response = NextResponse.json({
       ...proposal,
       parsedContent,
     });
+
+    // Adicionar headers para evitar cache
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    response.headers.set('Surrogate-Control', 'no-store');
+
+    return response;
 
   } catch (error) {
     console.error('Error fetching proposal:', error);

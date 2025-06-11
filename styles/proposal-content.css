@@ -1,0 +1,418 @@
+/* Estilos para visualização de propostas comerciais */
+.proposal-content {
+  /* Typography */
+  color: #1f2937;
+  line-height: 1.7;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Headers */
+.proposal-content h1,
+.proposal-content h2,
+.proposal-content h3,
+.proposal-content h4,
+.proposal-content h5,
+.proposal-content h6 {
+  color: #111827;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.proposal-content h1 {
+  font-size: 2.25rem;
+  border-bottom: 3px solid #6be94c;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.proposal-content h2 {
+  font-size: 1.875rem;
+  color: #6be94c;
+  border-left: 4px solid #6be94c;
+  padding-left: 1rem;
+}
+
+.proposal-content h3 {
+  font-size: 1.5rem;
+  color: #374151;
+}
+
+/* Paragraphs */
+.proposal-content p {
+  color: #374151;
+  margin-bottom: 1rem;
+  text-align: justify;
+}
+
+/* Strong text */
+.proposal-content strong {
+  color: #6be94c;
+  font-weight: 600;
+}
+
+/* Lists */
+.proposal-content ul,
+.proposal-content ol {
+  margin-bottom: 1.5rem;
+  padding-left: 1.5rem;
+}
+
+.proposal-content li {
+  color: #374151;
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.proposal-content li::marker {
+  color: #6be94c;
+}
+
+/* Tables */
+.proposal-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.proposal-content th {
+  background-color: #6be94c;
+  color: #111827;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 2px solid #4ade80;
+}
+
+.proposal-content td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  color: #374151;
+}
+
+.proposal-content tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.proposal-content tr:hover {
+  background-color: #f3f4f6;
+}
+
+/* Blockquotes */
+.proposal-content blockquote {
+  border-left: 4px solid #6be94c;
+  background-color: #f0fdf4;
+  padding: 1rem 1.5rem;
+  margin: 1.5rem 0;
+  border-radius: 0 8px 8px 0;
+}
+
+.proposal-content blockquote p {
+  color: #166534;
+  font-style: italic;
+  margin-bottom: 0;
+}
+
+/* Links */
+.proposal-content a {
+  color: #6be94c;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.proposal-content a:hover {
+  color: #4ade80;
+  text-decoration: none;
+}
+
+/* Code */
+.proposal-content code {
+  background-color: #f3f4f6;
+  color: #374151;
+  padding: 0.125rem 0.25rem;
+  border-radius: 4px;
+  font-size: 0.875em;
+  font-family: 'Fira Code', Consolas, Monaco, monospace;
+}
+
+.proposal-content pre {
+  background-color: #1f2937;
+  color: #f9fafb;
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.proposal-content pre code {
+  background-color: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+/* Special sections */
+.proposal-content .highlight {
+  background-color: #fef3c7;
+  border: 1px solid #f59e0b;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.proposal-content .warning {
+  background-color: #fef2f2;
+  border: 1px solid #ef4444;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.proposal-content .success {
+  background-color: #f0fdf4;
+  border: 1px solid #22c55e;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .proposal-content {
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  
+  .proposal-content h1 {
+    font-size: 1.875rem;
+  }
+  
+  .proposal-content h2 {
+    font-size: 1.5rem;
+  }
+  
+  .proposal-content h3 {
+    font-size: 1.25rem;
+  }
+  
+  .proposal-content table {
+    font-size: 0.875rem;
+  }
+  
+  .proposal-content th,
+  .proposal-content td {
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+/* Error handling styles */
+.error-container {
+  padding: 20px;
+  border: 2px solid #ff6b6b;
+  background: #ffe0e0;
+  color: #d63031;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.original-content {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 4px;
+  font-family: 'Fira Code', monospace;
+  white-space: pre-wrap;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e9ecef;
+}
+
+/* 🎨 VISUALIZAÇÃO NORMAL: Fundo branco, texto preto, sem cores */
+.proposal-content-normal {
+  background: white;
+  color: #1a1a1a;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.7;
+}
+
+.proposal-content-normal h1 {
+  color: #1a1a1a !important;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #e5e5e5;
+  padding-bottom: 0.5rem;
+}
+
+.proposal-content-normal h2 {
+  color: #2d2d2d !important;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  border-left: 4px solid #666666;
+  padding-left: 1rem;
+}
+
+.proposal-content-normal h3 {
+  color: #404040 !important;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.proposal-content-normal h4,
+.proposal-content-normal h5,
+.proposal-content-normal h6 {
+  color: #525252 !important;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.proposal-content-normal p {
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+  line-height: 1.7;
+  text-align: justify;
+}
+
+.proposal-content-normal strong {
+  color: #1a1a1a !important;
+  font-weight: 700;
+}
+
+.proposal-content-normal em {
+  color: #2d2d2d;
+  font-style: italic;
+}
+
+.proposal-content-normal ul,
+.proposal-content-normal ol {
+  margin-bottom: 1.5rem;
+  padding-left: 1.5rem;
+  color: #1a1a1a;
+}
+
+.proposal-content-normal li {
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.proposal-content-normal li::marker {
+  color: #666666;
+}
+
+.proposal-content-normal hr {
+  border: none;
+  border-top: 1px solid #e5e5e5;
+  margin: 2rem 0;
+}
+
+.proposal-content-normal blockquote {
+  border-left: 4px solid #d1d5db;
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+  color: #525252;
+  font-style: italic;
+}
+
+.proposal-content-normal table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+.proposal-content-normal th,
+.proposal-content-normal td {
+  border: 1px solid #e5e5e5;
+  padding: 0.75rem;
+  text-align: left;
+  color: #1a1a1a;
+}
+
+.proposal-content-normal th {
+  background-color: #f9f9f9;
+  font-weight: 600;
+}
+
+/* Legacy styles para compatibilidade */
+.proposal-heading-1 {
+  color: #1a1a1a !important;
+  border-bottom: 2px solid #e5e5e5;
+  padding-bottom: 0.5rem;
+  margin-top: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.proposal-heading-2 {
+  color: #2d2d2d !important;
+  border-left: 4px solid #666666;
+  padding-left: 1rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.proposal-heading-3 {
+  color: #404040 !important;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.proposal-paragraph {
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+  line-height: 1.7;
+  text-align: justify;
+}
+
+.proposal-strong {
+  color: #1a1a1a !important;
+  font-weight: 700;
+}
+
+.proposal-list {
+  margin-bottom: 1.5rem;
+  padding-left: 1.5rem;
+}
+
+.proposal-list li {
+  color: #374151;
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.proposal-list li::marker {
+  color: #6be94c;
+}
+
+/* Content wrapper styles */
+.proposal-content {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.7;
+  color: #1f2937;
+}
+
+/* Print styles */
+@media print {
+  .proposal-content {
+    font-size: 12pt;
+    line-height: 1.5;
+    color: #000;
+  }
+  
+  .proposal-content h1,
+  .proposal-content h2,
+  .proposal-content h3 {
+    page-break-after: avoid;
+  }
+  
+  .proposal-content table {
+    page-break-inside: avoid;
+  }
+} 

@@ -102,13 +102,23 @@ export function useProposals(filters: ProposalFilters = {}) {
 }
 
 // Hook para buscar proposta específica
-export function useProposal(id: string | null) {
+export function useProposal(id: string | null, options?: { alwaysFresh?: boolean }) {
   return useQuery<Proposal>({
     queryKey: ['proposal', id],
     queryFn: async () => {
       if (!id) throw new Error('ID da proposta é obrigatório');
       
-      const response = await fetch(`/api/proposals/${id}`);
+      // 🔥 SEMPRE BUSCAR DADOS FRESCOS: Adicionar timestamp para evitar cache do browser
+      const timestamp = new Date().getTime();
+      const response = await fetch(`/api/proposals/${id}?_t=${timestamp}`, {
+        // Forçar bypass do cache do browser
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
       
       if (!response.ok) {
         const error = await response.json();
@@ -118,7 +128,12 @@ export function useProposal(id: string | null) {
       return response.json();
     },
     enabled: !!id,
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    // 🔥 CONFIGURAÇÃO PARA SEMPRE BUSCAR DADOS FRESCOS
+    staleTime: options?.alwaysFresh ? 0 : 1000 * 60 * 5, // Se alwaysFresh=true, sempre considerar stale
+    gcTime: options?.alwaysFresh ? 0 : 1000 * 60 * 10, // Se alwaysFresh=true, não manter em cache
+    refetchOnMount: options?.alwaysFresh ? 'always' : true, // Sempre refetch ao montar se alwaysFresh=true
+    refetchOnWindowFocus: options?.alwaysFresh ? true : false, // Refetch ao focar janela se alwaysFresh=true
+    refetchOnReconnect: true, // Sempre refetch ao reconectar
   });
 }
 

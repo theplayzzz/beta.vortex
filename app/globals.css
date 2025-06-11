@@ -362,3 +362,6 @@ button[style*="zIndex: 10000"]:hover {
   contain: layout !important;
   display: block !important;
 }
+
+/* Import dos estilos específicos para propostas */
+@import '../styles/proposal-content.css';
