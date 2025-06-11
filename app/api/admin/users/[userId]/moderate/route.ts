@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma/client';
 import { ApprovalStatus, ModerationAction } from '@prisma/client';
 
 interface ModerationRequest {
-  action: 'APPROVE' | 'REJECT' | 'SUSPEND';
+  action: 'APPROVE' | 'REJECT' | 'SUSPEND' | 'UNSUSPEND_TO_APPROVED' | 'UNSUSPEND_TO_PENDING';
   reason?: string;
   version: number; // Para optimistic concurrency control
 }
@@ -32,7 +32,7 @@ export async function POST(
     const { userId: targetUserClerkId } = await params;
 
     // Validações
-    if (!['APPROVE', 'REJECT', 'SUSPEND'].includes(action)) {
+    if (!['APPROVE', 'REJECT', 'SUSPEND', 'UNSUSPEND_TO_APPROVED', 'UNSUSPEND_TO_PENDING'].includes(action)) {
       return NextResponse.json({ error: 'Ação inválida' }, { status: 400 });
     }
 
@@ -97,6 +97,27 @@ export async function POST(
         newStatus = ApprovalStatus.SUSPENDED;
         newMetadata.approvalStatus = newStatus;
         newMetadata.creditBalance = 0; // Zerar créditos na suspensão
+        break;
+
+      case 'UNSUSPEND_TO_APPROVED':
+        newStatus = ApprovalStatus.APPROVED;
+        newMetadata.approvalStatus = newStatus;
+        newMetadata.approvedAt = now.toISOString();
+        newMetadata.approvedBy = moderatorClerkId;
+        newMetadata.creditBalance = 100; // Restituir créditos
+        newMetadata.unsuspendedAt = now.toISOString();
+        newMetadata.unsuspendedBy = moderatorClerkId;
+        break;
+
+      case 'UNSUSPEND_TO_PENDING':
+        newStatus = ApprovalStatus.PENDING;
+        newMetadata.approvalStatus = newStatus;
+        newMetadata.creditBalance = 0; // Manter sem créditos até nova aprovação
+        newMetadata.unsuspendedAt = now.toISOString();
+        newMetadata.unsuspendedBy = moderatorClerkId;
+        // Limpar dados de aprovação anterior
+        delete newMetadata.approvedAt;
+        delete newMetadata.approvedBy;
         break;
 
       default:
@@ -199,10 +220,19 @@ export async function POST(
       rejectionReason: finalMetadata.rejectionReason || null
     };
 
+    // Mensagens de sucesso personalizadas
+    const successMessages = {
+      'APPROVE': 'aprovado',
+      'REJECT': 'rejeitado',
+      'SUSPEND': 'suspenso',
+      'UNSUSPEND_TO_APPROVED': 'removido da suspensão e aprovado',
+      'UNSUSPEND_TO_PENDING': 'removido da suspensão e retornado para pendente'
+    };
+
     return NextResponse.json({
       success: true,
       user: responseUser,
-      message: `Usuário ${action === 'APPROVE' ? 'aprovado' : action === 'REJECT' ? 'rejeitado' : 'suspenso'} com sucesso`,
+      message: `Usuário ${successMessages[action]} com sucesso`,
       source: 'clerk-first'
     });
 

@@ -155,16 +155,7 @@ export default function AccountRejectedPage() {
         </div>
       </div>
 
-      {/* CSS Variables inline para garantir compatibilidade */}
-      <style jsx>{`
-        :root {
-          --night: #0e0f0f;
-          --eerie-black: #171818;
-          --sgbus-green: #6be94c;
-          --seasalt: #f9fbfc;
-          --periwinkle: #cfc6fe;
-        }
-      `}</style>
+
     </div>
   )
 } 

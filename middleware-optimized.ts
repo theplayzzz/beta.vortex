@@ -45,7 +45,7 @@ function cleanCache() {
   const now = Date.now();
   const expiredKeys: string[] = [];
   
-  for (const [userId, data] of userCache) {
+  for (const [userId, data] of Array.from(userCache.entries())) {
     if (now - data.timestamp > CACHE_TTL) {
       expiredKeys.push(userId);
     }
