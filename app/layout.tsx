@@ -5,6 +5,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import DynamicLayout from "@/components/layout/dynamic-layout";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ToastProvider } from "@/components/ui/toast";
+import { TokenExpirationHandler } from "@/components/auth/TokenExpirationHandler";
 
 export const metadata = {
   title: "Vortex Vault - Sistema de Planejamento e Gestão com IA",
@@ -30,9 +31,11 @@ export default function RootLayout({
         <body className={cx(sfPro.variable, inter.variable, "bg-night text-seasalt")}>
           <QueryProvider>
             <ToastProvider>
-              <DynamicLayout>
-                {children}
-              </DynamicLayout>
+              <TokenExpirationHandler>
+                <DynamicLayout>
+                  {children}
+                </DynamicLayout>
+              </TokenExpirationHandler>
             </ToastProvider>
           </QueryProvider>
         </body>
