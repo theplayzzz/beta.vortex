@@ -108,7 +108,7 @@ export function ConditionalFieldsTestDemo() {
             <ul className="text-orange-300 text-sm space-y-1">
               {requiredConditionalQuestions.map(q => (
                 <li key={q.field}>
-                  • <strong>{q.label}</strong> (aparece quando "{q.conditional?.dependsOn}" = {q.conditional?.showWhen.join(' ou ')})
+                  • <strong>{q.label}</strong> (aparece quando &quot;{q.conditional?.dependsOn}&quot; = {q.conditional?.showWhen.join(' ou ')})
                 </li>
               ))}
             </ul>
@@ -208,9 +208,9 @@ export function ConditionalFieldsTestDemo() {
       <div className="bg-gradient-to-r from-eerie-black to-night p-6 rounded-lg border border-sgbus-green/20">
         <h4 className="text-seasalt font-medium mb-3">📋 Como Testar</h4>
         <ol className="text-periwinkle text-sm space-y-2 list-decimal list-inside">
-          <li>Preencha apenas alguns campos <strong>não condicionais</strong> (deixe campos "Outro" vazios)</li>
-          <li>Clique em <strong>"Testar Validação"</strong> - deveria PASSAR</li>
-          <li>Agora selecione uma opção que ativa um campo condicional (ex: "Outro")</li>
+          <li>Preencha apenas alguns campos <strong>não condicionais</strong> (deixe campos &quot;Outro&quot; vazios)</li>
+          <li>Clique em <strong>&quot;Testar Validação&quot;</strong> - deveria PASSAR</li>
+          <li>Agora selecione uma opção que ativa um campo condicional (ex: &quot;Outro&quot;)</li>
           <li>Deixe o campo condicional vazio e teste novamente - deveria FALHAR</li>
           <li>Preencha o campo condicional e teste - deveria PASSAR</li>
         </ol>

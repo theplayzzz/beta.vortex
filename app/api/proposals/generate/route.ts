@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma/client';
 import { z } from 'zod';
+import { convertMarkdownToHtml } from '@/lib/proposals/markdownConverter';
 
 // Schema para dados de geração de proposta
 const GenerateProposalSchema = z.object({
@@ -193,7 +194,36 @@ export async function POST(request: NextRequest) {
 
       if (webhookResponse.ok) {
         const webhookResult = await webhookResponse.json();
-        console.log('✅ Webhook enviado com sucesso:', webhookResult);
+        console.log('✅ Webhook enviado com sucesso:', JSON.stringify(webhookResult, null, 2));
+
+        // 🔥 CORREÇÃO CRÍTICA: Extrair markdown da estrutura real da resposta
+        const markdownContent = webhookResult.Proposta;
+        
+        if (!markdownContent) {
+          console.error('❌ Estrutura da resposta webhook:', Object.keys(webhookResult));
+          throw new Error('Resposta da IA não contém o campo "Proposta"');
+        }
+
+        console.log('📄 Markdown extraído - Análise detalhada:', {
+          length: markdownContent?.length,
+          preview: markdownContent?.substring(0, 200),
+          hasCodeBlocks: markdownContent?.includes('```'),
+          hasPreTags: markdownContent?.includes('<pre>'),
+          startsWithMarkdown: markdownContent?.startsWith('#') || markdownContent?.startsWith('**'),
+          endsWithCode: markdownContent?.endsWith('```'),
+          containsHTML: markdownContent?.includes('<h1') || markdownContent?.includes('<p>')
+        });
+
+        // 🔥 CONVERTER MARKDOWN PARA HTML
+        const htmlContent = convertMarkdownToHtml(markdownContent);
+        console.log('🎨 HTML convertido - Análise detalhada:', {
+          length: htmlContent?.length,
+          preview: htmlContent?.substring(0, 200),
+          startsWithHeader: htmlContent?.startsWith('<h1') || htmlContent?.startsWith('<h2'),
+          containsRawMarkdown: htmlContent?.includes('#') || htmlContent?.includes('**'),
+          hasProperHTML: htmlContent?.includes('<p class="proposal-paragraph">') || htmlContent?.includes('<h1 class="proposal-heading-1">'),
+          conversionSuccessful: !htmlContent?.includes('```') && !htmlContent?.includes('**')
+        });
 
         // 🔥 IMPORTANTE: Não sobrescrever dados do formulário!
         // Os dados da IA vão para campos específicos, formData fica preservado
@@ -203,11 +233,25 @@ export async function POST(request: NextRequest) {
             status: 'SENT', // Mudando para SENT após geração
             updatedAt: new Date(),
             
+            // ✅ SALVAR MARKDOWN E HTML DA IA NOS CAMPOS DEDICADOS
+            proposalMarkdown: markdownContent,
+            proposalHtml: htmlContent,
+            
+            // ✅ METADATA DA GERAÇÃO
+            aiMetadata: {
+              generatedAt: new Date().toISOString(),
+              contentLength: markdownContent.length,
+              wordCount: markdownContent.split(/\s+/).length,
+              processingTime: webhookResult.processing_time_ms || null,
+              modelUsed: 'external-ai'
+            },
+            
             // ✅ Status de sucesso no generatedContent (sem sobrescrever formData)
             generatedContent: JSON.stringify({
               status: 'completed',
               message: 'Proposta gerada com sucesso pela IA',
-              completedAt: new Date().toISOString()
+              completedAt: new Date().toISOString(),
+              markdownLength: markdownContent.length
             }),
           },
           include: {

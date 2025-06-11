@@ -133,15 +133,15 @@ export function ProposalForm({ client }: ProposalFormProps) {
 
       const result = await generateProposal.mutateAsync(proposalData);
 
-      // Mostrar toast de sucesso
+      // Mostrar toast de sucesso com redirecionamento
       addToast(toast.success(
         'Proposta gerada com sucesso!',
-        'A IA criou uma proposta personalizada para seu cliente.',
-        { duration: 5000 }
+        'Redirecionando para visualização...',
+        { duration: 3000 }
       ));
 
-      // Redirecionar para a lista de propostas
-      router.push('/propostas');
+      // Redirecionar para a proposta criada (não para lista)
+      router.push(`/propostas/${result.proposal.id}`);
 
     } catch (error: any) {
       console.error('Erro ao gerar proposta:', error);
@@ -260,7 +260,7 @@ export function ProposalForm({ client }: ProposalFormProps) {
               <button
                 type="submit"
                 disabled={!isFormComplete || generateProposal.isPending}
-                className="px-6 py-2 bg-sgbus-green text-night rounded-lg hover:bg-sgbus-green/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                className="px-6 py-2 bg-sgbus-green text-night rounded-lg hover:bg-sgbus-green/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 min-w-[140px]"
               >
                 {generateProposal.isPending && (
                   <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-night" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -269,7 +269,7 @@ export function ProposalForm({ client }: ProposalFormProps) {
                   </svg>
                 )}
                 <span>
-                  {generateProposal.isPending ? 'Gerando...' : 'Gerar Proposta'}
+                  {generateProposal.isPending ? 'Processando...' : 'Gerar Proposta'}
                 </span>
               </button>
             )}
