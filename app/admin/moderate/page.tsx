@@ -22,7 +22,8 @@ import {
   Mail,
   ChevronLeft,
   ChevronRight,
-  RotateCcw
+  RotateCcw,
+  Unlock
 } from 'lucide-react'
 
 interface User {
@@ -147,14 +148,15 @@ export default function ModeratePage() {
     }
   }
 
-  const moderateUser = async (userId: string, action: 'APPROVE' | 'REJECT' | 'SUSPEND', reason?: string) => {
+  const moderateUser = async (userId: string, action: 'APPROVE' | 'REJECT' | 'SUSPEND' | 'UNSUSPEND_TO_APPROVED' | 'UNSUSPEND_TO_PENDING', reason?: string) => {
     const targetUser = users.find(u => u.id === userId)
     if (!targetUser) return
 
     setModeratingUserId(userId)
     
     try {
-      const response = await fetch(`/api/admin/users/${userId}/moderate`, {
+      // Usar clerkId para a chamada à API, pois a rota espera o clerkId
+      const response = await fetch(`/api/admin/users/${targetUser.clerkId}/moderate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -175,7 +177,9 @@ export default function ModeratePage() {
       const actionMessages = {
         APPROVE: 'Usuário aprovado com sucesso! 100 créditos foram concedidos.',
         REJECT: 'Usuário rejeitado. O acesso foi bloqueado.',
-        SUSPEND: 'Usuário suspenso. O acesso foi temporariamente bloqueado.'
+        SUSPEND: 'Usuário suspenso. O acesso foi temporariamente bloqueado.',
+        UNSUSPEND_TO_APPROVED: 'Suspensão removida! Usuário aprovado e 100 créditos concedidos.',
+        UNSUSPEND_TO_PENDING: 'Suspensão removida! Usuário retornado para análise pendente.'
       }
       
       addToast(toast.success(
@@ -262,6 +266,18 @@ export default function ModeratePage() {
           icon: UserCheck, 
           colors: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
           label: 'Reabilitado'
+        }
+      case 'UNSUSPEND_TO_APPROVED': 
+        return { 
+          icon: UserCheck, 
+          colors: 'bg-green-500/10 text-green-400 border-green-500/20',
+          label: 'Dessuspendido → Aprovado'
+        }
+      case 'UNSUSPEND_TO_PENDING': 
+        return { 
+          icon: RotateCcw, 
+          colors: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+          label: 'Dessuspendido → Pendente'
         }
       case 'RESET_TO_PENDING': 
         return { 
@@ -594,6 +610,43 @@ export default function ModeratePage() {
                                   )}
                                   Suspender
                                 </button>
+                              )}
+                              {user.approvalStatus === 'SUSPENDED' && (
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => moderateUser(user.id, 'UNSUSPEND_TO_APPROVED')}
+                                    disabled={moderatingUserId === user.id}
+                                    className="px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-opacity-50 disabled:opacity-50 flex items-center"
+                                    style={{ 
+                                      backgroundColor: 'var(--sgbus-green, #6be94c)',
+                                      color: 'var(--night, #0e0f0f)'
+                                    }}
+                                  >
+                                    {moderatingUserId === user.id ? (
+                                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                    ) : (
+                                      <Unlock className="w-3 h-3 mr-1" />
+                                    )}
+                                    Aprovar
+                                  </button>
+                                  <button
+                                    onClick={() => moderateUser(user.id, 'UNSUSPEND_TO_PENDING')}
+                                    disabled={moderatingUserId === user.id}
+                                    className="px-3 py-1 text-sm font-medium rounded-md transition-all duration-200 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-opacity-50 disabled:opacity-50 flex items-center border"
+                                    style={{ 
+                                      borderColor: 'var(--periwinkle, #cfc6fe)',
+                                      color: 'var(--periwinkle, #cfc6fe)',
+                                      backgroundColor: 'transparent'
+                                    }}
+                                  >
+                                    {moderatingUserId === user.id ? (
+                                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                    ) : (
+                                      <RotateCcw className="w-3 h-3 mr-1" />
+                                    )}
+                                    Pendente
+                                  </button>
+                                </div>
                               )}
                             </td>
                           </tr>
