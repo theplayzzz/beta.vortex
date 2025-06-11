@@ -58,11 +58,9 @@ export function ProposalForm({ client }: ProposalFormProps) {
 
   const currentTabData = form.watch();
   const currentTabProgress = calculateTabProgress(currentTab, currentTabData);
-  const isCurrentTabValid = validateTab(currentTab, currentTabData).isValid;
 
   const handleNextTab = async () => {
-    const isValid = await form.trigger();
-    if (isValid && currentTab < tabs.length - 1) {
+    if (currentTab < tabs.length - 1) {
       setCurrentTab(currentTab + 1);
     }
   };
@@ -137,17 +135,10 @@ export function ProposalForm({ client }: ProposalFormProps) {
             <button
               key={tab.id}
               onClick={() => setCurrentTab(index)}
-              disabled={index > currentTab && !isCurrentTabValid}
-              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
                 currentTab === index
                   ? 'bg-sgbus-green text-night'
-                  : tabValid
-                    ? 'text-seasalt hover:text-sgbus-green'
-                    : 'text-seasalt/50'
-              } ${
-                index > currentTab && !isCurrentTabValid
-                  ? 'cursor-not-allowed opacity-50'
-                  : 'cursor-pointer'
+                  : 'text-seasalt hover:text-sgbus-green'
               }`}
             >
               <div className="flex items-center justify-center space-x-2">
@@ -155,6 +146,11 @@ export function ProposalForm({ client }: ProposalFormProps) {
                 {tabValid && (
                   <svg className="w-4 h-4 text-sgbus-green" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+                {!tabValid && currentTab > index && (
+                  <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
                 )}
               </div>
@@ -197,8 +193,7 @@ export function ProposalForm({ client }: ProposalFormProps) {
               <button
                 type="button"
                 onClick={handleNextTab}
-                disabled={!isCurrentTabValid}
-                className="px-6 py-2 bg-sgbus-green text-night rounded-lg hover:bg-sgbus-green/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-sgbus-green text-night rounded-lg hover:bg-sgbus-green/90"
               >
                 Próximo
               </button>
