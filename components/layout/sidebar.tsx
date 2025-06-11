@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 import { 
   Home, 
   FileText, 
@@ -13,7 +14,8 @@ import {
   ChevronDown,
   Menu,
   X,
-  FileCheck
+  FileCheck,
+  Shield
 } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 
@@ -22,6 +24,7 @@ interface MenuItem {
   label: string;
   href: string;
   disabled?: boolean;
+  adminOnly?: boolean;
   submenu?: {
     label: string;
     href: string;
@@ -54,6 +57,12 @@ const menuItems: MenuItem[] = [
     href: "/propostas",
   },
   {
+    icon: Shield,
+    label: "Aprovação",
+    href: "/admin/moderate",
+    adminOnly: true,
+  },
+  {
     icon: BarChart2,
     label: "Vendas",
     href: "/vendas",
@@ -65,6 +74,19 @@ export default function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null);
   const pathname = usePathname();
+  const { user } = useUser();
+
+  // Verificar se é admin
+  const isAdmin = user?.publicMetadata?.role === 'ADMIN' || 
+                 user?.publicMetadata?.role === 'SUPER_ADMIN';
+
+  // Filtrar itens do menu baseado no role do usuário
+  const filteredMenuItems = menuItems.filter(item => {
+    if (item.adminOnly) {
+      return isAdmin;
+    }
+    return true;
+  });
 
   // Carregar estado do localStorage
   useEffect(() => {
@@ -139,7 +161,7 @@ export default function Sidebar() {
 
         {/* Navigation Menu */}
         <nav className="flex-1 py-4">
-          {menuItems.map((item) => (
+          {filteredMenuItems.map((item) => (
             <div key={item.label}>
               <Tooltip.Provider>
                 <Tooltip.Root>
@@ -169,6 +191,10 @@ export default function Sidebar() {
                             isActive(item.href)
                               ? "text-seasalt font-semibold bg-white/5 border-r-2 border-sgbus-green"
                               : "text-seasalt/70 hover:text-seasalt hover:bg-white/5"
+                          } ${
+                            item.adminOnly 
+                              ? "border-l-2 border-orange-400 bg-orange-500/10" 
+                              : ""
                           }`}
                           onClick={() => {
                             if (item.submenu && isExpanded) {
@@ -176,7 +202,9 @@ export default function Sidebar() {
                             }
                           }}
                         >
-                          <item.icon className="h-5 w-5 min-w-[20px]" />
+                          <item.icon className={`h-5 w-5 min-w-[20px] ${
+                            item.adminOnly ? "text-orange-400" : ""
+                          }`} />
                           <AnimatePresence>
                             {isExpanded && (
                               <motion.div
@@ -186,7 +214,14 @@ export default function Sidebar() {
                                 transition={{ duration: 0.2 }}
                                 className="ml-3 flex-1 flex items-center justify-between"
                               >
-                                <span className="text-sm">{item.label}</span>
+                                <span className={`text-sm ${
+                                  item.adminOnly ? "text-orange-400 font-medium" : ""
+                                }`}>
+                                  {item.label}
+                                  {item.adminOnly && (
+                                    <span className="ml-1 text-xs opacity-75">ADMIN</span>
+                                  )}
+                                </span>
                                 {item.submenu && (
                                   <ChevronDown
                                     className={`h-4 w-4 text-sgbus-green transition-transform ${
@@ -210,6 +245,7 @@ export default function Sidebar() {
                       >
                         {item.label}
                         {item.disabled && " (Coming Soon)"}
+                        {item.adminOnly && " (Admin Only)"}
                         <Tooltip.Arrow className="fill-[#2A1B45]" />
                       </Tooltip.Content>
                     </Tooltip.Portal>
