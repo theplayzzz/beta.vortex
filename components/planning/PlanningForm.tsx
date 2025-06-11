@@ -274,7 +274,7 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
         <div className="text-red-400 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
           <h4 className="font-medium mb-2">Componente não encontrado</h4>
           <p className="text-sm">
-            O componente para a aba "{currentTabConfig.label}" não foi encontrado.
+            O componente para a aba &quot;{currentTabConfig.label}&quot; não foi encontrado.
           </p>
         </div>
       );

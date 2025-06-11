@@ -239,11 +239,11 @@ export default function TestPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex items-center text-sgbus-green">
                   <span className="mr-2">✅</span>
-                  Página de Clientes (botão "Novo Cliente")
+                  Página de Clientes (botão &quot;Novo Cliente&quot;)
                 </div>
                 <div className="flex items-center text-sgbus-green">
                   <span className="mr-2">✅</span>
-                  Dashboard (ação rápida "Novo Cliente")
+                  Dashboard (ação rápida &quot;Novo Cliente&quot;)
                 </div>
                 <div className="flex items-center text-periwinkle">
                   <span className="mr-2">🔄</span>
