@@ -33,8 +33,10 @@ function createDetalhesSetorSchema(setor?: string): z.ZodSchema<any> {
   const schemaObject: Record<string, z.ZodSchema<any>> = {};
 
   questions.forEach(question => {
-    if (question.required) {
-      // Campo obrigatório
+    // Campos condicionais devem ser sempre opcionais na validação do schema
+    // A validação condicional será feita dinamicamente no frontend
+    if (question.required && !question.conditional) {
+      // Campo obrigatório NÃO condicional
       switch (question.type) {
         case 'text':
         case 'textarea':
@@ -58,13 +60,41 @@ function createDetalhesSetorSchema(setor?: string): z.ZodSchema<any> {
           );
       }
     } else {
-      // Campo opcional
+      // Campo opcional OU condicional (sempre opcional no schema)
       schemaObject[question.field] = z.any().optional();
     }
   });
 
+  // Retornar schema com validação personalizada para campos condicionais
   return Object.keys(schemaObject).length > 0 
-    ? z.object(schemaObject)
+    ? z.object(schemaObject).refine(
+        (data) => {
+          // Validação dinâmica para campos condicionais obrigatórios
+          const conditionalErrors: string[] = [];
+          
+          questions.forEach(question => {
+            // Só validar campos condicionais que são obrigatórios
+            if (question.conditional && question.required) {
+              const dependentValue = data[question.conditional.dependsOn];
+              const stringValue = String(dependentValue);
+              const shouldBeVisible = question.conditional.showWhen.includes(stringValue);
+              
+              // Se o campo deve estar visível e está vazio, é erro
+              if (shouldBeVisible) {
+                const fieldValue = data[question.field];
+                if (!fieldValue || (Array.isArray(fieldValue) && fieldValue.length === 0) || fieldValue === '') {
+                  conditionalErrors.push(`${question.label} é obrigatório quando "${question.conditional.dependsOn}" é "${dependentValue}"`);
+                }
+              }
+            }
+          });
+          
+          return conditionalErrors.length === 0;
+        },
+        {
+          message: "Alguns campos condicionais obrigatórios não foram preenchidos"
+        }
+      )
     : z.record(z.any());
 }
 

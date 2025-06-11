@@ -180,7 +180,13 @@ export default function ClientProfilePage() {
   }, [localClientData?.industry]);
 
   useEffect(() => {
+    // Só salvar se há mudanças do usuário e não está carregando
     if (!localClientData || isLoading || !hasUserChanges) {
+      return;
+    }
+
+    // Garantir que não está tentando salvar dados inválidos
+    if (!localClientData.name || localClientData.name.trim() === '') {
       return;
     }
 
@@ -230,41 +236,57 @@ export default function ClientProfilePage() {
   };
 
   useEffect(() => {
-    if (localClientData && hasUserChanges) {
+    if (localClientData) {
       const newScore = calculateRichnessScore(localClientData);
       if (newScore !== localClientData.richnessScore) {
+        // Atualizar o score sem marcar como mudança do usuário
         setLocalClientData(prev => prev ? { ...prev, richnessScore: newScore } : null);
       }
     }
-  }, [localClientData, hasUserChanges]);
+  }, [localClientData?.industry, localClientData?.serviceOrProduct, localClientData?.initialObjective, 
+      localClientData?.contactEmail, localClientData?.contactPhone, localClientData?.website, 
+      localClientData?.address, localClientData?.businessDetails, localClientData?.targetAudience,
+      localClientData?.marketingObjectives, localClientData?.historyAndStrategies, localClientData?.challengesOpportunities,
+      localClientData?.competitors, localClientData?.resourcesBudget, localClientData?.toneOfVoice, 
+      localClientData?.preferencesRestrictions]);
 
   const getValidClientData = (data: ClientData) => {
-    const explicitData = {
-      name: data.name || undefined,
-      industry: data.industry || undefined,
-      serviceOrProduct: data.serviceOrProduct || undefined,
-      initialObjective: data.initialObjective || undefined,
-      contactEmail: data.contactEmail || undefined,
-      contactPhone: data.contactPhone || undefined,
-      website: data.website || undefined,
-      address: data.address || undefined,
-      businessDetails: data.businessDetails || undefined,
-      targetAudience: data.targetAudience || undefined,
-      marketingObjectives: data.marketingObjectives || undefined,
-      historyAndStrategies: data.historyAndStrategies || undefined,
-      challengesOpportunities: data.challengesOpportunities || undefined,
-      competitors: data.competitors || undefined,
-      resourcesBudget: data.resourcesBudget || undefined,
-      toneOfVoice: data.toneOfVoice || undefined,
-      preferencesRestrictions: data.preferencesRestrictions || undefined,
+    // Função auxiliar para limpar strings vazias
+    const cleanValue = (value: string | undefined | null) => {
+      if (!value || value.trim() === '') return undefined;
+      return value.trim();
     };
 
+    const explicitData = {
+      name: cleanValue(data.name),
+      industry: cleanValue(data.industry),
+      serviceOrProduct: cleanValue(data.serviceOrProduct),
+      initialObjective: cleanValue(data.initialObjective),
+      contactEmail: cleanValue(data.contactEmail),
+      contactPhone: cleanValue(data.contactPhone),
+      website: cleanValue(data.website),
+      address: cleanValue(data.address),
+      businessDetails: cleanValue(data.businessDetails),
+      targetAudience: cleanValue(data.targetAudience),
+      marketingObjectives: cleanValue(data.marketingObjectives),
+      historyAndStrategies: cleanValue(data.historyAndStrategies),
+      challengesOpportunities: cleanValue(data.challengesOpportunities),
+      competitors: cleanValue(data.competitors),
+      resourcesBudget: cleanValue(data.resourcesBudget),
+      toneOfVoice: cleanValue(data.toneOfVoice),
+      preferencesRestrictions: cleanValue(data.preferencesRestrictions),
+    };
+
+    // Transformação especial para "Outro" -> texto personalizado
     if (data.industry === "Outro" && data.businessDetails?.trim()) {
       explicitData.industry = data.businessDetails.trim();
       explicitData.businessDetails = undefined;
     }
 
-    return explicitData;
+    // Remover campos undefined para evitar problemas na API
+    return Object.fromEntries(
+      Object.entries(explicitData).filter(([_, value]) => value !== undefined)
+    );
   };
 
   const handleFieldChange = (field: keyof ClientData, value: string) => {
