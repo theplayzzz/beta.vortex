@@ -354,7 +354,7 @@ export function MultiSelectWithTagsField({
                 }}
               >
                 <Plus className="w-4 h-4 text-sgbus-green" />
-                <span className="truncate">Adicionar "{customTag.trim()}"</span>
+                <span className="truncate">Adicionar &quot;{customTag.trim()}&quot;</span>
               </button>
             )}
 

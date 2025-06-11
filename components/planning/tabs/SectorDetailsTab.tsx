@@ -131,7 +131,7 @@ export const SectorDetailsTab = memo(function SectorDetailsTab({
           Nenhuma pergunta específica configurada para este setor.
         </p>
         <p className="text-periwinkle/70 text-sm mt-2">
-          As perguntas aparecerão quando forem adicionadas para "{sector}".
+          As perguntas aparecerão quando forem adicionadas para &quot;{sector}&quot;.
         </p>
       </div>
     );

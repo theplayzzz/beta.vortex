@@ -121,7 +121,7 @@ export default function PlanejamentoPage() {
             Planejamento não encontrado
           </h3>
           <p className="text-seasalt/70 mb-6">
-            O planejamento com ID "{planningId}" não existe ou você não tem permissão para visualizá-lo.
+            O planejamento com ID &quot;{planningId}&quot; não existe ou você não tem permissão para visualizá-lo.
           </p>
           <Link
             href="/planejamentos"
