@@ -85,7 +85,7 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
             <User className="h-4 w-4" />
             <div>
               <p className="text-seasalt/50">Modelo IA</p>
-              <p className="text-seasalt">{proposal.aiMetadata.model_version}</p>
+              <p className="text-seasalt">{proposal.aiMetadata.modelUsed}</p>
             </div>
           </div>
         )}
