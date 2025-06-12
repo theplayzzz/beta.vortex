@@ -18,22 +18,23 @@ export interface Client {
 // Dados do formulário de proposta
 export interface ProposalFormData {
   // Aba 1: Informações Básicas
-  titulo_proposta: string;
-  tipo_proposta: TipoProposta | '';
-  descricao_objetivo: string;
-  prazo_estimado: string;
+  titulo_da_proposta: string;
+  tipo_de_proposta: TipoProposta | '';
+  nome_da_contratada: string;
+  membros_da_equipe?: string;
   
   // Aba 2: Escopo de Serviços
   modalidade_entrega: ModalidadeEntrega | '';
   servicos_incluidos: ServicoIncluido[];
-  requisitos_especiais: string;
+  requisitos_especiais?: string;
   
   // Aba 3: Contexto Comercial
-  orcamento_estimado?: OrcamentoEstimado | '';
-  concorrentes_considerados: string;
-  urgencia_projeto: UrgenciaProjeto | '';
-  tomador_decisao: string;
-  contexto_adicional: string;
+  orcamento_estimado: string;
+  forma_prazo_pagamento: string;
+  urgencia_do_projeto: UrgenciaProjeto | '';
+  tomador_de_decisao: string;
+  resumo_dor_problema_cliente: string;
+  contexto_adicional?: string;
 }
 
 // Estado de validação por aba
@@ -52,25 +53,35 @@ export interface FormValidationState {
   };
 }
 
-// Payload para webhook
-export interface ProposalWebhookPayload {
-  proposal_id: string;
-  user_info: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  client_info: {
+// Interface para dados completos da proposta
+export interface ProposalData extends ProposalFormData {
+  clientId: string;
+}
+
+// Interface para resposta da API
+export interface ProposalResponse {
+  id: string;
+  title: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  Client: {
     id: string;
     name: string;
     industry: string;
-    richnessScore: number;
-    businessDetails?: string;
   };
-  proposal_requirements: ProposalFormData;
 }
 
-// 🆕 INTERFACES PARA CONTEÚDO DA IA
+// Interface para metadata da IA
+export interface AIMetadata {
+  generatedAt: string;
+  modelUsed: string;
+  tokensUsed: number;
+  processingTime?: number;
+  qualityScore?: number;
+}
+
+// Interface para conteúdo gerado pela IA
 export interface AIGeneratedContent {
   proposta_html: string;
   proposta_markdown: string;
@@ -92,23 +103,53 @@ export interface AIGeneratedContent {
     recommended_approach: string;
     follow_up_strategy: string[];
   };
-  metadata: {
-    generated_at: string;
-    model_version: string;
-    tokens_used: number;
-    processing_complexity: string;
-    quality_score: number;
+  metadata: AIMetadata;
+}
+
+// Payload para webhook ATUALIZADO
+export interface ProposalWebhookPayload {
+  proposal_id: string;
+  timestamp: string;
+  user_info: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  client_info: {
+    id: string;
+    name: string;
+    industry: string;
+    richnessScore: number;
+    businessDetails?: string;
+    contactEmail?: string;
+    website?: string;
+    targetAudience?: string;
+    competitors?: string;
+    data_quality: "alto" | "médio" | "baixo";
+  };
+  submission_metadata: {
+    titulo_da_proposta: string;
+    tipo_de_proposta: string; 
+    nome_da_contratada: string;
+    membros_da_equipe?: string;
+  };
+  context_enrichment: {
+    urgencia_do_projeto: string;
+    tomador_de_decisao: string;
+    resumo_dor_problema_cliente: string;
+    contexto_adicional?: string;
+  };
+  proposal_requirements: {
+    orcamento_estimado: string;
+    forma_prazo_pagamento: string;
+    escopo_detalhado: string;
+    deliverables: ServicoIncluido[];
+    modalidade_entrega: string;
+    requisitos_especiais?: string;
   };
 }
 
-export interface AIMetadata {
-  generated_at: string;
-  model_version: string;
-  tokens_used: number;
-  processing_complexity: string;
-  quality_score: number;
-}
-
+// 🆕 INTERFACES PARA CONTEÚDO DA IA
 export interface AIInsights {
   personalization_score: number;
   industry_match: string;

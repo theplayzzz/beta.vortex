@@ -4,6 +4,7 @@ import { z } from 'zod';
 // Definição dos tipos de aba para propostas
 export type ProposalTabKey = 'basic' | 'scope' | 'commercial';
 
+// Interface para erro de validação por campo
 export interface ProposalValidationError {
   tab: ProposalTabKey;
   tabIndex: number;
@@ -12,6 +13,7 @@ export interface ProposalValidationError {
   hasErrors: boolean;
 }
 
+// Interface para resultado de validação completa
 export interface ProposalFormValidationResult {
   isValid: boolean;
   errors: ProposalValidationError[];
@@ -54,10 +56,10 @@ export function validateCompleteProposalForm(
     
     if (tab.key === 'basic') {
       tabData = {
-        titulo_proposta: formData.titulo_proposta,
-        tipo_proposta: formData.tipo_proposta,
-        descricao_objetivo: formData.descricao_objetivo,
-        prazo_estimado: formData.prazo_estimado,
+        titulo_da_proposta: formData.titulo_da_proposta,
+        tipo_de_proposta: formData.tipo_de_proposta,
+        nome_da_contratada: formData.nome_da_contratada,
+        membros_da_equipe: formData.membros_da_equipe,
       };
     } else if (tab.key === 'scope') {
       tabData = {
@@ -68,9 +70,10 @@ export function validateCompleteProposalForm(
     } else if (tab.key === 'commercial') {
       tabData = {
         orcamento_estimado: formData.orcamento_estimado,
-        concorrentes_considerados: formData.concorrentes_considerados,
-        urgencia_projeto: formData.urgencia_projeto,
-        tomador_decisao: formData.tomador_decisao,
+        forma_prazo_pagamento: formData.forma_prazo_pagamento,
+        urgencia_do_projeto: formData.urgencia_do_projeto,
+        tomador_de_decisao: formData.tomador_de_decisao,
+        resumo_dor_problema_cliente: formData.resumo_dor_problema_cliente,
         contexto_adicional: formData.contexto_adicional,
       };
     }

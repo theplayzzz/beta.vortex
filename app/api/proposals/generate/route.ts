@@ -4,24 +4,25 @@ import { prisma } from '@/lib/prisma/client';
 import { z } from 'zod';
 import { convertMarkdownToHtml } from '@/lib/proposals/markdownConverter';
 
-// Schema para dados de geração de proposta
+// Schema para dados de geração de proposta ATUALIZADO
 const GenerateProposalSchema = z.object({
-  titulo_proposta: z.string().min(1, 'Título é obrigatório'),
-  tipo_proposta: z.string().min(1, 'Tipo é obrigatório'),
+  titulo_da_proposta: z.string().min(1, 'Título é obrigatório'),
+  tipo_de_proposta: z.string().min(1, 'Tipo é obrigatório'),
   clientId: z.string().min(1, 'Cliente é obrigatório'),
+  nome_da_contratada: z.string().min(1, 'Nome da contratada é obrigatório'),
+  membros_da_equipe: z.string().optional(),
   modalidade_entrega: z.string().min(1, 'Modalidade é obrigatória'),
   servicos_incluidos: z.array(z.string()).min(1, 'Pelo menos um serviço é obrigatório'),
-  urgencia_projeto: z.string().min(1, 'Urgência é obrigatória'),
-  tomador_decisao: z.string().min(1, 'Tomador de decisão é obrigatório'),
-  descricao_objetivo: z.string().optional(),
-  prazo_estimado: z.string().optional(),
-  orcamento_estimado: z.string().optional(),
   requisitos_especiais: z.string().optional(),
-  concorrentes_considerados: z.string().optional(),
+  orcamento_estimado: z.string().min(1, 'Orçamento estimado é obrigatório'),
+  forma_prazo_pagamento: z.string().min(1, 'Forma e prazo de pagamento é obrigatório'),
+  urgencia_do_projeto: z.string().min(1, 'Urgência é obrigatória'),
+  tomador_de_decisao: z.string().min(1, 'Tomador de decisão é obrigatório'),
+  resumo_dor_problema_cliente: z.string().min(1, 'Resumo da dor/problema é obrigatório'),
   contexto_adicional: z.string().optional(),
 });
 
-// Função para construir payload do webhook
+// Função para construir payload do webhook ATUALIZADO
 function buildProposalPayload(
   proposalId: string,
   userId: string,
@@ -49,34 +50,26 @@ function buildProposalPayload(
       competitors: clientData.competitors || 'Não informado',
       data_quality: clientData.richnessScore > 80 ? "alto" : clientData.richnessScore > 50 ? "médio" : "baixo"
     },
-    proposal_requirements: {
-      titulo_proposta: formData.titulo_proposta,
-      tipo_proposta: formData.tipo_proposta,
-      modalidade_entrega: formData.modalidade_entrega,
-      servicos_incluidos: formData.servicos_incluidos,
-      urgencia_projeto: formData.urgencia_projeto,
-      tomador_decisao: formData.tomador_decisao,
-      descricao_objetivo: formData.descricao_objetivo || '',
-      prazo_estimado: formData.prazo_estimado || '',
-      orcamento_estimado: formData.orcamento_estimado || 'A definir',
-      requisitos_especiais: formData.requisitos_especiais || '',
-      concorrentes_considerados: formData.concorrentes_considerados || '',
-      contexto_adicional: formData.contexto_adicional || '',
+    submission_metadata: {
+      titulo_da_proposta: formData.titulo_da_proposta,
+      tipo_de_proposta: formData.tipo_de_proposta,
+      nome_da_contratada: formData.nome_da_contratada,
+      membros_da_equipe: formData.membros_da_equipe || '',
     },
     context_enrichment: {
-      client_richness_level: clientData.richnessScore > 80 ? "alto" : clientData.richnessScore > 50 ? "médio" : "baixo",
-      industry_specific_insights: true,
-      personalization_level: clientData.richnessScore > 80 ? "avançado" : "intermediário",
-      recommended_complexity: clientData.richnessScore > 80 ? "avançado" : "intermediário",
-      services_count: formData.servicos_incluidos.length,
-      urgency_level: formData.urgencia_projeto
+      urgencia_do_projeto: formData.urgencia_do_projeto,
+      tomador_de_decisao: formData.tomador_de_decisao,
+      resumo_dor_problema_cliente: formData.resumo_dor_problema_cliente,
+      contexto_adicional: formData.contexto_adicional || '',
     },
-    submission_metadata: {
-      user_id: userId,
-      submitted_at: new Date().toISOString(),
-      form_version: "1.0",
-      session_id: `proposal_${proposalId}`
-    }
+    proposal_requirements: {
+      orcamento_estimado: formData.orcamento_estimado,
+      forma_prazo_pagamento: formData.forma_prazo_pagamento,
+      escopo_detalhado: `Modalidade: ${formData.modalidade_entrega}. Serviços: ${formData.servicos_incluidos.join(', ')}`,
+      deliverables: formData.servicos_incluidos,
+      modalidade_entrega: formData.modalidade_entrega,
+      requisitos_especiais: formData.requisitos_especiais || '',
+    },
   };
 }
 
@@ -258,7 +251,7 @@ export async function POST(request: NextRequest) {
     // Criar proposta inicial
     const proposal = await prisma.commercialProposal.create({
       data: {
-        title: formData.titulo_proposta,
+        title: formData.titulo_da_proposta,
         clientId: formData.clientId,
         userId: user.id,
         status: 'DRAFT',
