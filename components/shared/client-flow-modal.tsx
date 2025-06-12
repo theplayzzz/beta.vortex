@@ -16,24 +16,10 @@ import {
 } from "lucide-react";
 import { useDebounce } from "use-debounce";
 import { useClients, useCreateClient, type Client, type ClientFilters } from "@/lib/react-query";
+import { SETORES_PERMITIDOS } from "@/lib/constants/sectors";
 
-// Setores disponíveis
-const AVAILABLE_INDUSTRIES = [
-  "Tecnologia",
-  "Saúde",
-  "Educação", 
-  "Varejo",
-  "Alimentação",
-  "Consultoria",
-  "Finanças",
-  "Marketing",
-  "Manufatura",
-  "Imobiliário",
-  "Transporte",
-  "Energia",
-  "Turismo",
-  "Outro"
-];
+// Setores disponíveis - apenas os que têm formulários dinâmicos
+const AVAILABLE_INDUSTRIES = SETORES_PERMITIDOS;
 
 interface ClientFlowModalProps {
   isOpen: boolean;
