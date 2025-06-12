@@ -174,7 +174,7 @@ export function ProposalForm({ client }: ProposalFormProps) {
   const isFormComplete = tabs.every((_, index) => validateTab(index, currentTabData).isValid);
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-4">
+    <div className="p-6 space-y-4">
       {/* Tabs Navigation */}
       <div className="flex space-x-1 bg-night/50 p-1 rounded-lg">
         {tabs.map((tab, index) => (
