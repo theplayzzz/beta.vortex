@@ -11,6 +11,8 @@ import {
   APPROVAL_STATUS 
 } from '@/utils/approval-system'
 import { clerkClient } from '@clerk/nextjs/server'
+// 🆕 PLAN-025: Importar função de verificação automática
+import { checkAutoApproval } from '@/utils/auto-approval-webhook'
 
 type ClerkWebhookEvent = {
   type: string
@@ -120,12 +122,37 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
     throw new Error('No primary email found for user')
   }
 
-  // 🆕 Determinar status inicial baseado na configuração
-  const initialStatus = isApprovalRequired() ? getDefaultUserStatus() : APPROVAL_STATUS.APPROVED
+  // 🛡️ PRESERVAR: Lógica existente de determinação de status
+  let initialStatus = isApprovalRequired() ? getDefaultUserStatus() : APPROVAL_STATUS.APPROVED
+  let autoApprovalData: any = null
+
+  // 🆕 PLAN-025: Verificação automática VIA WEBHOOK (apenas se seria PENDING)
+  if (initialStatus === APPROVAL_STATUS.PENDING) {
+    console.log(`[WEBHOOK_AUTO_APPROVAL] Checking auto approval for: ${primaryEmail.email_address}`)
+    
+    try {
+      const autoCheck = await checkAutoApproval(primaryEmail.email_address)
+      
+      if (autoCheck.shouldApprove) {
+        initialStatus = APPROVAL_STATUS.APPROVED
+        autoApprovalData = autoCheck.webhookData
+        console.log(`[WEBHOOK_AUTO_APPROVAL] User pre-approved: ${primaryEmail.email_address}`)
+      } else {
+        console.log(`[WEBHOOK_AUTO_APPROVAL] User not pre-approved: ${primaryEmail.email_address}`)
+        if (autoCheck.error) {
+          console.log(`[WEBHOOK_AUTO_APPROVAL] Error: ${autoCheck.error}`)
+        }
+      }
+    } catch (webhookError) {
+      // 🛡️ CRÍTICO: Nunca falhar por causa do webhook
+      console.error('[WEBHOOK_AUTO_APPROVAL] Webhook check failed, proceeding with normal flow:', webhookError)
+      // initialStatus permanece PENDING
+    }
+  }
   
   console.log(`[USER_CREATED] Creating user with status: ${initialStatus}`)
 
-  // Criar usuário no banco com status de aprovação
+  // 🛡️ PRESERVAR: Toda lógica existente de criação de usuário
   const user = await prisma.user.create({
     data: {
       clerkId: data.id,
@@ -138,6 +165,11 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
       creditBalance: initialStatus === APPROVAL_STATUS.APPROVED ? 100 : 0, // Créditos só para aprovados
       version: 0,
       updatedAt: new Date(),
+      // 🆕 PLAN-025: Se aprovado automaticamente, registrar
+      ...(autoApprovalData && {
+        approvedAt: new Date(),
+        approvedBy: 'SYSTEM_AUTO_WEBHOOK'
+      })
     },
   })
 
@@ -156,14 +188,16 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
     // Não falhar o webhook por erro de metadata
   }
 
-  // 🆕 PHASE 3: Criar transação de crédito apenas para usuários aprovados
+  // 🛡️ PRESERVAR: Lógica existente de créditos (com extensão)
   if (initialStatus === APPROVAL_STATUS.APPROVED) {
     await prisma.creditTransaction.create({
       data: {
         userId: user.id,
         amount: 100,
         type: 'INITIAL_GRANT',
-        description: 'Créditos iniciais de boas-vindas',
+        description: autoApprovalData ? 
+          'Créditos iniciais - aprovação automática via webhook' : 
+          'Créditos iniciais de boas-vindas',
       },
     })
     console.log(`[CREDITS] Initial credits granted to approved user: ${user.id}`)
@@ -171,18 +205,45 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
     console.log(`[CREDITS] Credits withheld - user pending approval: ${user.id}`)
   }
 
-  // 🆕 PHASE 3: Log de auditoria
+  // 🆕 PLAN-025: Log de moderação para aprovação automática
+  if (autoApprovalData) {
+    try {
+      await prisma.userModerationLog.create({
+        data: {
+          userId: user.id,
+          moderatorId: user.id, // Sistema como moderador
+          action: 'APPROVE',
+          previousStatus: 'PENDING',
+          newStatus: 'APPROVED',
+          reason: 'Aprovação automática via webhook externo',
+          metadata: {
+            autoApproval: true,
+            webhookResponse: autoApprovalData,
+            environment: getEnvironment(),
+            timestamp: new Date().toISOString()
+          }
+        }
+      })
+    } catch (logError) {
+      // 🛡️ Log não deve falhar o processo principal
+      console.error('[WEBHOOK_AUTO_APPROVAL] Failed to create moderation log:', logError)
+    }
+  }
+
+  // 🛡️ PRESERVAR: Log de auditoria existente (com extensão)
   logApprovalAction({
-    action: 'USER_CREATED',
+    action: autoApprovalData ? 'USER_AUTO_APPROVED' : 'USER_CREATED',
     userId: user.id,
-    moderatorId: 'SYSTEM',
+    moderatorId: autoApprovalData ? 'SYSTEM_AUTO_WEBHOOK' : 'SYSTEM',
     environment: getEnvironment(),
     timestamp: new Date(),
     metadata: {
       clerkId: data.id,
       email: primaryEmail.email_address,
       initialStatus,
-      approvalRequired: isApprovalRequired()
+      approvalRequired: isApprovalRequired(),
+      autoApproval: !!autoApprovalData,
+      ...(autoApprovalData && { webhookData: autoApprovalData })
     }
   })
 

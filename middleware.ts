@@ -266,6 +266,21 @@ export default clerkMiddleware(async (auth, req) => {
       }
     }
 
+    // 🆕 PLAN-025: Para usuários PENDING, agendar verificação via API (não usar Prisma no middleware)
+    if (approvalStatus === 'PENDING') {
+      // Usar fetch para chamar API ao invés de Prisma direto (edge runtime não suporta Prisma)
+      fetch(`${req.nextUrl.origin}/api/check-auto-approval`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${userId}`, // Usar userId como token temporário
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ internal: true })
+      }).catch(error => {
+        console.error('[MIDDLEWARE] Auto approval check failed:', error)
+      })
+    }
+
     // ⚡ ULTRA-FAST: Retorno sem headers extras para performance máxima
     return NextResponse.next()
   }
