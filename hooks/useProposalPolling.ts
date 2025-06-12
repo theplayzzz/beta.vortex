@@ -189,7 +189,9 @@ export function useProposalPolling({
   onError,
   enabled = true
 }: PollingConfig) {
-  const callbackRef = useRef<(status: ProposalStatus) => void>();
+  const callbackRef = useRef<(status: ProposalStatus) => void>(
+    () => {} // Valor inicial padrão
+  );
 
   // Callback memoizado
   const handleStatusChange = useCallback((status: ProposalStatus) => {
@@ -276,6 +278,7 @@ export function useStartProposalPolling() {
 // Função utilitária para verificar status de todas as propostas em processamento
 export function checkAllActiveProposals() {
   if (typeof window === 'undefined') return;
+  
   // Verificar localStorage para propostas em processamento
   const keys = Object.keys(localStorage);
   const proposalKeys = keys.filter(key => key.startsWith('proposal_status_'));

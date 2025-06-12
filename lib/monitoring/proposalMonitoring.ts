@@ -164,7 +164,7 @@ export async function runProposalHealthCheck(userId?: string) {
       // Buscar todos os usuários ativos (que criaram propostas nas últimas 48h)
       const activeUsers = await prisma.user.findMany({
         where: {
-          commercialProposals: {
+          CommercialProposal: {
             some: {
               updatedAt: {
                 gte: new Date(Date.now() - 48 * 60 * 60 * 1000)
@@ -211,7 +211,7 @@ export async function runProposalHealthCheck(userId?: string) {
       alerts
     };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ [Monitoring] Erro na verificação de saúde:', error);
     return {
       success: false,

@@ -2,10 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma/client';
 
+interface ErrorDetails {
+  error: any;
+  errorType: any;
+  retryCount: number;
+  timestamp: any;
+}
+
+interface StatusInfo {
+  status: string;
+  message: string;
+  isProcessing: boolean;
+  isComplete: boolean;
+  hasError: boolean;
+  errorDetails: ErrorDetails | null;
+  progress: number;
+}
+
 // GET /api/proposals/[id]/status - Verificar status de uma proposta específica
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -13,6 +30,9 @@ export async function GET(
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Aguardar resolução dos parâmetros
+    const { id } = await params;
 
     // Buscar usuário no banco
     const user = await prisma.user.findUnique({
@@ -26,7 +46,7 @@ export async function GET(
     // Buscar proposta específica
     const proposal = await prisma.commercialProposal.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: user.id,
       },
       include: {
@@ -44,7 +64,7 @@ export async function GET(
     }
 
     // Processar informações de status
-    let statusInfo = {
+    let statusInfo: StatusInfo = {
       status: 'draft',
       message: 'Proposta em rascunho',
       isProcessing: false,
