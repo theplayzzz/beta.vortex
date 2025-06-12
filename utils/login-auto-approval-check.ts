@@ -77,7 +77,7 @@ export async function checkPendingUserAutoApproval(clerkId: string): Promise<voi
             metadata: {
               autoApproval: true,
               triggerEvent: 'LOGIN_CHECK',
-              webhookResponse: autoCheck.webhookData,
+              webhookResponse: autoCheck.webhookData ? JSON.parse(JSON.stringify(autoCheck.webhookData)) : null,
               timestamp: new Date().toISOString()
             }
           }
