@@ -179,8 +179,9 @@ export default function ClientProfilePage() {
     }
   }, [localClientData?.industry]);
 
-  useEffect(() => {
-    // Só salvar se há mudanças do usuário e não está carregando
+  // Função para salvar dados quando campo perde foco
+  const handleSave = () => {
+    // Só salvar se há mudanças do usuário e dados válidos
     if (!localClientData || isLoading || !hasUserChanges) {
       return;
     }
@@ -190,25 +191,21 @@ export default function ClientProfilePage() {
       return;
     }
 
-    const timeoutId = setTimeout(async () => {
-      const validData = getValidClientData(localClientData);
-      
-      updateClient({
-        id: clientId,
-        ...validData,
-      }, {
-        onSuccess: () => {
-          setLastSaved(new Date());
-          setHasUserChanges(false);
-        },
-        onError: (error) => {
-          console.error('Erro ao salvar cliente:', error);
-        }
-      });
-    }, 1000);
-
-    return () => clearTimeout(timeoutId);
-  }, [localClientData, isLoading, clientId, hasUserChanges, updateClient]);
+    const validData = getValidClientData(localClientData);
+    
+    updateClient({
+      id: clientId,
+      ...validData,
+    }, {
+      onSuccess: () => {
+        setLastSaved(new Date());
+        setHasUserChanges(false);
+      },
+      onError: (error) => {
+        console.error('Erro ao salvar cliente:', error);
+      }
+    });
+  };
 
   const calculateRichnessScore = (data: ClientData): number => {
     const allFields = [
@@ -528,6 +525,7 @@ export default function ClientProfilePage() {
                             <textarea
                               value={localClientData[field.key] as string || ''}
                               onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                              onBlur={handleSave}
                               placeholder={field.placeholder}
                               rows={4}
                               className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20 resize-none"
@@ -537,6 +535,7 @@ export default function ClientProfilePage() {
                               <SectorSelect
                                 value={localClientData[field.key] as string || ''}
                                 onValueChange={(value) => handleFieldChange(field.key, value)}
+                                onBlur={handleSave}
                                 placeholder={field.placeholder}
                               />
                               {showCustomIndustry && (
@@ -550,6 +549,7 @@ export default function ClientProfilePage() {
                                       type="text"
                                       value={localClientData.businessDetails || ''}
                                       onChange={(e) => handleFieldChange('businessDetails', e.target.value)}
+                                      onBlur={handleSave}
                                       placeholder="Descreva o setor específico..."
                                       className="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
                                     />
@@ -562,6 +562,7 @@ export default function ClientProfilePage() {
                               type={field.type}
                               value={localClientData[field.key] as string || ''}
                               onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                              onBlur={handleSave}
                               placeholder={field.placeholder}
                               className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
                             />

@@ -4,6 +4,7 @@ import { SETORES_PERMITIDOS } from "@/lib/constants/sectors";
 interface SectorSelectProps {
   value?: string;
   onValueChange: (value: string) => void;
+  onBlur?: () => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -12,6 +13,7 @@ interface SectorSelectProps {
 export function SectorSelect({ 
   value, 
   onValueChange, 
+  onBlur,
   placeholder = "Selecione o setor de atuação",
   disabled = false,
   className = ""
@@ -22,6 +24,7 @@ export function SectorSelect({
       <select
         value={value || ""}
         onChange={(e) => onValueChange(e.target.value)}
+        onBlur={onBlur}
         disabled={disabled}
         className="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20 appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
