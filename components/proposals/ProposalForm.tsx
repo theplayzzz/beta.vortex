@@ -1,31 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { proposalFormSchema, validateTab, calculateTabProgress, type ProposalFormSchema } from '@/lib/proposals/formSchema';
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  FileText, 
+  ChevronLeft, 
+  ChevronRight, 
+  CheckCircle, 
+  AlertCircle,
+  Loader2,
+  Eye
+} from 'lucide-react';
+
+import { proposalFormSchema, type ProposalFormSchema } from '@/lib/proposals/formSchema';
 import { 
   validateProposalFormWithNavigation, 
   executeProposalAutoNavigation,
   getProposalValidationErrorSummary,
   type ProposalFormValidationWithNavigationResult 
 } from '@/lib/proposals/proposalFormValidation';
+import { useGenerateProposal } from '@/hooks/use-proposals';
+import { useToast, toast } from '@/components/ui/toast';
+import { validateTab, calculateTabProgress } from '@/lib/proposals/tabValidation';
+
 import { BasicInfoTab } from './tabs/BasicInfoTab';
 import { ScopeTab } from './tabs/ScopeTab';
 import { CommercialTab } from './tabs/CommercialTab';
-import { useGenerateProposal } from '@/hooks/use-proposals';
-import { useToast, toast } from '@/components/ui/toast';
-import { useRouter } from 'next/navigation';
-
-interface Client {
-  id: string;
-  name: string;
-  industry?: string;
-  richnessScore: number;
-}
 
 interface ProposalFormProps {
-  client: Client;
+  client: {
+    id: string;
+    name: string;
+    industry: string;
+    richnessScore: number;
+  };
 }
 
 export function ProposalForm({ client }: ProposalFormProps) {
@@ -41,17 +52,18 @@ export function ProposalForm({ client }: ProposalFormProps) {
   const form = useForm<ProposalFormSchema>({
     resolver: zodResolver(proposalFormSchema),
     defaultValues: {
-      titulo_proposta: '',
-      tipo_proposta: '',
-      descricao_objetivo: '',
-      prazo_estimado: '',
+      titulo_da_proposta: '',
+      tipo_de_proposta: '',
+      nome_da_contratada: '',
+      membros_da_equipe: '',
       modalidade_entrega: '',
       servicos_incluidos: [],
       requisitos_especiais: '',
       orcamento_estimado: '',
-      concorrentes_considerados: '',
-      urgencia_projeto: '',
-      tomador_decisao: '',
+      forma_prazo_pagamento: '',
+      urgencia_do_projeto: '',
+      tomador_de_decisao: '',
+      resumo_dor_problema_cliente: '',
       contexto_adicional: '',
     },
     mode: 'onChange',
@@ -172,53 +184,38 @@ export function ProposalForm({ client }: ProposalFormProps) {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex space-x-1 bg-night p-1 rounded-lg border border-accent/20">
-        {tabs.map((tab, index) => {
-          const tabProgress = calculateTabProgress(index, currentTabData);
-          const tabValid = validateTab(index, currentTabData).isValid;
-          
-          // Verificar se há erros de validação para esta aba
-          const hasValidationError = validationErrors?.errors.find(error => error.tabIndex === index && error.hasErrors);
-          
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setCurrentTab(index)}
-              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
-                currentTab === index
-                  ? 'bg-sgbus-green text-night'
-                  : hasValidationError
-                    ? 'text-red-400 hover:text-red-300 border-red-400/50'
-                    : 'text-seasalt hover:text-sgbus-green'
-              }`}
-            >
-              <div className="flex items-center justify-center space-x-2">
-                <span>{tab.title}</span>
-                {/* Ícone de erro de validação - prioridade máxima */}
-                {hasValidationError && (
-                  <svg className="w-4 h-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                )}
-                {/* Ícone de válido - apenas se não houver erro de validação */}
-                {!hasValidationError && tabValid && (
-                  <svg className="w-4 h-4 text-sgbus-green" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                )}
-                {/* Ícone de alerta - apenas se não houver erro de validação e não for válido */}
-                {!hasValidationError && !tabValid && currentTab > index && (
-                  <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                )}
-              </div>
-            </button>
-          );
-        })}
+      <div className="flex space-x-1 bg-night/50 p-1 rounded-lg">
+        {tabs.map((tab, index) => (
+          <button
+            key={tab.id}
+            onClick={() => setCurrentTab(index)}
+            className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
+              currentTab === index
+                ? 'bg-sgbus-green text-night'
+                : 'text-seasalt/70 hover:text-seasalt hover:bg-accent/20'
+            }`}
+          >
+            <div className="flex items-center justify-center space-x-2">
+              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                currentTab === index ? 'bg-night text-sgbus-green' : 'bg-accent/20'
+              }`}>
+                {index + 1}
+              </span>
+              <span>{tab.title}</span>
+            </div>
+          </button>
+        ))}
       </div>
 
-      {/* Form */}
+      {/* Progress Bar */}
+      <div className="w-full bg-accent/20 rounded-full h-2">
+        <div
+          className="bg-sgbus-green h-2 rounded-full transition-all duration-300"
+          style={{ width: `${((currentTab + 1) / tabs.length) * 100}%` }}
+        />
+      </div>
+
+      {/* Tab Content */}
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <div className="bg-night rounded-lg p-6 border border-accent/20">
           {currentTab === 0 && <BasicInfoTab form={form} />}
@@ -296,9 +293,12 @@ export function ProposalForm({ client }: ProposalFormProps) {
             <div className="space-y-4 text-seasalt">
               <div>
                 <h4 className="font-medium text-sgbus-green">Informações Básicas</h4>
-                <p><strong>Título:</strong> {currentTabData.titulo_proposta}</p>
-                <p><strong>Tipo:</strong> {currentTabData.tipo_proposta}</p>
-                <p><strong>Prazo:</strong> {currentTabData.prazo_estimado}</p>
+                <p><strong>Título:</strong> {currentTabData.titulo_da_proposta}</p>
+                <p><strong>Tipo:</strong> {currentTabData.tipo_de_proposta}</p>
+                <p><strong>Contratada:</strong> {currentTabData.nome_da_contratada}</p>
+                {currentTabData.membros_da_equipe && (
+                  <p><strong>Equipe:</strong> {currentTabData.membros_da_equipe}</p>
+                )}
               </div>
               
               <div>
@@ -309,8 +309,10 @@ export function ProposalForm({ client }: ProposalFormProps) {
               
               <div>
                 <h4 className="font-medium text-sgbus-green">Contexto Comercial</h4>
-                <p><strong>Urgência:</strong> {currentTabData.urgencia_projeto}</p>
-                <p><strong>Tomador de Decisão:</strong> {currentTabData.tomador_decisao}</p>
+                <p><strong>Orçamento:</strong> {currentTabData.orcamento_estimado}</p>
+                <p><strong>Urgência:</strong> {currentTabData.urgencia_do_projeto}</p>
+                <p><strong>Tomador de Decisão:</strong> {currentTabData.tomador_de_decisao}</p>
+                <p><strong>Problema Identificado:</strong> {currentTabData.resumo_dor_problema_cliente}</p>
               </div>
             </div>
           </div>

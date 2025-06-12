@@ -54,18 +54,19 @@ export interface ProposalListResponse {
 }
 
 export interface CreateProposalData {
-  titulo_proposta: string;
-  tipo_proposta: string;
+  titulo_da_proposta: string;
+  tipo_de_proposta: string;
   clientId: string;
+  nome_da_contratada: string;
+  membros_da_equipe?: string;
   modalidade_entrega: string;
   servicos_incluidos: string[];
-  urgencia_projeto: string;
-  tomador_decisao: string;
-  descricao_objetivo?: string;
-  prazo_estimado?: string;
-  orcamento_estimado?: string;
   requisitos_especiais?: string;
-  concorrentes_considerados?: string;
+  orcamento_estimado: string;
+  forma_prazo_pagamento: string;
+  urgencia_do_projeto: string;
+  tomador_de_decisao: string;
+  resumo_dor_problema_cliente: string;
   contexto_adicional?: string;
 }
 

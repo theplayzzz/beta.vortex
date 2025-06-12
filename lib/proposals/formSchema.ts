@@ -3,31 +3,31 @@ import {
   TIPOS_PROPOSTA, 
   MODALIDADES_ENTREGA, 
   SERVICOS_INCLUIDOS,
-  URGENCIA_PROJETO,
-  ORCAMENTO_ESTIMADO
+  URGENCIA_PROJETO
 } from './proposalConfig';
 
 // Schema para Aba 1: Informações Básicas
 export const basicInfoSchema = z.object({
-  titulo_proposta: z
+  titulo_da_proposta: z
     .string()
     .min(5, 'Título deve ter pelo menos 5 caracteres')
     .max(200, 'Título deve ter no máximo 200 caracteres'),
   
-  tipo_proposta: z
+  tipo_de_proposta: z
     .string()
     .refine((val) => val !== '', 'Selecione um tipo de proposta')
     .refine((val) => TIPOS_PROPOSTA.includes(val as any), 'Tipo de proposta inválido'),
   
-  descricao_objetivo: z
+  nome_da_contratada: z
     .string()
-    .min(20, 'Descrição deve ter pelo menos 20 caracteres')
-    .max(1000, 'Descrição deve ter no máximo 1000 caracteres'),
-  
-  prazo_estimado: z
+    .min(2, 'Nome da contratada é obrigatório')
+    .max(100, 'Nome deve ter no máximo 100 caracteres'),
+
+  membros_da_equipe: z
     .string()
-    .min(3, 'Prazo estimado é obrigatório')
-    .max(100, 'Prazo deve ter no máximo 100 caracteres')
+    .max(300, 'Membros da equipe deve ter no máximo 300 caracteres')
+    .optional()
+    .or(z.literal(''))
 });
 
 // Schema para Aba 2: Escopo de Serviços
@@ -53,25 +53,28 @@ export const scopeSchema = z.object({
 export const commercialSchema = z.object({
   orcamento_estimado: z
     .string()
-    .optional()
-    .or(z.literal(''))
-    .refine((val) => !val || ORCAMENTO_ESTIMADO.includes(val as any), 'Faixa de orçamento inválida'),
+    .min(1, 'Orçamento estimado é obrigatório')
+    .max(200, 'Orçamento estimado deve ter no máximo 200 caracteres'),
   
-  concorrentes_considerados: z
+  forma_prazo_pagamento: z
     .string()
-    .max(300, 'Campo deve ter no máximo 300 caracteres')
-    .optional()
-    .or(z.literal('')),
+    .min(10, 'Forma e prazo de pagamento deve ter pelo menos 10 caracteres')
+    .max(300, 'Forma e prazo de pagamento deve ter no máximo 300 caracteres'),
   
-  urgencia_projeto: z
+  urgencia_do_projeto: z
     .string()
     .refine((val) => val !== '', 'Selecione uma urgência')
     .refine((val) => URGENCIA_PROJETO.includes(val as any), 'Urgência inválida'),
   
-  tomador_decisao: z
+  tomador_de_decisao: z
     .string()
     .min(2, 'Nome do tomador de decisão é obrigatório')
     .max(100, 'Nome deve ter no máximo 100 caracteres'),
+
+  resumo_dor_problema_cliente: z
+    .string()
+    .min(20, 'Resumo da dor/problema deve ter pelo menos 20 caracteres')
+    .max(800, 'Resumo da dor/problema deve ter no máximo 800 caracteres'),
   
   contexto_adicional: z
     .string()
