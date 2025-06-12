@@ -80,6 +80,144 @@ function buildProposalPayload(
   };
 }
 
+/**
+ * 🚀 PROCESSAMENTO DA IA EM BACKGROUND
+ * Esta função processa a proposta com IA externa sem bloquear a resposta HTTP
+ */
+async function processProposalWithAI(
+  proposalId: string, 
+  user: any, 
+  client: any, 
+  formData: any
+) {
+  try {
+    console.log(`🚀 [Background] Iniciando processamento da IA para proposta ${proposalId}`);
+    
+    if (!process.env.PROPOSTA_WEBHOOK_URL) {
+      throw new Error('PROPOSTA_WEBHOOK_URL não configurada');
+    }
+
+    // Construir payload estruturado
+    const webhookPayload = buildProposalPayload(
+      proposalId,
+      user.id,
+      user,
+      client,
+      formData
+    );
+
+    console.log('📡 [Background] Enviando proposta para IA externa:', process.env.PROPOSTA_WEBHOOK_URL);
+
+    // Obter domínio da aplicação
+    const originDomain = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3003';
+
+    // Enviar webhook com timeout de 90 segundos
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout
+
+    const webhookResponse = await fetch(process.env.PROPOSTA_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Webhook-Secret': process.env.WEBHOOK_SECRET || '',
+        'X-Origin-Domain': originDomain,
+        'User-Agent': 'Vortex-Proposal-System/1.0'
+      },
+      body: JSON.stringify(webhookPayload),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (webhookResponse.ok) {
+      const webhookResult = await webhookResponse.json();
+      console.log('✅ [Background] Webhook enviado com sucesso');
+
+      // Extrair markdown da estrutura real da resposta
+      const markdownContent = webhookResult.Proposta;
+      
+      if (!markdownContent) {
+        console.error('❌ [Background] Estrutura da resposta webhook:', Object.keys(webhookResult));
+        throw new Error('Resposta da IA não contém o campo "Proposta"');
+      }
+
+      console.log('📄 [Background] Markdown extraído, convertendo para HTML...');
+
+      // Converter markdown para HTML
+      const htmlContent = convertMarkdownToHtml(markdownContent);
+
+      // Atualizar proposta com conteúdo gerado
+      const updatedProposal = await prisma.commercialProposal.update({
+        where: { id: proposalId },
+        data: {
+          status: 'SENT', // Mudando para SENT após geração
+          updatedAt: new Date(),
+          
+          // Salvar markdown e HTML da IA nos campos dedicados
+          proposalMarkdown: markdownContent,
+          proposalHtml: htmlContent,
+          
+          // Metadata da geração
+          aiMetadata: {
+            generatedAt: new Date().toISOString(),
+            contentLength: markdownContent.length,
+            wordCount: markdownContent.split(/\s+/).length,
+            processingTime: webhookResult.processing_time_ms || null,
+            modelUsed: 'external-ai'
+          },
+          
+          // Status de sucesso no generatedContent
+          generatedContent: JSON.stringify({
+            status: 'completed',
+            message: 'Proposta gerada com sucesso pela IA',
+            completedAt: new Date().toISOString(),
+            markdownLength: markdownContent.length
+          }),
+        },
+      });
+
+      console.log(`✅ [Background] Proposta ${proposalId} atualizada com conteúdo gerado pela IA`);
+
+    } else {
+      const errorText = await webhookResponse.text();
+      console.error('❌ [Background] Erro no webhook:', webhookResponse.status, errorText);
+      
+      // Atualizar proposta com erro
+      await prisma.commercialProposal.update({
+        where: { id: proposalId },
+        data: {
+          status: 'DRAFT',
+          updatedAt: new Date(),
+          generatedContent: JSON.stringify({
+            status: 'error',
+            error: `Erro no webhook: ${webhookResponse.status}`,
+            details: errorText,
+            timestamp: new Date().toISOString()
+          }),
+        },
+      });
+    }
+
+  } catch (error: any) {
+    console.error(`❌ [Background] Erro ao processar IA para proposta ${proposalId}:`, error);
+
+    // Atualizar proposta com erro
+    await prisma.commercialProposal.update({
+      where: { id: proposalId },
+      data: {
+        status: 'DRAFT',
+        updatedAt: new Date(),
+        generatedContent: JSON.stringify({
+          status: 'error',
+          error: 'Falha na comunicação com IA externa',
+          details: error.message,
+          timestamp: new Date().toISOString()
+        }),
+      },
+    });
+  }
+}
+
 // POST /api/proposals/generate - Gerar proposta via webhook IA
 export async function POST(request: NextRequest) {
   try {
@@ -153,174 +291,20 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // 🔥 ENVIAR WEBHOOK PARA IA EXTERNA
-    try {
-      if (!process.env.PROPOSTA_WEBHOOK_URL) {
-        throw new Error('PROPOSTA_WEBHOOK_URL não configurada');
-      }
+    // 🔥 RETORNAR PROPOSTA IMEDIATAMENTE E PROCESSAR IA EM BACKGROUND
+    console.log('✅ Proposta criada com sucesso, iniciando processamento da IA em background');
+    
+    // 🚀 ENVIAR WEBHOOK EM BACKGROUND (não bloquear resposta)
+    processProposalWithAI(proposal.id, user, client, formData).catch(error => {
+      console.error('❌ Erro no processamento background da IA:', error);
+    });
 
-      // Construir payload estruturado
-      const webhookPayload = buildProposalPayload(
-        proposal.id,
-        user.id,
-        user,
-        client,
-        formData
-      );
-
-      console.log('📡 Enviando proposta para IA externa:', process.env.PROPOSTA_WEBHOOK_URL);
-      console.log('📤 Payload:', JSON.stringify(webhookPayload, null, 2));
-
-      // Obter domínio da aplicação
-      const originDomain = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3003';
-
-      // Enviar webhook com timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
-
-      const webhookResponse = await fetch(process.env.PROPOSTA_WEBHOOK_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Webhook-Secret': process.env.WEBHOOK_SECRET || '',
-          'X-Origin-Domain': originDomain,
-          'User-Agent': 'Vortex-Proposal-System/1.0'
-        },
-        body: JSON.stringify(webhookPayload),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (webhookResponse.ok) {
-        const webhookResult = await webhookResponse.json();
-        console.log('✅ Webhook enviado com sucesso:', JSON.stringify(webhookResult, null, 2));
-
-        // 🔥 CORREÇÃO CRÍTICA: Extrair markdown da estrutura real da resposta
-        const markdownContent = webhookResult.Proposta;
-        
-        if (!markdownContent) {
-          console.error('❌ Estrutura da resposta webhook:', Object.keys(webhookResult));
-          throw new Error('Resposta da IA não contém o campo "Proposta"');
-        }
-
-        console.log('📄 Markdown extraído - Análise detalhada:', {
-          length: markdownContent?.length,
-          preview: markdownContent?.substring(0, 200),
-          hasCodeBlocks: markdownContent?.includes('```'),
-          hasPreTags: markdownContent?.includes('<pre>'),
-          startsWithMarkdown: markdownContent?.startsWith('#') || markdownContent?.startsWith('**'),
-          endsWithCode: markdownContent?.endsWith('```'),
-          containsHTML: markdownContent?.includes('<h1') || markdownContent?.includes('<p>')
-        });
-
-        // 🔥 CONVERTER MARKDOWN PARA HTML
-        const htmlContent = convertMarkdownToHtml(markdownContent);
-        console.log('🎨 HTML convertido - Análise detalhada:', {
-          length: htmlContent?.length,
-          preview: htmlContent?.substring(0, 200),
-          startsWithHeader: htmlContent?.startsWith('<h1') || htmlContent?.startsWith('<h2'),
-          containsRawMarkdown: htmlContent?.includes('#') || htmlContent?.includes('**'),
-          hasProperHTML: htmlContent?.includes('<p class="proposal-paragraph">') || htmlContent?.includes('<h1 class="proposal-heading-1">'),
-          conversionSuccessful: !htmlContent?.includes('```') && !htmlContent?.includes('**')
-        });
-
-        // 🔥 IMPORTANTE: Não sobrescrever dados do formulário!
-        // Os dados da IA vão para campos específicos, formData fica preservado
-        const updatedProposal = await prisma.commercialProposal.update({
-          where: { id: proposal.id },
-          data: {
-            status: 'SENT', // Mudando para SENT após geração
-            updatedAt: new Date(),
-            
-            // ✅ SALVAR MARKDOWN E HTML DA IA NOS CAMPOS DEDICADOS
-            proposalMarkdown: markdownContent,
-            proposalHtml: htmlContent,
-            
-            // ✅ METADATA DA GERAÇÃO
-            aiMetadata: {
-              generatedAt: new Date().toISOString(),
-              contentLength: markdownContent.length,
-              wordCount: markdownContent.split(/\s+/).length,
-              processingTime: webhookResult.processing_time_ms || null,
-              modelUsed: 'external-ai'
-            },
-            
-            // ✅ Status de sucesso no generatedContent (sem sobrescrever formData)
-            generatedContent: JSON.stringify({
-              status: 'completed',
-              message: 'Proposta gerada com sucesso pela IA',
-              completedAt: new Date().toISOString(),
-              markdownLength: markdownContent.length
-            }),
-          },
-          include: {
-            Client: {
-              select: {
-                id: true,
-                name: true,
-                industry: true,
-                richnessScore: true,
-              },
-            },
-          },
-        });
-
-        console.log('✅ Proposta atualizada com conteúdo gerado');
-        return NextResponse.json({
-          proposal: updatedProposal,
-          message: 'Proposta gerada com sucesso',
-          webhookResult
-        }, { status: 201 });
-
-      } else {
-        const errorText = await webhookResponse.text();
-        console.error('❌ Erro no webhook:', webhookResponse.status, errorText);
-        
-        // Atualizar proposta com erro
-        await prisma.commercialProposal.update({
-          where: { id: proposal.id },
-          data: {
-            status: 'DRAFT',
-            updatedAt: new Date(),
-            generatedContent: JSON.stringify({
-              error: `Erro no webhook: ${webhookResponse.status}`,
-              details: errorText,
-              timestamp: new Date().toISOString()
-            }),
-          },
-        });
-
-        return NextResponse.json({
-          error: 'Erro ao gerar proposta',
-          details: `Webhook retornou status ${webhookResponse.status}`,
-          proposal: proposal
-        }, { status: 500 });
-      }
-
-    } catch (webhookError: any) {
-      console.error('❌ Erro ao enviar webhook:', webhookError);
-
-      // Atualizar proposta com erro
-      await prisma.commercialProposal.update({
-        where: { id: proposal.id },
-        data: {
-          status: 'DRAFT',
-          updatedAt: new Date(),
-          generatedContent: JSON.stringify({
-            error: 'Falha na comunicação com IA externa',
-            details: webhookError.message,
-            timestamp: new Date().toISOString()
-          }),
-        },
-      });
-
-      return NextResponse.json({
-        error: 'Erro na comunicação com IA externa',
-        details: webhookError.message,
-        proposal: proposal
-      }, { status: 500 });
-    }
+    // ✅ RETORNAR IMEDIATAMENTE PARA PERMITIR REDIRECIONAMENTO
+    return NextResponse.json({
+      proposal: proposal,
+      message: 'Proposta criada com sucesso. Processamento da IA iniciado em background.',
+      status: 'created'
+    }, { status: 201 });
 
   } catch (error) {
     console.error('Error generating proposal:', error);

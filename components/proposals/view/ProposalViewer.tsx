@@ -25,6 +25,7 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
   const [pollingElapsedTime, setPollingElapsedTime] = useState(0);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const [aiProcessingError, setAiProcessingError] = useState<string | null>(null);
 
   // Constantes do sistema de polling
   const POLLING_INTERVAL_MS = 3000; // Verifica a cada 3 segundos
@@ -77,11 +78,22 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
       setPollingInterval(interval);
 
       // Configura timeout máximo
-      const timeout = setTimeout(() => {
+      const timeout = setTimeout(async () => {
         console.log('⏰ Timeout atingido. Parando polling após 90 segundos.');
         clearInterval(interval);
         setIsWaitingForAI(false);
         setPollingElapsedTime(0);
+        
+        // Força um refetch final para garantir que temos os dados mais recentes
+        try {
+          const finalResult = await refetch();
+          if (!finalResult.data?.proposalHtml && !finalResult.data?.proposalMarkdown) {
+            setAiProcessingError('A IA não conseguiu processar sua proposta dentro do tempo limite de 90 segundos. Você pode tentar recarregar a página ou entrar em contato com o suporte.');
+          }
+        } catch (error) {
+          console.error('❌ Erro no refetch final:', error);
+          setAiProcessingError('Erro ao verificar o status final da proposta. Tente recarregar a página.');
+        }
       }, MAX_POLLING_TIME_MS);
 
       setTimeoutId(timeout);
@@ -108,6 +120,7 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
       if (timeoutId) clearTimeout(timeoutId);
       setIsWaitingForAI(false);
       setPollingElapsedTime(0);
+      setAiProcessingError(null); // Limpar qualquer erro anterior
     }
   }, [proposal, isLoading, isWaitingForAI, pollingInterval, timeoutId, refetch, needsAIProcessing]);
 
@@ -270,6 +283,84 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
               <h3 className="text-seasalt/70 text-sm font-medium mb-4 flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Dados do Formulário (Referência)
+              </h3>
+              <FormDataPanel 
+                formData={proposal.formDataJSON}
+                clientSnapshot={proposal.clientSnapshot}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Estado: Erro no processamento da IA (timeout ou falha)
+  if (aiProcessingError) {
+    return (
+      <div className="max-w-6xl mx-auto p-6">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 mb-6">
+          <Link 
+            href="/propostas"
+            className="flex items-center gap-2 text-seasalt/70 hover:text-seasalt transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Propostas
+          </Link>
+          <span className="text-seasalt/50">/</span>
+          <span className="text-seasalt">{proposal.title}</span>
+        </div>
+
+        <ProposalHeader proposal={proposal} />
+        
+        {/* Card de Erro da IA */}
+        <div className="mt-8">
+          <div className="bg-gradient-to-br from-red-500/20 to-red-500/5 border-2 border-red-500/30 rounded-xl p-8">
+            <div className="text-center">
+              {/* Ícone de erro */}
+              <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Bot className="h-10 w-10 text-red-400" />
+              </div>
+
+              {/* Título principal */}
+              <h2 className="text-2xl font-bold text-seasalt mb-2">
+                ⏰ Tempo Limite Atingido
+              </h2>
+              
+              <p className="text-seasalt/80 mb-6 text-lg max-w-2xl mx-auto">
+                {aiProcessingError}
+              </p>
+
+              {/* Ações */}
+              <div className="flex items-center justify-center gap-4">
+                <button
+                  onClick={() => {
+                    setAiProcessingError(null);
+                    window.location.reload();
+                  }}
+                  className="px-6 py-3 bg-sgbus-green text-night rounded-lg hover:bg-sgbus-green/90 transition-colors font-medium"
+                >
+                  Recarregar Página
+                </button>
+                <Link
+                  href="/propostas"
+                  className="px-6 py-3 border border-seasalt/20 text-seasalt rounded-lg hover:bg-seasalt/10 transition-colors font-medium"
+                >
+                  Voltar às Propostas
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Informações adicionais - dados do formulário se disponíveis */}
+        {proposal.formDataJSON && (
+          <div className="mt-8">
+            <div className="bg-night/30 rounded-lg p-6 border border-seasalt/10">
+              <h3 className="text-seasalt/70 text-sm font-medium mb-4 flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Dados do Formulário (Salvos)
               </h3>
               <FormDataPanel 
                 formData={proposal.formDataJSON}
