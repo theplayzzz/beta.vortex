@@ -1,0 +1,1 @@
+{"event": "new_user_registered", "data": {"id": 30, "username": "ferramentas2@gruporugido.com", "name": "GRUPO RUGIDO TESTE", "email": "ferramentas2@gruporugido.com", "aprovacao": false, "createdAt": "2025-06-12T02:30:00.000Z", "updatedAt": "2025-06-12T02:30:00.000Z", "resetToken": null, "resetTokenExpiry": null}}
