@@ -14,6 +14,18 @@ import { clerkClient } from '@clerk/nextjs/server'
 // 🆕 PLAN-025: Importar função de verificação automática
 import { checkAutoApproval } from '@/utils/auto-approval-webhook'
 
+// 🆕 PLAN-025: Função para detectar tipo de cadastro
+function getSignupType(data: ClerkWebhookEvent['data']) {
+  if (data.external_accounts && data.external_accounts.length > 0) {
+    const provider = data.external_accounts[0].provider
+    return { type: 'oauth', provider }
+  } else if (data.password_enabled) {
+    return { type: 'email_password' }
+  } else {
+    return { type: 'unknown' }
+  }
+}
+
 type ClerkWebhookEvent = {
   type: string
   data: {
@@ -31,6 +43,18 @@ type ClerkWebhookEvent = {
       role?: string
     }
     private_metadata?: any
+    // 🆕 PLAN-025: Incluir external_accounts para detectar tipo de cadastro
+    external_accounts?: Array<{
+      id: string
+      provider: string
+      email_address?: string
+      verification?: {
+        status: string
+        strategy: string
+      }
+    }>
+    password_enabled?: boolean
+    username?: string
   }
 }
 
@@ -122,13 +146,17 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
     throw new Error('No primary email found for user')
   }
 
+  // 🆕 PLAN-025: Detectar e logar tipo de cadastro
+  const signupType = getSignupType(data)
+  console.log(`[USER_CREATED] Signup type detected: ${signupType.type}${signupType.provider ? ` (${signupType.provider})` : ''} for email: ${primaryEmail.email_address}`)
+
   // 🛡️ PRESERVAR: Lógica existente de determinação de status
   let initialStatus = isApprovalRequired() ? getDefaultUserStatus() : APPROVAL_STATUS.APPROVED
   let autoApprovalData: any = null
 
   // 🆕 PLAN-025: Verificação automática VIA WEBHOOK (apenas se seria PENDING)
   if (initialStatus === APPROVAL_STATUS.PENDING) {
-    console.log(`[WEBHOOK_AUTO_APPROVAL] Checking auto approval for: ${primaryEmail.email_address}`)
+    console.log(`[WEBHOOK_AUTO_APPROVAL] Checking auto approval for: ${primaryEmail.email_address} (signup type: ${signupType.type}${signupType.provider ? ` via ${signupType.provider}` : ''})`)
     
     try {
       const autoCheck = await checkAutoApproval(primaryEmail.email_address)
@@ -136,9 +164,9 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
       if (autoCheck.shouldApprove) {
         initialStatus = APPROVAL_STATUS.APPROVED
         autoApprovalData = autoCheck.webhookData
-        console.log(`[WEBHOOK_AUTO_APPROVAL] User pre-approved: ${primaryEmail.email_address}`)
+        console.log(`[WEBHOOK_AUTO_APPROVAL] User pre-approved: ${primaryEmail.email_address} (${signupType.type}${signupType.provider ? ` via ${signupType.provider}` : ''})`)
       } else {
-        console.log(`[WEBHOOK_AUTO_APPROVAL] User not pre-approved: ${primaryEmail.email_address}`)
+        console.log(`[WEBHOOK_AUTO_APPROVAL] User not pre-approved: ${primaryEmail.email_address} (${signupType.type}${signupType.provider ? ` via ${signupType.provider}` : ''})`)
         if (autoCheck.error) {
           console.log(`[WEBHOOK_AUTO_APPROVAL] Error: ${autoCheck.error}`)
         }
@@ -237,14 +265,16 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
     moderatorId: autoApprovalData ? 'SYSTEM_AUTO_WEBHOOK' : 'SYSTEM',
     environment: getEnvironment(),
     timestamp: new Date(),
-    metadata: {
-      clerkId: data.id,
-      email: primaryEmail.email_address,
-      initialStatus,
-      approvalRequired: isApprovalRequired(),
-      autoApproval: !!autoApprovalData,
-      ...(autoApprovalData && { webhookData: autoApprovalData })
-    }
+          metadata: {
+        clerkId: data.id,
+        email: primaryEmail.email_address,
+        initialStatus,
+        approvalRequired: isApprovalRequired(),
+        autoApproval: !!autoApprovalData,
+        signupType: signupType.type,
+        ...(signupType.provider && { signupProvider: signupType.provider }),
+        ...(autoApprovalData && { webhookData: autoApprovalData })
+      }
   })
 
   console.log(`[USER_CREATED] User created successfully: ${data.id} (${initialStatus})`)
