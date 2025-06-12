@@ -54,7 +54,7 @@ export default function NovaPropostaPage() {
   if (step === 'form' && selectedClient) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           {/* Header com botão voltar */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
@@ -66,16 +66,12 @@ export default function NovaPropostaPage() {
               </button>
               <div>
                 <h1 className="text-3xl font-bold text-seasalt">Nova Proposta Comercial</h1>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
-                  <p className="text-periwinkle">
-                    Complete as informações abaixo para gerar sua proposta
-                  </p>
-                  <div className="flex items-center gap-2 text-sm text-seasalt/60">
-                    <span className="hidden sm:inline">•</span>
-                    <span>Cliente selecionado: <span className="text-seasalt/80 font-medium">{selectedClient.name}</span></span>
-                    <span>|</span>
-                    <span>Setor: <span className="text-periwinkle font-medium">{selectedClient.industry}</span></span>
-                  </div>
+                <p className="text-periwinkle mt-2">
+                  Complete as informações abaixo para gerar sua proposta
+                </p>
+                <div className="mt-1 text-sm text-seasalt/60 space-y-0.5">
+                  <div>Cliente selecionado: <span className="text-seasalt/80 font-medium">{selectedClient.name}</span></div>
+                  <div>Setor: <span className="text-periwinkle font-medium">{selectedClient.industry}</span></div>
                 </div>
               </div>
             </div>
