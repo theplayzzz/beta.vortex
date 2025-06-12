@@ -66,9 +66,17 @@ export default function NovaPropostaPage() {
               </button>
               <div>
                 <h1 className="text-3xl font-bold text-seasalt">Nova Proposta Comercial</h1>
-                <p className="text-periwinkle mt-2">
-                  Complete as informações abaixo para gerar sua proposta
-                </p>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
+                  <p className="text-periwinkle">
+                    Complete as informações abaixo para gerar sua proposta
+                  </p>
+                  <div className="flex items-center gap-2 text-sm text-seasalt/60">
+                    <span className="hidden sm:inline">•</span>
+                    <span>Cliente selecionado: <span className="text-seasalt/80 font-medium">{selectedClient.name}</span></span>
+                    <span>|</span>
+                    <span>Setor: <span className="text-periwinkle font-medium">{selectedClient.industry}</span></span>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="flex items-center space-x-4">
