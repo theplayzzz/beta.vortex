@@ -174,7 +174,7 @@ export function ProposalForm({ client }: ProposalFormProps) {
   const isFormComplete = tabs.every((_, index) => validateTab(index, currentTabData).isValid);
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="max-w-4xl mx-auto p-6 space-y-4">
       {/* Tabs Navigation */}
       <div className="flex space-x-1 bg-night/50 p-1 rounded-lg">
         {tabs.map((tab, index) => (
@@ -199,16 +199,8 @@ export function ProposalForm({ client }: ProposalFormProps) {
         ))}
       </div>
 
-      {/* Progress Bar */}
-      <div className="w-full bg-accent/20 rounded-full h-2">
-        <div
-          className="bg-sgbus-green h-2 rounded-full transition-all duration-300"
-          style={{ width: `${((currentTab + 1) / tabs.length) * 100}%` }}
-        />
-      </div>
-
       {/* Tab Content */}
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <div className="bg-night rounded-lg p-6 border border-accent/20">
           {currentTab === 0 && <BasicInfoTab form={form} />}
           {currentTab === 1 && <ScopeTab form={form} />}
