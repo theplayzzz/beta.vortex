@@ -56,7 +56,7 @@ export default function NovaPropostaPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header com botão voltar */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-4">
               <button
                 onClick={handleBackToClient}
