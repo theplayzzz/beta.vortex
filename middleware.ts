@@ -23,8 +23,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/external(.*)', // APIs externas com autenticação via API key
   '/pending-approval',
   '/account-rejected',
-  '/account-suspended',
-  '/session-expired'
+  '/account-suspended'
 ])
 
 // APIs que devem retornar JSON errors em vez de redirecionar
