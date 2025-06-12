@@ -6,7 +6,6 @@ import { ArrowLeft, Users, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import { useClientFlow } from '@/hooks/use-client-flow';
 import { ProposalForm } from '@/components/proposals/ProposalForm';
-import { ClientHeader } from '@/components/planning/ClientHeader';
 import ClientFlowModal from '@/components/shared/client-flow-modal';
 
 // Definir o tipo Client localmente
@@ -55,8 +54,8 @@ export default function NovaPropostaPage() {
   if (step === 'form' && selectedClient) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Header com botão voltar e informações do cliente */}
+        <div className="max-w-7xl mx-auto">
+          {/* Header com botão voltar */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <button
@@ -81,10 +80,6 @@ export default function NovaPropostaPage() {
                 Cancelar
               </button>
             </div>
-          </div>
-          
-          <div className="mb-6">
-            <ClientHeader client={selectedClient} />
           </div>
           
           {/* Formulário de proposta */}

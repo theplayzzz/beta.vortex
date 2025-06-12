@@ -154,20 +154,22 @@ export function AIInsightsPanel({ insights, metadata, extraData }: AIInsightsPan
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-seasalt/70">Modelo:</span>
-              <span className="text-seasalt">{metadata.model_version}</span>
+              <span className="text-seasalt">{metadata.modelUsed}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-seasalt/70">Tokens:</span>
-              <span className="text-seasalt">{metadata.tokens_used.toLocaleString()}</span>
+              <span className="text-seasalt">{metadata.tokensUsed.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-seasalt/70">Qualidade:</span>
-              <span className="text-seasalt">{metadata.quality_score}/100</span>
-            </div>
+            {metadata.qualityScore && (
+              <div className="flex justify-between">
+                <span className="text-seasalt/70">Qualidade:</span>
+                <span className="text-seasalt">{metadata.qualityScore}/100</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-seasalt/70">Gerado em:</span>
               <span className="text-seasalt">
-                {new Date(metadata.generated_at).toLocaleDateString('pt-BR')}
+                {new Date(metadata.generatedAt).toLocaleDateString('pt-BR')}
               </span>
             </div>
           </div>
