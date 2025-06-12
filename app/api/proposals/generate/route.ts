@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma/client';
 import { z } from 'zod';
 import { convertMarkdownToHtml } from '@/lib/proposals/markdownConverter';
+import { logProposalError } from '@/lib/monitoring/proposalMonitoring';
 
 // Schema para dados de geração de proposta ATUALIZADO
 const GenerateProposalSchema = z.object({
@@ -74,6 +75,40 @@ function buildProposalPayload(
 }
 
 /**
+ * 🏥 VERIFICAÇÃO DE SAÚDE DO WEBHOOK
+ * Verifica se o serviço de IA está disponível antes de processar
+ */
+async function checkWebhookHealth(): Promise<boolean> {
+  try {
+    if (!process.env.PROPOSTA_WEBHOOK_URL) {
+      console.log('⚠️ [Health] PROPOSTA_WEBHOOK_URL não configurada');
+      return false;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout para health check
+
+    const response = await fetch(process.env.PROPOSTA_WEBHOOK_URL.replace('/generate', '/health') || process.env.PROPOSTA_WEBHOOK_URL, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Vortex-Health-Check/1.0'
+      },
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+    
+    const isHealthy = response.status < 500;
+    console.log(`🏥 [Health] Webhook health check: ${isHealthy ? '✅ Saudável' : '❌ Indisponível'} (status: ${response.status})`);
+    
+    return isHealthy;
+  } catch (error: any) {
+    console.log('🏥 [Health] Webhook health check falhou:', error.message);
+    return false;
+  }
+}
+
+/**
  * 🚀 PROCESSAMENTO DA IA EM BACKGROUND
  * Esta função processa a proposta com IA externa sem bloquear a resposta HTTP
  */
@@ -81,13 +116,23 @@ async function processProposalWithAI(
   proposalId: string, 
   user: any, 
   client: any, 
-  formData: any
+  formData: any,
+  retryCount: number = 0
 ) {
+  const maxRetries = 2;
+  const timeoutMs = 180000; // Aumentando para 3 minutos
+  
   try {
-    console.log(`🚀 [Background] Iniciando processamento da IA para proposta ${proposalId}`);
+    console.log(`🚀 [Background] Iniciando processamento da IA para proposta ${proposalId} (tentativa ${retryCount + 1}/${maxRetries + 1})`);
     
     if (!process.env.PROPOSTA_WEBHOOK_URL) {
       throw new Error('PROPOSTA_WEBHOOK_URL não configurada');
+    }
+
+    // Verificar saúde do webhook antes de processar
+    const isWebhookHealthy = await checkWebhookHealth();
+    if (!isWebhookHealthy && retryCount === 0) {
+      console.log('⚠️ [Background] Webhook não está saudável, mas continuando processamento...');
     }
 
     // Construir payload estruturado
@@ -104,9 +149,12 @@ async function processProposalWithAI(
     // Obter domínio da aplicação
     const originDomain = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3003';
 
-    // Enviar webhook com timeout de 90 segundos
+    // Enviar webhook com timeout aumentado
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout
+    const timeoutId = setTimeout(() => {
+      console.log(`⏰ [Background] Timeout de ${timeoutMs}ms atingido para proposta ${proposalId}`);
+      controller.abort();
+    }, timeoutMs);
 
     const webhookResponse = await fetch(process.env.PROPOSTA_WEBHOOK_URL, {
       method: 'POST',
@@ -156,7 +204,8 @@ async function processProposalWithAI(
             contentLength: markdownContent.length,
             wordCount: markdownContent.split(/\s+/).length,
             processingTime: webhookResult.processing_time_ms || null,
-            modelUsed: 'external-ai'
+            modelUsed: 'external-ai',
+            retryCount: retryCount
           },
           
           // Status de sucesso no generatedContent
@@ -164,7 +213,8 @@ async function processProposalWithAI(
             status: 'completed',
             message: 'Proposta gerada com sucesso pela IA',
             completedAt: new Date().toISOString(),
-            markdownLength: markdownContent.length
+            markdownLength: markdownContent.length,
+            retryCount: retryCount
           }),
         },
       });
@@ -174,6 +224,13 @@ async function processProposalWithAI(
     } else {
       const errorText = await webhookResponse.text();
       console.error('❌ [Background] Erro no webhook:', webhookResponse.status, errorText);
+      
+      // Se for erro de servidor e ainda há tentativas, fazer retry
+      if (webhookResponse.status >= 500 && retryCount < maxRetries) {
+        console.log(`🔄 [Background] Tentando novamente em 5 segundos... (${retryCount + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        return processProposalWithAI(proposalId, user, client, formData, retryCount + 1);
+      }
       
       // Atualizar proposta com erro
       await prisma.commercialProposal.update({
@@ -185,7 +242,8 @@ async function processProposalWithAI(
             status: 'error',
             error: `Erro no webhook: ${webhookResponse.status}`,
             details: errorText,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            retryCount: retryCount
           }),
         },
       });
@@ -193,6 +251,34 @@ async function processProposalWithAI(
 
   } catch (error: any) {
     console.error(`❌ [Background] Erro ao processar IA para proposta ${proposalId}:`, error);
+
+    // Log estruturado do erro para monitoramento
+    logProposalError(proposalId, error, {
+      userId: user.id,
+      clientId: client.id,
+      retryCount,
+      timeoutMs,
+      webhookUrl: process.env.PROPOSTA_WEBHOOK_URL
+    });
+
+    // Verificar se é erro de timeout/abort e se ainda há tentativas
+    if (error.name === 'AbortError' && retryCount < maxRetries) {
+      console.log(`🔄 [Background] Operação abortada, tentando novamente em 5 segundos... (${retryCount + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      return processProposalWithAI(proposalId, user, client, formData, retryCount + 1);
+    }
+
+    // Determinar tipo de erro
+    let errorType = 'unknown';
+    let errorMessage = 'Falha na comunicação com IA externa';
+    
+    if (error.name === 'AbortError') {
+      errorType = 'timeout';
+      errorMessage = 'Timeout na comunicação com IA externa';
+    } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      errorType = 'network';
+      errorMessage = 'Erro de rede na comunicação com IA externa';
+    }
 
     // Atualizar proposta com erro
     await prisma.commercialProposal.update({
@@ -202,9 +288,11 @@ async function processProposalWithAI(
         updatedAt: new Date(),
         generatedContent: JSON.stringify({
           status: 'error',
-          error: 'Falha na comunicação com IA externa',
+          error: errorMessage,
+          errorType: errorType,
           details: error.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          retryCount: retryCount
         }),
       },
     });
