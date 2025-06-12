@@ -12,9 +12,9 @@ export const ClientSchema = z.object({
   initialObjective: z.string().nullable(),
   
   // Informações detalhadas
-  contactEmail: z.string().email().nullable(),
+  contactEmail: z.string().nullable(),
   contactPhone: z.string().nullable(),
-  website: z.string().url().nullable(),
+  website: z.string().nullable(),
   address: z.string().nullable(),
   businessDetails: z.string().nullable(),
   targetAudience: z.string().nullable(),
@@ -84,9 +84,9 @@ export const ClientInitialFormSchema = z.object({
 
 // Schema para enriquecimento progressivo
 export const ClientEnrichmentSchema = z.object({
-  contactEmail: z.string().email().optional(),
+  contactEmail: z.string().optional(),
   contactPhone: z.string().optional(),
-  website: z.string().url().optional(),
+  website: z.string().optional(),
   address: z.string().optional(),
   businessDetails: z.string().optional(),
   targetAudience: z.string().optional(),

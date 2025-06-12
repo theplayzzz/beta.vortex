@@ -11,32 +11,11 @@ const UpdateClientSchema = z.object({
   initialObjective: z.union([z.string(), z.null()]).optional(),
   contactEmail: z.union([z.string(), z.null(), z.undefined()])
     .optional()
-    .transform(val => val === '' || val === undefined ? null : val)
-    .refine(val => {
-      if (!val) return true; // null/undefined é válido
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return emailRegex.test(val);
-    }, 'E-mail deve ter um formato válido'),
+    .transform(val => val === '' || val === undefined ? null : val),
   contactPhone: z.union([z.string(), z.null()]).optional(),
   website: z.union([z.string(), z.null(), z.undefined()])
     .optional()
-    .transform(val => val === '' || val === undefined ? null : val)
-    .refine(val => {
-      if (!val) return true; // null/undefined é válido
-      try {
-        // Verificar se contém pelo menos um ponto (domínio válido)
-        if (!val.includes('.')) return false;
-        
-        // Tentar com protocolo se não tiver
-        const urlToTest = val.startsWith('http') ? val : `https://${val}`;
-        const url = new URL(urlToTest);
-        
-        // Verificar se o hostname tem pelo menos um ponto
-        return url.hostname.includes('.');
-      } catch {
-        return false;
-      }
-    }, 'Website deve ter um formato válido de URL'),
+    .transform(val => val === '' || val === undefined ? null : val),
   address: z.union([z.string(), z.null()]).optional(),
   businessDetails: z.union([z.string(), z.null()]).optional(),
   targetAudience: z.union([z.string(), z.null()]).optional(),
@@ -234,7 +213,6 @@ export async function PUT(
         field: err.path.join('.'),
         message: err.message,
         code: err.code,
-        received: err.message.includes('email') || err.message.includes('URL') ? 'Formato inválido' : undefined
       }));
       
       const specificMessage = fieldErrors.length === 1 
