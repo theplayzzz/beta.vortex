@@ -7,7 +7,7 @@ import { z } from 'zod';
 const UpdateProposalSchema = z.object({
   title: z.string().min(1, 'Título é obrigatório').optional(),
   status: z.enum(['DRAFT', 'SENT', 'VIEWED', 'ACCEPTED', 'REJECTED', 'NEGOTIATION', 'ARCHIVED']).optional(),
-  generatedContent: z.string().optional(),
+  // 🔥 CAMPO LEGACY REMOVIDO COMPLETAMENTE
 });
 
 // GET /api/proposals/[id] - Buscar proposta específica
@@ -66,21 +66,13 @@ export async function GET(
       );
     }
 
-    // Parse do conteúdo gerado se for JSON
-    let parsedContent = null;
-    if (proposal.generatedContent) {
-      try {
-        parsedContent = JSON.parse(proposal.generatedContent);
-      } catch (error) {
-        // Se não for JSON válido, manter como string
-        parsedContent = proposal.generatedContent;
-      }
-    }
+    // 🔥 REMOVER CAMPO LEGACY PARA EVITAR INTERFERÊNCIA
+    const { generatedContent, ...proposalWithoutLegacy } = proposal;
 
     // 🔥 HEADERS PARA EVITAR CACHE NO SERVIDOR E BROWSER
     const response = NextResponse.json({
-      ...proposal,
-      parsedContent,
+      ...proposalWithoutLegacy,
+      // 🔥 CAMPO LEGACY REMOVIDO COMPLETAMENTE
     });
 
     // Adicionar headers para evitar cache
@@ -150,8 +142,7 @@ export async function PUT(
       data: {
         ...data,
         updatedAt: new Date(),
-        // Incrementar versão se o conteúdo foi alterado
-        version: data.generatedContent ? existingProposal.version + 1 : existingProposal.version,
+        // 🔥 LÓGICA LEGACY REMOVIDA COMPLETAMENTE
       },
       include: {
         Client: {
