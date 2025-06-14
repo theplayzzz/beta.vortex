@@ -1,0 +1,275 @@
+/* 📄 PDF-Specific Styles - Professional Black & White Layout */
+
+/* Global PDF Container */
+.pdf-content {
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-family: 'Inter', 'Arial', sans-serif !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Headers - Professional Hierarchy */
+.pdf-content h1,
+.pdf-content h2,
+.pdf-content h3,
+.pdf-content h4,
+.pdf-content h5,
+.pdf-content h6 {
+  color: #2d2d2d !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 1rem !important;
+  font-weight: 600 !important;
+  page-break-after: avoid !important;
+}
+
+.pdf-content h1 {
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  border-bottom: 2px solid #cccccc !important;
+  padding-bottom: 0.5rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.pdf-content h2 {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  margin-top: 2rem !important;
+}
+
+.pdf-content h3 {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  margin-top: 1.5rem !important;
+}
+
+.pdf-content h4,
+.pdf-content h5,
+.pdf-content h6 {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  margin-top: 1.25rem !important;
+}
+
+/* Paragraphs */
+.pdf-content p {
+  color: #000000 !important;
+  margin-bottom: 1rem !important;
+  line-height: 1.6 !important;
+  text-align: justify !important;
+  orphans: 2 !important;
+  widows: 2 !important;
+}
+
+/* Text Formatting */
+.pdf-content strong,
+.pdf-content b {
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+.pdf-content em,
+.pdf-content i {
+  color: #2d2d2d !important;
+  font-style: italic !important;
+}
+
+/* Lists */
+.pdf-content ul,
+.pdf-content ol {
+  margin-bottom: 1rem !important;
+  padding-left: 1.5rem !important;
+  page-break-inside: avoid !important;
+}
+
+.pdf-content li {
+  color: #000000 !important;
+  margin-bottom: 0.5rem !important;
+  line-height: 1.6 !important;
+}
+
+.pdf-content ul li::marker {
+  color: #666666 !important;
+}
+
+.pdf-content ol li::marker {
+  color: #666666 !important;
+  font-weight: 600 !important;
+}
+
+/* Tables */
+.pdf-content table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  margin: 1rem 0 !important;
+  page-break-inside: avoid !important;
+}
+
+.pdf-content th,
+.pdf-content td {
+  border: 1px solid #cccccc !important;
+  padding: 0.5rem !important;
+  text-align: left !important;
+  color: #000000 !important;
+  font-size: 11px !important;
+}
+
+.pdf-content th {
+  background-color: #f5f5f5 !important;
+  font-weight: 600 !important;
+  color: #2d2d2d !important;
+}
+
+.pdf-content tbody tr:nth-child(even) {
+  background-color: #fafafa !important;
+}
+
+/* Horizontal Rules */
+.pdf-content hr {
+  border: none !important;
+  border-top: 1px solid #cccccc !important;
+  margin: 1.5rem 0 !important;
+  page-break-after: avoid !important;
+}
+
+/* Blockquotes */
+.pdf-content blockquote {
+  border-left: 4px solid #cccccc !important;
+  padding-left: 1rem !important;
+  margin: 1rem 0 !important;
+  color: #666666 !important;
+  font-style: italic !important;
+  background-color: #fafafa !important;
+  padding: 0.75rem 1rem !important;
+  border-radius: 0 4px 4px 0 !important;
+}
+
+.pdf-content blockquote p {
+  color: #666666 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* Links - Print Friendly */
+.pdf-content a {
+  color: #000000 !important;
+  text-decoration: underline !important;
+  font-weight: normal !important;
+}
+
+.pdf-content a::after {
+  content: " (" attr(href) ")" !important;
+  font-size: 10px !important;
+  color: #666666 !important;
+  font-weight: normal !important;
+}
+
+/* Code */
+.pdf-content code {
+  background-color: #f5f5f5 !important;
+  color: #2d2d2d !important;
+  padding: 0.125rem 0.25rem !important;
+  border-radius: 2px !important;
+  font-size: 11px !important;
+  font-family: 'Courier New', monospace !important;
+  border: 1px solid #e0e0e0 !important;
+}
+
+.pdf-content pre {
+  background-color: #f8f8f8 !important;
+  color: #2d2d2d !important;
+  padding: 1rem !important;
+  border-radius: 4px !important;
+  overflow-x: auto !important;
+  margin: 1rem 0 !important;
+  border: 1px solid #e0e0e0 !important;
+  page-break-inside: avoid !important;
+}
+
+.pdf-content pre code {
+  background-color: transparent !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+/* Page Break Utilities */
+.pdf-page-break {
+  page-break-before: always !important;
+}
+
+.pdf-page-break-avoid {
+  page-break-inside: avoid !important;
+}
+
+/* Hide Elements for PDF */
+.pdf-hide {
+  display: none !important;
+}
+
+/* Ensure all colors are print-friendly */
+.pdf-content * {
+  color: inherit !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* Override any green brand colors for PDF */
+.pdf-content .text-sgbus-green,
+.pdf-content .text-green-400,
+.pdf-content .text-green-500,
+.pdf-content .border-sgbus-green,
+.pdf-content .bg-sgbus-green {
+  color: #2d2d2d !important;
+  background-color: transparent !important;
+  border-color: #cccccc !important;
+}
+
+/* Ensure proper spacing for PDF layout */
+.pdf-content > *:first-child {
+  margin-top: 0 !important;
+}
+
+.pdf-content > *:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* High contrast mode for better readability */
+@media print {
+  .pdf-content {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* Responsive PDF layout for different screen sizes during generation */
+@media (max-width: 210mm) {
+  .pdf-content {
+    font-size: 11px !important;
+  }
+  
+  .pdf-content h1 {
+    font-size: 22px !important;
+  }
+  
+  .pdf-content h2 {
+    font-size: 18px !important;
+  }
+  
+  .pdf-content h3 {
+    font-size: 15px !important;
+  }
+  
+  .pdf-content table {
+    font-size: 10px !important;
+  }
+  
+  .pdf-content th,
+  .pdf-content td {
+    padding: 0.375rem !important;
+    font-size: 10px !important;
+  }
+} 
