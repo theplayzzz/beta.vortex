@@ -6,7 +6,7 @@ import DOMPurify from 'dompurify';
 import {
   PDF_CONFIG,
   generatePDFFilename,
-  applyPDFStyles,
+  applySmartPageBreaks,
   calculatePDFDimensions,
   addPagesToPDF,
   cleanupPDFElements,
@@ -75,11 +75,11 @@ export function useExportPDF() {
       tempDiv = document.createElement('div');
       tempDiv.innerHTML = sanitizedHTML;
       
-      // 📏 Apply PDF-specific styles
-      style = applyPDFStyles(tempDiv);
+      // 🧠 Apply Smart Page Breaks (CSS + HTML Analysis)
+      style = applySmartPageBreaks(tempDiv);
       document.head.appendChild(style);
       document.body.appendChild(tempDiv);
-      monitor.step('DOM elements created');
+      monitor.step('Smart page breaks applied');
 
       // ⏱️ Timeout handler
       const timeoutPromise = createGenerationTimeout();
@@ -114,7 +114,7 @@ export function useExportPDF() {
         // ✅ Success feedback
         addToast(toast.success(
           'PDF exportado',
-          'Download iniciado com sucesso!'
+          'Download iniciado com quebras de página inteligentes!'
         ));
 
       } catch (canvasError) {
@@ -135,7 +135,7 @@ export function useExportPDF() {
 
           addToast(toast.success(
             'PDF exportado',
-            'Download iniciado (qualidade reduzida)'
+            'Download iniciado (qualidade reduzida mas com quebras inteligentes)'
           ));
           monitor.step('Fallback generation succeeded');
 
