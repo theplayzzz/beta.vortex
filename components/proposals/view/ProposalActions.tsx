@@ -12,8 +12,17 @@ import {
   Trash2,
   MoreHorizontal 
 } from 'lucide-react';
-import { useUpdateProposal, useDeleteProposal, Proposal } from '@/hooks/use-proposals';
+import { useUpdateProposal, useDeleteProposal } from '@/hooks/use-proposals';
 import { useToast, toast } from '@/components/ui/toast';
+import { useExportPDF } from '@/hooks/useExportPDF';
+
+interface Proposal {
+  id: string;
+  title: string;
+  status: 'DRAFT' | 'SENT' | 'VIEWED' | 'ACCEPTED' | 'REJECTED' | 'NEGOTIATION' | 'ARCHIVED';
+  proposalHtml: string | null;
+  proposalMarkdown: string | null;
+}
 
 interface ProposalActionsProps {
   proposalId: string;
@@ -27,6 +36,7 @@ export function ProposalActions({ proposalId, proposal }: ProposalActionsProps) 
   
   const updateProposal = useUpdateProposal(proposalId);
   const deleteProposal = useDeleteProposal();
+  const { exportToPDF } = useExportPDF();
 
   const handleStatusUpdate = async (newStatus: Proposal['status']) => {
     try {
@@ -51,12 +61,8 @@ export function ProposalActions({ proposalId, proposal }: ProposalActionsProps) 
     ));
   };
 
-  const handleExportPDF = () => {
-    // TODO: Implementar export PDF
-    addToast(toast.info(
-      'Funcionalidade em desenvolvimento',
-      'O export para PDF será implementado em breve'
-    ));
+  const handleExportPDF = async () => {
+    await exportToPDF({ proposal });
   };
 
   const handleEdit = () => {
