@@ -188,13 +188,50 @@ export function useGenerateProposal() {
       return response.json();
     },
     onSuccess: (data) => {
-      // Invalidar cache das propostas
-      queryClient.invalidateQueries({ queryKey: ['proposals'] });
+      // 🔥 LIMPEZA AGRESSIVA DE CACHE PARA GARANTIR DADOS FRESCOS
+      console.log(`🧹 [CACHE] Limpando cache para nova proposta ${data.proposal?.id}...`);
       
-      if (data.proposal) {
-        // Adicionar proposta específica ao cache
-        queryClient.setQueryData(['proposal', data.proposal.id], data.proposal);
+      // 1. Invalidar TODAS as queries de propostas
+      queryClient.invalidateQueries({ queryKey: ['proposals'] });
+      queryClient.invalidateQueries({ queryKey: ['proposal-stats'] });
+      
+      // 2. Remover qualquer cache existente da proposta específica
+      if (data.proposal?.id) {
+        queryClient.removeQueries({ queryKey: ['proposal', data.proposal.id] });
+        
+        // 3. Forçar refetch imediato da proposta específica
+        queryClient.prefetchQuery({
+          queryKey: ['proposal', data.proposal.id],
+          queryFn: async () => {
+            const timestamp = new Date().getTime();
+            const response = await fetch(`/api/proposals/${data.proposal.id}?_t=${timestamp}`, {
+              cache: 'no-store',
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+              }
+            });
+            
+            if (!response.ok) {
+              throw new Error('Erro ao buscar proposta');
+            }
+            
+            return response.json();
+          },
+          staleTime: 0, // Sempre considerar stale
+          gcTime: 0, // Não manter em cache
+        });
+        
+        console.log(`✅ [CACHE] Cache limpo e dados frescos carregados para proposta ${data.proposal.id}`);
       }
+    },
+    onError: (error) => {
+      console.error('❌ [GENERATE] Erro ao gerar proposta:', error);
+      
+      // Limpar cache em caso de erro também
+      queryClient.invalidateQueries({ queryKey: ['proposals'] });
+      queryClient.invalidateQueries({ queryKey: ['proposal-stats'] });
     },
   });
 }

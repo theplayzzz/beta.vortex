@@ -26,19 +26,48 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
   const [aiProcessingError, setAiProcessingError] = useState<string | null>(null);
+  const [lastProposalId, setLastProposalId] = useState<string | null>(null);
 
   // Constantes do sistema de polling
   const POLLING_INTERVAL_MS = 2000; // 🔥 REDUZIDO: Verifica a cada 2 segundos (era 3s)
   const MAX_POLLING_TIME_MS = 60000; // 🔥 REDUZIDO: 60 segundos máximo (era 90s)
   const RECENT_PROPOSAL_THRESHOLD_MS = 180000; // 🔥 AUMENTADO: Considera "recente" se criada há menos de 3 minutos (era 2min)
 
+  // 🔥 RESET COMPLETO DO ESTADO QUANDO PROPOSTA MUDA
+  useEffect(() => {
+    if (proposalId && proposalId !== lastProposalId) {
+      console.log(`🔄 [RESET] Nova proposta detectada: ${proposalId} (anterior: ${lastProposalId})`);
+      
+      // Limpar todos os timers e estados anteriores
+      if (pollingInterval) {
+        console.log(`🛑 [RESET] Parando polling anterior para proposta ${lastProposalId}`);
+        clearInterval(pollingInterval);
+        setPollingInterval(null);
+      }
+      
+      if (timeoutId) {
+        console.log(`🛑 [RESET] Parando timeout anterior para proposta ${lastProposalId}`);
+        clearTimeout(timeoutId);
+        setTimeoutId(null);
+      }
+      
+      // Reset completo do estado
+      setIsWaitingForAI(false);
+      setPollingElapsedTime(0);
+      setAiProcessingError(null);
+      setLastProposalId(proposalId);
+      
+      console.log(`✅ [RESET] Estado resetado para nova proposta ${proposalId}`);
+    }
+  }, [proposalId, lastProposalId, pollingInterval, timeoutId]);
+
   // Função para verificar se a proposta é recente e ainda pode estar sendo processada
-  const isRecentProposal = (proposal: any) => {
+  const isRecentProposal = useCallback((proposal: any) => {
     if (!proposal?.createdAt) return false;
     const createdAt = new Date(proposal.createdAt).getTime();
     const now = Date.now();
     return (now - createdAt) < RECENT_PROPOSAL_THRESHOLD_MS;
-  };
+  }, [RECENT_PROPOSAL_THRESHOLD_MS]);
 
   // Função para verificar se precisa aguardar processamento da IA
   const needsAIProcessing = useCallback((proposal: any) => {
@@ -77,17 +106,32 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
     });
     
     return needsProcessing;
-  }, []);
+  }, [isRecentProposal]);
 
   // Iniciar sistema de polling quando necessário
   useEffect(() => {
-    if (!proposal || isLoading) return;
+    // 🔥 VERIFICAÇÃO INICIAL: Só processar se temos proposta e não está carregando
+    if (!proposal || isLoading) {
+      console.log(`⏸️ [POLLING] Aguardando dados da proposta ${proposalId}... (loading: ${isLoading})`);
+      return;
+    }
+
+    console.log(`🔍 [POLLING] Avaliando necessidade de polling para proposta ${proposal.id}:`, {
+      proposalId: proposal.id,
+      status: proposal.status,
+      hasMarkdown: !!(proposal.proposalMarkdown && proposal.proposalMarkdown.trim().length > 0),
+      hasHtml: !!(proposal.proposalHtml && proposal.proposalHtml.trim().length > 0),
+      hasAIContent: !!(proposal.aiGeneratedContent && Object.keys(proposal.aiGeneratedContent).length > 0),
+      isWaitingForAI,
+      createdAt: proposal.createdAt
+    });
 
     // Se precisa aguardar processamento da IA e ainda não está fazendo polling
     if (needsAIProcessing(proposal) && !isWaitingForAI) {
-      console.log('🤖 Iniciando sistema de polling para aguardar resposta da IA...');
+      console.log(`🤖 [POLLING] Iniciando sistema de polling para proposta ${proposal.id}...`);
       setIsWaitingForAI(true);
       setPollingElapsedTime(0);
+      setAiProcessingError(null);
 
       // Configura o intervalo de polling
       const interval = setInterval(async () => {
@@ -100,13 +144,14 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
             const hasHtml = !!(result.data.proposalHtml && result.data.proposalHtml.trim().length > 0);
             const hasAIContent = !!(result.data.aiGeneratedContent && Object.keys(result.data.aiGeneratedContent).length > 0);
             
-            console.log(`📊 Status da proposta ${proposal.id}:`, {
+            console.log(`📊 [POLLING] Status da proposta ${proposal.id}:`, {
               hasMarkdown,
               hasHtml,
               hasAIContent,
               status: result.data.status,
               markdownLength: result.data.proposalMarkdown?.length || 0,
-              htmlLength: result.data.proposalHtml?.length || 0
+              htmlLength: result.data.proposalHtml?.length || 0,
+              updatedAt: result.data.updatedAt
             });
             
             if (hasMarkdown || hasHtml || hasAIContent) {
@@ -115,6 +160,7 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
               setIsWaitingForAI(false);
               setPollingElapsedTime(0);
               setAiProcessingError(null);
+              setPollingInterval(null);
             }
           }
         } catch (error) {
@@ -126,10 +172,11 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
 
       // Configura timeout máximo
       const timeout = setTimeout(async () => {
-        console.log('⏰ Timeout atingido. Parando polling após 60 segundos.');
+        console.log(`⏰ [POLLING] Timeout atingido para proposta ${proposal.id}. Parando polling após 60 segundos.`);
         clearInterval(interval);
         setIsWaitingForAI(false);
         setPollingElapsedTime(0);
+        setPollingInterval(null);
         
         // Força um refetch final para garantir que temos os dados mais recentes
         try {
@@ -141,7 +188,7 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
             const hasHtml = !!(finalResult.data.proposalHtml && finalResult.data.proposalHtml.trim().length > 0);
             const hasAIContent = !!(finalResult.data.aiGeneratedContent && Object.keys(finalResult.data.aiGeneratedContent).length > 0);
             
-            console.log(`📊 Status final da proposta ${proposal.id}:`, {
+            console.log(`📊 [POLLING] Status final da proposta ${proposal.id}:`, {
               hasMarkdown,
               hasHtml,
               hasAIContent,
@@ -172,6 +219,7 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
 
       // Cleanup function
       return () => {
+        console.log(`🧹 [POLLING] Limpando timers para proposta ${proposal.id}`);
         clearInterval(interval);
         clearTimeout(timeout);
         clearInterval(timeCounter);
@@ -183,7 +231,7 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
     // Se já tem conteúdo da IA, garantir que polling está parado
     if (proposal && (proposal.proposalHtml || proposal.proposalMarkdown || proposal.aiGeneratedContent) && isWaitingForAI) {
       console.log(`✅ [${new Date().toLocaleTimeString()}] Conteúdo da IA detectado para proposta ${proposal.id}. Parando polling.`);
-      console.log(`📊 Conteúdo detectado:`, {
+      console.log(`📊 [POLLING] Conteúdo detectado:`, {
         hasMarkdown: !!(proposal.proposalMarkdown && proposal.proposalMarkdown.trim().length > 0),
         hasHtml: !!(proposal.proposalHtml && proposal.proposalHtml.trim().length > 0),
         hasAIContent: !!(proposal.aiGeneratedContent && Object.keys(proposal.aiGeneratedContent).length > 0),
@@ -191,13 +239,19 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
         htmlLength: proposal.proposalHtml?.length || 0
       });
       
-      if (pollingInterval) clearInterval(pollingInterval);
-      if (timeoutId) clearTimeout(timeoutId);
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        setPollingInterval(null);
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        setTimeoutId(null);
+      }
       setIsWaitingForAI(false);
       setPollingElapsedTime(0);
-      setAiProcessingError(null); // Limpar qualquer erro anterior
+      setAiProcessingError(null);
     }
-  }, [proposal, isLoading, isWaitingForAI, pollingInterval, timeoutId, refetch, needsAIProcessing]);
+  }, [proposal, isLoading, isWaitingForAI, pollingInterval, timeoutId, refetch, needsAIProcessing, proposalId]);
 
   // Cleanup no unmount
   useEffect(() => {
