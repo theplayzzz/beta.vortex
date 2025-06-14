@@ -18,13 +18,23 @@ interface Client {
 interface Proposal {
   id: string;
   title: string;
-  generatedContent: string | null;
   status: 'DRAFT' | 'SENT' | 'VIEWED' | 'ACCEPTED' | 'REJECTED' | 'NEGOTIATION' | 'ARCHIVED';
   version: number;
   clientId: string | null;
   userId: string;
   createdAt: string;
   updatedAt: string;
+  
+  // ✅ Campos da IA (únicos e definitivos)
+  aiGeneratedContent: any | null;
+  proposalHtml: string | null;
+  proposalMarkdown: string | null;
+  aiMetadata: any | null;
+  
+  // ✅ Dados do formulário e snapshot do cliente
+  formDataJSON: any | null;
+  clientSnapshot: any | null;
+  
   Client?: Client;
   parsedContent?: any;
 }
