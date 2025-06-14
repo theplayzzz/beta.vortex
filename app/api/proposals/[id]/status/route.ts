@@ -63,7 +63,7 @@ export async function GET(
       return NextResponse.json({ error: 'Proposal not found' }, { status: 404 });
     }
 
-    // Processar informações de status
+    // 🔥 NOVA LÓGICA: PRIORIZAR CAMPOS NOVOS PARA STATUS
     let statusInfo: StatusInfo = {
       status: 'draft',
       message: 'Proposta em rascunho',
@@ -74,47 +74,61 @@ export async function GET(
       progress: 0
     };
 
-    try {
-      const generatedContent = JSON.parse(proposal.generatedContent || '{}');
+    // ✅ VERIFICAÇÃO PRIMÁRIA: Usar campos novos como fonte de verdade
+    const hasAIContent = !!(proposal.proposalMarkdown || proposal.proposalHtml || proposal.aiGeneratedContent);
+    const isProposalSent = proposal.status === 'SENT';
+    
+    if (isProposalSent && hasAIContent) {
+      // ✅ PROPOSTA PRONTA: IA processou e salvou conteúdo
+      statusInfo = {
+        status: 'completed',
+        message: 'Proposta gerada com sucesso!',
+        isProcessing: false,
+        isComplete: true,
+        hasError: false,
+        errorDetails: null,
+        progress: 100
+      };
+    } else if (isProposalSent && !hasAIContent) {
+      // ⚠️ PROPOSTA ENVIADA MAS SEM CONTEÚDO: Possível erro ou ainda processando
+      // Verificar se é recente (menos de 3 minutos) para considerar como processando
+      const createdAt = new Date(proposal.createdAt).getTime();
+      const now = Date.now();
+      const isRecent = (now - createdAt) < (3 * 60 * 1000); // 3 minutos
       
-      switch (generatedContent.status) {
-        case 'generating':
-          statusInfo = {
-            status: 'generating',
-            message: 'Gerando proposta com IA...',
-            isProcessing: true,
-            isComplete: false,
-            hasError: false,
-            errorDetails: null,
-            progress: 25
-          };
-          break;
-          
-        case 'retrying':
-          statusInfo = {
-            status: 'retrying',
-            message: 'Tentando novamente...',
-            isProcessing: true,
-            isComplete: false,
-            hasError: false,
-            errorDetails: null,
-            progress: 50
-          };
-          break;
-          
-        case 'completed':
-          statusInfo = {
-            status: 'completed',
-            message: 'Proposta gerada com sucesso!',
-            isProcessing: false,
-            isComplete: true,
-            hasError: false,
-            errorDetails: null,
-            progress: 100
-          };
-          break;
-          
-        case 'error':
+      if (isRecent) {
+        statusInfo = {
+          status: 'generating',
+          message: 'Aguardando processamento da IA...',
+          isProcessing: true,
+          isComplete: false,
+          hasError: false,
+          errorDetails: null,
+          progress: 75
+        };
+      } else {
+        // Proposta antiga sem conteúdo - possível erro
+        statusInfo = {
+          status: 'error',
+          message: 'Erro no processamento da IA - conteúdo não foi gerado',
+          isProcessing: false,
+          isComplete: false,
+          hasError: true,
+          errorDetails: {
+            error: 'Timeout ou falha na geração de conteúdo',
+            errorType: 'ai_processing_timeout',
+            retryCount: 0,
+            timestamp: new Date().toISOString()
+          },
+          progress: 0
+        };
+      }
+    } else {
+      // 📋 PROPOSTA EM DRAFT: Verificar se há informações de erro no campo legado
+      try {
+        const generatedContent = JSON.parse(proposal.generatedContent || '{}');
+        
+        if (generatedContent.status === 'error' || generatedContent.status === 'legacy_error') {
           statusInfo = {
             status: 'error',
             message: generatedContent.error || 'Erro na geração da proposta',
@@ -129,33 +143,22 @@ export async function GET(
             },
             progress: 0
           };
-          break;
-          
-        default:
-          if (proposal.status === 'SENT' && proposal.proposalMarkdown) {
-            statusInfo = {
-              status: 'completed',
-              message: 'Proposta gerada com sucesso!',
-              isProcessing: false,
-              isComplete: true,
-              hasError: false,
-              errorDetails: null,
-              progress: 100
-            };
-          }
-      }
-    } catch (e) {
-      // Se não conseguir fazer parse, assumir que está em draft
-      if (proposal.status === 'SENT' && proposal.proposalMarkdown) {
-        statusInfo = {
-          status: 'completed',
-          message: 'Proposta gerada com sucesso!',
-          isProcessing: false,
-          isComplete: true,
-          hasError: false,
-          errorDetails: null,
-          progress: 100
-        };
+        } else if (generatedContent.status === 'generating' || generatedContent.status === 'legacy_generating' || generatedContent.status === 'retrying') {
+          statusInfo = {
+            status: generatedContent.status === 'retrying' ? 'retrying' : 'generating',
+            message: generatedContent.status === 'retrying' ? 'Tentando novamente...' : 'Gerando proposta com IA...',
+            isProcessing: true,
+            isComplete: false,
+            hasError: false,
+            errorDetails: null,
+            progress: generatedContent.status === 'retrying' ? 50 : 25
+          };
+        }
+        // ⚠️ IGNORAR generatedContent.status === 'completed' ou 'legacy_completed'
+        // Apenas os campos novos (proposalMarkdown, etc.) determinam se está completo
+      } catch (e) {
+        // Erro no parse do generatedContent - manter status draft
+        console.warn(`Erro ao fazer parse do generatedContent para proposta ${proposal.id}:`, e);
       }
     }
 
@@ -167,7 +170,7 @@ export async function GET(
       createdAt: proposal.createdAt,
       dbStatus: proposal.status,
       statusInfo,
-      hasContent: !!proposal.proposalMarkdown,
+      hasContent: hasAIContent,
       contentLength: proposal.proposalMarkdown?.length || 0
     });
 

@@ -208,13 +208,14 @@ async function processProposalWithAI(
             retryCount: retryCount
           },
           
-          // Status de sucesso no generatedContent
+          // 🔧 CAMPO LEGADO: Manter apenas para compatibilidade (não usado para lógica de status)
           generatedContent: JSON.stringify({
-            status: 'completed',
-            message: 'Proposta gerada com sucesso pela IA',
+            status: 'legacy_completed', // Indicar que é campo legado
+            message: 'Proposta gerada - usar campos novos para status',
             completedAt: new Date().toISOString(),
             markdownLength: markdownContent.length,
-            retryCount: retryCount
+            retryCount: retryCount,
+            note: 'Este campo é mantido apenas para compatibilidade. Use proposalMarkdown/proposalHtml/aiGeneratedContent.'
           }),
         },
       });
@@ -238,12 +239,14 @@ async function processProposalWithAI(
         data: {
           status: 'DRAFT',
           updatedAt: new Date(),
+          // 🔧 CAMPO LEGADO: Manter apenas para compatibilidade
           generatedContent: JSON.stringify({
-            status: 'error',
+            status: 'legacy_error',
             error: `Erro no webhook: ${webhookResponse.status}`,
             details: errorText,
             timestamp: new Date().toISOString(),
-            retryCount: retryCount
+            retryCount: retryCount,
+            note: 'Este campo é mantido apenas para compatibilidade. Use status DRAFT para verificar erros.'
           }),
         },
       });
@@ -286,13 +289,15 @@ async function processProposalWithAI(
       data: {
         status: 'DRAFT',
         updatedAt: new Date(),
+        // 🔧 CAMPO LEGADO: Manter apenas para compatibilidade
         generatedContent: JSON.stringify({
-          status: 'error',
+          status: 'legacy_error',
           error: errorMessage,
           errorType: errorType,
           details: error.message,
           timestamp: new Date().toISOString(),
-          retryCount: retryCount
+          retryCount: retryCount,
+          note: 'Este campo é mantido apenas para compatibilidade. Use status DRAFT para verificar erros.'
         }),
       },
     });
@@ -360,11 +365,12 @@ export async function POST(request: NextRequest) {
           snapshotAt: new Date().toISOString()
         },
         
-        // Campo temporário para status da geração
+        // 🔧 CAMPO LEGADO: Manter apenas para compatibilidade
         generatedContent: JSON.stringify({
-          status: 'generating',
-          message: 'Enviando para IA externa...',
-          timestamp: new Date().toISOString()
+          status: 'legacy_generating',
+          message: 'Processamento iniciado - usar campos novos para status',
+          timestamp: new Date().toISOString(),
+          note: 'Este campo é mantido apenas para compatibilidade. Use status DRAFT/SENT para verificar progresso.'
         }),
       },
       include: {

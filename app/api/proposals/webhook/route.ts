@@ -86,9 +86,12 @@ export async function POST(request: NextRequest) {
         data: {
           status: 'DRAFT',
           updatedAt: new Date(),
+          // 🔧 CAMPO LEGADO: Manter apenas para compatibilidade
           generatedContent: JSON.stringify({
+            status: 'legacy_error',
             error: 'IA externa retornou erro',
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            note: 'Este campo é mantido apenas para compatibilidade. Use status DRAFT para verificar erros.'
           }),
         },
       });
@@ -125,8 +128,13 @@ export async function POST(request: NextRequest) {
         proposalMarkdown: data.generated_content.proposta_markdown,
         aiMetadata: data.generated_content.metadata as any,
         
-        // Manter compatibilidade com campo antigo
-        generatedContent: data.generated_content.proposta_html,
+        // 🔧 CAMPO LEGADO: Manter apenas para compatibilidade
+        generatedContent: JSON.stringify({
+          status: 'legacy_completed',
+          message: 'Proposta gerada via webhook - usar campos novos para status',
+          completedAt: new Date().toISOString(),
+          note: 'Este campo é mantido apenas para compatibilidade. Use proposalMarkdown/proposalHtml/aiGeneratedContent.'
+        }),
       },
       include: {
         Client: {
