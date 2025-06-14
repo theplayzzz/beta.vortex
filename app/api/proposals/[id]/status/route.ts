@@ -75,54 +75,33 @@ export async function GET(
     };
 
     // ✅ VERIFICAÇÃO PRIMÁRIA: Usar campos novos como fonte de verdade
-    const hasAIContent = !!(proposal.proposalMarkdown || proposal.proposalHtml || proposal.aiGeneratedContent);
+    const hasMarkdown = !!(proposal.proposalMarkdown && proposal.proposalMarkdown.trim().length > 0);
+    const hasHtml = !!(proposal.proposalHtml && proposal.proposalHtml.trim().length > 0);
+    const hasAIGeneratedContent = !!(proposal.aiGeneratedContent && Object.keys(proposal.aiGeneratedContent).length > 0);
+    const hasAIContent = hasMarkdown || hasHtml || hasAIGeneratedContent;
     const isProposalSent = proposal.status === 'SENT';
     
-    if (isProposalSent && hasAIContent) {
-      // ✅ PROPOSTA PRONTA: IA processou e salvou conteúdo
+    // 🔥 CORREÇÃO CRÍTICA: Proposta está completa se TEM CONTEÚDO OU STATUS SENT
+    if (hasAIContent || isProposalSent) {
+      // ✅ PROPOSTA PRONTA: IA processou e salvou conteúdo OU status foi atualizado para SENT
       statusInfo = {
         status: 'completed',
         message: 'Proposta gerada com sucesso!',
         isProcessing: false,
-        isComplete: true,
+        isComplete: true, // 🔥 GARANTIR QUE POLLING PARE
         hasError: false,
         errorDetails: null,
         progress: 100
       };
-    } else if (isProposalSent && !hasAIContent) {
-      // ⚠️ PROPOSTA ENVIADA MAS SEM CONTEÚDO: Possível erro ou ainda processando
-      // Verificar se é recente (menos de 3 minutos) para considerar como processando
-      const createdAt = new Date(proposal.createdAt).getTime();
-      const now = Date.now();
-      const isRecent = (now - createdAt) < (3 * 60 * 1000); // 3 minutos
       
-      if (isRecent) {
-        statusInfo = {
-          status: 'generating',
-          message: 'Aguardando processamento da IA...',
-          isProcessing: true,
-          isComplete: false,
-          hasError: false,
-          errorDetails: null,
-          progress: 75
-        };
-      } else {
-        // Proposta antiga sem conteúdo - possível erro
-        statusInfo = {
-          status: 'error',
-          message: 'Erro no processamento da IA - conteúdo não foi gerado',
-          isProcessing: false,
-          isComplete: false,
-          hasError: true,
-          errorDetails: {
-            error: 'Timeout ou falha na geração de conteúdo',
-            errorType: 'ai_processing_timeout',
-            retryCount: 0,
-            timestamp: new Date().toISOString()
-          },
-          progress: 0
-        };
-      }
+      console.log(`✅ [STATUS_API] Proposta ${proposal.id} marcada como completa:`, {
+        hasMarkdown,
+        hasHtml,
+        hasAIGeneratedContent,
+        isProposalSent,
+        markdownLength: proposal.proposalMarkdown?.length || 0,
+        htmlLength: proposal.proposalHtml?.length || 0
+      });
     } else {
       // 📋 PROPOSTA EM DRAFT: Verificar se há informações de erro no campo legado
       try {

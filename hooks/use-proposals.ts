@@ -5,7 +5,7 @@ import { AIGeneratedContent, AIMetadata } from '@/lib/proposals/types';
 export interface Proposal {
   id: string;
   title: string;
-  generatedContent: string | null;
+  // 🔥 CAMPO LEGACY REMOVIDO COMPLETAMENTE
   status: 'DRAFT' | 'SENT' | 'VIEWED' | 'ACCEPTED' | 'REJECTED' | 'NEGOTIATION' | 'ARCHIVED';
   version: number;
   clientId: string | null;
@@ -13,13 +13,13 @@ export interface Proposal {
   createdAt: string;
   updatedAt: string;
   
-  // 🆕 Novos campos da IA
+  // ✅ Campos da IA (únicos e definitivos)
   aiGeneratedContent: AIGeneratedContent | null;
   proposalHtml: string | null;
   proposalMarkdown: string | null;
   aiMetadata: AIMetadata | null;
   
-  // 🆕 Dados do formulário e snapshot do cliente
+  // ✅ Dados do formulário e snapshot do cliente
   formDataJSON: any | null;
   clientSnapshot: any | null;
   
@@ -32,7 +32,6 @@ export interface Proposal {
     contactEmail?: string | null;
     website?: string | null;
   };
-  parsedContent?: any;
 }
 
 export interface ProposalFilters {
@@ -73,7 +72,7 @@ export interface CreateProposalData {
 export interface UpdateProposalData {
   title?: string;
   status?: 'DRAFT' | 'SENT' | 'VIEWED' | 'ACCEPTED' | 'REJECTED' | 'NEGOTIATION' | 'ARCHIVED';
-  generatedContent?: string;
+  // 🔥 CAMPO LEGACY REMOVIDO COMPLETAMENTE
 }
 
 // Hook para listar propostas

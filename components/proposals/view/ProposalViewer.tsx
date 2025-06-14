@@ -2,7 +2,7 @@
 
 import { ArrowLeft, Loader2, FileText, Bot, Clock, Zap } from 'lucide-react';
 import Link from 'next/link';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useProposal } from '@/hooks/use-proposals';
 import { ProposalHeader } from './ProposalHeader';
 import { ContentRenderer } from './ContentRenderer';
@@ -10,6 +10,9 @@ import { AIInsightsPanel } from './AIInsightsPanel';
 import { ProposalActions } from './ProposalActions';
 import { ProposalEmptyState } from './ProposalEmptyState';
 import { FormDataPanel } from './FormDataPanel';
+
+// 🔥 DESABILITAR SISTEMA DE POLLING DUPLICADO
+// import { useProposalPollingContext } from '../ProposalPollingProvider';
 
 interface ProposalViewerProps {
   proposalId: string;
@@ -23,15 +26,18 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
   // Estados para o sistema de polling inteligente
   const [isWaitingForAI, setIsWaitingForAI] = useState(false);
   const [pollingElapsedTime, setPollingElapsedTime] = useState(0);
-  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
   const [aiProcessingError, setAiProcessingError] = useState<string | null>(null);
   const [lastProposalId, setLastProposalId] = useState<string | null>(null);
+  
+  // 🔥 USAR useRef PARA EVITAR DEPENDÊNCIAS PROBLEMÁTICAS
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
+  const isWaitingForAIRef = useRef(false);
 
   // Constantes do sistema de polling
   const POLLING_INTERVAL_MS = 2000; // 🔥 REDUZIDO: Verifica a cada 2 segundos (era 3s)
   const MAX_POLLING_TIME_MS = 60000; // 🔥 REDUZIDO: 60 segundos máximo (era 90s)
-  const RECENT_PROPOSAL_THRESHOLD_MS = 180000; // 🔥 AUMENTADO: Considera "recente" se criada há menos de 3 minutos (era 2min)
+  const RECENT_PROPOSAL_THRESHOLD_MS = 600000; // 🔥 AUMENTADO: Considera "recente" se criada há menos de 10 minutos
 
   // 🔥 RESET COMPLETO DO ESTADO QUANDO PROPOSTA MUDA
   useEffect(() => {
@@ -39,74 +45,48 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
       console.log(`🔄 [RESET] Nova proposta detectada: ${proposalId} (anterior: ${lastProposalId})`);
       
       // Limpar todos os timers e estados anteriores
-      if (pollingInterval) {
+      if (pollingIntervalRef.current) {
         console.log(`🛑 [RESET] Parando polling anterior para proposta ${lastProposalId}`);
-        clearInterval(pollingInterval);
-        setPollingInterval(null);
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
       }
       
-      if (timeoutId) {
+      if (timeoutIdRef.current) {
         console.log(`🛑 [RESET] Parando timeout anterior para proposta ${lastProposalId}`);
-        clearTimeout(timeoutId);
-        setTimeoutId(null);
+        clearTimeout(timeoutIdRef.current);
+        timeoutIdRef.current = null;
       }
       
       // Reset completo do estado
       setIsWaitingForAI(false);
+      isWaitingForAIRef.current = false;
       setPollingElapsedTime(0);
       setAiProcessingError(null);
       setLastProposalId(proposalId);
       
       console.log(`✅ [RESET] Estado resetado para nova proposta ${proposalId}`);
     }
-  }, [proposalId, lastProposalId, pollingInterval, timeoutId]);
+  }, [proposalId, lastProposalId]);
 
-  // Função para verificar se a proposta é recente e ainda pode estar sendo processada
-  const isRecentProposal = useCallback((proposal: any) => {
+  // 🔥 FUNÇÃO REMOVIDA: Consolidada em shouldStartPolling
+
+  // 🔥 FUNÇÃO SIMPLIFICADA: Verificar se precisa aguardar processamento da IA
+  const shouldStartPolling = useCallback((proposal: any) => {
     if (!proposal?.createdAt) return false;
+    
+    // Verificar se é recente (menos de 10 minutos)
     const createdAt = new Date(proposal.createdAt).getTime();
     const now = Date.now();
-    return (now - createdAt) < RECENT_PROPOSAL_THRESHOLD_MS;
-  }, [RECENT_PROPOSAL_THRESHOLD_MS]);
-
-  // Função para verificar se precisa aguardar processamento da IA
-  const needsAIProcessing = useCallback((proposal: any) => {
-    if (!proposal) return false;
+    const isRecent = (now - createdAt) < RECENT_PROPOSAL_THRESHOLD_MS;
     
-    // 🔥 VERIFICAÇÃO MELHORADA: Múltiplos campos para detectar conteúdo da IA
-    const hasMarkdown = !!(proposal.proposalMarkdown && proposal.proposalMarkdown.trim().length > 0);
-    const hasHtml = !!(proposal.proposalHtml && proposal.proposalHtml.trim().length > 0);
-    const hasAIContent = !!(proposal.aiGeneratedContent && Object.keys(proposal.aiGeneratedContent).length > 0);
-    const isProposalSent = proposal.status === 'SENT';
-    
-    // Se tem qualquer conteúdo da IA, não precisa aguardar
-    if (hasMarkdown || hasHtml || hasAIContent) {
-      console.log(`✅ Conteúdo da IA detectado para proposta ${proposal.id}:`, {
-        hasMarkdown,
-        hasHtml,
-        hasAIContent,
-        markdownLength: proposal.proposalMarkdown?.length || 0,
-        htmlLength: proposal.proposalHtml?.length || 0
-      });
-      return false;
+    if (isRecent) {
+      console.log(`🔍 [POLLING_CHECK] Proposta recente detectada ${proposal.id} - INICIANDO POLLING`);
+      return true;
     }
     
-    // Se não tem conteúdo, verificar se é recente e pode estar processando
-    const isRecent = isRecentProposal(proposal);
-    const needsProcessing = !hasMarkdown && !hasHtml && !hasAIContent && isRecent;
-    
-    console.log(`🔍 Verificação de processamento para proposta ${proposal.id}:`, {
-      hasMarkdown,
-      hasHtml,
-      hasAIContent,
-      isProposalSent,
-      isRecent,
-      needsProcessing,
-      createdAt: proposal.createdAt
-    });
-    
-    return needsProcessing;
-  }, [isRecentProposal]);
+    console.log(`⏸️ [POLLING_SKIP] Proposta ${proposal.id} não é recente - PULANDO POLLING`);
+    return false;
+  }, [RECENT_PROPOSAL_THRESHOLD_MS]);
 
   // Iniciar sistema de polling quando necessário
   useEffect(() => {
@@ -123,13 +103,17 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
       hasHtml: !!(proposal.proposalHtml && proposal.proposalHtml.trim().length > 0),
       hasAIContent: !!(proposal.aiGeneratedContent && Object.keys(proposal.aiGeneratedContent).length > 0),
       isWaitingForAI,
-      createdAt: proposal.createdAt
+      createdAt: proposal.createdAt,
+      updatedAt: proposal.updatedAt
     });
 
+    // 🔥 REMOVIDO: Auto-refresh automático não desejado
+
     // Se precisa aguardar processamento da IA e ainda não está fazendo polling
-    if (needsAIProcessing(proposal) && !isWaitingForAI) {
+    if (shouldStartPolling(proposal) && !isWaitingForAIRef.current) {
       console.log(`🤖 [POLLING] Iniciando sistema de polling para proposta ${proposal.id}...`);
       setIsWaitingForAI(true);
+      isWaitingForAIRef.current = true;
       setPollingElapsedTime(0);
       setAiProcessingError(null);
 
@@ -144,23 +128,32 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
             const hasHtml = !!(result.data.proposalHtml && result.data.proposalHtml.trim().length > 0);
             const hasAIContent = !!(result.data.aiGeneratedContent && Object.keys(result.data.aiGeneratedContent).length > 0);
             
-            console.log(`📊 [POLLING] Status da proposta ${proposal.id}:`, {
+            console.log(`📊 [POLLING_INTERVAL] Status da proposta ${proposal.id}:`, {
               hasMarkdown,
               hasHtml,
               hasAIContent,
               status: result.data.status,
+              isProposalSent: result.data.status === 'SENT',
               markdownLength: result.data.proposalMarkdown?.length || 0,
               htmlLength: result.data.proposalHtml?.length || 0,
               updatedAt: result.data.updatedAt
             });
             
-            if (hasMarkdown || hasHtml || hasAIContent) {
-              console.log(`✅ [${new Date().toLocaleTimeString()}] Proposta ${proposal.id} processada pela IA! Parando polling.`);
+            // 🔥 CORREÇÃO CRÍTICA: Parar polling se tem conteúdo OU status SENT
+            if (hasMarkdown || hasHtml || hasAIContent || result.data.status === 'SENT') {
+              console.log(`✅ [${new Date().toLocaleTimeString()}] [POLLING_INTERVAL_STOP] Proposta ${proposal.id} processada pela IA! Parando polling.`);
+              console.log(`🎯 [POLLING_INTERVAL_STOP] Motivo da parada:`, {
+                hasMarkdown,
+                hasHtml,
+                hasAIContent,
+                isProposalSent: result.data.status === 'SENT'
+              });
               clearInterval(interval);
               setIsWaitingForAI(false);
+              isWaitingForAIRef.current = false;
               setPollingElapsedTime(0);
               setAiProcessingError(null);
-              setPollingInterval(null);
+              pollingIntervalRef.current = null;
             }
           }
         } catch (error) {
@@ -168,15 +161,16 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
         }
       }, POLLING_INTERVAL_MS);
 
-      setPollingInterval(interval);
+      pollingIntervalRef.current = interval;
 
       // Configura timeout máximo
       const timeout = setTimeout(async () => {
         console.log(`⏰ [POLLING] Timeout atingido para proposta ${proposal.id}. Parando polling após 60 segundos.`);
         clearInterval(interval);
         setIsWaitingForAI(false);
+        isWaitingForAIRef.current = false;
         setPollingElapsedTime(0);
-        setPollingInterval(null);
+        pollingIntervalRef.current = null;
         
         // Força um refetch final para garantir que temos os dados mais recentes
         try {
@@ -210,7 +204,7 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
         }
       }, MAX_POLLING_TIME_MS);
 
-      setTimeoutId(timeout);
+      timeoutIdRef.current = timeout;
 
       // Contador de tempo decorrido
       const timeCounter = setInterval(() => {
@@ -223,43 +217,64 @@ export function ProposalViewer({ proposalId }: ProposalViewerProps) {
         clearInterval(interval);
         clearTimeout(timeout);
         clearInterval(timeCounter);
-        setPollingInterval(null);
-        setTimeoutId(null);
+        pollingIntervalRef.current = null;
+        timeoutIdRef.current = null;
       };
     }
 
-    // Se já tem conteúdo da IA, garantir que polling está parado
-    if (proposal && (proposal.proposalHtml || proposal.proposalMarkdown || proposal.aiGeneratedContent) && isWaitingForAI) {
-      console.log(`✅ [${new Date().toLocaleTimeString()}] Conteúdo da IA detectado para proposta ${proposal.id}. Parando polling.`);
-      console.log(`📊 [POLLING] Conteúdo detectado:`, {
+    // 🔥 CORREÇÃO CRÍTICA: Se já tem conteúdo da IA OU status SENT, garantir que polling está parado
+    const hasContent = proposal && (
+      (proposal.proposalHtml && proposal.proposalHtml.trim().length > 0) ||
+      (proposal.proposalMarkdown && proposal.proposalMarkdown.trim().length > 0) ||
+      (proposal.aiGeneratedContent && Object.keys(proposal.aiGeneratedContent).length > 0) ||
+      proposal.status === 'SENT'
+    );
+    
+    if (hasContent && isWaitingForAI) {
+      console.log(`✅ [${new Date().toLocaleTimeString()}] [POLLING_FORCE_STOP] Conteúdo da IA detectado para proposta ${proposal.id}. PARANDO POLLING IMEDIATAMENTE.`);
+      console.log(`📊 [POLLING_FORCE_STOP] Conteúdo detectado:`, {
         hasMarkdown: !!(proposal.proposalMarkdown && proposal.proposalMarkdown.trim().length > 0),
         hasHtml: !!(proposal.proposalHtml && proposal.proposalHtml.trim().length > 0),
         hasAIContent: !!(proposal.aiGeneratedContent && Object.keys(proposal.aiGeneratedContent).length > 0),
+        isProposalSent: proposal.status === 'SENT',
         markdownLength: proposal.proposalMarkdown?.length || 0,
-        htmlLength: proposal.proposalHtml?.length || 0
+        htmlLength: proposal.proposalHtml?.length || 0,
+        status: proposal.status,
+        proposalId: proposal.id
       });
       
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-        setPollingInterval(null);
+      // 🔥 PARADA FORÇADA E IMEDIATA
+      if (pollingIntervalRef.current) {
+        console.log(`🛑 [POLLING_FORCE_STOP] Limpando intervalo de polling`);
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
       }
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        setTimeoutId(null);
+      if (timeoutIdRef.current) {
+        console.log(`🛑 [POLLING_FORCE_STOP] Limpando timeout`);
+        clearTimeout(timeoutIdRef.current);
+        timeoutIdRef.current = null;
       }
+      
+      // 🔥 RESET COMPLETO DO ESTADO
       setIsWaitingForAI(false);
+      isWaitingForAIRef.current = false;
       setPollingElapsedTime(0);
       setAiProcessingError(null);
+      
+      console.log(`✅ [POLLING_FORCE_STOP] Polling completamente parado para proposta ${proposal.id}`);
+      
+      // 🔥 FORÇA RETURN PARA EVITAR EXECUÇÃO ADICIONAL
+      return;
     }
-  }, [proposal, isLoading, isWaitingForAI, pollingInterval, timeoutId, refetch, needsAIProcessing, proposalId]);
+  }, [proposal?.id, proposal?.status, proposal?.proposalMarkdown, proposal?.proposalHtml, proposal?.aiGeneratedContent, isLoading, proposalId]);
 
   // Cleanup no unmount
   useEffect(() => {
     return () => {
-      if (pollingInterval) clearInterval(pollingInterval);
-      if (timeoutId) clearTimeout(timeoutId);
+      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+      if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
     };
-  }, [pollingInterval, timeoutId]);
+  }, []);
 
   // Loading state padrão
   if (isLoading) {
