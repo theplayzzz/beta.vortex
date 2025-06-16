@@ -2,6 +2,9 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma/client';
 import { metrics } from '@/utils/monitoring';
+import { checkDatabaseHealth } from '@/utils/database-health';
+import { PerformanceLogger } from '@/utils/structured-logging';
+import { withDatabaseRetry } from '@/utils/retry-mechanism';
 
 export async function GET(request: NextRequest) {
   try {
@@ -236,5 +239,261 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     );
+  }
+}
+
+async function getConnectionPoolMetrics() {
+  try {
+    const dbHealth = await checkDatabaseHealth();
+    
+    // Tentar obter métricas detalhadas do Prisma
+    let prismaMetrics = null;
+    try {
+      const metrics = await prisma.$metrics.json();
+      if (metrics && metrics.gauges) {
+        const poolMetrics = metrics.gauges.filter(g => 
+          g.key.includes('prisma_pool_connections')
+        );
+        
+        prismaMetrics = {
+          openConnections: poolMetrics.find(g => g.key === 'prisma_pool_connections_open')?.value || 0,
+          busyConnections: poolMetrics.find(g => g.key === 'prisma_pool_connections_busy')?.value || 0,
+          idleConnections: poolMetrics.find(g => g.key === 'prisma_pool_connections_idle')?.value || 0
+        };
+      }
+    } catch (metricsError) {
+      console.debug('[METRICS] Prisma metrics not available:', metricsError);
+    }
+
+    return {
+      status: dbHealth.status,
+      latency: dbHealth.latency,
+      connectionPool: prismaMetrics || dbHealth.connectionPool,
+      lastCheck: dbHealth.timestamp,
+      configuration: {
+        databaseUrl: !!process.env.DATABASE_URL,
+        directUrl: !!process.env.DIRECT_URL,
+        hasPooling: process.env.DATABASE_URL?.includes('pgbouncer=true') || false,
+        hasConnectionLimit: process.env.DATABASE_URL?.includes('connection_limit=') || false,
+        hasPoolTimeout: process.env.DATABASE_URL?.includes('pool_timeout=') || false
+      }
+    };
+  } catch (error: any) {
+    return {
+      status: 'error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    };
+  }
+}
+
+async function getApprovalSystemMetrics() {
+  try {
+    const [
+      totalUsers,
+      pendingUsers,
+      approvedUsers,
+      rejectedUsers,
+      suspendedUsers,
+      recentApprovals,
+      autoApprovals
+    ] = await Promise.all([
+      withDatabaseRetry(() => prisma.user.count(), 'total users count'),
+      withDatabaseRetry(() => prisma.user.count({ where: { approvalStatus: 'PENDING' } }), 'pending users count'),
+      withDatabaseRetry(() => prisma.user.count({ where: { approvalStatus: 'APPROVED' } }), 'approved users count'),
+      withDatabaseRetry(() => prisma.user.count({ where: { approvalStatus: 'REJECTED' } }), 'rejected users count'),
+      withDatabaseRetry(() => prisma.user.count({ where: { approvalStatus: 'SUSPENDED' } }), 'suspended users count'),
+      withDatabaseRetry(() => prisma.user.count({
+        where: {
+          approvedAt: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Últimas 24h
+          }
+        }
+      }), 'recent approvals count'),
+      withDatabaseRetry(() => prisma.user.count({
+        where: {
+          approvedBy: 'SYSTEM_AUTO_WEBHOOK',
+          approvedAt: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Últimas 24h
+          }
+        }
+      }), 'auto approvals count')
+    ]);
+
+    const approvalRate = totalUsers > 0 ? (approvedUsers / totalUsers) * 100 : 0;
+    const autoApprovalRate = recentApprovals > 0 ? (autoApprovals / recentApprovals) * 100 : 0;
+
+    return {
+      totalUsers,
+      statusBreakdown: {
+        pending: pendingUsers,
+        approved: approvedUsers,
+        rejected: rejectedUsers,
+        suspended: suspendedUsers
+      },
+      metrics: {
+        approvalRate: Math.round(approvalRate * 100) / 100,
+        autoApprovalRate: Math.round(autoApprovalRate * 100) / 100,
+        recentApprovals24h: recentApprovals,
+        autoApprovals24h: autoApprovals
+      },
+      webhookConfiguration: {
+        configured: !!process.env.APROVACAO_WEBHOOK_URL,
+        url: process.env.APROVACAO_WEBHOOK_URL ? 'configured' : 'not_configured'
+      }
+    };
+  } catch (error: any) {
+    return {
+      status: 'error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    };
+  }
+}
+
+async function getPerformanceMetrics() {
+  try {
+    const performanceData = PerformanceLogger.getMetrics();
+    
+    // Calcular estatísticas agregadas
+    const operations = Object.keys(performanceData);
+    const totalOperations = operations.reduce((sum, op) => sum + performanceData[op].count, 0);
+    const totalErrors = operations.reduce((sum, op) => sum + performanceData[op].totalErrors, 0);
+    const overallErrorRate = totalOperations > 0 ? (totalErrors / totalOperations) * 100 : 0;
+    
+    // Identificar operações mais lentas
+    const slowestOperations = operations
+      .map(op => ({
+        operation: op,
+        averageDuration: performanceData[op].averageDuration,
+        maxDuration: performanceData[op].maxDuration,
+        errorRate: performanceData[op].errorRate * 100
+      }))
+      .sort((a, b) => b.averageDuration - a.averageDuration)
+      .slice(0, 5);
+
+    return {
+      summary: {
+        totalOperations,
+        totalErrors,
+        overallErrorRate: Math.round(overallErrorRate * 100) / 100,
+        uniqueOperations: operations.length
+      },
+      slowestOperations,
+      detailedMetrics: performanceData,
+      thresholds: {
+        warningDuration: 1000, // 1s
+        errorDuration: 3000,    // 3s
+        maxErrorRate: 5         // 5%
+      }
+    };
+  } catch (error: any) {
+    return {
+      status: 'error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    };
+  }
+}
+
+async function getSystemHealthMetrics() {
+  try {
+    const [
+      dbHealth,
+      creditSystemHealth,
+      recentErrors
+    ] = await Promise.all([
+      checkDatabaseHealth(),
+      getCreditSystemHealth(),
+      getRecentErrors()
+    ]);
+
+    return {
+      database: {
+        status: dbHealth.status,
+        latency: dbHealth.latency,
+        lastCheck: dbHealth.timestamp
+      },
+      creditSystem: creditSystemHealth,
+      recentErrors,
+      environment: {
+        nodeEnv: process.env.NODE_ENV,
+        vercelEnv: process.env.VERCEL_ENV,
+        region: process.env.VERCEL_REGION,
+        hasRequiredEnvVars: !![
+          process.env.DATABASE_URL,
+          process.env.DIRECT_URL,
+          process.env.CLERK_SECRET_KEY,
+          process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+        ].every(Boolean)
+      }
+    };
+  } catch (error: any) {
+    return {
+      status: 'error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    };
+  }
+}
+
+async function getCreditSystemHealth() {
+  try {
+    const [
+      totalCreditsIssued,
+      totalCreditsConsumed,
+      usersWithCredits,
+      recentTransactions
+    ] = await Promise.all([
+      withDatabaseRetry(() => prisma.creditTransaction.aggregate({
+        where: { amount: { gt: 0 } },
+        _sum: { amount: true }
+      }), 'total credits issued'),
+      withDatabaseRetry(() => prisma.creditTransaction.aggregate({
+        where: { amount: { lt: 0 } },
+        _sum: { amount: true }
+      }), 'total credits consumed'),
+      withDatabaseRetry(() => prisma.user.count({
+        where: { creditBalance: { gt: 0 } }
+      }), 'users with credits'),
+      withDatabaseRetry(() => prisma.creditTransaction.count({
+        where: {
+          createdAt: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Últimas 24h
+          }
+        }
+      }), 'recent transactions')
+    ]);
+
+    return {
+      totalCreditsIssued: totalCreditsIssued._sum.amount || 0,
+      totalCreditsConsumed: Math.abs(totalCreditsConsumed._sum.amount || 0),
+      usersWithCredits,
+      recentTransactions24h: recentTransactions,
+      status: 'healthy'
+    };
+  } catch (error: any) {
+    return {
+      status: 'error',
+      error: error.message
+    };
+  }
+}
+
+async function getRecentErrors() {
+  try {
+    // Esta é uma implementação simplificada
+    // Em produção, você poderia integrar com um sistema de logging como Sentry
+    return {
+      count24h: 0, // Placeholder
+      criticalErrors: 0, // Placeholder
+      lastError: null, // Placeholder
+      note: 'Error tracking not implemented - consider integrating with Sentry or similar'
+    };
+  } catch (error: any) {
+    return {
+      status: 'error',
+      error: error.message
+    };
   }
 } 

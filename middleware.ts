@@ -2,15 +2,17 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { createClerkClient } from '@clerk/backend'
 
-// ⚡ CACHE: Cache in-memory para reduzir chamadas à API do Clerk
+// 🆕 PLAN-028: Cache inteligente otimizado para connection pool
 const userStatusCache = new Map<string, {
   approvalStatus: string;
   role: string;
   isAdmin: boolean;
   timestamp: number;
+  retryCount?: number;
 }>()
 
-const CACHE_TTL = 60000 // 1 minuto
+const CACHE_TTL = 30000 // 30 segundos - reduzido para dados mais frescos
+const MAX_CACHE_SIZE = 1000 // Limitar tamanho do cache
 
 // Definir rotas públicas que não precisam de autenticação
 const isPublicRoute = createRouteMatcher([
@@ -37,7 +39,7 @@ const isAdminRoute = createRouteMatcher([
   '/api/admin(.*)'  // Incluir APIs de admin também
 ])
 
-// 🚀 FALLBACK: Se sessionClaims falharem, consultar Clerk diretamente (COM CACHE)
+// 🆕 PLAN-028: Fallback otimizado com retry e cache inteligente
 async function getApprovalStatusDirect(userId: string): Promise<{ approvalStatus: string; role: string; isAdmin: boolean }> {
   try {
     // ⚡ VERIFICAR CACHE PRIMEIRO
@@ -53,37 +55,74 @@ async function getApprovalStatusDirect(userId: string): Promise<{ approvalStatus
       };
     }
     
-    // 🔥 CACHE MISS: Consultar Clerk API
+    // 🧹 LIMPEZA DE CACHE: Remover entradas antigas se cache muito grande
+    if (userStatusCache.size > MAX_CACHE_SIZE) {
+      const oldestEntries = Array.from(userStatusCache.entries())
+        .sort(([,a], [,b]) => a.timestamp - b.timestamp)
+        .slice(0, Math.floor(MAX_CACHE_SIZE * 0.3)) // Remove 30% das mais antigas
+      
+      oldestEntries.forEach(([key]) => userStatusCache.delete(key))
+      console.log(`[MIDDLEWARE CACHE] Limpeza: removidas ${oldestEntries.length} entradas antigas`)
+    }
+    
+    // 🔥 CACHE MISS: Consultar Clerk API com retry
     console.log('[MIDDLEWARE CACHE] Miss para usuário:', userId);
-    const clerkClient = createClerkClient({ 
-      secretKey: process.env.CLERK_SECRET_KEY! 
+    
+    // Importar retry utility dinamicamente
+    const { withRetry } = await import('./utils/retry-mechanism');
+    
+    const result = await withRetry(async () => {
+      const clerkClient = createClerkClient({ 
+        secretKey: process.env.CLERK_SECRET_KEY! 
+      });
+      
+      const user = await clerkClient.users.getUser(userId);
+      const metadata = user.publicMetadata as any;
+      
+      return {
+        approvalStatus: metadata?.approvalStatus || 'PENDING',
+        role: metadata?.role || 'USER',
+        isAdmin: metadata?.role === 'ADMIN' || metadata?.role === 'SUPER_ADMIN'
+      };
+    }, {
+      maxRetries: 2,
+      baseDelay: 1000,
+      retryCondition: (error) => 
+        error.message?.includes('timeout') ||
+        error.message?.includes('network') ||
+        error.status >= 500
     });
-    
-    const user = await clerkClient.users.getUser(userId);
-    const metadata = user.publicMetadata as any;
-    
-    const result = {
-      approvalStatus: metadata?.approvalStatus || 'PENDING',
-      role: metadata?.role || 'USER',
-      isAdmin: metadata?.role === 'ADMIN' || metadata?.role === 'SUPER_ADMIN'
-    };
     
     // ⚡ SALVAR NO CACHE
     userStatusCache.set(userId, {
       ...result,
-      timestamp: now
+      timestamp: now,
+      retryCount: 0
     });
     
-    console.log('[MIDDLEWARE FALLBACK] Direct Clerk query:', {
+    console.log('[MIDDLEWARE FALLBACK] Direct Clerk query successful:', {
       userId,
-      metadata,
       cached: false,
       timestamp: new Date().toISOString()
     });
     
     return result;
+    
   } catch (error) {
-    console.error('[MIDDLEWARE FALLBACK] Error:', error);
+    console.error('[MIDDLEWARE FALLBACK] All attempts failed:', error);
+    
+    // 🛡️ FALLBACK GRACIOSO: Usar cache expirado se disponível
+    const staleCache = userStatusCache.get(userId);
+    if (staleCache) {
+      console.warn('[MIDDLEWARE FALLBACK] Usando cache expirado devido a erro:', userId);
+      return {
+        approvalStatus: staleCache.approvalStatus,
+        role: staleCache.role,
+        isAdmin: staleCache.isAdmin
+      };
+    }
+    
+    // 🛡️ ÚLTIMO RECURSO: Status seguro
     return {
       approvalStatus: 'PENDING',
       role: 'USER',

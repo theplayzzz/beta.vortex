@@ -33,64 +33,71 @@ export async function checkAutoApproval(email: string): Promise<AutoApprovalResu
     return { shouldApprove: false, error: 'APROVACAO_WEBHOOK_URL not configured' };
   }
 
-  // Preparar payload conforme formato do webhook
-  const payload = {
-    event: "new_user_registered",
-    data: {
-      id: Math.floor(Math.random() * 1000),
-      username: email,
-      name: "Auto Check",
-      email: email,
-      aprovacao: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      resetToken: null,
-      resetTokenExpiry: null
-    }
-  };
+  // Importar retry utility dinamicamente para evitar circular dependency
+  const { withWebhookRetry } = await import('./retry-mechanism');
 
-  try {
-    // 🛡️ TIMEOUT: 5 segundos máximo para não travar o sistema
+  return withWebhookRetry(async () => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // Aumentado para 8s
 
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'vortex-auto-approval',
-        'Accept': '*/*'
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    // 🛡️ TRATAMENTO: Não falhar se response não for JSON
-    let data: any = {};
     try {
-      data = await response.json();
-    } catch (parseError) {
-      console.log('[WEBHOOK_AUTO_APPROVAL] Response is not valid JSON, treating as not approved');
-      return { shouldApprove: false, error: 'Invalid JSON response' };
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'vortex-auto-approval',
+          'Accept': '*/*'
+        },
+        body: JSON.stringify({
+          event: "new_user_registered",
+          data: {
+            id: Math.floor(Math.random() * 1000),
+            username: email,
+            name: "Auto Check",
+            email: email,
+            aprovacao: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            resetToken: null,
+            resetTokenExpiry: null,
+            timestamp: new Date().toISOString()
+          }
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      // 🛡️ TRATAMENTO: Não falhar se response não for JSON
+      let data: any = {};
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.log('[WEBHOOK_AUTO_APPROVAL] Response is not valid JSON, treating as not approved');
+        return { shouldApprove: false, error: 'Invalid JSON response' };
+      }
+
+      // Critério: Status 200 + campo "email contato" presente
+      const shouldApprove = response.status === 200 && !!data["email contato"];
+
+      console.log(`[WEBHOOK_AUTO_APPROVAL] Status: ${response.status}, Should approve: ${shouldApprove}, Email: ${email}`);
+
+      return {
+        shouldApprove,
+        webhookData: shouldApprove ? data : undefined
+      };
+
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    // Critério: Status 200 + campo "email contato" presente
-    const shouldApprove = response.status === 200 && data["email contato"];
-
-    console.log(`[WEBHOOK_AUTO_APPROVAL] Status: ${response.status}, Should approve: ${shouldApprove}, Email: ${email}`);
-
-    return {
-      shouldApprove,
-      webhookData: shouldApprove ? data : undefined
+  }, 'auto-approval-webhook').catch((error: any) => {
+    // 🛡️ CRÍTICO: Nunca falhar por causa do webhook
+    console.error('[WEBHOOK_AUTO_APPROVAL] All retry attempts failed, proceeding with normal flow:', error);
+    return { 
+      shouldApprove: false, 
+      error: error.message || 'Webhook request failed after retries' 
     };
-
-  } catch (error) {
-    // 🛡️ FALLBACK: Qualquer erro deve permitir que o usuário seja criado normalmente
-    console.log('[WEBHOOK_AUTO_APPROVAL] Error checking auto approval (fallback to manual):', error);
-    return { shouldApprove: false, error: (error as Error).message };
-  }
+  });
 }
 
 /**
