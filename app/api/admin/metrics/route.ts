@@ -245,30 +245,11 @@ export async function GET(request: NextRequest) {
 async function getConnectionPoolMetrics() {
   try {
     const dbHealth = await checkDatabaseHealth();
-    
-    // Tentar obter métricas detalhadas do Prisma
-    let prismaMetrics = null;
-    try {
-      const metrics = await prisma.$metrics.json();
-      if (metrics && metrics.gauges) {
-        const poolMetrics = metrics.gauges.filter(g => 
-          g.key.includes('prisma_pool_connections')
-        );
-        
-        prismaMetrics = {
-          openConnections: poolMetrics.find(g => g.key === 'prisma_pool_connections_open')?.value || 0,
-          busyConnections: poolMetrics.find(g => g.key === 'prisma_pool_connections_busy')?.value || 0,
-          idleConnections: poolMetrics.find(g => g.key === 'prisma_pool_connections_idle')?.value || 0
-        };
-      }
-    } catch (metricsError) {
-      console.debug('[METRICS] Prisma metrics not available:', metricsError);
-    }
 
     return {
       status: dbHealth.status,
       latency: dbHealth.latency,
-      connectionPool: prismaMetrics || dbHealth.connectionPool,
+      connectionPool: dbHealth.connectionPool,
       lastCheck: dbHealth.timestamp,
       configuration: {
         databaseUrl: !!process.env.DATABASE_URL,
