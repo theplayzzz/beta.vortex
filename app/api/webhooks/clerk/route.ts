@@ -13,6 +13,8 @@ import {
 import { clerkClient } from '@clerk/nextjs/server'
 // 🆕 PLAN-025: Importar função de verificação automática
 import { checkAutoApproval } from '@/utils/auto-approval-webhook'
+// 🆕 PLAN-028: Importar retry mechanisms
+import { withDatabaseRetry } from '@/utils/retry-mechanism'
 
 // 🆕 PLAN-025: Função para detectar tipo de cadastro
 function getSignupType(data: ClerkWebhookEvent['data']) {
@@ -180,26 +182,28 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
   
   console.log(`[USER_CREATED] Creating user with status: ${initialStatus}`)
 
-  // 🛡️ PRESERVAR: Toda lógica existente de criação de usuário
-  const user = await prisma.user.create({
-    data: {
-      clerkId: data.id,
-      email: primaryEmail.email_address,
-      firstName: data.first_name || null,
-      lastName: data.last_name || null,
-      profileImageUrl: data.image_url || null,
-      // 🆕 PHASE 3: Sistema de aprovação
-      approvalStatus: initialStatus,
-      creditBalance: initialStatus === APPROVAL_STATUS.APPROVED ? 100 : 0, // Créditos só para aprovados
-      version: 0,
-      updatedAt: new Date(),
-      // 🆕 PLAN-025: Se aprovado automaticamente, registrar
-      ...(autoApprovalData && {
-        approvedAt: new Date(),
-        approvedBy: 'SYSTEM_AUTO_WEBHOOK'
-      })
-    },
-  })
+  // 🆕 PLAN-028: OPERAÇÃO CRÍTICA COM RETRY
+  const user = await withDatabaseRetry(async () => {
+    return await prisma.user.create({
+      data: {
+        clerkId: data.id,
+        email: primaryEmail.email_address,
+        firstName: data.first_name || null,
+        lastName: data.last_name || null,
+        profileImageUrl: data.image_url || null,
+        // 🆕 PHASE 3: Sistema de aprovação
+        approvalStatus: initialStatus,
+        creditBalance: initialStatus === APPROVAL_STATUS.APPROVED ? 100 : 0, // Créditos só para aprovados
+        version: 0,
+        updatedAt: new Date(),
+        // 🆕 PLAN-025: Se aprovado automaticamente, registrar
+        ...(autoApprovalData && {
+          approvedAt: new Date(),
+          approvedBy: 'SYSTEM_AUTO_WEBHOOK'
+        })
+      },
+    })
+  }, 'user creation')
 
   // 🆕 PHASE 3: Sincronizar metadata no Clerk
   try {
@@ -216,18 +220,20 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
     // Não falhar o webhook por erro de metadata
   }
 
-  // 🛡️ PRESERVAR: Lógica existente de créditos (com extensão)
+  // 🆕 PLAN-028: TRANSAÇÃO DE CRÉDITOS COM RETRY
   if (initialStatus === APPROVAL_STATUS.APPROVED) {
-    await prisma.creditTransaction.create({
-      data: {
-        userId: user.id,
-        amount: 100,
-        type: 'INITIAL_GRANT',
-        description: autoApprovalData ? 
-          'Créditos iniciais - aprovação automática via webhook' : 
-          'Créditos iniciais de boas-vindas',
-      },
-    })
+    await withDatabaseRetry(async () => {
+      await prisma.creditTransaction.create({
+        data: {
+          userId: user.id,
+          amount: 100,
+          type: 'INITIAL_GRANT',
+          description: autoApprovalData ? 
+            'Créditos iniciais - aprovação automática via webhook' : 
+            'Créditos iniciais de boas-vindas',
+        },
+      })
+    }, 'credit transaction creation')
     console.log(`[CREDITS] Initial credits granted to approved user: ${user.id}`)
   } else {
     console.log(`[CREDITS] Credits withheld - user pending approval: ${user.id}`)
