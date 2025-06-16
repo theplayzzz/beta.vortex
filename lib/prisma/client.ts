@@ -15,20 +15,12 @@ export const prisma =
     },
   })
 
-// Configurar métricas e logs em desenvolvimento
+// Configurar logs em desenvolvimento
 if (process.env.NODE_ENV === 'development') {
-  prisma.$on('info', (e) => {
-    if (e.message.includes('pool')) {
-      console.log('🔗 [POOL]', e.message)
+  prisma.$on('query', (e) => {
+    if (e.query.includes('SELECT') && e.duration > 1000) {
+      console.log('🐌 [SLOW_QUERY]', `${e.duration}ms:`, e.query.substring(0, 100))
     }
-  })
-  
-  prisma.$on('warn', (e) => {
-    console.warn('⚠️ [PRISMA_WARN]', e.message)
-  })
-  
-  prisma.$on('error', (e) => {
-    console.error('❌ [PRISMA_ERROR]', e.message)
   })
 }
 
