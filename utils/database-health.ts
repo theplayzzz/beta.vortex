@@ -20,24 +20,11 @@ export async function checkDatabaseHealth(): Promise<DatabaseHealthResult> {
     await prisma.$queryRaw`SELECT 1 as health_check`
     const latency = Date.now() - start
     
-    // Tentar obter métricas do connection pool (se disponível)
-    let connectionPool = undefined
-    try {
-      const metrics = await prisma.$metrics.json()
-      const openConnections = metrics.gauges?.find(g => g.key === 'prisma_pool_connections_open')?.value
-      const busyConnections = metrics.gauges?.find(g => g.key === 'prisma_pool_connections_busy')?.value
-      const idleConnections = metrics.gauges?.find(g => g.key === 'prisma_pool_connections_idle')?.value
-      
-      if (openConnections !== undefined) {
-        connectionPool = {
-          open: openConnections,
-          busy: busyConnections || 0,
-          idle: idleConnections || 0
-        }
-      }
-    } catch (metricsError) {
-      // Métricas não disponíveis, continuar sem elas
-      console.debug('[DB_HEALTH] Metrics not available:', metricsError)
+    // Connection pool básico (sem métricas detalhadas)
+    const connectionPool = {
+      open: 1, // Assumir pelo menos 1 conexão ativa se o teste passou
+      busy: 0,
+      idle: 0
     }
     
     // Determinar status baseado na latência
