@@ -1,12 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { isUserAdmin } from '@/utils/approval-system';
-
-// Importar função de sincronização
-const { syncUsersQuiet } = require('../../../../scripts/sync-users-auto.js');
+import { syncUserWithDatabase } from '@/lib/auth/user-sync';
+import { clerkClient } from '@clerk/nextjs/server';
 
 /**
- * API para sincronização manual de usuários entre Clerk e Supabase
+ * Função para sincronizar todos os usuários aprovados
+ */
+async function syncAllApprovedUsers() {
+  try {
+    // Buscar usuários aprovados no Clerk
+    const clerkUsers = await clerkClient.users.getUserList({ limit: 500 });
+    const users = Array.isArray(clerkUsers) ? clerkUsers : (clerkUsers?.data || []);
+    
+    const approvedUsers = users.filter(user => {
+      const metadata = user.publicMetadata as any;
+      return metadata?.approvalStatus === 'APPROVED';
+    });
+
+    let syncedCount = 0;
+    let errorCount = 0;
+    const errors: string[] = [];
+
+    for (const user of approvedUsers) {
+      try {
+        const result = await syncUserWithDatabase(user.id);
+        if (result) {
+          syncedCount++;
+        } else {
+          errorCount++;
+          errors.push(`Falha ao sincronizar: ${user.id}`);
+        }
+      } catch (error) {
+        errorCount++;
+        errors.push(`Erro em ${user.id}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      }
+    }
+
+    return {
+      status: errorCount === 0 ? 'success' : 'partial',
+      message: `Sincronizados: ${syncedCount}, Erros: ${errorCount}`,
+      details: {
+        totalApproved: approvedUsers.length,
+        synced: syncedCount,
+        errors: errorCount,
+        errorDetails: errors
+      }
+    };
+  } catch (error) {
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Erro desconhecido',
+      details: {}
+    };
+  }
+}
+
+/**
+ * API para sincronização manual de usuários entre Clerk e banco de dados
  * Restrito apenas para administradores
  */
 export async function POST(req: NextRequest) {
@@ -31,7 +82,7 @@ export async function POST(req: NextRequest) {
     console.log(`[ADMIN_SYNC] Sincronização iniciada por admin: ${userId}`);
 
     // Executar sincronização
-    const result = await syncUsersQuiet();
+    const result = await syncAllApprovedUsers();
 
     console.log(`[ADMIN_SYNC] Resultado: ${result.status} - ${result.message}`);
 
@@ -77,8 +128,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Executar verificação sem migração
-    const result = await syncUsersQuiet();
+    // Executar verificação de sincronização
+    const result = await syncAllApprovedUsers();
 
     return NextResponse.json({
       status: result.status,
