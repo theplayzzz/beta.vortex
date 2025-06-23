@@ -140,12 +140,74 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// 🆕 PHASE 3: Função atualizada para sistema de aprovação
+// 🆕 PHASE 3: Função atualizada para sistema de aprovação e sincronização de convites
 async function handleUserCreated(data: ClerkWebhookEvent['data']) {
   const primaryEmail = data.email_addresses.find(email => email.id === data.email_addresses[0]?.id)
   
   if (!primaryEmail) {
     throw new Error('No primary email found for user')
+  }
+
+  console.log(`[USER_CREATED] Processing user: ${primaryEmail.email_address} (ID: ${data.id})`)
+
+  // 🆕 SINCRONIZAÇÃO DE CONVITES: Verificar se usuário já existe no banco por email
+  const existingUser = await prisma.user.findFirst({
+    where: { email: primaryEmail.email_address }
+  })
+
+  if (existingUser) {
+    console.log(`[INVITE_SYNC] Existing user found in database: ${existingUser.id}`)
+    console.log(`[INVITE_SYNC] Syncing invited user: ${existingUser.clerkId} -> ${data.id}`)
+    
+    // Sincronizar usuário existente que aceitou convite
+    try {
+      const updatedUser = await withDatabaseRetry(async () => {
+        return await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            clerkId: data.id,
+            firstName: data.first_name || existingUser.firstName,
+            lastName: data.last_name || existingUser.lastName,
+            profileImageUrl: data.image_url || existingUser.profileImageUrl,
+            updatedAt: new Date()
+          }
+        })
+      }, 'invited user sync')
+
+      // Atualizar metadados no Clerk com dados do usuário existente
+      await clerkClient.users.updateUserMetadata(data.id, {
+        publicMetadata: {
+          approvalStatus: existingUser.approvalStatus,
+          dbUserId: existingUser.id,
+          role: existingUser.role,
+          syncedFromInvite: true,
+          originalClerkId: existingUser.clerkId
+        }
+      })
+
+      console.log(`[INVITE_SYNC] User synchronized successfully: ${existingUser.id}`)
+      console.log(`[INVITE_SYNC] Status: ${existingUser.approvalStatus}, Role: ${existingUser.role}`)
+      
+      // Log da sincronização
+      logApprovalAction({
+        action: 'INVITE_SYNC',
+        userId: existingUser.id,
+        moderatorId: 'SYSTEM_INVITE',
+        environment: getEnvironment(),
+        timestamp: new Date(),
+        metadata: {
+          oldClerkId: existingUser.clerkId,
+          newClerkId: data.id,
+          email: primaryEmail.email_address,
+          preservedStatus: existingUser.approvalStatus
+        }
+      })
+
+      return
+    } catch (syncError: any) {
+      console.error(`[INVITE_SYNC] Failed to sync invited user: ${syncError.message}`)
+      // Continuar com criação normal se sincronização falhar
+    }
   }
 
   // 🆕 PLAN-025: Detectar e logar tipo de cadastro
@@ -180,7 +242,7 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
     }
   }
   
-  console.log(`[USER_CREATED] Creating user with status: ${initialStatus}`)
+  console.log(`[USER_CREATED] Creating new user with status: ${initialStatus}`)
 
   // 🆕 PLAN-028: OPERAÇÃO CRÍTICA COM RETRY
   const user = await withDatabaseRetry(async () => {

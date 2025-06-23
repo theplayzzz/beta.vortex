@@ -1,5 +1,5 @@
 import { auth as clerkAuth } from '@clerk/nextjs/server'
-import { prisma } from '@/lib/prisma/client'
+import { getUserIdFromClerkWithSync } from './user-sync'
 
 /**
  * Wrapper para o auth() do Clerk que é compatível com Next.js 15
@@ -20,24 +20,11 @@ export async function auth() {
 
 /**
  * Obtém o userId do banco de dados baseado no clerkId
- * Fluxo: clerkId → User.id (para usar em queries Client)
+ * COM SINCRONIZAÇÃO AUTOMÁTICA:
+ * - Se usuário não existe no BD, sincroniza automaticamente
+ * - Se email existe com ClerkId diferente, atualiza o ClerkId
+ * - Preserva todos os dados existentes
  */
 export async function getUserIdFromClerk(): Promise<string | null> {
-  try {
-    const { userId: clerkId } = await auth()
-    
-    if (!clerkId) {
-      return null
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { clerkId },
-      select: { id: true }
-    })
-
-    return user?.id || null
-  } catch (error) {
-    console.error('Error getting userId from clerkId:', error)
-    return null
-  }
+  return await getUserIdFromClerkWithSync()
 } 
