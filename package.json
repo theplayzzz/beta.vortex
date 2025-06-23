@@ -33,8 +33,13 @@
     "force-session-refresh": "node scripts/force-session-refresh.js",
     "test-middleware-final": "node scripts/test-middleware-final.js",
     "test-middleware-realtime": "node scripts/test-middleware-realtime.js",
-    "check-middleware-logs": "node scripts/check-middleware-logs.js"
-  },
+    "check-middleware-logs": "node scripts/check-middleware-logs.js",
+        "sync-invited-users": "node scripts/sync-invited-users.js",
+    "health-check": "node scripts/health-check.js",
+    "production-monitoring": "node scripts/production-monitoring.js",
+    "setup-external-api": "node scripts/setup-external-api.js",
+    "apply-rls-policies": "node scripts/apply-rls-policies-prisma-fixed.js"
+    },
   "dependencies": {
     "@clerk/backend": "^1.14.1",
     "@clerk/nextjs": "^5.6.2",

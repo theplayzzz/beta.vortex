@@ -24,8 +24,8 @@ export default function RootLayout({
     <ClerkProvider
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
-      afterSignInUrl="/"
-      afterSignUpUrl="/"
+      signInFallbackRedirectUrl="/clientes"
+      signUpFallbackRedirectUrl="/clientes"
     >
       <html lang="pt-BR">
         <body className={cx(sfPro.variable, inter.variable, "bg-night text-seasalt")}>
