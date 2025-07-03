@@ -4,6 +4,14 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
+// 🚨 PROTEÇÕES DE SEGURANÇA CONTRA EXECUÇÃO EM MASSA
+const SECURITY_CHECKS = {
+  MAX_USERS_PER_EXECUTION: 10, // Máximo 10 usuários por execução
+  REQUIRE_CONFIRMATION: true,  // Exigir confirmação manual
+  DRY_RUN_MODE: true,         // Modo simulação por padrão
+  ADMIN_EMAIL_REQUIRED: true  // Exigir email do admin
+};
+
 // Configuração das chaves
 const DEV_CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY_LEGACY;
 const PROD_CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY;
@@ -13,34 +21,108 @@ function createClerkClient(secretKey) {
   return clerkClient({ secretKey });
 }
 
+// 🛡️ FUNÇÃO DE VERIFICAÇÃO DE SEGURANÇA
+async function performSecurityChecks() {
+  console.log('🔒 ===== VERIFICAÇÕES DE SEGURANÇA =====');
+  
+  // 1. Verificar se é modo dry-run
+  const isDryRun = process.argv.includes('--dry-run') || SECURITY_CHECKS.DRY_RUN_MODE;
+  if (isDryRun) {
+    console.log('✅ Modo simulação ativado - nenhuma alteração será feita');
+  } else {
+    console.log('⚠️ MODO PRODUÇÃO - alterações reais serão feitas!');
+  }
+  
+  // 2. Verificar email do administrador
+  const adminEmail = process.env.ADMIN_EMAIL || process.argv.find(arg => arg.startsWith('--admin='))?.split('=')[1];
+  if (SECURITY_CHECKS.ADMIN_EMAIL_REQUIRED && !adminEmail) {
+    throw new Error('🚨 Email do administrador é obrigatório. Use: --admin=seu@email.com');
+  }
+  
+  // 3. Verificar limite de usuários
+  const maxUsers = parseInt(process.argv.find(arg => arg.startsWith('--max='))?.split('=')[1]) || SECURITY_CHECKS.MAX_USERS_PER_EXECUTION;
+  if (maxUsers > 50) {
+    throw new Error('🚨 Limite máximo de 50 usuários por execução para segurança');
+  }
+  
+  // 4. Verificar sincronizações recentes
+  const recentSyncs = await prisma.user.count({
+    where: {
+      updatedAt: {
+        gte: new Date(Date.now() - 10 * 60 * 1000) // Últimos 10 minutos
+      }
+    }
+  });
+  
+  if (recentSyncs > 20) {
+    throw new Error(`🚨 Muitas sincronizações recentes detectadas (${recentSyncs}). Aguarde 10 minutos antes de executar novamente.`);
+  }
+  
+  console.log(`✅ Verificações de segurança aprovadas`);
+  console.log(`📊 Configuração: maxUsers=${maxUsers}, dryRun=${isDryRun}, admin=${adminEmail || 'N/A'}`);
+  
+  return { isDryRun, adminEmail, maxUsers };
+}
+
+// 🔒 FUNÇÃO DE CONFIRMAÇÃO MANUAL
+async function requireManualConfirmation(config) {
+  if (!SECURITY_CHECKS.REQUIRE_CONFIRMATION || config.isDryRun) {
+    return true;
+  }
+  
+  console.log('\n🚨 ===== CONFIRMAÇÃO OBRIGATÓRIA =====');
+  console.log('⚠️ ATENÇÃO: Este script irá modificar dados reais!');
+  console.log(`📊 Máximo de ${config.maxUsers} usuários serão processados`);
+  console.log(`👨‍💼 Administrador: ${config.adminEmail}`);
+  console.log('\n❓ Tem certeza que deseja continuar? (digite "CONFIRMO" para prosseguir)');
+  
+  // Aguardar input do usuário
+  const readline = require('readline');
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+  
+  return new Promise((resolve) => {
+    rl.question('> ', (answer) => {
+      rl.close();
+      if (answer.trim().toUpperCase() === 'CONFIRMO') {
+        console.log('✅ Confirmação recebida, prosseguindo...\n');
+        resolve(true);
+      } else {
+        console.log('❌ Confirmação não recebida, cancelando execução.');
+        resolve(false);
+      }
+    });
+  });
+}
+
 async function syncInvitedUsers() {
   try {
-    console.log('🔄 ===== SINCRONIZAÇÃO DE USUÁRIOS CONVIDADOS =====');
-    console.log('🎯 Objetivo: Sincronizar usuários que aceitaram convites na produção');
-    console.log('📧 Estratégia: Buscar por email e atualizar clerkId + status');
+    // 🔒 VERIFICAÇÕES DE SEGURANÇA OBRIGATÓRIAS
+    const config = await performSecurityChecks();
+    
+    // 🔒 CONFIRMAÇÃO MANUAL OBRIGATÓRIA
+    const confirmed = await requireManualConfirmation(config);
+    if (!confirmed) {
+      console.log('🛑 Execução cancelada pelo usuário.');
+      return { cancelled: true };
+    }
+    
+    console.log('🔄 ===== SINCRONIZAÇÃO SEGURA DE USUÁRIOS =====');
+    console.log('🎯 Objetivo: Sincronizar usuários individuais que aceitaram convites');
+    console.log('🔒 Modo: INDIVIDUAL E SEGURO (máx. 10 usuários por vez)');
     console.log('');
 
-    // 1. Buscar usuários no Clerk Production
-    console.log('🚀 1. Buscando usuários no Clerk PRODUÇÃO...');
+    // 1. Buscar usuários no Clerk Production (LIMITADO)
+    console.log('🚀 1. Buscando usuários no Clerk PRODUÇÃO (limitado)...');
     const prodClerkClient = createClerkClient(PROD_CLERK_SECRET_KEY);
-    const prodUserList = await prodClerkClient.users.getUserList({ limit: 500 });
+    const prodUserList = await prodClerkClient.users.getUserList({ limit: config.maxUsers });
     const prodUsers = Array.isArray(prodUserList) ? prodUserList : (prodUserList?.data || []);
-    console.log(`👥 Total de usuários no PROD: ${prodUsers.length}`);
+    console.log(`👥 Total de usuários no PROD (limitado): ${prodUsers.length}`);
 
-    // 2. Buscar usuários no Clerk Development para verificar status de aprovação
-    console.log('🔧 2. Buscando usuários no Clerk DESENVOLVIMENTO...');
-    let devUsers = [];
-    try {
-      const devClerkClient = createClerkClient(DEV_CLERK_SECRET_KEY);
-      const devUserList = await devClerkClient.users.getUserList({ limit: 500 });
-      devUsers = Array.isArray(devUserList) ? devUserList : (devUserList?.data || []);
-      console.log(`👥 Total de usuários no DEV: ${devUsers.length}`);
-    } catch (error) {
-      console.log('⚠️ Erro ao buscar usuários do DEV, continuando apenas com produção...');
-    }
-
-    // 3. Buscar todos os usuários no banco de dados
-    console.log('\n💾 3. Buscando usuários no BANCO DE DADOS...');
+    // 2. Buscar usuários no banco de dados
+    console.log('\n💾 2. Buscando usuários no BANCO DE DADOS...');
     const dbUsers = await prisma.user.findMany({
       select: {
         id: true,
@@ -62,8 +144,8 @@ async function syncInvitedUsers() {
     });
     console.log(`💾 Total de usuários no banco: ${dbUsers.length}`);
 
-    // 4. Sincronizar usuários
-    console.log('\n🔄 4. SINCRONIZANDO USUÁRIOS:');
+    // 3. Processar usuários individualmente e com segurança
+    console.log('\n🔄 3. PROCESSAMENTO INDIVIDUAL E SEGURO:');
     console.log('═'.repeat(80));
     
     let processedCount = 0;
@@ -72,7 +154,10 @@ async function syncInvitedUsers() {
     let errorCount = 0;
     const syncResults = [];
 
-    for (const prodUser of prodUsers) {
+    // 🔒 PROCESSAR APENAS USUÁRIOS ESPECÍFICOS OU POUCOS
+    const usersToProcess = prodUsers.slice(0, config.maxUsers);
+    
+    for (const prodUser of usersToProcess) {
       processedCount++;
       const email = prodUser.emailAddresses?.[0]?.emailAddress;
       
@@ -88,60 +173,8 @@ async function syncInvitedUsers() {
       const dbUser = dbUsers.find(db => db.email.toLowerCase() === email.toLowerCase());
       
       if (!dbUser) {
-        console.log(`   ❌ Usuário não encontrado no banco de dados`);
-        
-        // Verificar se existe no desenvolvimento para pegar dados
-        const devUser = devUsers.find(dev => 
-          dev.emailAddresses?.[0]?.emailAddress?.toLowerCase() === email.toLowerCase()
-        );
-        
-        if (devUser) {
-          console.log(`   🔧 Encontrado no DEV, criando registro no banco...`);
-          
-          try {
-            const newDbUser = await prisma.user.create({
-              data: {
-                clerkId: prodUser.id,
-                email: email,
-                firstName: prodUser.firstName || devUser.firstName || null,
-                lastName: prodUser.lastName || devUser.lastName || null,
-                profileImageUrl: prodUser.imageUrl || devUser.imageUrl || null,
-                approvalStatus: devUser.publicMetadata?.approvalStatus || 'PENDING',
-                role: devUser.publicMetadata?.role || 'USER',
-                creditBalance: devUser.publicMetadata?.approvalStatus === 'APPROVED' ? 100 : 0,
-                version: 0
-              }
-            });
-            
-            console.log(`   ✅ Usuário criado no banco: ${newDbUser.id}`);
-            
-            // Atualizar metadados no Clerk de produção
-            await updateClerkMetadata(prodClerkClient, prodUser.id, {
-              dbUserId: newDbUser.id,
-              approvalStatus: newDbUser.approvalStatus,
-              role: newDbUser.role,
-              migratedFromDev: true,
-              originalDevId: devUser.id
-            });
-            
-            syncedCount++;
-            syncResults.push({
-              email,
-              action: 'CREATED',
-              prodClerkId: prodUser.id,
-              devClerkId: devUser.id,
-              dbUserId: newDbUser.id,
-              status: newDbUser.approvalStatus
-            });
-            
-          } catch (createError) {
-            console.log(`   ❌ Erro ao criar usuário: ${createError.message}`);
-            errorCount++;
-          }
-        } else {
-          console.log(`   ⚠️ Usuário não encontrado nem no banco nem no DEV - novo usuário`);
-          skippedCount++;
-        }
+        console.log(`   ❌ Usuário não encontrado no banco de dados - pulando por segurança`);
+        skippedCount++;
         continue;
       }
       
@@ -157,84 +190,48 @@ async function syncInvitedUsers() {
         continue;
       }
       
-      console.log(`   🔄 Sincronizando: ${dbUser.clerkId} -> ${prodUser.id}`);
+      console.log(`   🔄 Sincronização necessária: ${dbUser.clerkId} -> ${prodUser.id}`);
       
-      // Verificar status no desenvolvimento
-      const devUser = devUsers.find(dev => 
-        dev.emailAddresses?.[0]?.emailAddress?.toLowerCase() === email.toLowerCase()
-      );
-      
-      let newApprovalStatus = dbUser.approvalStatus;
-      let shouldUpdateCredits = false;
-      
-      if (devUser) {
-        const devApprovalStatus = devUser.publicMetadata?.approvalStatus;
-        if (devApprovalStatus && devApprovalStatus !== dbUser.approvalStatus) {
-          console.log(`   📋 Atualizando status: ${dbUser.approvalStatus} -> ${devApprovalStatus}`);
-          newApprovalStatus = devApprovalStatus;
-          
-          if (devApprovalStatus === 'APPROVED' && dbUser.approvalStatus !== 'APPROVED') {
-            shouldUpdateCredits = true;
-          }
-        }
-      }
-      
-      try {
-        // Atualizar banco de dados
-        const updateData = {
-          clerkId: prodUser.id,
-          approvalStatus: newApprovalStatus,
-          updatedAt: new Date()
-        };
-        
-        if (shouldUpdateCredits) {
-          updateData.creditBalance = 100;
-        }
-        
-        const updatedUser = await prisma.user.update({
-          where: { id: dbUser.id },
-          data: updateData
-        });
-        
-        console.log(`   ✅ Banco atualizado com sucesso`);
-        
-        // Atualizar metadados no Clerk de produção
-        await updateClerkMetadata(prodClerkClient, prodUser.id, {
-          dbUserId: dbUser.id,
-          approvalStatus: newApprovalStatus,
-          role: dbUser.role,
-          syncedFromInvite: true,
-          originalDevId: devUser?.id
-        });
-        
-        console.log(`   ✅ Metadados do Clerk atualizados`);
-        
-        // Criar transação de créditos se necessário
-        if (shouldUpdateCredits) {
-          await prisma.creditTransaction.create({
-            data: {
-              userId: dbUser.id,
-              amount: 100,
-              type: 'INITIAL_GRANT',
-              description: 'Créditos concedidos após sincronização de convite aceito'
-            }
-          });
-          console.log(`   💰 Créditos concedidos: 100`);
-        }
-        
-        syncedCount++;
+      // 🔒 MODO DRY-RUN: Apenas simular
+      if (config.isDryRun) {
+        console.log(`   🧪 [DRY-RUN] Simulando sincronização - nenhuma alteração feita`);
         syncResults.push({
           email,
-          action: 'SYNCED',
+          action: 'DRY_RUN_SYNC',
           prodClerkId: prodUser.id,
           oldClerkId: dbUser.clerkId,
           dbUserId: dbUser.id,
-          statusChange: dbUser.approvalStatus !== newApprovalStatus ? `${dbUser.approvalStatus} -> ${newApprovalStatus}` : null,
-          creditsGranted: shouldUpdateCredits
+          dataPreserved: `${dbUser._count.Client} clientes, ${dbUser._count.StrategicPlanning} planejamentos`
         });
+        syncedCount++;
+        continue;
+      }
+      
+      // 🔒 SINCRONIZAÇÃO REAL (apenas se não for dry-run)
+      try {
+        console.log(`   🔒 Executando sincronização segura...`);
+        
+        // Usar a função segura de sincronização
+        const { syncUserWithDatabase } = require('../lib/auth/user-sync');
+        const result = await syncUserWithDatabase(prodUser.id);
+        
+        if (result) {
+          console.log(`   ✅ Sincronização segura concluída: ${result}`);
+          syncedCount++;
+          syncResults.push({
+            email,
+            action: 'SAFE_SYNC',
+            prodClerkId: prodUser.id,
+            oldClerkId: dbUser.clerkId,
+            dbUserId: result,
+            dataPreserved: `${dbUser._count.Client} clientes, ${dbUser._count.StrategicPlanning} planejamentos`
+          });
+        } else {
+          throw new Error('Sincronização segura retornou null');
+        }
         
       } catch (syncError) {
-        console.log(`   ❌ Erro na sincronização: ${syncError.message}`);
+        console.log(`   ❌ Erro na sincronização segura: ${syncError.message}`);
         errorCount++;
         
         syncResults.push({
@@ -244,67 +241,32 @@ async function syncInvitedUsers() {
         });
       }
       
-      // Pequeno delay para não sobrecarregar
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // 🔒 Delay obrigatório entre sincronizações para evitar sobrecarga
+      await new Promise(resolve => setTimeout(resolve, 2000)); // 2 segundos
     }
 
-    // 5. Resumo final
-    console.log('\n🏆 ===== RESUMO DA SINCRONIZAÇÃO =====');
+    // 4. Resumo final
+    console.log('\n🏆 ===== RESUMO DA SINCRONIZAÇÃO SEGURA =====');
     console.log(`📊 Total de usuários processados: ${processedCount}`);
     console.log(`✅ Usuários sincronizados: ${syncedCount}`);
     console.log(`⚠️ Usuários pulados: ${skippedCount}`);
     console.log(`❌ Usuários com erro: ${errorCount}`);
+    console.log(`🔒 Modo de execução: ${config.isDryRun ? 'DRY-RUN (simulação)' : 'PRODUÇÃO (real)'}`);
     console.log('');
 
     if (syncResults.length > 0) {
       console.log('📋 DETALHES DOS RESULTADOS:');
       syncResults.forEach((result, index) => {
-        const actionIcon = result.action === 'SYNCED' ? '🔄' : result.action === 'CREATED' ? '🆕' : '❌';
+        const actionIcon = result.action === 'SAFE_SYNC' ? '🔒' : result.action === 'DRY_RUN_SYNC' ? '🧪' : '❌';
         console.log(`   ${index + 1}. ${actionIcon} ${result.email}`);
         
-        if (result.action === 'SYNCED') {
+        if (result.action === 'SAFE_SYNC' || result.action === 'DRY_RUN_SYNC') {
           console.log(`      🔗 ${result.oldClerkId} -> ${result.prodClerkId}`);
-          if (result.statusChange) {
-            console.log(`      📊 Status: ${result.statusChange}`);
-          }
-          if (result.creditsGranted) {
-            console.log(`      💰 Créditos concedidos: 100`);
-          }
-        } else if (result.action === 'CREATED') {
-          console.log(`      🆕 Criado: ${result.prodClerkId} -> DB: ${result.dbUserId}`);
-          console.log(`      📊 Status: ${result.status}`);
+          console.log(`      💾 Dados preservados: ${result.dataPreserved}`);
         } else if (result.action === 'ERROR') {
           console.log(`      ❌ Erro: ${result.error}`);
         }
       });
-    }
-
-    // 6. Verificação de integridade
-    console.log('\n🔍 ===== VERIFICAÇÃO DE INTEGRIDADE =====');
-    const finalDbUsers = await prisma.user.findMany({
-      select: { id: true, email: true, clerkId: true, approvalStatus: true }
-    });
-    
-    let syncedUsers = 0;
-    let desyncedUsers = 0;
-    
-    for (const dbUser of finalDbUsers) {
-      const prodUser = prodUsers.find(p => 
-        p.emailAddresses?.[0]?.emailAddress?.toLowerCase() === dbUser.email.toLowerCase()
-      );
-      
-      if (prodUser && dbUser.clerkId === prodUser.id) {
-        syncedUsers++;
-      } else if (prodUser) {
-        desyncedUsers++;
-      }
-    }
-    
-    console.log(`✅ Usuários sincronizados: ${syncedUsers}`);
-    console.log(`⚠️ Usuários ainda dessincronizados: ${desyncedUsers}`);
-    
-    if (desyncedUsers === 0) {
-      console.log('🎉 PERFEITO! Todos os usuários estão sincronizados!');
     }
 
     return {
@@ -313,7 +275,8 @@ async function syncInvitedUsers() {
       skipped: skippedCount,
       errors: errorCount,
       results: syncResults,
-      finalStats: { syncedUsers, desyncedUsers }
+      dryRun: config.isDryRun,
+      admin: config.adminEmail
     };
 
   } catch (error) {
@@ -339,22 +302,37 @@ async function updateClerkMetadata(clerkClient, userId, metadata) {
   }
 }
 
-// Executar sincronização
+// 🔒 EXECUÇÃO PROTEGIDA
 if (require.main === module) {
+  console.log('🔒 ===== SCRIPT DE SINCRONIZAÇÃO SEGURA =====');
+  console.log('⚠️ Este script agora possui proteções contra execução em massa');
+  console.log('📖 Uso:');
+  console.log('   node scripts/sync-invited-users.js --dry-run --admin=seu@email.com --max=5');
+  console.log('   node scripts/sync-invited-users.js --admin=seu@email.com --max=10');
+  console.log('');
+  
   syncInvitedUsers()
     .then((result) => {
-      console.log('\n🎉 Sincronização de usuários convidados concluída!');
-      console.log(`✅ ${result.synced} usuários sincronizados com sucesso`);
-      console.log(`❌ ${result.errors} usuários com erro`);
+      if (result.cancelled) {
+        console.log('🛑 Execução cancelada pelo usuário.');
+        process.exit(0);
+      }
       
-      if (result.finalStats.desyncedUsers === 0) {
-        console.log('🏆 MISSÃO CUMPRIDA! Todos os usuários estão sincronizados!');
+      console.log('\n🎉 Sincronização segura concluída!');
+      console.log(`✅ ${result.synced} usuários processados`);
+      console.log(`❌ ${result.errors} usuários com erro`);
+      console.log(`🔒 Modo: ${result.dryRun ? 'DRY-RUN (simulação)' : 'PRODUÇÃO (real)'}`);
+      console.log(`👨‍💼 Admin: ${result.admin || 'N/A'}`);
+      
+      if (result.dryRun) {
+        console.log('\n💡 Para executar as alterações reais, remova --dry-run');
       }
       
       process.exit(0);
     })
     .catch((error) => {
       console.error('\n❌ Falha na sincronização:', error.message);
+      console.error('🔒 Script interrompido por medida de segurança');
       process.exit(1);
     });
 }

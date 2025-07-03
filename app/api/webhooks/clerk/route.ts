@@ -148,71 +148,60 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
     throw new Error('No primary email found for user')
   }
 
-  console.log(`[USER_CREATED] Processing user: ${primaryEmail.email_address} (ID: ${data.id})`)
+  console.log(`[USER_CREATED] 🔄 Processando usuário: ${primaryEmail.email_address} (ID: ${data.id})`)
 
-  // 🆕 SINCRONIZAÇÃO DE CONVITES: Verificar se usuário já existe no banco por email
+  // 🔒 SINCRONIZAÇÃO SEGURA E INDIVIDUAL
+  // Usar a função segura de sincronização que já tem todas as proteções
+  try {
+    const { syncUserWithDatabase } = await import('@/lib/auth/user-sync')
+    const userId = await syncUserWithDatabase(data.id)
+    
+    if (userId) {
+      console.log(`[USER_CREATED] ✅ Usuário sincronizado com sucesso via função segura: ${userId}`)
+      return // Função segura já fez todo o trabalho necessário
+    } else {
+      console.log(`[USER_CREATED] ⚠️ Sincronização segura retornou null, continuando com criação normal`)
+    }
+  } catch (syncError: any) {
+    // Se foi bloqueio de massa, não continuar
+    if (syncError.message?.includes('MASS_SYNC_BLOCKED')) {
+      console.error(`[USER_CREATED] 🚨 BLOQUEIO DE SEGURANÇA: ${syncError.message}`)
+      throw new Error('USER_CREATION_BLOCKED: Sincronização em massa detectada e bloqueada')
+    }
+    
+    console.error(`[USER_CREATED] ⚠️ Erro na sincronização segura, continuando com lógica de fallback: ${syncError.message}`)
+  }
+
+  // 🔍 FALLBACK: Verificação manual se a sincronização segura falhou
   const existingUser = await prisma.user.findFirst({
-    where: { email: primaryEmail.email_address }
+    where: { email: primaryEmail.email_address },
+    select: { 
+      id: true, 
+      clerkId: true, 
+      approvalStatus: true,
+      _count: {
+        select: {
+          Client: true,
+          StrategicPlanning: true,
+          CommercialProposal: true
+        }
+      }
+    }
   })
 
-  if (existingUser) {
-    console.log(`[INVITE_SYNC] Existing user found in database: ${existingUser.id}`)
-    console.log(`[INVITE_SYNC] Syncing invited user: ${existingUser.clerkId} -> ${data.id}`)
+  if (existingUser && existingUser.clerkId !== data.id) {
+    console.log(`[USER_CREATED] 🎯 FALLBACK - Usuário existente detectado:`)
+    console.log(`[USER_CREATED] 👤 ID: ${existingUser.id}, Dados: ${existingUser._count.Client} clientes, ${existingUser._count.StrategicPlanning} planejamentos`)
+    console.log(`[USER_CREATED] ⚠️ ATENÇÃO: Sincronização segura falhou, mas usuário existe. Possível problema no sistema.`)
     
-    // Sincronizar usuário existente que aceitou convite
-    try {
-      const updatedUser = await withDatabaseRetry(async () => {
-        return await prisma.user.update({
-          where: { id: existingUser.id },
-          data: {
-            clerkId: data.id,
-            firstName: data.first_name || existingUser.firstName,
-            lastName: data.last_name || existingUser.lastName,
-            profileImageUrl: data.image_url || existingUser.profileImageUrl,
-            updatedAt: new Date()
-          }
-        })
-      }, 'invited user sync')
-
-      // Atualizar metadados no Clerk com dados do usuário existente
-      await clerkClient.users.updateUserMetadata(data.id, {
-        publicMetadata: {
-          approvalStatus: existingUser.approvalStatus,
-          dbUserId: existingUser.id,
-          role: existingUser.role,
-          syncedFromInvite: true,
-          originalClerkId: existingUser.clerkId
-        }
-      })
-
-      console.log(`[INVITE_SYNC] User synchronized successfully: ${existingUser.id}`)
-      console.log(`[INVITE_SYNC] Status: ${existingUser.approvalStatus}, Role: ${existingUser.role}`)
-      
-      // Log da sincronização
-      logApprovalAction({
-        action: 'INVITE_SYNC',
-        userId: existingUser.id,
-        moderatorId: 'SYSTEM_INVITE',
-        environment: getEnvironment(),
-        timestamp: new Date(),
-        metadata: {
-          oldClerkId: existingUser.clerkId,
-          newClerkId: data.id,
-          email: primaryEmail.email_address,
-          preservedStatus: existingUser.approvalStatus
-        }
-      })
-
-      return
-    } catch (syncError: any) {
-      console.error(`[INVITE_SYNC] Failed to sync invited user: ${syncError.message}`)
-      // Continuar com criação normal se sincronização falhar
-    }
+    // Não fazer nada aqui - deixar para o administrador resolver manualmente
+    // para evitar corrupção de dados
+    return
   }
 
   // 🆕 PLAN-025: Detectar e logar tipo de cadastro
   const signupType = getSignupType(data)
-  console.log(`[USER_CREATED] Signup type detected: ${signupType.type}${signupType.provider ? ` (${signupType.provider})` : ''} for email: ${primaryEmail.email_address}`)
+  console.log(`[USER_CREATED] 📝 Tipo de cadastro: ${signupType.type}${signupType.provider ? ` (${signupType.provider})` : ''} para email: ${primaryEmail.email_address}`)
 
   // 🛡️ PRESERVAR: Lógica existente de determinação de status
   let initialStatus = isApprovalRequired() ? getDefaultUserStatus() : APPROVAL_STATUS.APPROVED
@@ -220,7 +209,7 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
 
   // 🆕 PLAN-025: Verificação automática VIA WEBHOOK (apenas se seria PENDING)
   if (initialStatus === APPROVAL_STATUS.PENDING) {
-    console.log(`[WEBHOOK_AUTO_APPROVAL] Checking auto approval for: ${primaryEmail.email_address} (signup type: ${signupType.type}${signupType.provider ? ` via ${signupType.provider}` : ''})`)
+    console.log(`[WEBHOOK_AUTO_APPROVAL] 🔍 Verificando aprovação automática para: ${primaryEmail.email_address}`)
     
     try {
       const autoCheck = await checkAutoApproval(primaryEmail.email_address)
@@ -228,21 +217,21 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
       if (autoCheck.shouldApprove) {
         initialStatus = APPROVAL_STATUS.APPROVED
         autoApprovalData = autoCheck.webhookData
-        console.log(`[WEBHOOK_AUTO_APPROVAL] User pre-approved: ${primaryEmail.email_address} (${signupType.type}${signupType.provider ? ` via ${signupType.provider}` : ''})`)
+        console.log(`[WEBHOOK_AUTO_APPROVAL] ✅ Usuário pré-aprovado: ${primaryEmail.email_address}`)
       } else {
-        console.log(`[WEBHOOK_AUTO_APPROVAL] User not pre-approved: ${primaryEmail.email_address} (${signupType.type}${signupType.provider ? ` via ${signupType.provider}` : ''})`)
+        console.log(`[WEBHOOK_AUTO_APPROVAL] ❌ Usuário não pré-aprovado: ${primaryEmail.email_address}`)
         if (autoCheck.error) {
-          console.log(`[WEBHOOK_AUTO_APPROVAL] Error: ${autoCheck.error}`)
+          console.log(`[WEBHOOK_AUTO_APPROVAL] Erro: ${autoCheck.error}`)
         }
       }
     } catch (webhookError) {
       // 🛡️ CRÍTICO: Nunca falhar por causa do webhook
-      console.error('[WEBHOOK_AUTO_APPROVAL] Webhook check failed, proceeding with normal flow:', webhookError)
+      console.error('[WEBHOOK_AUTO_APPROVAL] ⚠️ Verificação de webhook falhou, continuando com fluxo normal:', webhookError)
       // initialStatus permanece PENDING
     }
   }
   
-  console.log(`[USER_CREATED] Creating new user with status: ${initialStatus}`)
+  console.log(`[USER_CREATED] 🆕 Criando novo usuário com status: ${initialStatus}`)
 
   // 🆕 PLAN-028: OPERAÇÃO CRÍTICA COM RETRY
   const user = await withDatabaseRetry(async () => {
@@ -273,12 +262,14 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
       publicMetadata: {
         approvalStatus: initialStatus,
         dbUserId: user.id,
-        role: 'USER'
+        role: 'USER',
+        createdViaWebhook: true,
+        createdAt: new Date().toISOString()
       }
     })
-    console.log(`[METADATA_SYNC] Clerk metadata updated for user: ${data.id}`)
+    console.log(`[METADATA_SYNC] ✅ Metadados do Clerk atualizados para usuário: ${data.id}`)
   } catch (metadataError) {
-    console.error('Error updating Clerk metadata:', metadataError)
+    console.error('[METADATA_SYNC] ⚠️ Erro ao atualizar metadados do Clerk:', metadataError)
     // Não falhar o webhook por erro de metadata
   }
 
@@ -296,9 +287,9 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
         },
       })
     }, 'credit transaction creation')
-    console.log(`[CREDITS] Initial credits granted to approved user: ${user.id}`)
+    console.log(`[CREDITS] ✅ Créditos iniciais concedidos ao usuário aprovado: ${user.id}`)
   } else {
-    console.log(`[CREDITS] Credits withheld - user pending approval: ${user.id}`)
+    console.log(`[CREDITS] ⏸️ Créditos retidos - usuário pendente de aprovação: ${user.id}`)
   }
 
   // 🆕 PLAN-025: Log de moderação para aprovação automática
@@ -322,7 +313,7 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
       })
     } catch (logError) {
       // 🛡️ Log não deve falhar o processo principal
-      console.error('[WEBHOOK_AUTO_APPROVAL] Failed to create moderation log:', logError)
+      console.error('[WEBHOOK_AUTO_APPROVAL] ⚠️ Falha ao criar log de moderação:', logError)
     }
   }
 
@@ -333,19 +324,19 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
     moderatorId: autoApprovalData ? 'SYSTEM_AUTO_WEBHOOK' : 'SYSTEM',
     environment: getEnvironment(),
     timestamp: new Date(),
-          metadata: {
-        clerkId: data.id,
-        email: primaryEmail.email_address,
-        initialStatus,
-        approvalRequired: isApprovalRequired(),
-        autoApproval: !!autoApprovalData,
-        signupType: signupType.type,
-        ...(signupType.provider && { signupProvider: signupType.provider }),
-        ...(autoApprovalData && { webhookData: autoApprovalData })
-      }
+    metadata: {
+      clerkId: data.id,
+      email: primaryEmail.email_address,
+      initialStatus,
+      approvalRequired: isApprovalRequired(),
+      autoApproval: !!autoApprovalData,
+      signupType: signupType.type,
+      ...(signupType.provider && { signupProvider: signupType.provider }),
+      ...(autoApprovalData && { webhookData: autoApprovalData })
+    }
   })
 
-  console.log(`[USER_CREATED] User created successfully: ${data.id} (${initialStatus})`)
+  console.log(`[USER_CREATED] ✅ Usuário criado com sucesso: ${data.id} (${initialStatus})`)
 }
 
 // 🆕 PHASE 3: Função atualizada para sincronização de metadata
