@@ -1,4 +1,5 @@
 import { Client } from '@prisma/client';
+import { waitUntil } from '@vercel/functions';
 
 interface WebhookPayload {
   planning_id: string;
@@ -63,10 +64,10 @@ class WebhookService {
     userId: string,
     options?: WebhookOptions
   ): Promise<void> {
-    // Não aguardar o resultado - fire-and-forget
-    setImmediate(() => {
-      this.executeWebhookWithRetry(planningId, client, formData, userId, options);
-    });
+    // Usar waitUntil do Vercel para garantir execução em ambiente serverless
+    waitUntil(
+      this.executeWebhookWithRetry(planningId, client, formData, userId, options)
+    );
   }
 
   /**
