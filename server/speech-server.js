@@ -84,8 +84,22 @@ wss.on('connection', (ws) => {
     const timeSinceLastRestart = Date.now() - lastRestartTime;
     console.log(`🚀 Iniciando novo stream de reconhecimento (${timeSinceLastRestart}ms desde último restart)`);
     
+    // Limpar stream anterior adequadamente
     if (recognizeStream) {
-      recognizeStream.end();
+      console.log('🧹 Limpando stream anterior antes de criar novo');
+      try {
+        // Remover listeners para evitar vazamentos
+        recognizeStream.removeAllListeners();
+        
+        // Finalizar stream apenas se ainda não foi finalizado
+        if (!recognizeStream.destroyed && !recognizeStream.writableEnded) {
+          recognizeStream.end();
+        }
+      } catch (error) {
+        console.error('⚠️ Erro ao limpar stream anterior:', error.message);
+      }
+      
+      recognizeStream = null; // Limpar referência
     }
 
     recognizeStream = speechClient
@@ -202,10 +216,20 @@ wss.on('connection', (ws) => {
           break;
           
         case 'audio':
-          if (recognizeStream && !recognizeStream.destroyed) {
-            // Converter audio base64 para buffer e enviar para Google
-            const audioBuffer = Buffer.from(data.audio, 'base64');
-            recognizeStream.write(audioBuffer);
+          if (recognizeStream && !recognizeStream.destroyed && !recognizeStream.writableEnded) {
+            try {
+              // Converter audio base64 para buffer e enviar para Google
+              const audioBuffer = Buffer.from(data.audio, 'base64');
+              recognizeStream.write(audioBuffer);
+            } catch (error) {
+              console.error('❌ Erro ao escrever áudio no stream:', error.message);
+              // Se o stream não está mais disponível, tentar reiniciar
+              if (isTranscriptionActive && ws.readyState === WebSocket.OPEN) {
+                console.log('🔄 Reiniciando stream devido a erro de escrita');
+                lastRestartTime = Date.now();
+                startRecognitionStream();
+              }
+            }
           }
           break;
           
@@ -213,7 +237,16 @@ wss.on('connection', (ws) => {
           console.log('⏹️ Parando transcrição CONTÍNUA');
           isTranscriptionActive = false; // Desativar transcrição contínua
           if (recognizeStream) {
-            recognizeStream.end();
+            try {
+              console.log('🧹 Finalizando stream ao parar transcrição');
+              recognizeStream.removeAllListeners();
+              if (!recognizeStream.destroyed && !recognizeStream.writableEnded) {
+                recognizeStream.end();
+              }
+            } catch (error) {
+              console.error('⚠️ Erro ao finalizar stream:', error.message);
+            }
+            recognizeStream = null;
           }
           if (restartTimeout) {
             clearTimeout(restartTimeout);
@@ -272,7 +305,19 @@ wss.on('connection', (ws) => {
             
             // Finalizar stream atual (isso dispara evento 'end')
             console.log('📤 Finalizando stream atual - isso deve disparar evento end');
-            recognizeStream.end();
+            try {
+              if (!recognizeStream.destroyed && !recognizeStream.writableEnded) {
+                recognizeStream.end();
+              } else {
+                console.log('⚠️ Stream já finalizado, disparando evento manualmente');
+                // Se o stream já foi finalizado, disparar o handler manualmente
+                handleForcedEnd();
+              }
+            } catch (error) {
+              console.error('❌ Erro ao finalizar stream no force-finalize:', error.message);
+              // Em caso de erro, disparar handler para continuar o processo
+              handleForcedEnd();
+            }
             
           } else {
             console.log('⚠️ Condições não atendidas para force-finalize');
@@ -301,7 +346,16 @@ wss.on('connection', (ws) => {
     console.log('🔌 Conexão WebSocket fechada');
     isTranscriptionActive = false; // Desativar transcrição contínua
     if (recognizeStream) {
-      recognizeStream.end();
+      try {
+        console.log('🧹 Limpando stream ao fechar conexão');
+        recognizeStream.removeAllListeners();
+        if (!recognizeStream.destroyed && !recognizeStream.writableEnded) {
+          recognizeStream.end();
+        }
+      } catch (error) {
+        console.error('⚠️ Erro ao limpar stream no fechamento:', error.message);
+      }
+      recognizeStream = null;
     }
     if (restartTimeout) {
       clearTimeout(restartTimeout);
