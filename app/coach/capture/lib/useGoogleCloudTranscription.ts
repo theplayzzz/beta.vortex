@@ -11,6 +11,7 @@ interface TranscriptionState {
   confidence: number;
   micLevel: number;
   screenLevel: number;
+  isMicrophoneEnabled: boolean;
 }
 
 export const useGoogleCloudTranscription = () => {
@@ -23,6 +24,7 @@ export const useGoogleCloudTranscription = () => {
     confidence: 0,
     micLevel: 0,
     screenLevel: 0,
+    isMicrophoneEnabled: false,
   });
 
   // Referências para recursos de áudio
@@ -34,6 +36,7 @@ export const useGoogleCloudTranscription = () => {
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const micAnalyserRef = useRef<AnalyserNode | null>(null);
   const screenAnalyserRef = useRef<AnalyserNode | null>(null);
+  const micGainRef = useRef<GainNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
   // Conectar ao servidor WebSocket
@@ -134,6 +137,17 @@ export const useGoogleCloudTranscription = () => {
     }
   }, []);
 
+  // Função para toggle do microfone
+  const toggleMicrophoneCapture = useCallback((enabled: boolean) => {
+    setState(prev => ({ ...prev, isMicrophoneEnabled: enabled }));
+    
+    // Controlar o gain do microfone
+    if (micGainRef.current) {
+      micGainRef.current.gain.value = enabled ? 1 : 0;
+      console.log(`🎙️ Microfone ${enabled ? 'HABILITADO' : 'DESABILITADO'}`);
+    }
+  }, []);
+
   // Função para calcular nível de áudio
   const calculateAudioLevel = useCallback((analyser: AnalyserNode): number => {
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
@@ -146,14 +160,14 @@ export const useGoogleCloudTranscription = () => {
   // Atualizar níveis de áudio em tempo real
   const updateAudioLevels = useCallback(() => {
     if (micAnalyserRef.current && screenAnalyserRef.current) {
-      const micLevel = calculateAudioLevel(micAnalyserRef.current);
+      const micLevel = state.isMicrophoneEnabled ? calculateAudioLevel(micAnalyserRef.current) : 0;
       const screenLevel = calculateAudioLevel(screenAnalyserRef.current);
       
       setState(prev => ({ ...prev, micLevel, screenLevel }));
     }
     
     animationFrameRef.current = requestAnimationFrame(updateAudioLevels);
-  }, [calculateAudioLevel]);
+  }, [calculateAudioLevel, state.isMicrophoneEnabled]);
 
   // Configurar captura de áudio
   const setupAudioCapture = useCallback(async () => {
@@ -189,6 +203,11 @@ export const useGoogleCloudTranscription = () => {
       const screenSource = audioContext.createMediaStreamSource(screenStream);
       const destination = audioContext.createMediaStreamDestination();
 
+      // Criar gain node para controlar o microfone
+      const micGain = audioContext.createGain();
+      micGain.gain.value = state.isMicrophoneEnabled ? 1 : 0; // Iniciar conforme estado
+      micGainRef.current = micGain;
+
       // Criar analisadores para monitoramento
       const micAnalyser = audioContext.createAnalyser();
       const screenAnalyser = audioContext.createAnalyser();
@@ -198,11 +217,13 @@ export const useGoogleCloudTranscription = () => {
       micAnalyserRef.current = micAnalyser;
       screenAnalyserRef.current = screenAnalyser;
 
-      // Conectar e processar áudio
+      // Conectar e processar áudio com controle do microfone
       micSource.connect(micAnalyser);
+      micSource.connect(micGain); // Microfone passa pelo gain
+      micGain.connect(destination); // Gain controlado vai para o destino
+      
       screenSource.connect(screenAnalyser);
-      micSource.connect(destination);
-      screenSource.connect(destination);
+      screenSource.connect(destination); // Tela vai direto para o destino
 
       combinedStreamRef.current = destination.stream;
 
@@ -239,6 +260,7 @@ export const useGoogleCloudTranscription = () => {
       updateAudioLevels();
 
       console.log('🎙️ Captura de áudio configurada com sucesso');
+      console.log(`🎙️ Microfone ${state.isMicrophoneEnabled ? 'HABILITADO' : 'DESABILITADO'}`);
       return true;
     } catch (error) {
       console.error('❌ Erro ao configurar captura de áudio:', error);
@@ -248,7 +270,7 @@ export const useGoogleCloudTranscription = () => {
       }));
       return false;
     }
-  }, [updateAudioLevels]);
+  }, [updateAudioLevels, state.isMicrophoneEnabled]);
 
   // Iniciar transcrição
   const startListening = useCallback(async () => {
@@ -299,6 +321,11 @@ export const useGoogleCloudTranscription = () => {
       if (processorRef.current) {
         processorRef.current.disconnect();
         processorRef.current = null;
+      }
+
+      if (micGainRef.current) {
+        micGainRef.current.disconnect();
+        micGainRef.current = null;
       }
 
       if (audioContextRef.current) {
@@ -365,9 +392,11 @@ export const useGoogleCloudTranscription = () => {
     confidence: state.confidence,
     micLevel: state.micLevel,
     screenLevel: state.screenLevel,
+    isMicrophoneEnabled: state.isMicrophoneEnabled,
     startListening,
     stopListening,
     clearTranscript,
     connectWebSocket,
+    toggleMicrophoneCapture,
   };
 }; 
