@@ -1,7 +1,18 @@
-import { clerkMiddleware } from '@clerk/nextjs/server'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+
+// Definir rotas públicas
+const isPublicRoute = createRouteMatcher([
+  '/coach/capture',  // Rota pública para testes
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+])
 
 // To learn more how to use clerkMiddleware to protect pages in your app, check out https://clerk.com/docs/references/nextjs/clerk-middleware
-export default clerkMiddleware()
+export default clerkMiddleware((auth, request) => {
+  if (!isPublicRoute(request)) {
+    auth().protect()
+  }
+})
 
 export const config = {
   matcher: [

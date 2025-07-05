@@ -43,3 +43,10 @@ next-env.d.ts
 # misc
 .vscode
 env.example
+
+# SSL certificates (local development)
+.ssl/
+server-https.js
+setup-https.sh
+ssl.conf
+SOLUCAO-SSL-ERRO.md

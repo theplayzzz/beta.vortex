@@ -19,13 +19,14 @@ import { prisma } from '@/lib/prisma/client'
 export async function syncUserWithDatabase(clerkId: string): Promise<string | null> {
   const startTime = Date.now()
   const logPrefix = `[USER_SYNC_SAFE]`
+  let userEmail: string | undefined // Declarar fora do try-catch
   
   try {
     console.log(`${logPrefix} 🔄 Iniciando sincronização segura para clerkId: ${clerkId}`)
     
     // 1. Buscar usuário no Clerk
     const clerkUser = await clerkClient.users.getUser(clerkId)
-    const userEmail = clerkUser.emailAddresses[0]?.emailAddress
+    userEmail = clerkUser.emailAddresses[0]?.emailAddress
     
     if (!userEmail) {
       console.error(`${logPrefix} ❌ Usuário sem email no Clerk: ${clerkId}`)
@@ -194,7 +195,7 @@ export async function syncUserWithDatabase(clerkId: string): Promise<string | nu
     console.error(`${logPrefix} ⏱️ Tempo até erro: ${Date.now() - startTime}ms`)
     
     // 🚨 Se erro foi por bloqueio de massa, não retornar null para não criar problemas
-    if (error.message?.includes('MASS_SYNC_BLOCKED')) {
+    if (error instanceof Error && error.message?.includes('MASS_SYNC_BLOCKED')) {
       throw error
     }
     
@@ -234,7 +235,7 @@ export async function getUserIdFromClerkWithSync(): Promise<string | null> {
     console.error('[USER_SYNC_SAFE] Erro no getUserIdFromClerkWithSync:', error)
     
     // Se foi bloqueio de massa, logar e retornar null para não quebrar a aplicação
-    if (error.message?.includes('MASS_SYNC_BLOCKED')) {
+    if (error instanceof Error && error.message?.includes('MASS_SYNC_BLOCKED')) {
       console.error('[USER_SYNC_SAFE] 🚨 Sincronização bloqueada por segurança - possível tentativa de sincronização em massa')
       return null
     }
