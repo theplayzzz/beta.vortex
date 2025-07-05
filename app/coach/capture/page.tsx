@@ -1,11 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import { ScreenRecorder } from './components/ScreenRecorder'
 
 export default function CapturePage() {
-  const [isRecording, setIsRecording] = useState(false)
-
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--night, #0e0f0f)' }}>
       <div className="container mx-auto px-4 py-8">
@@ -24,10 +21,7 @@ export default function CapturePage() {
                  backgroundColor: 'var(--eerie-black, #171818)',
                  borderColor: 'var(--seasalt, #f9fbfc)'
                }}>
-            <ScreenRecorder 
-              isRecording={isRecording}
-              onRecordingChange={setIsRecording}
-            />
+            <ScreenRecorder />
           </div>
 
           <div className="mt-6 text-center">
