@@ -4,6 +4,7 @@
 /node_modules
 /.pnp
 .pnp.js
+speech-service-key.json
 
 # testing
 /coverage
@@ -50,3 +51,7 @@ server-https.js
 setup-https.sh
 ssl.conf
 SOLUCAO-SSL-ERRO.md
+
+# Google Cloud credentials
+config/*.json
+speech-service-key.json

@@ -86,71 +86,72 @@ Implementar um sistema de transcrição em tempo real de áudio de tela comparti
 - ✅ **Cleanup automático**: Liberação de recursos ao parar captura
 - ✅ **Interface responsiva**: Design seguindo paleta de cores do projeto
 
-### **Etapa 4: Sistema Dual de Transcrição** ✅
-**Observações críticas aplicadas:**
-- ✅ **Sistema independente**: Não interferir na estrutura atual de microfone
-- ✅ **Transcrição simultânea**: Microfone + tela compartilhada ao mesmo tempo
-- ✅ **Conversão de mídia**: Conectar áudio da tela ao Web Speech API
-- ✅ **Arquitetura dual**: Dois hooks separados para cada fonte de áudio
+### **Etapa 4: Sistema Unificado de Transcrição** ✅
+**Evolução para sistema unificado aplicada:**
+- ✅ **Sistema de combinação de áudio**: Combinar microfone + tela antes da API
+- ✅ **Stream unificado**: Criar input padrão para Web Speech API
+- ✅ **Transcrição única**: Uma API processando ambas as fontes
+- ✅ **Arquitetura intermediária**: Mixer de áudio antes da transcrição
 
 **Implementações da Etapa 4:**
-- [x] **Criar `useMicrophoneTranscription`**: Hook dedicado para transcrição de microfone
-- [x] **Criar `useScreenAudioTranscription`**: Hook dedicado para transcrição de áudio da tela
-- [x] **Converter MediaStream da tela**: Conectar áudio capturado ao Web Speech API
-- [x] **Interface dual**: Componente para exibir ambas as transcrições simultaneamente
-- [x] **Gerenciamento independente**: Cada transcrição com controles próprios
-- [x] **Sincronização**: Coordenar ambas as transcrições sem interferência
-- [x] **Teste**: Verificar transcrição simultânea funcionando
+- [x] **Criar `useCombinedAudioTranscription`**: Hook unificado que combina áudios
+- [x] **Sistema de mixing**: Web Audio API para combinar microfone + tela
+- [x] **Stream processado**: MediaStreamDestination para criar stream unificado
+- [x] **Interface unificada**: Componente para exibir transcrição combinada
+- [x] **Controles de volume**: Ajuste independente para cada fonte
+- [x] **Monitoramento**: Níveis de áudio em tempo real para cada fonte
+- [x] **Teste**: Sistema unificado funcionando com transcrição única
 
 **Desafios técnicos específicos resolvidos:**
-- ✅ **Dual Web Speech API**: Duas instâncias simultâneas do SpeechRecognition implementadas
-- ✅ **Stream customizado**: MediaStream da tela conectado corretamente ao Web Speech API
-- ✅ **Isolamento de contexto**: Evitado conflitos entre as duas transcrições
-- ✅ **Performance**: Otimizado para duas transcrições simultâneas
+- ✅ **Conflito de instâncias**: Eliminado problema de múltiplas SpeechRecognition
+- ✅ **Combinação de streams**: Web Audio API mixing microfone + tela
+- ✅ **Stream customizado**: MediaStreamDestination criando stream processado
+- ✅ **Performance otimizada**: Uma única instância de transcrição
+- ✅ **Controle granular**: Volume independente para cada fonte
 
 **Arquivos implementados:**
-- ✅ `useMicrophoneTranscription.ts` - Hook para transcrição de microfone
-- ✅ `useScreenAudioTranscription.ts` - Hook para transcrição de áudio da tela
-- ✅ `audioStreamUtils.ts` - Utilitários de conversão de streams
-- ✅ `DualTranscriptionDisplay.tsx` - Interface dual de transcrições
-- ✅ `ScreenRecorder.tsx` - Atualizado para sistema dual
+- ✅ `useCombinedAudioTranscription.ts` - Hook unificado principal
+- ✅ `UnifiedTranscriptionDisplay.tsx` - Interface unificada com controles
+- ✅ `audioStreamUtils.ts` - Utilitários aprimorados para combinação
+- ✅ `ScreenRecorder.tsx` - Atualizado para sistema unificado
+- ✅ `useMicrophoneTranscription.ts` - Hook mantido para compatibilidade
 
-### **Etapa 5: Melhorias de Interface Dual**
-- [ ] Interface responsiva com duas colunas de transcrição
-- [ ] Indicadores visuais separados para cada fonte
-- [ ] Controles independentes para cada transcrição
-- [ ] Exportação separada/combinada das transcrições
-- [ ] Teste: Interface dual completa
+### **Etapa 5: Melhorias de Interface Unificada**
+- [ ] Interface responsiva com controles de volume
+- [ ] Indicadores visuais para cada fonte (microfone/tela)
+- [ ] Controles granulares de mixing de áudio
+- [ ] Exportação da transcrição unificada
+- [ ] Teste: Interface unificada completa
 
 ### **Etapa 6: Otimização e Testes Finais**
-- [ ] Otimizar performance das transcrições simultâneas
-- [ ] Implementar tratamento robusto de erros para cada fonte
-- [ ] Adicionar logs para debugging de cada transcrição
-- [ ] Testes em diferentes navegadores com audio dual
-- [ ] Teste: Sistema dual completo funcionando
+- [ ] Otimizar performance do sistema de mixing
+- [ ] Implementar tratamento robusto de erros do sistema unificado
+- [ ] Adicionar logs para debugging do sistema combinado
+- [ ] Testes em diferentes navegadores com sistema unificado
+- [ ] Teste: Sistema unificado completo funcionando
 
 ### **Etapa 7: Documentação e Deploy**
-- [ ] Documentar setup do sistema dual
-- [ ] Criar guia de uso para transcrições simultâneas
-- [ ] Preparar deploy da funcionalidade dual
-- [ ] Teste: Sistema dual em produção
+- [ ] Documentar setup do sistema unificado
+- [ ] Criar guia de uso para transcrição combinada
+- [ ] Preparar deploy da funcionalidade unificada
+- [ ] Teste: Sistema unificado em produção
 
 ## 📋 Arquivos Principais a Criar/Modificar
 
 ### **Frontend (Next.js)**
 ```
 app/coach/capture/
-├── page.tsx                          # Página principal ✅
+├── page.tsx                            # Página principal ✅
 ├── components/
-│   ├── ScreenRecorder.tsx           # Componente adaptado do subtitle-chan ✅
-│   ├── DualTranscriptionDisplay.tsx # Exibição dual de transcrições 🔄
-│   ├── MicrophoneTranscription.tsx  # Transcrição de microfone 🔄
-│   ├── ScreenAudioTranscription.tsx # Transcrição de áudio da tela 🔄
-│   └── AudioControls.tsx           # Controles de interface ✅
+│   ├── ScreenRecorder.tsx             # Componente principal do sistema ✅
+│   ├── UnifiedTranscriptionDisplay.tsx # Interface unificada com controles ✅
+│   ├── DualTranscriptionDisplay.tsx   # Interface dual (legado) ✅
+│   └── AudioControls.tsx              # Controles de interface ✅
 └── lib/
-    ├── useMicrophoneTranscription.ts    # Hook para transcrição de microfone 🔄
-    ├── useScreenAudioTranscription.ts   # Hook para transcrição de áudio da tela 🔄
-    ├── audioStreamUtils.ts              # Utilitários para conversão de streams 🔄
+    ├── useCombinedAudioTranscription.ts # Hook unificado principal ✅
+    ├── useMicrophoneTranscription.ts    # Hook para transcrição de microfone ✅
+    ├── useScreenAudioTranscription.ts   # Hook para transcrição de áudio da tela ✅
+    ├── audioStreamUtils.ts              # Utilitários para combinação de streams ✅
     └── useScreenTranscription.ts        # Hook legado (manter compatibilidade) ✅
 ```
 
@@ -164,10 +165,10 @@ next.config.js              # Configuração do Next.js (se necessário)
 1. **Etapa 1**: ✅ Compreensão clara da arquitetura do subtitle-chan
 2. **Etapa 2**: ✅ Página `/coach/capture` acessível e funcional
 3. **Etapa 3**: ✅ Captura de áudio da tela compartilhada
-4. **Etapa 4**: Sistema dual funcionando - microfone + tela simultâneos
-5. **Etapa 5**: Interface dual completa e responsiva
-6. **Etapa 6**: Sistema dual robusto e otimizado
-7. **Etapa 7**: Funcionalidade dual pronta para produção
+4. **Etapa 4**: ✅ Sistema unificado funcionando - microfone + tela combinados
+5. **Etapa 5**: Interface unificada completa e responsiva
+6. **Etapa 6**: Sistema unificado robusto e otimizado
+7. **Etapa 7**: Funcionalidade unificada pronta para produção
 
 ## 🚀 Comandos Iniciais
 
