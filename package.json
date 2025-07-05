@@ -28,6 +28,7 @@
     "setup-external-api": "node scripts/setup-external-api.js",
     "apply-rls-policies": "node scripts/apply-rls-policies-prisma-fixed.js",
     "speech-server": "node server/speech-server.js",
+    "speech-server-https": "node server/speech-server-https.js",
     "speech-server-ultra-fast": "node server/speech-server-advanced.js ULTRA_FAST",
     "speech-server-fast": "node server/speech-server-advanced.js FAST",
     "speech-server-balanced": "node server/speech-server-advanced.js BALANCED",

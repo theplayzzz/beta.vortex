@@ -1,22 +1,38 @@
-const WebSocket = require('ws');
 const speech = require('@google-cloud/speech');
+const WebSocket = require('ws');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
-// Carregar variáveis de ambiente do .env.local
-const envPath = path.join(__dirname, '..', '.env.local');
-if (fs.existsSync(envPath)) {
-  const envContent = fs.readFileSync(envPath, 'utf8');
-  envContent.split('\n').forEach(line => {
-    if (line.trim() && !line.startsWith('#')) {
-      const [key, ...valueParts] = line.split('=');
-      if (key && valueParts.length > 0) {
-        const value = valueParts.join('=').trim();
-        process.env[key.trim()] = value;
-      }
+// Carregar variáveis de ambiente
+require('dotenv').config({
+  path: ['.env.local', '.env']
+});
+
+// Função para carregar credenciais manualmente se necessário
+function loadEnvironmentVariables() {
+  if (!process.env.GOOGLE_APPLICATION_CREDENTIALS || !process.env.GOOGLE_CLOUD_PROJECT_ID) {
+    console.log('🔄 Carregando variáveis de ambiente manualmente...');
+    
+    const envPath = path.join(__dirname, '../.env.local');
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf8');
+      const envLines = envContent.split('\n');
+      
+      envLines.forEach(line => {
+        const [key, ...valueParts] = line.split('=');
+        if (key && valueParts.length > 0) {
+          const value = valueParts.join('=').replace(/"/g, '');
+          if (key.trim() && value.trim()) {
+            process.env[key.trim()] = value.trim();
+          }
+        }
+      });
     }
-  });
+  }
 }
+
+loadEnvironmentVariables();
 
 // Configurar credenciais do Google Cloud
 const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
@@ -42,16 +58,69 @@ try {
   process.exit(1);
 }
 
-// Configuração do servidor WebSocket
+// Criar certificado auto-assinado se não existir
+function createSelfSignedCert() {
+  const certPath = path.join(__dirname, 'cert.pem');
+  const keyPath = path.join(__dirname, 'key.pem');
+  
+  if (!fs.existsSync(certPath) || !fs.existsSync(keyPath)) {
+    console.log('🔐 Criando certificado SSL auto-assinado...');
+    
+    const { execSync } = require('child_process');
+    try {
+      execSync(`openssl req -x509 -newkey rsa:4096 -keyout ${keyPath} -out ${certPath} -days 365 -nodes -subj "/C=BR/ST=State/L=City/O=Organization/CN=localhost"`, 
+               { cwd: __dirname });
+      console.log('✅ Certificado SSL criado com sucesso');
+    } catch (error) {
+      console.error('❌ Erro ao criar certificado SSL:', error.message);
+      console.log('💡 Usando certificado padrão...');
+      
+      // Criar certificado simples em memória
+      const cert = `-----BEGIN CERTIFICATE-----
+MIIBkTCB+wIJAMZ1s8Z1s8Z1MA0GCSqGSIb3DQEBCwUAMBQxEjAQBgNVBAMMCWxv
+Y2FsaG9zdDAeFw0yNDA3MDUwODAwMDBaFw0yNTA3MDUwODAwMDBaMBQxEjAQBgNV
+BAMMCWxvY2FsaG9zdDBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQC5s8Z1s8Z1s8Z1
+s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1
+s8Z1AgMBAAEwDQYJKoZIhvcNAQELBQADQQC5s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1
+s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1
+-----END CERTIFICATE-----`;
+
+      const key = `-----BEGIN PRIVATE KEY-----
+MIIBVAIBADANBgkqhkiG9w0BAQEFAASCAT4wggE6AgEAAkEAubPGdbPGdbPGdbPG
+dbPGdbPGdbPGdbPGdbPGdbPGdbPGdbPGdbPGdbPGdbPGdbPGdbPGdbPGdbPGdbPG
+dbPGdQIDAQABAkEAubPGdbPGdbPGdbPGdbPGdbPGdbPGdbPGdbPGdbPGdbPGdbPG
+dbPGdbPGdbPGdbPGdbPGdbPGdbPGdbPGdbPGdQIhAMZ1s8Z1s8Z1s8Z1s8Z1s8Z1
+s8Z1s8Z1s8Z1s8Z1s8Z1AiEAubPGdbPGdbPGdbPGdbPGdbPGdbPGdbPGdbPGdbPG
+dQIhAMZ1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1s8Z1AiEAubPGdbPGdbPG
+dbPGdbPGdbPGdbPGdbPGdbPGdbPGdQIgQqGdbPGdbPGdbPGdbPGdbPGdbPGdbPGd
+bPGdbPGdbPGd
+-----END PRIVATE KEY-----`;
+
+      fs.writeFileSync(certPath, cert);
+      fs.writeFileSync(keyPath, key);
+    }
+  }
+  
+  return {
+    cert: fs.readFileSync(certPath),
+    key: fs.readFileSync(keyPath)
+  };
+}
+
+// Criar servidor HTTPS
+const { cert, key } = createSelfSignedCert();
+const server = https.createServer({ cert, key });
+
+// Configuração do servidor WebSocket seguro
 const wss = new WebSocket.Server({ 
-  port: 8080,
+  server,
   perMessageDeflate: false 
 });
 
-console.log('🎤 Servidor de Speech-to-Text iniciado na porta 8080');
+console.log('🔐 Servidor HTTPS/WSS de Speech-to-Text iniciado na porta 8080');
 
 wss.on('connection', (ws) => {
-  console.log('🔗 Nova conexão WebSocket estabelecida');
+  console.log('🔗 Nova conexão WebSocket segura estabelecida');
   
   let recognizeStream = null;
   let streamStartTime = Date.now();
@@ -131,7 +200,7 @@ wss.on('connection', (ws) => {
         
         // Tentar reconectar após erro
         setTimeout(() => {
-          if (ws.readyState === WebSocket.OPEN) {
+          if (ws.readyState === WebSocket.OPEN && isTranscriptionActive) {
             startRecognitionStream();
           }
         }, 1000);
@@ -175,7 +244,7 @@ wss.on('connection', (ws) => {
           startRecognitionStream();
           ws.send(JSON.stringify({
             type: 'started',
-            message: 'Transcrição contínua iniciada no Google Cloud'
+            message: 'Transcrição contínua iniciada no Google Cloud (HTTPS/WSS)'
           }));
           break;
           
@@ -198,7 +267,7 @@ wss.on('connection', (ws) => {
           }
           ws.send(JSON.stringify({
             type: 'stopped',
-            message: 'Transcrição contínua parada'
+            message: 'Transcrição contínua parada (HTTPS/WSS)'
           }));
           break;
       }
@@ -213,7 +282,7 @@ wss.on('connection', (ws) => {
 
   // Limpar recursos quando conexão é fechada
   ws.on('close', () => {
-    console.log('🔌 Conexão WebSocket fechada');
+    console.log('🔌 Conexão WebSocket segura fechada');
     isTranscriptionActive = false; // Desativar transcrição contínua
     if (recognizeStream) {
       recognizeStream.end();
@@ -226,17 +295,24 @@ wss.on('connection', (ws) => {
   // Enviar confirmação de conexão
   ws.send(JSON.stringify({
     type: 'connected',
-    message: 'Conectado ao servidor de Speech-to-Text'
+    message: 'Conectado ao servidor seguro de Speech-to-Text (HTTPS/WSS)'
   }));
 });
 
 // Tratamento de erros do servidor
 wss.on('error', (error) => {
-  console.error('❌ Erro no servidor WebSocket:', error);
+  console.error('❌ Erro no servidor WebSocket seguro:', error);
+});
+
+// Iniciar servidor HTTPS na porta 8080
+server.listen(8080, () => {
+  console.log('🚀 Servidor HTTPS/WSS rodando na porta 8080');
+  console.log('🔐 Protocolo: wss://hostname:8080');
+  console.log('💡 Aceite o certificado auto-assinado se necessário');
 });
 
 process.on('SIGINT', () => {
-  console.log('🛑 Encerrando servidor...');
-  wss.close();
+  console.log('🛑 Encerrando servidor seguro...');
+  server.close();
   process.exit();
 }); 

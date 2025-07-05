@@ -39,7 +39,13 @@ export const useGoogleCloudTranscription = () => {
   // Conectar ao servidor WebSocket
   const connectWebSocket = useCallback(() => {
     try {
-      const ws = new WebSocket('ws://localhost:8080');
+      // 🔧 CORREÇÃO: Detectar automaticamente protocolo e host
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.hostname;
+      const wsUrl = `${protocol}//${host}:8080`;
+      
+      console.log('🔗 Conectando ao WebSocket:', wsUrl);
+      const ws = new WebSocket(wsUrl);
       
       ws.onopen = () => {
         console.log('🔗 Conectado ao servidor Speech-to-Text');
