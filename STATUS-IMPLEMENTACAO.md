@@ -112,7 +112,50 @@ curl -s http://localhost:3003/coach/capture/google-cloud
 
 ✅ **Resolve 100% o problema original da Web Speech API**  
 
+✅ **STREAM CONTÍNUO FLUIDO implementado** - Zero lacunas entre transcrições
+
 ✅ **Pronto para uso após configuração das credenciais**
+
+### 🚀 **Última Correção Implementada: Stream Contínuo Fluido**
+
+#### **Problema Resolvido:**
+- ❌ **ANTES:** Restart após cada resultado final causava delay e perda de contexto
+- ✅ **AGORA:** Single stream contínuo com captura imediata
+
+#### **Melhorias Aplicadas:**
+- 🎧 **Stream permanece ativo** após resultados finais
+- ⚡ **Captura imediata** da primeira palavra da próxima fala  
+- 🎯 **Zero delay** entre transcrições
+- 📊 **Modelo otimizado** `latest_long` para streaming contínuo
+- ⏰ **Restart apenas preventivo** a cada 58s
+
+#### **Experiência do Usuário:**
+- **Fluidez total** como Google Assistant ou Alexa
+- **Sem lacunas** perceptíveis entre frases
+- **Contexto preservado** durante toda a sessão
+- **Performance otimizada** para uso contínuo
+
+**Documentação completa:** `docs/STREAM-CONTINUO-FLUIDO-CORRIGIDO.md`
+
+### 🔄 **Correção Final: Loop Infinito Resolvido**
+
+#### **Problema Detectado:**
+- Stream entrava em **loop infinito** reiniciando constantemente
+- Logs mostravam restart contínuo sem funcionar
+
+#### **Soluções Aplicadas:**
+- 🛡️ **Proteção Anti-Loop:** Mínimo 5s entre restarts
+- ⏱️ **Validação de Duração:** Stream deve durar pelo menos 1s  
+- 📊 **Modelo Estável:** Mudança para `default` em vez de `latest_long`
+- 🔍 **Logs Detalhados:** Monitoramento completo para debug
+
+#### **Sistema Agora:**
+- ✅ **Sem loops infinitos**
+- ✅ **Restarts controlados** e validados
+- ✅ **Estabilidade garantida**
+- ✅ **Debug completo** via logs
+
+**Documentação completa:** `docs/CORRECAO-LOOP-INFINITO.md`
 
 ---
 

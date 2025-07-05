@@ -55,31 +55,24 @@ wss.on('connection', (ws) => {
   
   let recognizeStream = null;
   let streamStartTime = Date.now();
-  const STREAM_LIMIT_MS = 55000; // 55s para ficar dentro do limite de 60s do Google
+  const STREAM_LIMIT_MS = 58000; // 58s para ficar seguro dentro do limite de 60s do Google
   let restartTimeout = null;
   let isTranscriptionActive = false; // Controla se a transcrição deve continuar ativa
+  let lastRestartTime = 0; // Previne restarts muito frequentes
+  const MIN_RESTART_INTERVAL = 5000; // Mínimo 5s entre restarts
 
-  // Configuração do reconhecimento de áudio - ULTRA RÁPIDO
+  // Configuração do reconhecimento de áudio - STREAMING ESTÁVEL
   const audioConfig = {
     encoding: 'LINEAR16',
     sampleRateHertz: 16000,
     languageCode: 'pt-BR', // Português brasileiro
     enableAutomaticPunctuation: true,
-    model: 'latest_short',        // ← Modelo mais rápido (1-2s)
+    model: 'default',             // ← Modelo padrão mais estável
     useEnhanced: true,            // ← Usar versão melhorada
-    maxAlternatives: 1,           // ← Menos alternativas = mais rápido
-    enableWordTimeOffsets: true,  // ← Timestamps por palavra
-    enableWordConfidence: true,   // ← Confiança por palavra
-    speechContexts: [             // ← Palavras que aceleram finalização
-      {
-        phrases: ['sim', 'não', 'ok', 'pronto', 'finalizar', 'obrigado'],
-        boost: 25.0,
-      },
-      {
-        phrases: ['ponto', 'vírgula', 'parágrafo', 'enter'],
-        boost: 20.0,
-      }
-    ],
+    maxAlternatives: 1,           // ← Menos alternativas = mais eficiente
+    enableWordTimeOffsets: false, // ← Desabilitado para performance
+    enableWordConfidence: false,  // ← Desabilitado para performance
+    profanityFilter: false,       // ← Desabilitado para performance
   };
 
   const streamingConfig = {
@@ -88,7 +81,8 @@ wss.on('connection', (ws) => {
   };
 
   function startRecognitionStream() {
-    console.log('🚀 Iniciando novo stream de reconhecimento');
+    const timeSinceLastRestart = Date.now() - lastRestartTime;
+    console.log(`🚀 Iniciando novo stream de reconhecimento (${timeSinceLastRestart}ms desde último restart)`);
     
     if (recognizeStream) {
       recognizeStream.end();
@@ -106,12 +100,15 @@ wss.on('connection', (ws) => {
           // Enviar resultado para o frontend
           if (isFinal) {
             console.log('✅ Transcrição final:', transcript);
-            console.log('🔄 Stream continua ativo para próxima fala (transcrição contínua)');
             ws.send(JSON.stringify({
               type: 'final',
               transcript: transcript,
               confidence: confidence
             }));
+            
+            // 🎯 CORREÇÃO: NÃO reiniciar stream após resultado final
+            // O stream deve permanecer ativo para transcrição contínua fluida
+            console.log('🎧 Stream permanece ativo aguardando próxima fala (transcrição contínua)');
           } else {
             console.log('📝 Transcrição interim:', transcript);
             ws.send(JSON.stringify({
@@ -131,20 +128,34 @@ wss.on('connection', (ws) => {
         
         // Tentar reconectar após erro
         setTimeout(() => {
-          if (ws.readyState === WebSocket.OPEN) {
+          if (ws.readyState === WebSocket.OPEN && isTranscriptionActive) {
             startRecognitionStream();
           }
         }, 1000);
       })
       .on('end', () => {
-        console.log('📝 Stream de reconhecimento finalizado');
+        const streamDuration = Date.now() - streamStartTime;
+        console.log(`📝 Stream de reconhecimento finalizado (duração: ${streamDuration}ms)`);
         
-        // 🔄 TRANSCRIÇÃO CONTÍNUA: Reiniciar automaticamente se ainda estiver ativo
-        if (isTranscriptionActive && ws.readyState === WebSocket.OPEN) {
-          console.log('🔄 Reiniciando stream automaticamente para continuar transcrição contínua');
+        // 🔄 VERIFICAÇÕES PARA EVITAR LOOP INFINITO
+        const timeSinceLastRestart = Date.now() - lastRestartTime;
+        const shouldRestart = isTranscriptionActive && 
+                             ws.readyState === WebSocket.OPEN && 
+                             timeSinceLastRestart >= MIN_RESTART_INTERVAL &&
+                             streamDuration >= 1000; // Stream deve durar pelo menos 1s
+        
+        if (shouldRestart) {
+          console.log(`🔄 Reiniciando stream (última tentativa há ${timeSinceLastRestart}ms)`);
+          lastRestartTime = Date.now();
           setTimeout(() => {
             startRecognitionStream();
-          }, 100); // Pequeno delay para evitar problemas
+          }, 100);
+        } else if (!isTranscriptionActive) {
+          console.log('⏹️ Transcrição foi parada, não reiniciando stream');
+        } else if (timeSinceLastRestart < MIN_RESTART_INTERVAL) {
+          console.log(`⚠️ Restart muito frequente bloqueado (${timeSinceLastRestart}ms < ${MIN_RESTART_INTERVAL}ms)`);
+        } else if (streamDuration < 1000) {
+          console.log(`⚠️ Stream muito curto (${streamDuration}ms), possível erro de configuração`);
         }
       });
 
@@ -157,7 +168,8 @@ wss.on('connection', (ws) => {
     
     restartTimeout = setTimeout(() => {
       if (ws.readyState === WebSocket.OPEN && isTranscriptionActive) {
-        console.log('🔄 Reiniciando stream para evitar limite de 60s (transcrição contínua)');
+        console.log('⏰ Reiniciando stream por limite de tempo (58s) - transcrição contínua');
+        lastRestartTime = Date.now();
         startRecognitionStream();
       }
     }, STREAM_LIMIT_MS);
@@ -172,6 +184,7 @@ wss.on('connection', (ws) => {
         case 'start':
           console.log('🎙️ Iniciando transcrição CONTÍNUA');
           isTranscriptionActive = true; // Ativar transcrição contínua
+          lastRestartTime = Date.now(); // Inicializar controle de restart
           startRecognitionStream();
           ws.send(JSON.stringify({
             type: 'started',
