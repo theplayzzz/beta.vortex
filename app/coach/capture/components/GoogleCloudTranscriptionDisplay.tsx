@@ -54,6 +54,7 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
     clearTranscript,
     connectWebSocket,
     toggleMicrophoneCapture,
+    forceFinalize,
   } = useGoogleCloudTranscription();
 
   // Refs e estados para controle do scroll automático
@@ -61,6 +62,7 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const [newFieldText, setNewFieldText] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Função para verificar se está no final do scroll
   const isAtBottom = () => {
@@ -136,10 +138,94 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
     toggleMicrophoneCapture(!isMicrophoneEnabled);
   };
 
-  // Função para análise de contexto
-  const handleContextAnalysis = () => {
-    console.log('Análise de contexto iniciada');
-    // TODO: Implementar análise de contexto do texto transcrito
+  // Função para envio ao webhook de análise
+  const sendToWebhook = async (contexto: string) => {
+    try {
+      console.log('📡 Enviando contexto para webhook:', contexto.substring(0, 100) + '...');
+      
+      const response = await fetch('https://webhook.lucasfelix.com/webhook/Analise_venda_beta', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contexto: contexto,
+          timestamp: new Date().toISOString(),
+          source: 'google-cloud-transcription'
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.text();
+      console.log('✅ Resposta do webhook:', data);
+      
+      return data;
+    } catch (error) {
+      console.error('❌ Erro ao enviar para webhook:', error);
+      throw error;
+    }
+  };
+
+  // Função para análise de contexto completa
+  const handleContextAnalysis = async () => {
+    if (!isConnected) {
+      setNewFieldText('❌ Erro: Servidor não conectado');
+      return;
+    }
+
+    if (!isListening) {
+      setNewFieldText('❌ Erro: Transcrição não está ativa');
+      return;
+    }
+
+    if (isAnalyzing) {
+      console.log('⚠️ Análise já em andamento');
+      return;
+    }
+
+    console.log('🧠 Análise de contexto iniciada');
+    setIsAnalyzing(true);
+    
+    try {
+      // Mostrar loading
+      setNewFieldText('🔄 Enviando para análise...');
+      
+      // 1. Forçar finalização do ciclo atual
+      console.log('📤 Enviando comando force-finalize');
+      forceFinalize();
+      
+      // 2. Aguardar um momento para coleta de contexto
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // 3. Coletar contexto atual
+      const contextoCompleto = transcript + (interimTranscript ? ' ' + interimTranscript : '');
+      
+      if (!contextoCompleto.trim()) {
+        setNewFieldText('⚠️ Nenhum contexto disponível para análise');
+        return;
+      }
+      
+      console.log('📋 Contexto coletado:', contextoCompleto.length, 'caracteres');
+      
+      // 4. Enviar para webhook
+      setNewFieldText('🌐 Aguardando resposta do webhook...');
+      const resposta = await sendToWebhook(contextoCompleto);
+      
+      // 5. Atualizar textarea com resposta
+      setNewFieldText(resposta);
+      
+      // 6. Stream continua ativo automaticamente
+      console.log('✅ Análise concluída, stream continua ativo');
+      
+    } catch (error) {
+      console.error('❌ Erro na análise:', error);
+      setNewFieldText(`❌ Erro na análise: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   return (
@@ -208,14 +294,19 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
                   {/* Análise de Contexto */}
                   <button
                     onClick={handleContextAnalysis}
+                    disabled={isAnalyzing || !isConnected || !isListening}
                     className="px-3 py-2 rounded-lg font-medium transition-all duration-200 text-xs"
                     style={{
-                      backgroundColor: 'rgba(207, 198, 254, 0.2)',
-                      border: '1px solid var(--periwinkle)',
-                      color: 'var(--periwinkle)'
+                      backgroundColor: isAnalyzing 
+                        ? 'rgba(107, 233, 76, 0.2)' 
+                        : 'rgba(207, 198, 254, 0.2)',
+                      border: `1px solid ${isAnalyzing ? 'var(--sgbus-green)' : 'var(--periwinkle)'}`,
+                      color: isAnalyzing ? 'var(--sgbus-green)' : 'var(--periwinkle)',
+                      cursor: (isAnalyzing || !isConnected || !isListening) ? 'not-allowed' : 'pointer',
+                      opacity: (isAnalyzing || !isConnected || !isListening) ? 0.6 : 1
                     }}
                   >
-                    🧠 ANÁLISE
+                    {isAnalyzing ? '🔄 ANALISANDO' : '🧠 ANÁLISE'}
                   </button>
                 </div>
 
@@ -393,7 +484,7 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
             </div>
           </div>
 
-          {/* COLUNA DIREITA - Campo para Nova Implementação */}
+          {/* COLUNA DIREITA - Análise de IA */}
           <div 
             className="p-6 rounded-xl"
             style={{ 
@@ -401,13 +492,23 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
               border: '1px solid rgba(249, 251, 252, 0.1)'
             }}
           >
-            <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--seasalt)' }}>
-              Campo de Implementação
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold" style={{ color: 'var(--seasalt)' }}>
+                Análise de IA
+              </h3>
+              {isAnalyzing && (
+                <div className="flex items-center space-x-2">
+                  <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--sgbus-green)' }} />
+                  <span className="text-xs" style={{ color: 'var(--sgbus-green)' }}>
+                    Processando...
+                  </span>
+                </div>
+              )}
+            </div>
             <textarea
               value={newFieldText}
               onChange={(e) => setNewFieldText(e.target.value)}
-              placeholder="Campo para nova implementação da ferramenta..."
+              placeholder="Clique em 'ANÁLISE' para enviar o contexto atual das transcrições para análise de IA..."
               className="w-full h-full p-4 rounded-xl resize-none"
               style={{
                 backgroundColor: 'var(--night)',

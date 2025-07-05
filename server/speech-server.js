@@ -214,6 +214,41 @@ wss.on('connection', (ws) => {
             message: 'Transcrição contínua parada'
           }));
           break;
+
+        case 'force-finalize':
+          console.log('🧠 Forçando finalização para análise de contexto');
+          if (recognizeStream && isTranscriptionActive) {
+            // Finalizar stream atual para forçar finalização das transcrições interim
+            recognizeStream.end();
+            
+            // Enviar confirmação para frontend
+            ws.send(JSON.stringify({
+              type: 'force-finalize-started',
+              message: 'Finalização forçada iniciada'
+            }));
+            
+            // Aguardar um momento para finalização e então reiniciar stream
+            setTimeout(() => {
+              if (ws.readyState === WebSocket.OPEN && isTranscriptionActive) {
+                console.log('🔄 Reiniciando stream após finalização forçada');
+                lastRestartTime = Date.now();
+                startRecognitionStream();
+                
+                // Confirmar que o stream foi reiniciado
+                ws.send(JSON.stringify({
+                  type: 'force-finalize-completed',
+                  message: 'Stream reiniciado após finalização forçada'
+                }));
+              }
+            }, 500);
+          } else {
+            console.log('⚠️ Nenhum stream ativo para forçar finalização');
+            ws.send(JSON.stringify({
+              type: 'force-finalize-error',
+              message: 'Nenhum stream ativo para forçar finalização'
+            }));
+          }
+          break;
       }
     } catch (error) {
       console.error('❌ Erro ao processar mensagem:', error);

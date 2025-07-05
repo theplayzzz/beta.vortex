@@ -103,6 +103,18 @@ export const useGoogleCloudTranscription = () => {
             case 'connected':
               console.log('✅ Servidor confirmou conexão');
               break;
+
+            case 'force-finalize-started':
+              console.log('🧠 Finalização forçada iniciada pelo servidor');
+              break;
+
+            case 'force-finalize-completed':
+              console.log('✅ Finalização forçada concluída, stream reiniciado');
+              break;
+
+            case 'force-finalize-error':
+              console.warn('⚠️ Erro na finalização forçada:', data.message);
+              break;
           }
         } catch (error) {
           console.error('❌ Erro ao processar mensagem WebSocket:', error);
@@ -365,6 +377,25 @@ export const useGoogleCloudTranscription = () => {
     }));
   }, []);
 
+  // Forçar finalização de transcrições interim para análise
+  const forceFinalize = useCallback(() => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      console.warn('⚠️ WebSocket não conectado para forçar finalização');
+      return;
+    }
+    
+    if (!state.isListening) {
+      console.warn('⚠️ Transcrição não está ativa para forçar finalização');
+      return;
+    }
+
+    console.log('🧠 Enviando comando force-finalize para servidor');
+    wsRef.current.send(JSON.stringify({ 
+      type: 'force-finalize',
+      reason: 'user-analysis' 
+    }));
+  }, [state.isListening]);
+
   // Conectar ao WebSocket na inicialização
   useEffect(() => {
     connectWebSocket();
@@ -398,5 +429,6 @@ export const useGoogleCloudTranscription = () => {
     clearTranscript,
     connectWebSocket,
     toggleMicrophoneCapture,
+    forceFinalize,
   };
 }; 
