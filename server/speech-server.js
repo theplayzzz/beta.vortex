@@ -136,6 +136,7 @@ wss.on('connection', (ws) => {
       .on('end', () => {
         const streamDuration = Date.now() - streamStartTime;
         console.log(`📝 Stream de reconhecimento finalizado (duração: ${streamDuration}ms)`);
+        console.log(`🔍 Evento 'end' disparado - verificando se deve reiniciar...`);
         
         // 🔄 VERIFICAÇÕES PARA EVITAR LOOP INFINITO
         const timeSinceLastRestart = Date.now() - lastRestartTime;
@@ -144,8 +145,15 @@ wss.on('connection', (ws) => {
                              timeSinceLastRestart >= MIN_RESTART_INTERVAL &&
                              streamDuration >= 1000; // Stream deve durar pelo menos 1s
         
+        console.log(`🔍 Condições para restart automático:`);
+        console.log(`   - isTranscriptionActive: ${isTranscriptionActive}`);
+        console.log(`   - ws.readyState === WebSocket.OPEN: ${ws.readyState === WebSocket.OPEN}`);
+        console.log(`   - timeSinceLastRestart >= MIN_RESTART_INTERVAL: ${timeSinceLastRestart}ms >= ${MIN_RESTART_INTERVAL}ms = ${timeSinceLastRestart >= MIN_RESTART_INTERVAL}`);
+        console.log(`   - streamDuration >= 1000: ${streamDuration}ms >= 1000ms = ${streamDuration >= 1000}`);
+        console.log(`   - shouldRestart: ${shouldRestart}`);
+        
         if (shouldRestart) {
-          console.log(`🔄 Reiniciando stream (última tentativa há ${timeSinceLastRestart}ms)`);
+          console.log(`🔄 Reiniciando stream automaticamente (última tentativa há ${timeSinceLastRestart}ms)`);
           lastRestartTime = Date.now();
           setTimeout(() => {
             startRecognitionStream();
@@ -153,9 +161,9 @@ wss.on('connection', (ws) => {
         } else if (!isTranscriptionActive) {
           console.log('⏹️ Transcrição foi parada, não reiniciando stream');
         } else if (timeSinceLastRestart < MIN_RESTART_INTERVAL) {
-          console.log(`⚠️ Restart muito frequente bloqueado (${timeSinceLastRestart}ms < ${MIN_RESTART_INTERVAL}ms)`);
+          console.log(`⚠️ Restart automático bloqueado - muito frequente (${timeSinceLastRestart}ms < ${MIN_RESTART_INTERVAL}ms)`);
         } else if (streamDuration < 1000) {
-          console.log(`⚠️ Stream muito curto (${streamDuration}ms), possível erro de configuração`);
+          console.log(`⚠️ Restart automático bloqueado - stream muito curto (${streamDuration}ms)`);
         }
       });
 
@@ -179,6 +187,7 @@ wss.on('connection', (ws) => {
   ws.on('message', (message) => {
     try {
       const data = JSON.parse(message);
+      console.log('📨 Mensagem recebida do frontend:', data.type);
       
       switch (data.type) {
         case 'start':
@@ -217,35 +226,63 @@ wss.on('connection', (ws) => {
 
         case 'force-finalize':
           console.log('🧠 Forçando finalização para análise de contexto');
-          if (recognizeStream && isTranscriptionActive) {
-            // Finalizar stream atual para forçar finalização das transcrições interim
-            recognizeStream.end();
-            
+          console.log('🔍 Estado atual - recognizeStream existe:', !!recognizeStream);
+          console.log('🔍 Estado atual - isTranscriptionActive:', isTranscriptionActive);
+          
+          if (isTranscriptionActive && ws.readyState === WebSocket.OPEN && recognizeStream) {
             // Enviar confirmação para frontend
             ws.send(JSON.stringify({
               type: 'force-finalize-started',
-              message: 'Finalização forçada iniciada'
+              message: 'Forçando finalização - aguardando evento end'
             }));
             
-            // Aguardar um momento para finalização e então reiniciar stream
-            setTimeout(() => {
+            // ⭐ NOVA ABORDAGEM: Aguardar evento 'end' para reiniciar
+            console.log('🔄 Finalizando stream atual e aguardando evento end para restart');
+            
+            // Listener único para este force-finalize
+            const handleForcedEnd = () => {
+              console.log('📝 Evento end recebido após force-finalize - reiniciando agora');
+              
+              // Remover este listener
+              if (recognizeStream) {
+                recognizeStream.removeListener('end', handleForcedEnd);
+              }
+              
+              // Reiniciar imediatamente sem verificar MIN_RESTART_INTERVAL
               if (ws.readyState === WebSocket.OPEN && isTranscriptionActive) {
-                console.log('🔄 Reiniciando stream após finalização forçada');
+                console.log('🚀 Reiniciando stream após force-finalize (bypass MIN_RESTART_INTERVAL)');
                 lastRestartTime = Date.now();
                 startRecognitionStream();
                 
-                // Confirmar que o stream foi reiniciado
-                ws.send(JSON.stringify({
-                  type: 'force-finalize-completed',
-                  message: 'Stream reiniciado após finalização forçada'
-                }));
+                // Confirmar reinicio
+                setTimeout(() => {
+                  if (ws.readyState === WebSocket.OPEN && isTranscriptionActive) {
+                    console.log('✅ Finalização forçada concluída - stream reiniciado após evento end');
+                    ws.send(JSON.stringify({
+                      type: 'force-finalize-completed',
+                      message: 'Stream reiniciado após finalização forçada'
+                    }));
+                  }
+                }, 100);
               }
-            }, 500);
+            };
+            
+            // Adicionar listener temporário para este force-finalize
+            recognizeStream.once('end', handleForcedEnd);
+            
+            // Finalizar stream atual (isso dispara evento 'end')
+            console.log('📤 Finalizando stream atual - isso deve disparar evento end');
+            recognizeStream.end();
+            
           } else {
-            console.log('⚠️ Nenhum stream ativo para forçar finalização');
+            console.log('⚠️ Condições não atendidas para force-finalize');
+            console.log('   - isTranscriptionActive:', isTranscriptionActive);
+            console.log('   - ws.readyState === WebSocket.OPEN:', ws.readyState === WebSocket.OPEN);
+            console.log('   - recognizeStream existe:', !!recognizeStream);
+            
             ws.send(JSON.stringify({
               type: 'force-finalize-error',
-              message: 'Nenhum stream ativo para forçar finalização'
+              message: 'Condições não atendidas para forçar finalização'
             }));
           }
           break;

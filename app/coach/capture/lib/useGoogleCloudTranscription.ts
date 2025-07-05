@@ -12,6 +12,7 @@ interface TranscriptionState {
   micLevel: number;
   screenLevel: number;
   isMicrophoneEnabled: boolean;
+  isForceFinalizingActive: boolean; // Flag para controlar force-finalize
 }
 
 export const useGoogleCloudTranscription = () => {
@@ -25,6 +26,7 @@ export const useGoogleCloudTranscription = () => {
     micLevel: 0,
     screenLevel: 0,
     isMicrophoneEnabled: false,
+    isForceFinalizingActive: false,
   });
 
   // Referências para recursos de áudio
@@ -93,10 +95,13 @@ export const useGoogleCloudTranscription = () => {
               break;
               
             case 'error':
+              console.log('❌ Erro recebido do servidor:', data.message);
+              console.log('🔍 Verificando se é durante force-finalize...');
               setState(prev => ({ 
                 ...prev, 
                 error: data.message,
-                isListening: false 
+                // NÃO modificar isListening se estivermos em force-finalize
+                isListening: prev.isForceFinalizingActive ? prev.isListening : false 
               }));
               break;
               
@@ -106,14 +111,33 @@ export const useGoogleCloudTranscription = () => {
 
             case 'force-finalize-started':
               console.log('🧠 Finalização forçada iniciada pelo servidor');
+              console.log('🔍 Estado atual isListening:', state.isListening);
               break;
 
             case 'force-finalize-completed':
               console.log('✅ Finalização forçada concluída, stream reiniciado');
+              console.log('🔍 Estado atual isListening:', state.isListening);
+              // Limpar flag de force-finalize
+              setState(prev => ({ ...prev, isForceFinalizingActive: false }));
+              // Resolver Promise pendente se existir
+              if (forceFinalizePendingRef.current) {
+                clearTimeout(forceFinalizePendingRef.current.timeout);
+                forceFinalizePendingRef.current.resolve(true);
+                forceFinalizePendingRef.current = null;
+              }
               break;
 
             case 'force-finalize-error':
               console.warn('⚠️ Erro na finalização forçada:', data.message);
+              console.log('🔍 Estado atual isListening:', state.isListening);
+              // Limpar flag de force-finalize
+              setState(prev => ({ ...prev, isForceFinalizingActive: false }));
+              // Rejeitar Promise pendente se existir
+              if (forceFinalizePendingRef.current) {
+                clearTimeout(forceFinalizePendingRef.current.timeout);
+                forceFinalizePendingRef.current.reject(new Error(data.message || 'Erro na finalização forçada'));
+                forceFinalizePendingRef.current = null;
+              }
               break;
           }
         } catch (error) {
@@ -132,11 +156,20 @@ export const useGoogleCloudTranscription = () => {
 
       ws.onclose = () => {
         console.log('🔌 Conexão WebSocket fechada');
+        console.log('🔍 Verificando se é durante force-finalize...');
         setState(prev => ({ 
           ...prev, 
           isConnected: false, 
-          isListening: false 
+          // NÃO modificar isListening se estivermos em force-finalize
+          isListening: prev.isForceFinalizingActive ? prev.isListening : false 
         }));
+        
+        // Limpar Promise de finalização pendente se existir
+        if (forceFinalizePendingRef.current) {
+          clearTimeout(forceFinalizePendingRef.current.timeout);
+          forceFinalizePendingRef.current.reject(new Error('Conexão WebSocket fechada'));
+          forceFinalizePendingRef.current = null;
+        }
       };
 
       wsRef.current = ws;
@@ -377,23 +410,69 @@ export const useGoogleCloudTranscription = () => {
     }));
   }, []);
 
+  // Ref para Promise de finalização forçada
+  const forceFinalizePendingRef = useRef<{
+    resolve: (value: boolean) => void;
+    reject: (error: Error) => void;
+    timeout: NodeJS.Timeout;
+  } | null>(null);
+
   // Forçar finalização de transcrições interim para análise
   const forceFinalize = useCallback(() => {
+    console.log('🔍 forceFinalize chamado - verificando condições...');
+    console.log('🔍 Estado atual isListening:', state.isListening);
+    
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       console.warn('⚠️ WebSocket não conectado para forçar finalização');
-      return;
+      return Promise.reject(new Error('WebSocket não conectado'));
     }
     
     if (!state.isListening) {
       console.warn('⚠️ Transcrição não está ativa para forçar finalização');
-      return;
+      return Promise.reject(new Error('Transcrição não está ativa'));
     }
 
     console.log('🧠 Enviando comando force-finalize para servidor');
-    wsRef.current.send(JSON.stringify({ 
-      type: 'force-finalize',
-      reason: 'user-analysis' 
-    }));
+    console.log('📡 Estado WebSocket:', wsRef.current.readyState);
+    console.log('🎙️ Transcrição ativa:', state.isListening);
+    console.log('🔍 forceFinalize NÃO deve modificar isListening');
+    
+    // Marcar que força finalização está ativa
+    setState(prev => ({ ...prev, isForceFinalizingActive: true }));
+    
+    return new Promise<boolean>((resolve, reject) => {
+      // Limpar Promise anterior se existir
+      if (forceFinalizePendingRef.current) {
+        clearTimeout(forceFinalizePendingRef.current.timeout);
+        forceFinalizePendingRef.current.reject(new Error('Nova finalização iniciada'));
+      }
+      
+      // Configurar timeout
+      const timeout = setTimeout(() => {
+        forceFinalizePendingRef.current = null;
+        // Limpar flag de force-finalize em caso de timeout
+        setState(prev => ({ ...prev, isForceFinalizingActive: false }));
+        reject(new Error('Timeout na finalização forçada'));
+      }, 8000); // Aumentado para 8 segundos para aguardar evento 'end'
+      
+      // Armazenar Promise pendente
+      forceFinalizePendingRef.current = { resolve, reject, timeout };
+      
+      // Enviar comando
+      if (wsRef.current) {
+        const comando = { 
+          type: 'force-finalize',
+          reason: 'user-analysis' 
+        };
+        console.log('📤 Enviando comando para servidor:', comando);
+        wsRef.current.send(JSON.stringify(comando));
+        console.log('✅ Comando enviado, aguardando resposta...');
+      } else {
+        clearTimeout(timeout);
+        forceFinalizePendingRef.current = null;
+        reject(new Error('WebSocket não está mais conectado'));
+      }
+    });
   }, [state.isListening]);
 
   // Conectar ao WebSocket na inicialização

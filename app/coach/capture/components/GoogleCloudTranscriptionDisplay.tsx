@@ -191,16 +191,18 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
     
     try {
       // Mostrar loading
-      setNewFieldText('🔄 Enviando para análise...');
+      setNewFieldText('🔄 Forçando finalização das transcrições...');
       
-      // 1. Forçar finalização do ciclo atual
+      // 1. Forçar finalização do ciclo atual e aguardar confirmação
       console.log('📤 Enviando comando force-finalize');
-      forceFinalize();
+      await forceFinalize();
       
-      // 2. Aguardar um momento para coleta de contexto
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 2. Aguardar tempo mínimo para garantir que evento 'end' foi processado
+      console.log('⏳ Aguardando evento end e restart do stream...');
+      setNewFieldText('⏳ Stream reiniciado - coletando contexto...');
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // 3. Coletar contexto atual
+      // 3. Coletar contexto atual (agora deve estar finalizado)
       const contextoCompleto = transcript + (interimTranscript ? ' ' + interimTranscript : '');
       
       if (!contextoCompleto.trim()) {
@@ -209,9 +211,10 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
       }
       
       console.log('📋 Contexto coletado:', contextoCompleto.length, 'caracteres');
+      console.log('📋 Contexto final:', contextoCompleto.substring(0, 200) + '...');
       
       // 4. Enviar para webhook
-      setNewFieldText('🌐 Aguardando resposta do webhook...');
+      setNewFieldText('🌐 Enviando contexto para análise de IA...');
       const resposta = await sendToWebhook(contextoCompleto);
       
       // 5. Atualizar textarea com resposta
