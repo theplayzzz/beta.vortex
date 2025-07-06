@@ -38,6 +38,38 @@ const AudioLevelBar: React.FC<AudioLevelBarProps> = ({ level, label, color }) =>
   );
 };
 
+// Componente compacto para barras de áudio lado a lado
+const CompactAudioLevelBar: React.FC<AudioLevelBarProps> = ({ level, label, color }) => {
+  const actualPercentage = Math.min(level * 100, 100);
+  
+  return (
+    <div className="flex flex-col items-center space-y-1">
+      <div className="flex items-center space-x-1">
+        <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--periwinkle)' }}>
+          {label}
+        </span>
+        <span className="text-xs font-mono" style={{ color: 'var(--seasalt)' }}>
+          {Math.round(actualPercentage)}
+        </span>
+      </div>
+      <div className="w-20 relative">
+        <div 
+          className="w-full h-1.5 rounded-full"
+          style={{ backgroundColor: 'rgba(249, 251, 252, 0.1)' }}
+        >
+          <div
+            className="h-full rounded-full transition-all duration-200 ease-out"
+            style={{ 
+              width: `${actualPercentage}%`,
+              backgroundColor: color === 'blue' ? 'var(--periwinkle)' : 'var(--sgbus-green)'
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const GoogleCloudTranscriptionDisplay: React.FC = () => {
   const {
     transcript,
@@ -212,6 +244,13 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
       console.log('🔍 Texto da análise extraído:', analysisText);
       
       if (analysisText) {
+        // Remover marcadores markdown de código (```html, ```, etc)
+        analysisText = analysisText
+          .replace(/```html\s*/g, '')  // Remove ```html
+          .replace(/```\s*/g, '')      // Remove ``` no final
+          .replace(/^```.*$/gm, '')    // Remove qualquer linha que comece com ```
+          .trim();
+        
         // Se contém HTML, processar adequadamente
         if (analysisText.includes('<') && analysisText.includes('>')) {
           console.log('✅ HTML detectado, processando formatação HTML');
@@ -231,10 +270,16 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
       // Se não encontrou nenhum campo conhecido, retornar o valor do primeiro campo
       const firstValue = Object.values(parsed)[0];
       if (typeof firstValue === 'string') {
-        if (firstValue.includes('<') && firstValue.includes('>')) {
-          return firstValue.replace(/\\"/g, '"').trim();
+        let cleanedValue = firstValue
+          .replace(/```html\s*/g, '')  // Remove ```html
+          .replace(/```\s*/g, '')      // Remove ``` no final
+          .replace(/^```.*$/gm, '')    // Remove qualquer linha que comece com ```
+          .trim();
+        
+        if (cleanedValue.includes('<') && cleanedValue.includes('>')) {
+          return cleanedValue.replace(/\\"/g, '"').trim();
         } else {
-          return firstValue.replace(/\\n/g, '\n').replace(/\n\n+/g, '\n\n').trim();
+          return cleanedValue.replace(/\\n/g, '\n').replace(/\n\n+/g, '\n\n').trim();
         }
       }
       
@@ -246,7 +291,12 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
       // Se não é JSON válido, tentar extrair texto entre aspas
       const textMatch = rawResponse.match(/"([^"]*(?:\\.[^"]*)*)"/);
       if (textMatch && textMatch[1]) {
-        const extractedText = textMatch[1];
+        const extractedText = textMatch[1]
+          .replace(/```html\s*/g, '')  // Remove ```html
+          .replace(/```\s*/g, '')      // Remove ``` no final
+          .replace(/^```.*$/gm, '')    // Remove qualquer linha que comece com ```
+          .trim();
+        
         return extractedText
           .replace(/\\n/g, '\n')
           .replace(/\\"/g, '"')
@@ -255,7 +305,13 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
       }
       
       // Último recurso: retornar como texto formatado
-      return rawResponse.replace(/\\n/g, '\n').replace(/\n\n+/g, '\n\n').trim();
+      return rawResponse
+        .replace(/```html\s*/g, '')  // Remove ```html
+        .replace(/```\s*/g, '')      // Remove ``` no final
+        .replace(/^```.*$/gm, '')    // Remove qualquer linha que comece com ```
+        .replace(/\\n/g, '\n')
+        .replace(/\n\n+/g, '\n\n')
+        .trim();
     }
   };
 
@@ -431,9 +487,9 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
               style={{ 
                 backgroundColor: 'var(--eerie-black)', 
                 border: '1px solid rgba(249, 251, 252, 0.1)',
-                height: '280px',
-                minHeight: '280px',
-                maxHeight: '280px'
+                height: '196px',
+                minHeight: '196px',
+                maxHeight: '196px'
               }}
             >
               {/* Status de Conexão */}
@@ -530,20 +586,21 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
               </div>
 
               {/* Níveis de Áudio - SEMPRE VISÍVEL COM ESPAÇO RESERVADO */}
-              <div className="mt-4" style={{ height: '120px' }}>
-                <div className="mb-3">
+              <div className="mt-3" style={{ height: '68px' }}>
+                <div className="mb-2">
                   <h4 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--periwinkle)' }}>
                     Níveis de Áudio
                   </h4>
                 </div>
                 
-                <div className="space-y-3">
-                  <AudioLevelBar
+                {/* Barras lado a lado */}
+                <div className="flex items-center justify-center space-x-6 mb-2">
+                  <CompactAudioLevelBar
                     level={micLevel}
                     label="MIC"
                     color="blue"
                   />
-                  <AudioLevelBar
+                  <CompactAudioLevelBar
                     level={screenLevel}
                     label="TELA"
                     color="green"
@@ -551,7 +608,7 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
                 </div>
                 
                 {/* Indicador de status do microfone */}
-                <div className="mt-3 flex items-center justify-center">
+                <div className="flex items-center justify-center">
                   <div className="flex items-center space-x-2 text-xs" style={{ color: 'var(--periwinkle)' }}>
                     <span>Microfone:</span>
                     <span style={{ color: isMicrophoneEnabled ? 'var(--sgbus-green)' : '#ef4444' }}>
@@ -664,7 +721,7 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
                   {!isListening && !transcript && (
                     <div className="flex items-center justify-center h-full">
                       <p className="text-sm italic text-center" style={{ color: 'var(--periwinkle)' }}>
-                        Clique em "INICIAR" para começar a transcrição
+                        Clique em &quot;INICIAR&quot; para começar a transcrição
                       </p>
                     </div>
                   )}
@@ -674,89 +731,116 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
           </div>
 
           {/* COLUNA DIREITA - Análise de IA */}
-          <div 
-            className="rounded-xl flex flex-col"
-            style={{ 
-              backgroundColor: 'var(--eerie-black)', 
-              border: '1px solid rgba(249, 251, 252, 0.1)',
-              height: 'calc(100vh - 12rem)'
-            }}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 pb-4">
-              <div className="flex items-center space-x-2">
-                <h3 className="text-lg font-semibold" style={{ color: 'var(--seasalt)' }}>
-                  Análise de IA
-                </h3>
-                {analysisHistory.length > 0 && (
-                  <span 
-                    className="text-xs px-2 py-1 rounded-full"
-                    style={{ 
-                      backgroundColor: 'rgba(207, 198, 254, 0.2)',
-                      color: 'var(--periwinkle)'
-                    }}
-                  >
-                    {analysisHistory.length}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center space-x-3">
-                {analysisHistory.length > 0 && (
-                  <button
-                    onClick={clearAnalysisHistory}
-                    className="px-2 py-1 rounded text-xs transition-all duration-200"
-                    style={{ 
-                      backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                      color: '#ef4444',
-                      border: '1px solid rgba(239, 68, 68, 0.3)'
-                    }}
-                  >
-                    🗑️ Limpar
-                  </button>
-                )}
-                {isAnalyzing && (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--sgbus-green)' }} />
-                    <span className="text-xs" style={{ color: 'var(--sgbus-green)' }}>
-                      Processando...
+          <div className="flex flex-col space-y-6">
+            
+            {/* PARTE SUPERIOR - Header e Status - TAMANHO FIXO */}
+            <div 
+              className="p-4 rounded-xl overflow-hidden"
+              style={{ 
+                backgroundColor: 'var(--eerie-black)', 
+                border: '1px solid rgba(249, 251, 252, 0.1)',
+                height: '196px',
+                minHeight: '196px',
+                maxHeight: '196px'
+              }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <h3 className="text-lg font-semibold" style={{ color: 'var(--seasalt)' }}>
+                    Análise de IA
+                  </h3>
+                  {analysisHistory.length > 0 && (
+                    <span 
+                      className="text-xs px-2 py-1 rounded-full"
+                      style={{ 
+                        backgroundColor: 'rgba(207, 198, 254, 0.2)',
+                        color: 'var(--periwinkle)'
+                      }}
+                    >
+                      {analysisHistory.length}
                     </span>
+                  )}
+                </div>
+                <div className="flex items-center space-x-3">
+                  {analysisHistory.length > 0 && (
+                    <button
+                      onClick={clearAnalysisHistory}
+                      className="px-2 py-1 rounded text-xs transition-all duration-200"
+                      style={{ 
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        color: '#ef4444',
+                        border: '1px solid rgba(239, 68, 68, 0.3)'
+                      }}
+                    >
+                      🗑️ Limpar
+                    </button>
+                  )}
+                  {isAnalyzing && (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--sgbus-green)' }} />
+                      <span className="text-xs" style={{ color: 'var(--sgbus-green)' }}>
+                        Processando...
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Campo de entrada atual */}
+              {newFieldText && (
+                <div className="mb-4">
+                  <div 
+                    className="p-4 rounded-xl"
+                    style={{
+                      backgroundColor: 'var(--night)',
+                      border: '1px solid rgba(249, 251, 252, 0.1)',
+                    }}
+                  >
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--sgbus-green)' }} />
+                      <span className="text-xs font-medium" style={{ color: 'var(--sgbus-green)' }}>
+                        Processando agora...
+                      </span>
+                    </div>
+                    <div className="text-sm whitespace-pre-wrap" style={{ color: 'var(--seasalt)' }}>
+                      {newFieldText}
+                    </div>
                   </div>
-                )}
+                </div>
+              )}
+
+              {/* Informações sobre a análise */}
+              <div className="flex items-center justify-center flex-1">
+                <div className="text-center">
+                  <div className="text-3xl mb-2" style={{ color: 'var(--periwinkle)' }}>🧠</div>
+                  <p className="text-xs" style={{ color: 'var(--periwinkle)' }}>
+                    Clique em &quot;ANÁLISE&quot; para enviar o contexto atual das transcrições para análise de IA
+                  </p>
+                  {analysisHistory.length > 0 && (
+                    <p className="text-xs mt-2" style={{ color: 'rgba(249, 251, 252, 0.7)' }}>
+                      {analysisHistory.length} análise{analysisHistory.length !== 1 ? 's' : ''} no histórico
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Campo de entrada atual */}
-            {newFieldText && (
-              <div className="px-6 pb-4">
-                <div 
-                  className="p-4 rounded-xl"
-                  style={{
-                    backgroundColor: 'var(--night)',
-                    border: '1px solid rgba(249, 251, 252, 0.1)',
-                  }}
-                >
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--sgbus-green)' }} />
-                    <span className="text-xs font-medium" style={{ color: 'var(--sgbus-green)' }}>
-                      Processando agora...
-                    </span>
-                  </div>
-                  <div className="text-sm whitespace-pre-wrap" style={{ color: 'var(--seasalt)' }}>
-                    {newFieldText}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Histórico de análises */}
-            <div className="flex-1 px-6 pb-6 overflow-hidden">
+            {/* PARTE INFERIOR - Histórico de análises */}
+            <div 
+              className="p-6 rounded-xl flex-1"
+            style={{ 
+              backgroundColor: 'var(--eerie-black)', 
+              border: '1px solid rgba(249, 251, 252, 0.1)'
+            }}
+          >
               <div className="h-full overflow-y-auto space-y-4" style={{ scrollBehavior: 'smooth' }}>
                 {analysisHistory.length === 0 && !newFieldText && (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
-                      <div className="text-3xl mb-3" style={{ color: 'var(--periwinkle)' }}>🧠</div>
+                      <div className="text-3xl mb-3" style={{ color: 'var(--periwinkle)' }}>📋</div>
                       <p className="text-sm" style={{ color: 'var(--periwinkle)' }}>
-                        Clique em "ANÁLISE" para enviar o contexto atual das transcrições para análise de IA
+                        Histórico de análises aparecerá aqui
                       </p>
                     </div>
                   </div>
@@ -766,8 +850,8 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
                   <div 
                     key={analysis.id}
                     className="p-4 rounded-xl"
-                    style={{
-                      backgroundColor: 'var(--night)',
+              style={{
+                backgroundColor: 'var(--night)',
                       border: `1px solid ${analysis.isProcessing ? 'rgba(107, 233, 76, 0.3)' : 'rgba(249, 251, 252, 0.1)'}`,
                     }}
                   >
@@ -803,7 +887,7 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
                           backgroundColor: 'rgba(249, 251, 252, 0.05)'
                         }}
                       >
-                        "{analysis.contexto}"
+                        &quot;{analysis.contexto}&quot;
                       </div>
                     </div>
 

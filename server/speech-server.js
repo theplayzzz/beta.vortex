@@ -154,16 +154,22 @@ wss.on('connection', (ws) => {
         
         // 🔄 VERIFICAÇÕES PARA EVITAR LOOP INFINITO
         const timeSinceLastRestart = Date.now() - lastRestartTime;
+        
+        // 🎯 MELHORIA: Verificar se já existe um listener específico (timeout ou force-finalize)
+        const hasSpecificHandler = recognizeStream && recognizeStream.listenerCount('end') > 1;
+        
         const shouldRestart = isTranscriptionActive && 
                              ws.readyState === WebSocket.OPEN && 
                              timeSinceLastRestart >= MIN_RESTART_INTERVAL &&
-                             streamDuration >= 1000; // Stream deve durar pelo menos 1s
+                             streamDuration >= 1000 && // Stream deve durar pelo menos 1s
+                             !hasSpecificHandler; // Não reiniciar se há handler específico
         
         console.log(`🔍 Condições para restart automático:`);
         console.log(`   - isTranscriptionActive: ${isTranscriptionActive}`);
         console.log(`   - ws.readyState === WebSocket.OPEN: ${ws.readyState === WebSocket.OPEN}`);
         console.log(`   - timeSinceLastRestart >= MIN_RESTART_INTERVAL: ${timeSinceLastRestart}ms >= ${MIN_RESTART_INTERVAL}ms = ${timeSinceLastRestart >= MIN_RESTART_INTERVAL}`);
         console.log(`   - streamDuration >= 1000: ${streamDuration}ms >= 1000ms = ${streamDuration >= 1000}`);
+        console.log(`   - hasSpecificHandler: ${hasSpecificHandler}`);
         console.log(`   - shouldRestart: ${shouldRestart}`);
         
         if (shouldRestart) {
@@ -178,6 +184,8 @@ wss.on('connection', (ws) => {
           console.log(`⚠️ Restart automático bloqueado - muito frequente (${timeSinceLastRestart}ms < ${MIN_RESTART_INTERVAL}ms)`);
         } else if (streamDuration < 1000) {
           console.log(`⚠️ Restart automático bloqueado - stream muito curto (${streamDuration}ms)`);
+        } else if (hasSpecificHandler) {
+          console.log(`⚠️ Restart automático bloqueado - handler específico ativo`);
         }
       });
 
@@ -190,9 +198,32 @@ wss.on('connection', (ws) => {
     
     restartTimeout = setTimeout(() => {
       if (ws.readyState === WebSocket.OPEN && isTranscriptionActive) {
-        console.log('⏰ Reiniciando stream por limite de tempo (58s) - transcrição contínua');
-        lastRestartTime = Date.now();
-        startRecognitionStream();
+        console.log('⏰ Limite de tempo atingido (58s) - forçando resultados finais antes de reiniciar');
+        
+        // 🎯 CORREÇÃO: Forçar resultados finais antes do restart
+        if (recognizeStream && !recognizeStream.destroyed && !recognizeStream.writableEnded) {
+          // Aguardar evento 'end' para reiniciar após processar resultados finais
+          const handleTimeLimitEnd = () => {
+            console.log('✅ Resultados finais processados após limite de tempo - reiniciando stream');
+            recognizeStream.removeListener('end', handleTimeLimitEnd);
+            
+            if (ws.readyState === WebSocket.OPEN && isTranscriptionActive) {
+              lastRestartTime = Date.now();
+              startRecognitionStream();
+            }
+          };
+          
+          recognizeStream.once('end', handleTimeLimitEnd);
+          
+          // Encerrar stream limpo para forçar resultados finais
+          console.log('🔄 Encerrando stream atual para forçar processamento de resultados finais');
+          recognizeStream.end();
+        } else {
+          // Stream já foi encerrado, reiniciar diretamente
+          console.log('🔄 Stream já encerrado - reiniciando diretamente');
+          lastRestartTime = Date.now();
+          startRecognitionStream();
+        }
       }
     }, STREAM_LIMIT_MS);
   }

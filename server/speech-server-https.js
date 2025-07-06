@@ -208,12 +208,17 @@ wss.on('connection', (ws) => {
       .on('end', () => {
         console.log('📝 Stream de reconhecimento finalizado');
         
+        // 🎯 MELHORIA: Verificar se já existe um listener específico (timeout ou force-finalize)
+        const hasSpecificHandler = recognizeStream && recognizeStream.listenerCount('end') > 1;
+        
         // 🔄 TRANSCRIÇÃO CONTÍNUA: Reiniciar automaticamente se ainda estiver ativo
-        if (isTranscriptionActive && ws.readyState === WebSocket.OPEN) {
+        if (isTranscriptionActive && ws.readyState === WebSocket.OPEN && !hasSpecificHandler) {
           console.log('🔄 Reiniciando stream automaticamente para continuar transcrição contínua');
           setTimeout(() => {
             startRecognitionStream();
           }, 100); // Pequeno delay para evitar problemas
+        } else if (hasSpecificHandler) {
+          console.log('⚠️ Restart automático bloqueado - handler específico ativo');
         }
       });
 
@@ -226,8 +231,32 @@ wss.on('connection', (ws) => {
     
     restartTimeout = setTimeout(() => {
       if (ws.readyState === WebSocket.OPEN && isTranscriptionActive) {
-        console.log('🔄 Reiniciando stream para evitar limite de 60s (transcrição contínua)');
-        startRecognitionStream();
+        console.log('⏰ Limite de tempo atingido (55s) - forçando resultados finais antes de reiniciar');
+        
+        // 🎯 CORREÇÃO: Forçar resultados finais antes do restart
+        if (recognizeStream && !recognizeStream.destroyed && !recognizeStream.writableEnded) {
+          // Aguardar evento 'end' para reiniciar após processar resultados finais
+          const handleTimeLimitEnd = () => {
+            console.log('✅ Resultados finais processados após limite de tempo - reiniciando stream');
+            recognizeStream.removeListener('end', handleTimeLimitEnd);
+            
+            if (ws.readyState === WebSocket.OPEN && isTranscriptionActive) {
+              setTimeout(() => {
+                startRecognitionStream();
+              }, 100);
+            }
+          };
+          
+          recognizeStream.once('end', handleTimeLimitEnd);
+          
+          // Encerrar stream limpo para forçar resultados finais
+          console.log('🔄 Encerrando stream atual para forçar processamento de resultados finais');
+          recognizeStream.end();
+        } else {
+          // Stream já foi encerrado, reiniciar diretamente
+          console.log('🔄 Stream já encerrado - reiniciando diretamente');
+          startRecognitionStream();
+        }
       }
     }, STREAM_LIMIT_MS);
   }
