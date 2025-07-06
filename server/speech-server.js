@@ -293,7 +293,50 @@ wss.on('connection', (ws) => {
           console.log('🔍 Estado atual - recognizeStream existe:', !!recognizeStream);
           console.log('🔍 Estado atual - isTranscriptionActive:', isTranscriptionActive);
           
+          // Se transcrição está ativa mas stream não existe (em restart), aguardar
+          if (isTranscriptionActive && ws.readyState === WebSocket.OPEN && !recognizeStream) {
+            console.log('⏳ Stream em processo de restart, aguardando...');
+            
+            // Aguardar até 2 segundos pelo stream
+            let waitCount = 0;
+            const maxWait = 20; // 20 * 100ms = 2 segundos
+            
+            const waitForStream = setInterval(() => {
+              waitCount++;
+              
+              if (recognizeStream) {
+                clearInterval(waitForStream);
+                console.log('✅ Stream disponível, processando force-finalize');
+                // Processar force-finalize normalmente
+                processForceFinalize();
+              } else if (waitCount >= maxWait) {
+                clearInterval(waitForStream);
+                console.log('⚠️ Timeout aguardando stream');
+                ws.send(JSON.stringify({
+                  type: 'force-finalize-error',
+                  message: 'Stream não disponível após timeout'
+                }));
+              }
+            }, 100);
+            
+            break;
+          }
+          
           if (isTranscriptionActive && ws.readyState === WebSocket.OPEN && recognizeStream) {
+            processForceFinalize();
+          } else {
+            console.log('⚠️ Condições não atendidas para force-finalize');
+            console.log('   - isTranscriptionActive:', isTranscriptionActive);
+            console.log('   - ws.readyState === WebSocket.OPEN:', ws.readyState === WebSocket.OPEN);
+            console.log('   - recognizeStream existe:', !!recognizeStream);
+            
+            ws.send(JSON.stringify({
+              type: 'force-finalize-error',
+              message: 'Condições não atendidas para forçar finalização'
+            }));
+          }
+          
+          function processForceFinalize() {
             // Enviar confirmação para frontend
             ws.send(JSON.stringify({
               type: 'force-finalize-started',
@@ -349,17 +392,6 @@ wss.on('connection', (ws) => {
               // Em caso de erro, disparar handler para continuar o processo
               handleForcedEnd();
             }
-            
-          } else {
-            console.log('⚠️ Condições não atendidas para force-finalize');
-            console.log('   - isTranscriptionActive:', isTranscriptionActive);
-            console.log('   - ws.readyState === WebSocket.OPEN:', ws.readyState === WebSocket.OPEN);
-            console.log('   - recognizeStream existe:', !!recognizeStream);
-            
-            ws.send(JSON.stringify({
-              type: 'force-finalize-error',
-              message: 'Condições não atendidas para forçar finalização'
-            }));
           }
           break;
       }

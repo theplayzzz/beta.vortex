@@ -5,7 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 interface TranscriptionState {
   transcript: string;
   interimTranscript: string;
-  isListening: boolean;
+  isListening: boolean; // Estado técnico: stream ativo no servidor
+  userIsTranscribing: boolean; // Estado de UI: usuário iniciou transcrição
   isConnected: boolean;
   error: string | null;
   confidence: number;
@@ -20,6 +21,7 @@ export const useGoogleCloudTranscription = () => {
     transcript: "",
     interimTranscript: "",
     isListening: false,
+    userIsTranscribing: false,
     isConnected: false,
     error: null,
     confidence: 0,
@@ -336,14 +338,19 @@ export const useGoogleCloudTranscription = () => {
       // Iniciar transcrição no servidor
       wsRef.current.send(JSON.stringify({ type: 'start' }));
       
-      setState(prev => ({ ...prev, isListening: true }));
+      setState(prev => ({ 
+        ...prev, 
+        isListening: true,
+        userIsTranscribing: true // UI sempre mostra que está transcrevendo
+      }));
       console.log('🚀 Transcrição iniciada');
     } catch (error) {
       console.error('❌ Erro ao iniciar transcrição:', error);
       setState(prev => ({ 
         ...prev, 
         error: 'Erro ao iniciar transcrição',
-        isListening: false 
+        isListening: false,
+        userIsTranscribing: false 
       }));
     }
   }, [setupAudioCapture]);
@@ -391,6 +398,7 @@ export const useGoogleCloudTranscription = () => {
       setState(prev => ({ 
         ...prev, 
         isListening: false,
+        userIsTranscribing: false, // Usuário parou a transcrição
         micLevel: 0,
         screenLevel: 0 
       }));
@@ -420,6 +428,7 @@ export const useGoogleCloudTranscription = () => {
   // Forçar finalização de transcrições interim para análise
   const forceFinalize = useCallback(() => {
     console.log('🔍 forceFinalize chamado - verificando condições...');
+    console.log('🔍 Estado atual userIsTranscribing:', state.userIsTranscribing);
     console.log('🔍 Estado atual isListening:', state.isListening);
     
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
@@ -427,15 +436,16 @@ export const useGoogleCloudTranscription = () => {
       return Promise.reject(new Error('WebSocket não conectado'));
     }
     
-    if (!state.isListening) {
+    if (!state.userIsTranscribing) {
       console.warn('⚠️ Transcrição não está ativa para forçar finalização');
       return Promise.reject(new Error('Transcrição não está ativa'));
     }
 
     console.log('🧠 Enviando comando force-finalize para servidor');
     console.log('📡 Estado WebSocket:', wsRef.current.readyState);
-    console.log('🎙️ Transcrição ativa:', state.isListening);
-    console.log('🔍 forceFinalize NÃO deve modificar isListening');
+    console.log('🎙️ userIsTranscribing:', state.userIsTranscribing);
+    console.log('🔍 isListening:', state.isListening);
+    console.log('💡 Force-finalize funcionará mesmo se stream estiver em restart');
     
     // Marcar que força finalização está ativa
     setState(prev => ({ ...prev, isForceFinalizingActive: true }));
@@ -473,7 +483,7 @@ export const useGoogleCloudTranscription = () => {
         reject(new Error('WebSocket não está mais conectado'));
       }
     });
-  }, [state.isListening]);
+  }, [state.userIsTranscribing]);
 
   // Conectar ao WebSocket na inicialização
   useEffect(() => {
@@ -497,6 +507,7 @@ export const useGoogleCloudTranscription = () => {
     transcript: state.transcript,
     interimTranscript: state.interimTranscript,
     isListening: state.isListening,
+    userIsTranscribing: state.userIsTranscribing,
     isConnected: state.isConnected,
     error: state.error,
     confidence: state.confidence,

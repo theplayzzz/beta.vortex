@@ -75,6 +75,7 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
     transcript,
     interimTranscript,
     isListening,
+    userIsTranscribing,
     isConnected,
     error,
     confidence,
@@ -401,7 +402,7 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
       return;
     }
 
-    if (!isListening) {
+    if (!userIsTranscribing) {
       setNewFieldText('❌ Erro: Transcrição não está ativa');
       return;
     }
@@ -424,12 +425,49 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
       console.log('📤 Enviando comando force-finalize');
       await forceFinalize();
       
-      // 2. Aguardar tempo mínimo para garantir que evento 'end' foi processado
-      console.log('⏳ Aguardando evento end e restart do stream...');
-      setNewFieldText('⏳ Stream reiniciado - coletando contexto...');
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // 2. Aguardar a transcrição interim ser finalizada
+      console.log('⏳ Aguardando finalização da transcrição...');
+      setNewFieldText('⏳ Finalizando transcrição em andamento...');
       
-      // 3. Coletar contexto atual (agora deve estar finalizado)
+      // Guardar o estado atual do interim para comparação
+      const interimInicial = interimTranscript;
+      let tentativas = 0;
+      const maxTentativas = 30; // 3 segundos no máximo (30 * 100ms)
+      
+      // Aguardar até que:
+      // - interimTranscript seja limpo (transcrição final recebida) OU
+      // - interimTranscript não mude por 1 segundo (não há mais fala) OU
+      // - timeout máximo seja atingido
+      let interimAnterior = interimTranscript;
+      let contagemSemMudanca = 0;
+      
+      while (tentativas < maxTentativas) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        tentativas++;
+        
+        // Se interim foi limpo, transcrição final foi recebida
+        if (!interimTranscript && interimInicial) {
+          console.log('✅ Transcrição final recebida (interim limpo)');
+          break;
+        }
+        
+        // Se interim não mudou por 10 tentativas (1 segundo), assumir que acabou
+        if (interimTranscript === interimAnterior) {
+          contagemSemMudanca++;
+          if (contagemSemMudanca >= 10) {
+            console.log('⏱️ Transcrição estável por 1 segundo');
+            break;
+          }
+        } else {
+          contagemSemMudanca = 0;
+          interimAnterior = interimTranscript;
+        }
+      }
+      
+      console.log(`🔍 Aguardou ${tentativas * 100}ms pela finalização`);
+      
+      // 3. Incluir qualquer transcrição interim restante no contexto final
+      // Isso garante que nada seja perdido mesmo se ainda houver interim
       const contextoCompleto = transcript + (interimTranscript ? ' ' + interimTranscript : '');
       
       if (!contextoCompleto.trim()) {
@@ -524,22 +562,22 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
                 <div className="grid grid-cols-2 gap-2">
                   {/* Botão Principal - Iniciar/Parar */}
                   <button
-                    onClick={isListening ? stopListening : startListening}
+                    onClick={userIsTranscribing ? stopListening : startListening}
                     disabled={!isConnected}
                     className="px-3 py-2 rounded-lg font-medium transition-all duration-200 text-xs"
                     style={{
-                      backgroundColor: isListening ? '#ef4444' : ((!isConnected) ? 'rgba(55, 65, 81, 0.5)' : 'var(--sgbus-green)'),
-                      color: isListening ? 'white' : ((!isConnected) ? '#9ca3af' : 'var(--night)'),
+                      backgroundColor: userIsTranscribing ? '#ef4444' : ((!isConnected) ? 'rgba(55, 65, 81, 0.5)' : 'var(--sgbus-green)'),
+                      color: userIsTranscribing ? 'white' : ((!isConnected) ? '#9ca3af' : 'var(--night)'),
                       cursor: (!isConnected) ? 'not-allowed' : 'pointer'
                     }}
                   >
-                    {isListening ? '⏹ PARAR' : '▶ INICIAR'}
+                    {userIsTranscribing ? '⏹ PARAR' : '▶ INICIAR'}
                   </button>
 
                   {/* Análise de Contexto */}
                   <button
                     onClick={handleContextAnalysis}
-                    disabled={isAnalyzing || !isConnected || !isListening}
+                    disabled={isAnalyzing || !isConnected || !userIsTranscribing}
                     className="px-3 py-2 rounded-lg font-medium transition-all duration-200 text-xs"
                     style={{
                       backgroundColor: isAnalyzing 
@@ -547,8 +585,8 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
                         : 'rgba(207, 198, 254, 0.2)',
                       border: `1px solid ${isAnalyzing ? 'var(--sgbus-green)' : 'var(--periwinkle)'}`,
                       color: isAnalyzing ? 'var(--sgbus-green)' : 'var(--periwinkle)',
-                      cursor: (isAnalyzing || !isConnected || !isListening) ? 'not-allowed' : 'pointer',
-                      opacity: (isAnalyzing || !isConnected || !isListening) ? 0.6 : 1
+                      cursor: (isAnalyzing || !isConnected || !userIsTranscribing) ? 'not-allowed' : 'pointer',
+                      opacity: (isAnalyzing || !isConnected || !userIsTranscribing) ? 0.6 : 1
                     }}
                   >
                     {isAnalyzing ? '🔄 ANALISANDO' : '🧠 ANÁLISE'}
@@ -614,7 +652,7 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
                     <span style={{ color: isMicrophoneEnabled ? 'var(--sgbus-green)' : '#ef4444' }}>
                       {isMicrophoneEnabled ? 'ATIVO' : 'DESLIGADO'}
                     </span>
-                    {!isMicrophoneEnabled && isListening && (
+                    {!isMicrophoneEnabled && userIsTranscribing && (
                       <span style={{ color: 'var(--periwinkle)' }}>
                         • Apenas tela sendo capturada
                       </span>
@@ -702,7 +740,7 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
                   )}
                   
                   {/* Estados de placeholder */}
-                  {isListening && !transcript && !interimTranscript && (
+                  {userIsTranscribing && !transcript && !interimTranscript && (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center">
                         <div className="w-6 h-6 mx-auto mb-2 rounded-full animate-pulse" style={{ backgroundColor: 'var(--sgbus-green)' }} />
@@ -718,7 +756,7 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
                     </div>
                   )}
                   
-                  {!isListening && !transcript && (
+                  {!userIsTranscribing && !transcript && (
                     <div className="flex items-center justify-center h-full">
                       <p className="text-sm italic text-center" style={{ color: 'var(--periwinkle)' }}>
                         Clique em &quot;INICIAR&quot; para começar a transcrição
