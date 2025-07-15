@@ -185,7 +185,7 @@ const DeepgramTranscriptionDisplay: React.FC = () => {
     if (isAutoScrollEnabled && (transcript || interimTranscript)) {
       setTimeout(scrollToBottom, 50);
     }
-  }, [transcript, interimTranscript, isAutoScrollEnabled]);
+  }, [transcript, interimTranscript, isAutoScrollEnabled, scrollToBottom]);
 
   // Effect para detectar scroll programático vs manual
   useEffect(() => {
@@ -215,7 +215,7 @@ const DeepgramTranscriptionDisplay: React.FC = () => {
       container.removeEventListener('scroll', handleScroll);
       clearTimeout(scrollTimer);
     };
-  }, []);
+  }, [handleScroll]);
 
   // Reabilita auto-scroll quando limpa a transcrição
   useEffect(() => {
@@ -814,7 +814,9 @@ const DeepgramTranscriptionDisplay: React.FC = () => {
                     <div className="text-center">
                       <div className="text-3xl mb-3" style={{ color: 'var(--periwinkle)' }}>📋</div>
                       <p className="text-sm" style={{ color: 'var(--periwinkle)' }}>
-                        Histórico de análises aparecerá aqui
+                        O histórico de análise contextual aparecerá aqui. Use o botão 
+                        <span className="font-bold mx-1" style={{ color: 'var(--seasalt)' }}>"Analisar Contexto"</span> 
+                        para obter insights sobre a transcrição.
                       </p>
                     </div>
                   </div>
