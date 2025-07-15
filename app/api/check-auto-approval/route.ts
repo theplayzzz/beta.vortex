@@ -17,11 +17,11 @@ export async function POST(req: NextRequest) {
     
     // Verificar se é chamada interna do middleware
     const body = await req.json().catch(() => ({}))
-    const authHeader = req.headers.get('Authorization')
+    const isInternalCall = req.headers.get('X-Internal-Call') === 'true'
     
-    if (body.internal && authHeader?.startsWith('Bearer ')) {
+    if (isInternalCall && body.clerkId) {
       // Chamada interna do middleware
-      userId = authHeader.replace('Bearer ', '')
+      userId = body.clerkId
       console.log('[API_AUTO_APPROVAL] Internal call from middleware for user:', userId)
     } else {
       // Chamada normal do frontend
@@ -37,7 +37,14 @@ export async function POST(req: NextRequest) {
     }
 
     // 🛡️ NÃO AGUARDAR: Fire and forget para não bloquear resposta
-    triggerAutoApprovalCheck(userId)
+    if (userId) {
+      triggerAutoApprovalCheck(userId)
+    } else {
+      return NextResponse.json({ 
+        success: false,
+        error: 'User ID not found' 
+      }, { status: 400 })
+    }
     
     return NextResponse.json({ 
       success: true, 

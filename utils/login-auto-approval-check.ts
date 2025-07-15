@@ -119,4 +119,28 @@ export function triggerAutoApprovalCheck(clerkId: string): void {
   checkPendingUserAutoApproval(clerkId).catch(error => {
     console.error('[LOGIN_AUTO_APPROVAL] Background check failed:', error)
   })
+}
+
+/**
+ * Versão otimizada para Edge Runtime (middleware)
+ * Faz uma chamada fetch interna simples sem aguardar resposta
+ * 
+ * @param clerkId ID do usuário no Clerk
+ * @param baseUrl URL base da aplicação
+ */
+export function triggerAutoApprovalCheckEdge(clerkId: string, baseUrl: string): void {
+  // Fire and forget - não bloqueia middleware
+  fetch(`${baseUrl}/api/check-auto-approval`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Internal-Call': 'true', // Identificar como chamada interna
+    },
+    body: JSON.stringify({ 
+      clerkId: clerkId,
+      internal: true 
+    })
+  }).catch(error => {
+    console.error('[MIDDLEWARE] Auto approval fetch failed:', error)
+  })
 } 
