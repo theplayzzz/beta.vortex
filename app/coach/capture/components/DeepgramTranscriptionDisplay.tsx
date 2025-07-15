@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useDeepgramTranscription } from '../lib/useDeepgramTranscription';
 
 interface AudioLevelBarProps {
@@ -156,21 +156,21 @@ const DeepgramTranscriptionDisplay: React.FC = () => {
   }, []);
 
   // Função para verificar se está no final do scroll
-  const isAtBottom = () => {
+  const isAtBottom = useCallback(() => {
     if (!scrollContainerRef.current) return false;
     const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
     return scrollTop + clientHeight >= scrollHeight - 10;
-  };
+  }, []);
 
   // Função para fazer scroll para baixo
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     if (scrollContainerRef.current && isAutoScrollEnabled) {
       scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
     }
-  };
+  }, [isAutoScrollEnabled]);
 
   // Handler do evento de scroll
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     if (!scrollContainerRef.current || isUserScrolling) return;
     
     if (!isAtBottom()) {
@@ -178,7 +178,7 @@ const DeepgramTranscriptionDisplay: React.FC = () => {
     } else {
       setIsAutoScrollEnabled(true);
     }
-  };
+  }, [isUserScrolling, isAtBottom]);
 
   // Effect para scroll automático quando há novo conteúdo
   useEffect(() => {
@@ -765,7 +765,7 @@ const DeepgramTranscriptionDisplay: React.FC = () => {
                   <textarea
                     value={newFieldText}
                     onChange={(e) => setNewFieldText(e.target.value)}
-                    placeholder="Resultado da análise aparecerá aqui..."
+                    placeholder="O resultado da análise aparecerá aqui..."
                     className="w-full h-16 p-3 rounded-lg text-sm resize-none leading-relaxed"
                     style={{
                       backgroundColor: 'var(--night)',
@@ -814,8 +814,8 @@ const DeepgramTranscriptionDisplay: React.FC = () => {
                     <div className="text-center">
                       <div className="text-3xl mb-3" style={{ color: 'var(--periwinkle)' }}>📋</div>
                       <p className="text-sm" style={{ color: 'var(--periwinkle)' }}>
-                        O histórico de análise contextual aparecerá aqui. Use o botão 
-                        <span className="font-bold mx-1" style={{ color: 'var(--seasalt)' }}>"Analisar Contexto"</span> 
+                        O histórico de análise contextual aparecerá aqui. Use o botão
+                        <span className="font-bold mx-1" style={{ color: 'var(--seasalt)' }}>&quot;Analisar Contexto&quot;</span> 
                         para obter insights sobre a transcrição.
                       </p>
                     </div>
@@ -863,7 +863,7 @@ const DeepgramTranscriptionDisplay: React.FC = () => {
                           backgroundColor: 'rgba(249, 251, 252, 0.05)'
                         }}
                       >
-                        "{analysis.contexto}"
+                        &quot;{analysis.contexto}&quot;
                       </div>
                     </div>
 
