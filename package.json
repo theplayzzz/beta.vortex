@@ -33,13 +33,14 @@
     "speech-server-fast": "node server/speech-server-advanced.js FAST",
     "speech-server-balanced": "node server/speech-server-advanced.js BALANCED",
     "speech-server-precise": "node server/speech-server-advanced.js PRECISE",
-    "test-profiles": "node scripts/test-speech-profiles.js",
-    "test-server": "node server/test-server.js"
+    "speech-deepgram": "node server/deepgram-server-updated.js",
+    "test-profiles": "node scripts/test-speech-profiles.js"
   },
   "dependencies": {
     "@clerk/backend": "^1.14.1",
     "@clerk/nextjs": "^5.6.2",
     "@clerk/themes": "^2.2.46",
+    "@deepgram/sdk": "^4.9.1",
     "@google-cloud/speech": "^6.7.1",
     "@heroicons/react": "^2.0.16",
     "@hookform/resolvers": "^5.0.1",
@@ -72,6 +73,7 @@
     "clsx": "^2.0.0",
     "commander": "^13.1.0",
     "concurrently": "^7.6.0",
+    "cross-fetch": "^4.1.0",
     "dompurify": "^3.2.6",
     "dotenv": "^16.5.0",
     "eslint": "^8.57.0",

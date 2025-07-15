@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect, useState } from 'react';
-import { useGoogleCloudTranscription } from '../lib/useGoogleCloudTranscription';
+import { useDeepgramTranscription } from '../lib/useDeepgramTranscription';
 
 interface AudioLevelBarProps {
   level: number;
@@ -70,7 +70,7 @@ const CompactAudioLevelBar: React.FC<AudioLevelBarProps> = ({ level, label, colo
   );
 };
 
-const GoogleCloudTranscriptionDisplay: React.FC = () => {
+const DeepgramTranscriptionDisplay: React.FC = () => {
   const {
     transcript,
     interimTranscript,
@@ -82,13 +82,16 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
     micLevel,
     screenLevel,
     isMicrophoneEnabled,
+    provider,
+    model,
+    stats,
     startListening,
     stopListening,
     clearTranscript,
     connectWebSocket,
     toggleMicrophoneCapture,
     forceFinalize,
-  } = useGoogleCloudTranscription();
+  } = useDeepgramTranscription();
 
   // Refs e estados para controle do scroll automático
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -221,7 +224,7 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
     }
   }, [transcript, interimTranscript]);
 
-  // Função para toggle do microfone - agora usa a função real do hook
+  // Função para toggle do microfone
   const toggleMicrophone = () => {
     toggleMicrophoneCapture(!isMicrophoneEnabled);
   };
@@ -271,45 +274,15 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
       // Se não encontrou nenhum campo conhecido, retornar o valor do primeiro campo
       const firstValue = Object.values(parsed)[0];
       if (typeof firstValue === 'string') {
-        let cleanedValue = firstValue
-          .replace(/```html\s*/g, '')  // Remove ```html
-          .replace(/```\s*/g, '')      // Remove ``` no final
-          .replace(/^```.*$/gm, '')    // Remove qualquer linha que comece com ```
-          .trim();
-        
-        if (cleanedValue.includes('<') && cleanedValue.includes('>')) {
-          return cleanedValue.replace(/\\"/g, '"').trim();
-        } else {
-          return cleanedValue.replace(/\\n/g, '\n').replace(/\n\n+/g, '\n\n').trim();
-        }
+        return firstValue;
       }
       
-      // Se não conseguiu extrair, retornar como texto
-      return rawResponse;
+      return 'Resposta não encontrada na estrutura esperada';
     } catch (error) {
-      console.log('⚠️ Erro ao fazer parse do JSON, tratando como texto simples');
+      console.error('❌ Erro ao processar resposta:', error);
       
-      // Se não é JSON válido, tentar extrair texto entre aspas
-      const textMatch = rawResponse.match(/"([^"]*(?:\\.[^"]*)*)"/);
-      if (textMatch && textMatch[1]) {
-        const extractedText = textMatch[1]
-          .replace(/```html\s*/g, '')  // Remove ```html
-          .replace(/```\s*/g, '')      // Remove ``` no final
-          .replace(/^```.*$/gm, '')    // Remove qualquer linha que comece com ```
-          .trim();
-        
-        return extractedText
-          .replace(/\\n/g, '\n')
-          .replace(/\\"/g, '"')
-          .replace(/\n\n+/g, '\n\n')
-          .trim();
-      }
-      
-      // Último recurso: retornar como texto formatado
+      // Se não é JSON, retornar como texto simples
       return rawResponse
-        .replace(/```html\s*/g, '')  // Remove ```html
-        .replace(/```\s*/g, '')      // Remove ``` no final
-        .replace(/^```.*$/gm, '')    // Remove qualquer linha que comece com ```
         .replace(/\\n/g, '\n')
         .replace(/\n\n+/g, '\n\n')
         .trim();
@@ -364,37 +337,23 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
     ));
   };
 
-  // Função para envio ao webhook de análise
+  // Função para enviar contexto para webhook
   const sendToWebhook = async (contexto: string) => {
     try {
-      const webhookUrl = process.env.NEXT_PUBLIC_ANALYSIS_WEBHOOK_URL;
-      if (!webhookUrl) {
-        console.error('❌ URL do webhook de análise não configurada. Verifique a variável de ambiente NEXT_PUBLIC_ANALYSIS_WEBHOOK_URL.');
-        throw new Error('Webhook URL not configured');
-      }
-
-      console.log('📡 Enviando contexto para webhook...');
-      
-      const response = await fetch(webhookUrl, {
+      const response = await fetch('/api/analyze-context', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contexto: contexto,
-          timestamp: new Date().toISOString(),
-          source: 'google-cloud-transcription'
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contexto })
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Erro HTTP: ${response.status}`);
       }
       
-      const data = await response.text();
-      console.log('✅ Resposta do webhook:', data);
+      const responseText = await response.text();
+      console.log('🔍 Resposta do webhook:', responseText);
       
-      return data;
+      return responseText;
     } catch (error) {
       console.error('❌ Erro ao enviar para webhook:', error);
       throw error;
@@ -546,6 +505,16 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
                   <span className="text-xs font-medium" style={{ color: 'var(--seasalt)' }}>
                     {isConnected ? 'CONECTADO' : 'DESCONECTADO'}
                   </span>
+                  {/* Provider e Modelo */}
+                  <div className="flex items-center space-x-2 ml-4">
+                    <div className="h-3 w-px" style={{ backgroundColor: 'rgba(249, 251, 252, 0.2)' }} />
+                    <span className="text-xs font-medium" style={{ color: 'var(--periwinkle)' }}>
+                      {provider?.toUpperCase() || 'DEEPGRAM'}
+                    </span>
+                    <span className="text-xs font-mono" style={{ color: 'var(--seasalt)' }}>
+                      {model?.toUpperCase() || 'NOVA-2'}
+                    </span>
+                  </div>
                 </div>
                 
                 {!isConnected && (
@@ -563,112 +532,94 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
               </div>
 
               {/* Grid de Controles Reorganizado */}
-              <div className="space-y-2 mb-4">
-                {/* Primeira linha: Gravação + Análise */}
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Botão Principal - Iniciar/Parar */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                {/* Controles Principais */}
+                <div className="space-y-2">
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={userIsTranscribing ? stopListening : startListening}
+                      disabled={!isConnected}
+                      className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50"
+                      style={{
+                        backgroundColor: userIsTranscribing ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 233, 76, 0.2)',
+                        color: userIsTranscribing ? '#ef4444' : 'var(--sgbus-green)',
+                        border: userIsTranscribing ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(107, 233, 76, 0.3)'
+                      }}
+                    >
+                      {userIsTranscribing ? '⏹️ PARAR' : '🎙️ INICIAR'}
+                    </button>
+                    
+                    <button
+                      onClick={clearTranscript}
+                      className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                      style={{
+                        backgroundColor: 'rgba(207, 198, 254, 0.2)',
+                        color: 'var(--periwinkle)',
+                        border: '1px solid rgba(207, 198, 254, 0.3)'
+                      }}
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                  
                   <button
-                    onClick={userIsTranscribing ? stopListening : startListening}
-                    disabled={!isConnected}
-                    className="px-3 py-2 rounded-lg font-medium transition-all duration-200 text-xs"
+                    onClick={toggleMicrophone}
+                    className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200"
                     style={{
-                      backgroundColor: userIsTranscribing ? '#ef4444' : ((!isConnected) ? 'rgba(55, 65, 81, 0.5)' : 'var(--sgbus-green)'),
-                      color: userIsTranscribing ? 'white' : ((!isConnected) ? '#9ca3af' : 'var(--night)'),
-                      cursor: (!isConnected) ? 'not-allowed' : 'pointer'
+                      backgroundColor: isMicrophoneEnabled ? 'rgba(107, 233, 76, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                      color: isMicrophoneEnabled ? 'var(--sgbus-green)' : '#ef4444',
+                      border: isMicrophoneEnabled ? '1px solid rgba(107, 233, 76, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)'
                     }}
                   >
-                    {userIsTranscribing ? '⏹ PARAR' : '▶ INICIAR'}
-                  </button>
-
-                  {/* Análise de Contexto */}
-                  <button
-                    onClick={handleContextAnalysis}
-                    disabled={isAnalyzing || !isConnected || !userIsTranscribing}
-                    className="px-3 py-2 rounded-lg font-medium transition-all duration-200 text-xs"
-                    style={{
-                      backgroundColor: isAnalyzing 
-                        ? 'rgba(107, 233, 76, 0.2)' 
-                        : 'rgba(207, 198, 254, 0.2)',
-                      border: `1px solid ${isAnalyzing ? 'var(--sgbus-green)' : 'var(--periwinkle)'}`,
-                      color: isAnalyzing ? 'var(--sgbus-green)' : 'var(--periwinkle)',
-                      cursor: (isAnalyzing || !isConnected || !userIsTranscribing) ? 'not-allowed' : 'pointer',
-                      opacity: (isAnalyzing || !isConnected || !userIsTranscribing) ? 0.6 : 1
-                    }}
-                  >
-                    {isAnalyzing ? '🔄 ANALISANDO' : '🧠 ANÁLISE'}
+                    {isMicrophoneEnabled ? '🎙️ MIC ON' : '🎙️ MIC OFF'}
                   </button>
                 </div>
 
-                {/* Segunda linha: Microfone + Limpar */}
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Toggle Microfone - Agora funcional */}
-                  <button
-                    onClick={toggleMicrophone}
-                    className="px-3 py-2 rounded-lg font-medium transition-all duration-200 text-xs"
-                    style={{
-                      backgroundColor: isMicrophoneEnabled ? 'var(--sgbus-green)' : 'rgba(239, 68, 68, 0.2)',
-                      border: `1px solid ${isMicrophoneEnabled ? 'var(--sgbus-green)' : '#ef4444'}`,
-                      color: isMicrophoneEnabled ? 'var(--night)' : '#ef4444'
-                    }}
-                  >
-                    🎙 {isMicrophoneEnabled ? 'ON' : 'OFF'}
-                  </button>
-
-                  {/* Limpar */}
-                  <button
-                    onClick={clearTranscript}
-                    className="px-3 py-2 rounded-lg font-medium transition-all duration-200 text-xs"
-                    style={{
-                      backgroundColor: 'rgba(249, 251, 252, 0.1)',
-                      border: '1px solid rgba(249, 251, 252, 0.2)',
-                      color: 'var(--seasalt)'
-                    }}
-                  >
-                    🗑 LIMPAR
-                  </button>
+                {/* Níveis de Áudio */}
+                <div className="space-y-2">
+                  <CompactAudioLevelBar level={micLevel} label="MIC" color="blue" />
+                  <CompactAudioLevelBar level={screenLevel} label="TELA" color="green" />
                 </div>
               </div>
 
-              {/* Níveis de Áudio - SEMPRE VISÍVEL COM ESPAÇO RESERVADO */}
-              <div className="mt-3" style={{ height: '68px' }}>
-                <div className="mb-2">
-                  <h4 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--periwinkle)' }}>
-                    Níveis de Áudio
-                  </h4>
+              {/* Estatísticas Deepgram */}
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <div className="bg-opacity-50 p-1.5 rounded" style={{ backgroundColor: 'rgba(249, 251, 252, 0.05)' }}>
+                  <div className="text-xs font-mono" style={{ color: 'var(--seasalt)' }}>
+                    {stats.finalResults}
+                  </div>
+                  <div className="text-xs" style={{ color: 'var(--periwinkle)' }}>
+                    FINAL
+                  </div>
                 </div>
-                
-                {/* Barras lado a lado */}
-                <div className="flex items-center justify-center space-x-6 mb-2">
-                  <CompactAudioLevelBar
-                    level={micLevel}
-                    label="MIC"
-                    color="blue"
-                  />
-                  <CompactAudioLevelBar
-                    level={screenLevel}
-                    label="TELA"
-                    color="green"
-                  />
+                <div className="bg-opacity-50 p-1.5 rounded" style={{ backgroundColor: 'rgba(249, 251, 252, 0.05)' }}>
+                  <div className="text-xs font-mono" style={{ color: 'var(--seasalt)' }}>
+                    {stats.interimResults}
+                  </div>
+                  <div className="text-xs" style={{ color: 'var(--periwinkle)' }}>
+                    INTERIM
+                  </div>
                 </div>
-                
-                {/* Indicador de status do microfone */}
-                <div className="flex items-center justify-center">
-                  <div className="flex items-center space-x-2 text-xs" style={{ color: 'var(--periwinkle)' }}>
-                    <span>Microfone:</span>
-                    <span style={{ color: isMicrophoneEnabled ? 'var(--sgbus-green)' : '#ef4444' }}>
-                      {isMicrophoneEnabled ? 'ATIVO' : 'DESLIGADO'}
-                    </span>
-                    {!isMicrophoneEnabled && userIsTranscribing && (
-                      <span style={{ color: 'var(--periwinkle)' }}>
-                        • Apenas tela sendo capturada
-                      </span>
-                    )}
+                <div className="bg-opacity-50 p-1.5 rounded" style={{ backgroundColor: 'rgba(249, 251, 252, 0.05)' }}>
+                  <div className="text-xs font-mono" style={{ color: 'var(--seasalt)' }}>
+                    {Math.round(stats.duration / 1000)}s
+                  </div>
+                  <div className="text-xs" style={{ color: 'var(--periwinkle)' }}>
+                    TEMPO
+                  </div>
+                </div>
+                <div className="bg-opacity-50 p-1.5 rounded" style={{ backgroundColor: 'rgba(249, 251, 252, 0.05)' }}>
+                  <div className="text-xs font-mono" style={{ color: 'var(--seasalt)' }}>
+                    {confidence > 0 ? Math.round(confidence * 100) : 0}%
+                  </div>
+                  <div className="text-xs" style={{ color: 'var(--periwinkle)' }}>
+                    CONF
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* PARTE INFERIOR - Área de Transcrição */}
+            {/* PARTE INFERIOR - Transcrição - FLEXÍVEL */}
             <div 
               className="p-6 rounded-xl flex-1"
               style={{ 
@@ -680,7 +631,7 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
                 {/* Header da Transcrição */}
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold" style={{ color: 'var(--seasalt)' }}>
-                    Transcrição
+                    Transcrição Deepgram
                   </h3>
                   <div className="flex items-center space-x-4">
                     {confidence > 0 && (
@@ -746,27 +697,14 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
                   )}
                   
                   {/* Estados de placeholder */}
-                  {userIsTranscribing && !transcript && !interimTranscript && (
+                  {!transcript && !interimTranscript && (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center">
-                        <div className="w-6 h-6 mx-auto mb-2 rounded-full animate-pulse" style={{ backgroundColor: 'var(--sgbus-green)' }} />
-                        <p className="text-sm italic" style={{ color: 'var(--periwinkle)' }}>
-                          Aguardando fala...
-                          {!isMicrophoneEnabled && (
-                            <span className="block text-xs mt-1" style={{ color: '#ef4444' }}>
-                              (Microfone desligado - apenas áudio da tela)
-                            </span>
-                          )}
+                        <div className="text-3xl mb-3" style={{ color: 'var(--periwinkle)' }}>🎙️</div>
+                        <p className="text-sm" style={{ color: 'var(--periwinkle)' }}>
+                          {isConnected ? 'Pronto para transcrever' : 'Aguardando conexão...'}
                         </p>
                       </div>
-                    </div>
-                  )}
-                  
-                  {!userIsTranscribing && !transcript && (
-                    <div className="flex items-center justify-center h-full">
-                      <p className="text-sm italic text-center" style={{ color: 'var(--periwinkle)' }}>
-                        Clique em &quot;INICIAR&quot; para começar a transcrição
-                      </p>
                     </div>
                   )}
                 </div>
@@ -806,78 +744,70 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center space-x-3">
-                  {analysisHistory.length > 0 && (
-                    <button
-                      onClick={clearAnalysisHistory}
-                      className="px-2 py-1 rounded text-xs transition-all duration-200"
-                      style={{ 
-                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                        color: '#ef4444',
-                        border: '1px solid rgba(239, 68, 68, 0.3)'
-                      }}
-                    >
-                      🗑️ Limpar
-                    </button>
-                  )}
-                  {isAnalyzing && (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--sgbus-green)' }} />
-                      <span className="text-xs" style={{ color: 'var(--sgbus-green)' }}>
-                        Processando...
-                      </span>
-                    </div>
-                  )}
-                </div>
+                
+                {analysisHistory.length > 0 && (
+                  <button
+                    onClick={clearAnalysisHistory}
+                    className="px-2 py-1 rounded text-xs transition-all duration-200"
+                    style={{ 
+                      backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                      color: '#ef4444'
+                    }}
+                  >
+                    LIMPAR
+                  </button>
+                )}
               </div>
 
-              {/* Campo de entrada atual */}
-              {newFieldText && (
-                <div className="mb-4">
-                  <div 
-                    className="p-4 rounded-xl"
+              {/* Campo de Entrada para Análise */}
+              <div className="space-y-3">
+                <div className="relative">
+                  <textarea
+                    value={newFieldText}
+                    onChange={(e) => setNewFieldText(e.target.value)}
+                    placeholder="Resultado da análise aparecerá aqui..."
+                    className="w-full h-16 p-3 rounded-lg text-sm resize-none leading-relaxed"
                     style={{
                       backgroundColor: 'var(--night)',
                       border: '1px solid rgba(249, 251, 252, 0.1)',
+                      color: 'var(--seasalt)',
+                      fontSize: '14px'
                     }}
-                  >
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--sgbus-green)' }} />
-                      <span className="text-xs font-medium" style={{ color: 'var(--sgbus-green)' }}>
-                        Processando agora...
-                      </span>
+                    readOnly
+                  />
+                  
+                  {/* Indicador de processamento */}
+                  {isAnalyzing && (
+                    <div className="absolute top-2 right-2">
+                      <div className="animate-spin w-4 h-4 border-2 border-transparent border-t-blue-500 rounded-full" />
                     </div>
-                    <div className="text-sm whitespace-pre-wrap" style={{ color: 'var(--seasalt)' }}>
-                      {newFieldText}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Informações sobre a análise */}
-              <div className="flex items-center justify-center flex-1">
-                <div className="text-center">
-                  <div className="text-3xl mb-2" style={{ color: 'var(--periwinkle)' }}>🧠</div>
-                  <p className="text-xs" style={{ color: 'var(--periwinkle)' }}>
-                    Clique em &quot;ANÁLISE&quot; para enviar o contexto atual das transcrições para análise de IA
-                  </p>
-                  {analysisHistory.length > 0 && (
-                    <p className="text-xs mt-2" style={{ color: 'rgba(249, 251, 252, 0.7)' }}>
-                      {analysisHistory.length} análise{analysisHistory.length !== 1 ? 's' : ''} no histórico
-                    </p>
                   )}
                 </div>
+                
+                {/* Botão de Análise */}
+                <button
+                  onClick={handleContextAnalysis}
+                  disabled={!isConnected || !userIsTranscribing || isAnalyzing}
+                  className="w-full px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50"
+                  style={{
+                    backgroundColor: isAnalyzing ? 'rgba(107, 233, 76, 0.2)' : 'rgba(207, 198, 254, 0.2)',
+                    color: isAnalyzing ? 'var(--sgbus-green)' : 'var(--periwinkle)',
+                    border: isAnalyzing ? '1px solid rgba(107, 233, 76, 0.3)' : '1px solid rgba(207, 198, 254, 0.3)'
+                  }}
+                >
+                  {isAnalyzing ? '🔄 ANALISANDO...' : '🧠 ANALISAR CONTEXTO'}
+                </button>
               </div>
             </div>
 
-            {/* PARTE INFERIOR - Histórico de análises */}
+            {/* PARTE INFERIOR - Histórico - FLEXÍVEL */}
             <div 
               className="p-6 rounded-xl flex-1"
-            style={{ 
-              backgroundColor: 'var(--eerie-black)', 
-              border: '1px solid rgba(249, 251, 252, 0.1)'
-            }}
-          >
+              style={{ 
+                backgroundColor: 'var(--eerie-black)', 
+                border: '1px solid rgba(249, 251, 252, 0.1)'
+              }}
+            >
               <div className="h-full overflow-y-auto space-y-4" style={{ scrollBehavior: 'smooth' }}>
                 {analysisHistory.length === 0 && !newFieldText && (
                   <div className="flex items-center justify-center h-full">
@@ -894,8 +824,8 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
                   <div 
                     key={analysis.id}
                     className="p-4 rounded-xl"
-              style={{
-                backgroundColor: 'var(--night)',
+                    style={{
+                      backgroundColor: 'var(--night)',
                       border: `1px solid ${analysis.isProcessing ? 'rgba(107, 233, 76, 0.3)' : 'rgba(249, 251, 252, 0.1)'}`,
                     }}
                   >
@@ -931,7 +861,7 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
                           backgroundColor: 'rgba(249, 251, 252, 0.05)'
                         }}
                       >
-                        &quot;{analysis.contexto}&quot;
+                        "{analysis.contexto}"
                       </div>
                     </div>
 
@@ -985,4 +915,4 @@ const GoogleCloudTranscriptionDisplay: React.FC = () => {
   );
 };
 
-export default GoogleCloudTranscriptionDisplay; 
+export default DeepgramTranscriptionDisplay; 

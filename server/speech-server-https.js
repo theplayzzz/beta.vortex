@@ -119,6 +119,19 @@ const wss = new WebSocket.Server({
 
 console.log('🔐 Servidor HTTPS/WSS de Speech-to-Text iniciado na porta 8080');
 
+// 🛡️ PROTEÇÃO GLOBAL: Prevenir crash do servidor por erros não tratados
+process.on('uncaughtException', (error) => {
+  console.error('💥 Erro não tratado capturado (HTTPS):', error.message);
+  console.error('🔍 Stack trace:', error.stack);
+  console.log('🔄 Servidor HTTPS continua rodando com segurança...');
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🚨 Promise rejeitada não tratada (HTTPS):', reason);
+  console.error('🔍 Promise:', promise);
+  console.log('🔄 Servidor HTTPS continua rodando com segurança...');
+});
+
 wss.on('connection', (ws) => {
   console.log('🔗 Nova conexão WebSocket segura estabelecida');
   
@@ -127,6 +140,14 @@ wss.on('connection', (ws) => {
   const STREAM_LIMIT_MS = 55000; // 55s para ficar dentro do limite de 60s do Google
   let restartTimeout = null;
   let isTranscriptionActive = false; // Controla se a transcrição deve continuar ativa
+  
+  // 🎯 TIMEOUT INTELIGENTE: Monitorar atividade da transcrição
+  let lastTranscriptionTime = Date.now();
+  let lastInterimText = '';
+  let stableTranscriptionCount = 0;
+  const TRANSCRIPTION_STABILITY_THRESHOLD = 3; // 3 repetições = estável
+  const INACTIVITY_TIMEOUT = 8000; // 8s sem mudança = considerar estável
+  const MIN_SAFE_TIMEOUT = 40000; // 40s mínimo antes de considerar timeout (HTTPS mais rápido)
 
   // Configuração do reconhecimento de áudio - ULTRA RÁPIDO
   const audioConfig = {
@@ -174,15 +195,36 @@ wss.on('connection', (ws) => {
           
           // Enviar resultado para o frontend
           if (isFinal) {
-            console.log('✅ Transcrição final:', transcript);
+            console.log('✅ Transcrição final (HTTPS):', transcript);
             console.log('🔄 Stream continua ativo para próxima fala (transcrição contínua)');
+            
+            // 🎯 RESET: Transcrição final gerada - resetar monitoramento
+            lastTranscriptionTime = Date.now();
+            lastInterimText = '';
+            stableTranscriptionCount = 0;
+            
             ws.send(JSON.stringify({
               type: 'final',
               transcript: transcript,
               confidence: confidence
             }));
           } else {
-            console.log('📝 Transcrição interim:', transcript);
+            console.log('📝 Transcrição interim (HTTPS):', transcript);
+            
+            // 🎯 MONITORAMENTO: Detectar estabilidade da transcrição
+            const currentTime = Date.now();
+            
+            if (transcript === lastInterimText) {
+              stableTranscriptionCount++;
+              console.log(`🔍 Transcrição estável HTTPS (${stableTranscriptionCount}/${TRANSCRIPTION_STABILITY_THRESHOLD}): "${transcript.substring(0, 50)}..."`);
+            } else {
+              // Transcrição mudou - resetar contadores
+              lastTranscriptionTime = currentTime;
+              lastInterimText = transcript;
+              stableTranscriptionCount = 0;
+              console.log('🔄 Transcrição mudou (HTTPS) - resetando monitoramento de estabilidade');
+            }
+            
             ws.send(JSON.stringify({
               type: 'interim',
               transcript: transcript,
@@ -229,36 +271,71 @@ wss.on('connection', (ws) => {
       clearTimeout(restartTimeout);
     }
     
-    restartTimeout = setTimeout(() => {
-      if (ws.readyState === WebSocket.OPEN && isTranscriptionActive) {
-        console.log('⏰ Limite de tempo atingido (55s) - forçando resultados finais antes de reiniciar');
-        
-        // 🎯 CORREÇÃO: Forçar resultados finais antes do restart
-        if (recognizeStream && !recognizeStream.destroyed && !recognizeStream.writableEnded) {
-          // Aguardar evento 'end' para reiniciar após processar resultados finais
-          const handleTimeLimitEnd = () => {
-            console.log('✅ Resultados finais processados após limite de tempo - reiniciando stream');
-            recognizeStream.removeListener('end', handleTimeLimitEnd);
-            
-            if (ws.readyState === WebSocket.OPEN && isTranscriptionActive) {
-              setTimeout(() => {
-                startRecognitionStream();
-              }, 100);
-            }
-          };
-          
-          recognizeStream.once('end', handleTimeLimitEnd);
-          
-          // Encerrar stream limpo para forçar resultados finais
-          console.log('🔄 Encerrando stream atual para forçar processamento de resultados finais');
-          recognizeStream.end();
-        } else {
-          // Stream já foi encerrado, reiniciar diretamente
-          console.log('🔄 Stream já encerrado - reiniciando diretamente');
-          startRecognitionStream();
-        }
+    // 🎯 TIMEOUT INTELIGENTE: Verificar periodicamente se deve aplicar timeout
+    const checkSmartTimeout = () => {
+      if (ws.readyState !== WebSocket.OPEN || !isTranscriptionActive) {
+        return; // Não aplicar se não estiver ativo
       }
-    }, STREAM_LIMIT_MS);
+      
+      const streamAge = Date.now() - streamStartTime;
+      const timeSinceLastActivity = Date.now() - lastTranscriptionTime;
+      const isTranscriptionStable = stableTranscriptionCount >= TRANSCRIPTION_STABILITY_THRESHOLD;
+      const hasMinimumAge = streamAge >= MIN_SAFE_TIMEOUT;
+      const hasInactivity = timeSinceLastActivity >= INACTIVITY_TIMEOUT;
+      
+      console.log(`🔍 Verificação de timeout inteligente (HTTPS):`);
+      console.log(`   - Idade do stream: ${streamAge}ms (mín: ${MIN_SAFE_TIMEOUT}ms)`);
+      console.log(`   - Tempo desde última atividade: ${timeSinceLastActivity}ms (mín: ${INACTIVITY_TIMEOUT}ms)`);
+      console.log(`   - Transcrição estável: ${isTranscriptionStable} (${stableTranscriptionCount}/${TRANSCRIPTION_STABILITY_THRESHOLD})`);
+      console.log(`   - Última transcrição: "${lastInterimText.substring(0, 50)}..."`);
+      
+      // Aplicar timeout apenas se TODAS as condições forem atendidas
+      const shouldTimeout = hasMinimumAge && isTranscriptionStable && hasInactivity;
+      
+      if (shouldTimeout) {
+        console.log('⏰ Timeout inteligente ativado (HTTPS) - transcrição estável e inativa, forçando finalização');
+        applySmartRestart();
+      } else if (streamAge >= STREAM_LIMIT_MS + 10000) {
+        // Timeout de segurança após 65s (55s + 10s extra)
+        console.log('🚨 Timeout de segurança ativado após 65s (HTTPS) - forçando restart');
+        applySmartRestart();
+      } else {
+        // Continuar monitorando
+        restartTimeout = setTimeout(checkSmartTimeout, 2000); // Verificar a cada 2s
+      }
+    };
+    
+    const applySmartRestart = () => {
+      console.log('🔄 Aplicando restart inteligente (HTTPS) - tentando preservar contexto');
+      
+      // 🎯 CORREÇÃO: Forçar resultados finais antes do restart
+      if (recognizeStream && !recognizeStream.destroyed && !recognizeStream.writableEnded) {
+        // Aguardar evento 'end' para reiniciar após processar resultados finais
+        const handleTimeLimitEnd = () => {
+          console.log('✅ Resultados finais processados após timeout inteligente (HTTPS) - reiniciando stream');
+          recognizeStream.removeListener('end', handleTimeLimitEnd);
+          
+          if (ws.readyState === WebSocket.OPEN && isTranscriptionActive) {
+            setTimeout(() => {
+              startRecognitionStream();
+            }, 100);
+          }
+        };
+        
+        recognizeStream.once('end', handleTimeLimitEnd);
+        
+        // Encerrar stream limpo para forçar resultados finais
+        console.log('🔄 Encerrando stream atual para forçar processamento de resultados finais (HTTPS)');
+        recognizeStream.end();
+      } else {
+        // Stream já foi encerrado, reiniciar diretamente
+        console.log('🔄 Stream já encerrado - reiniciando diretamente (HTTPS)');
+        startRecognitionStream();
+      }
+    };
+    
+    // Iniciar monitoramento inteligente
+    restartTimeout = setTimeout(checkSmartTimeout, 2000); // Primeira verificação em 2s
   }
 
   // Manipular mensagens do frontend
@@ -286,18 +363,86 @@ wss.on('connection', (ws) => {
           break;
           
         case 'stop':
-          console.log('⏹️ Parando transcrição CONTÍNUA');
+          console.log('⏹️ Parando transcrição CONTÍNUA - forçando resultados finais (HTTPS)');
           isTranscriptionActive = false; // Desativar transcrição contínua
-          if (recognizeStream) {
-            recognizeStream.end();
-          }
+          
+          // Limpar timeout de restart
           if (restartTimeout) {
             clearTimeout(restartTimeout);
           }
-          ws.send(JSON.stringify({
-            type: 'stopped',
-            message: 'Transcrição contínua parada (HTTPS/WSS)'
-          }));
+          
+          // 🛡️ PROTEÇÃO: Aplicar mesma lógica do timeout para prevenir crash
+          if (recognizeStream && !recognizeStream.destroyed && !recognizeStream.writableEnded) {
+            // Adicionar handler específico para erros durante encerramento
+            const handleStopError = (error) => {
+              console.error('⚠️ Erro durante encerramento seguro (HTTPS):', error.message);
+              console.log('🔄 Continuando encerramento apesar do erro...');
+            };
+            
+            // Aguardar evento 'end' para processar resultados finais
+            const handleStopEnd = () => {
+              console.log('✅ Resultados finais processados após parada pelo usuário (HTTPS)');
+              
+              // Remover handlers específicos
+              if (recognizeStream) {
+                recognizeStream.removeListener('end', handleStopEnd);
+                recognizeStream.removeListener('error', handleStopError);
+                recognizeStream.removeAllListeners();
+              }
+              
+              recognizeStream = null;
+              
+              // Confirmar parada
+              ws.send(JSON.stringify({
+                type: 'stopped',
+                message: 'Transcrição parada - resultados finais processados (HTTPS/WSS)'
+              }));
+            };
+            
+            // Timeout de segurança para prevenir travamento
+            const stopTimeout = setTimeout(() => {
+              console.log('⚠️ Timeout na parada (HTTPS) - finalizando sem aguardar Google Cloud');
+              
+              if (recognizeStream) {
+                recognizeStream.removeListener('end', handleStopEnd);
+                recognizeStream.removeListener('error', handleStopError);
+                recognizeStream.removeAllListeners();
+              }
+              
+              recognizeStream = null;
+              
+              ws.send(JSON.stringify({
+                type: 'stopped',
+                message: 'Transcrição parada (timeout de segurança - HTTPS/WSS)'
+              }));
+            }, 5000); // 5 segundos máximo
+            
+            // Adicionar handlers temporários
+            recognizeStream.once('error', handleStopError);
+            recognizeStream.once('end', () => {
+              clearTimeout(stopTimeout);
+              handleStopEnd();
+            });
+            
+            // Enviar sinal de parada para Google Cloud
+            console.log('🔄 Encerrando stream com segurança (HTTPS) - aguardando evento end');
+            try {
+              recognizeStream.end();
+            } catch (error) {
+              console.error('❌ Erro ao encerrar stream (HTTPS):', error.message);
+              // Disparar handler manualmente em caso de erro
+              clearTimeout(stopTimeout);
+              handleStopEnd();
+            }
+          } else {
+            // Stream já foi encerrado ou não existe
+            console.log('⚠️ Stream já encerrado ou não disponível (HTTPS)');
+            recognizeStream = null;
+            ws.send(JSON.stringify({
+              type: 'stopped',
+              message: 'Transcrição parada (stream já encerrado - HTTPS/WSS)'
+            }));
+          }
           break;
       }
     } catch (error) {
@@ -313,11 +458,36 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     console.log('🔌 Conexão WebSocket segura fechada');
     isTranscriptionActive = false; // Desativar transcrição contínua
-    if (recognizeStream) {
-      recognizeStream.end();
-    }
+    
+    // Limpar timeout de restart
     if (restartTimeout) {
       clearTimeout(restartTimeout);
+    }
+    
+    // 🛡️ PROTEÇÃO: Limpeza segura durante desconexão
+    if (recognizeStream) {
+      try {
+        console.log('🧹 Limpando stream ao fechar conexão com segurança (HTTPS)');
+        
+        // Adicionar handler para erro durante limpeza
+        const handleCloseError = (error) => {
+          console.error('⚠️ Erro durante limpeza na desconexão (HTTPS):', error.message);
+          console.log('🔄 Continuando limpeza apesar do erro...');
+        };
+        
+        recognizeStream.once('error', handleCloseError);
+        
+        // Remover listeners e finalizar stream
+        recognizeStream.removeAllListeners();
+        recognizeStream.removeListener('error', handleCloseError);
+        
+        if (!recognizeStream.destroyed && !recognizeStream.writableEnded) {
+          recognizeStream.end();
+        }
+      } catch (error) {
+        console.error('⚠️ Erro ao limpar stream no fechamento (HTTPS):', error.message);
+      }
+      recognizeStream = null;
     }
   });
 
