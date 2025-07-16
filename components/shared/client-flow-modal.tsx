@@ -53,7 +53,6 @@ export default function ClientFlowModal({
     initialObjective: '',
     businessDetails: ''
   });
-  const [showCustomIndustry, setShowCustomIndustry] = useState(false);
 
   // Debounce da busca
   const [debouncedSearch] = useDebounce(searchTerm, 500);
@@ -77,11 +76,6 @@ export default function ClientFlowModal({
     isPending: isCreatingClient, 
     error: createError 
   } = useCreateClient();
-
-  // Monitorar mudanças no setor selecionado
-  useEffect(() => {
-    setShowCustomIndustry(newClientForm.industry === "Outro");
-  }, [newClientForm.industry]);
 
   // Auto-save no localStorage durante digitação
   useEffect(() => {
@@ -123,7 +117,6 @@ export default function ClientFlowModal({
     });
     setSearchTerm('');
     setMode('select');
-    setShowCustomIndustry(false);
     onClose();
   };
 
@@ -131,22 +124,12 @@ export default function ClientFlowModal({
   const handleCreateClient = async () => {
     if (!newClientForm.name.trim()) return;
 
-    // Preparar dados para envio
-    let industryToSave = newClientForm.industry;
-    let businessDetailsToSave = newClientForm.businessDetails;
-
-    // Se "Outro" foi selecionado e há texto personalizado, usar o texto como setor
-    if (newClientForm.industry === "Outro" && newClientForm.businessDetails?.trim()) {
-      industryToSave = newClientForm.businessDetails.trim();
-      businessDetailsToSave = ''; // Limpar para evitar duplicação
-    }
-
     const dataToSend = {
       name: newClientForm.name,
-      industry: industryToSave || undefined,
+      industry: newClientForm.industry || undefined,
       serviceOrProduct: newClientForm.serviceOrProduct || undefined,
       initialObjective: newClientForm.initialObjective || undefined,
-      businessDetails: businessDetailsToSave || undefined,
+      businessDetails: newClientForm.businessDetails || undefined,
     };
 
     createClient(dataToSend, {
@@ -350,40 +333,27 @@ export default function ClientFlowModal({
 
                         <div>
                           <label className="block text-sm font-medium text-seasalt mb-2">
-                            Setor de Atuação *
+                            Setor
                           </label>
-                          <select
-                            value={newClientForm.industry}
-                            onChange={(e) => setNewClientForm(prev => ({ ...prev, industry: e.target.value }))}
-                            className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
-                          >
-                            <option value="" className="bg-night text-seasalt">Selecione o setor de atuação</option>
-                            {AVAILABLE_INDUSTRIES.map(industry => (
-                              <option key={industry} value={industry} className="bg-night text-seasalt">{industry}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {showCustomIndustry && (
-                          <div className="mt-4">
-                            <label className="block text-sm font-medium text-seasalt mb-2">
-                              Especifique o setor *
-                            </label>
-                            <div className="relative">
-                              <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-periwinkle" />
-                              <input
-                                type="text"
-                                value={newClientForm.businessDetails || ""}
-                                onChange={(e) => setNewClientForm(prev => ({ 
-                                  ...prev, 
-                                  businessDetails: e.target.value 
-                                }))}
-                                placeholder="Descreva o setor específico..."
-                                className="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
-                              />
+                          <div className="relative">
+                            <Target className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-periwinkle" />
+                            <select
+                              value={newClientForm.industry}
+                              onChange={(e) => setNewClientForm(prev => ({ ...prev, industry: e.target.value }))}
+                              className="w-full pl-10 pr-10 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt appearance-none focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+                            >
+                              <option value="">Selecione um setor</option>
+                              {AVAILABLE_INDUSTRIES.map(sector => (
+                                <option key={sector} value={sector}>{sector}</option>
+                              ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-periwinkle">
+                              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                              </svg>
                             </div>
                           </div>
-                        )}
+                        </div>
 
                         <div>
                           <label className="block text-sm font-medium text-seasalt mb-2">

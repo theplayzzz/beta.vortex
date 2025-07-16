@@ -134,13 +134,11 @@ const SECTIONS: Section[] = [
 export default function ClientProfilePage() {
   const params = useParams();
   const router = useRouter();
-  const clientId = params.id as string;
-  
+  const clientId = params?.id as string;  
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['basic']));
   const [showActions, setShowActions] = useState(false);
   const [hasUserChanges, setHasUserChanges] = useState(false);
-  const [showCustomIndustry, setShowCustomIndustry] = useState(false);
   const [localClientData, setLocalClientData] = useState<ClientData | null>(null);
 
   const { 
@@ -172,12 +170,6 @@ export default function ClientProfilePage() {
       });
     }
   }, [clientData, hasUserChanges]);
-
-  useEffect(() => {
-    if (localClientData) {
-      setShowCustomIndustry(localClientData.industry === "Outro");
-    }
-  }, [localClientData?.industry]);
 
   // Função para salvar dados quando campo perde foco
   const handleSave = () => {
@@ -216,11 +208,6 @@ export default function ClientProfilePage() {
     ];
 
     const transformedData = { ...data };
-    
-    if (data.industry === "Outro" && data.businessDetails?.trim()) {
-      transformedData.industry = data.businessDetails.trim();
-      transformedData.businessDetails = undefined;
-    }
     
     const filledFields = allFields.filter(field => {
       const value = transformedData[field as keyof ClientData];
@@ -273,12 +260,6 @@ export default function ClientProfilePage() {
       toneOfVoice: cleanValue(data.toneOfVoice),
       preferencesRestrictions: cleanValue(data.preferencesRestrictions),
     };
-
-    // Transformação especial para "Outro" -> texto personalizado
-    if (data.industry === "Outro" && data.businessDetails?.trim()) {
-      explicitData.industry = data.businessDetails.trim();
-      explicitData.businessDetails = undefined;
-    }
 
     // Remover campos undefined para evitar problemas na API
     return Object.fromEntries(
@@ -516,59 +497,41 @@ export default function ClientProfilePage() {
                     className="overflow-hidden"
                   >
                     <div className="px-6 pb-6 space-y-4 border-t border-seasalt/10">
-                      {sectionFields.map((field) => (
-                        <div key={field.key}>
-                          <label className="block text-sm font-medium text-seasalt mb-2">
-                            {field.label}
-                          </label>
-                          {field.type === 'textarea' ? (
-                            <textarea
-                              value={localClientData[field.key] as string || ''}
-                              onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                              onBlur={handleSave}
-                              placeholder={field.placeholder}
-                              rows={4}
-                              className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20 resize-none"
-                            />
-                          ) : field.type === 'sector-select' ? (
-                            <div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        {sectionFields.map((field) => (
+                          <div key={field.key}>
+                            <label className="block text-sm font-medium text-seasalt mb-2">
+                              {field.label}
+                            </label>
+                            {field.type === 'textarea' ? (
+                              <textarea
+                                value={localClientData[field.key] as string || ''}
+                                onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                                onBlur={handleSave}
+                                placeholder={field.placeholder}
+                                rows={4}
+                                className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+                              />
+                            ) : field.type === 'sector-select' ? (
                               <SectorSelect
                                 value={localClientData[field.key] as string || ''}
                                 onValueChange={(value) => handleFieldChange(field.key, value)}
                                 onBlur={handleSave}
                                 placeholder={field.placeholder}
                               />
-                              {showCustomIndustry && (
-                                <div className="mt-4">
-                                  <label className="block text-sm font-medium text-seasalt mb-2">
-                                    Especifique o setor *
-                                  </label>
-                                  <div className="relative">
-                                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-periwinkle" />
-                                    <input
-                                      type="text"
-                                      value={localClientData.businessDetails || ''}
-                                      onChange={(e) => handleFieldChange('businessDetails', e.target.value)}
-                                      onBlur={handleSave}
-                                      placeholder="Descreva o setor específico..."
-                                      className="w-full pl-10 pr-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
-                                    />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <input
-                              type={field.type}
-                              value={localClientData[field.key] as string || ''}
-                              onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                              onBlur={handleSave}
-                              placeholder={field.placeholder}
-                              className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
-                            />
-                          )}
-                        </div>
-                      ))}
+                            ) : (
+                              <input
+                                type={field.type}
+                                value={localClientData[field.key] as string || ''}
+                                onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                                onBlur={handleSave}
+                                placeholder={field.placeholder}
+                                className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </motion.div>
                 )}
