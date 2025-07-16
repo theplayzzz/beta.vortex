@@ -247,11 +247,11 @@ export default function NotesAndAttachments({ clientId }: NotesAndAttachmentsPro
     <div className="space-y-8">
       {/* Seção de Notas */}
       <div className="bg-eerie-black rounded-xl border border-seasalt/10">
-        <div className="p-6 border-b border-seasalt/10">
+        <div className="p-4 border-b border-seasalt/10">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <MessageSquare className="w-6 h-6 text-sgbus-green" />
-              <h3 className="text-xl font-semibold text-seasalt">Notas</h3>
+              <MessageSquare className="w-5 h-5 text-sgbus-green" />
+              <h3 className="text-lg font-semibold text-seasalt">Notas</h3>
               <span className="px-2 py-1 bg-sgbus-green/20 text-sgbus-green text-sm rounded-full">
                 {notes.length}
               </span>
@@ -276,7 +276,7 @@ export default function NotesAndAttachments({ clientId }: NotesAndAttachmentsPro
               onChange={(e) => setNewNote(e.target.value)}
               placeholder="Adicionar nova nota..."
               rows={3}
-              className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20 resize-none"
+              className="w-full px-4 py-2.5 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20 resize-none"
             />
             <div className="flex justify-end">
               <button
@@ -284,7 +284,7 @@ export default function NotesAndAttachments({ clientId }: NotesAndAttachmentsPro
                 disabled={!newNote.trim()}
                 className="flex items-center gap-2 px-4 py-2 bg-sgbus-green text-night rounded-lg hover:bg-sgbus-green/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3 h-3" />
                 Adicionar Nota
               </button>
             </div>
@@ -292,7 +292,7 @@ export default function NotesAndAttachments({ clientId }: NotesAndAttachmentsPro
         </div>
 
         {/* Lista de notas */}
-        <div className="p-6">
+        <div className="p-4">
           {filteredNotes.length === 0 ? (
             <div className="text-center py-8 text-periwinkle">
               {searchTerm ? 'Nenhuma nota encontrada' : 'Nenhuma nota ainda'}
@@ -311,13 +311,13 @@ export default function NotesAndAttachments({ clientId }: NotesAndAttachmentsPro
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-sgbus-green/20 rounded-full flex items-center justify-center">
-                          <User className="w-4 h-4 text-sgbus-green" />
+                          <User className="w-3 h-3 text-sgbus-green" />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-seasalt">
                             {note.user.firstName} {note.user.lastName}
                           </p>
-                          <p className="text-xs text-periwinkle">
+                          <p className="text-[10px] text-periwinkle">
                             {formatDate(note.createdAt)}
                             {note.updatedAt !== note.createdAt && ' (editado)'}
                           </p>
@@ -329,15 +329,15 @@ export default function NotesAndAttachments({ clientId }: NotesAndAttachmentsPro
                             setEditingNote(note.id);
                             setEditContent(note.content);
                           }}
-                          className="p-1 text-periwinkle hover:text-sgbus-green transition-colors"
+                          className="p-0.5 text-periwinkle hover:text-sgbus-green transition-colors"
                         >
-                          <Edit3 className="w-4 h-4" />
+                          <Edit3 className="w-3 h-3" />
                         </button>
                         <button
                           onClick={() => handleDeleteNote(note.id)}
                           className="p-1 text-periwinkle hover:text-red-400 transition-colors"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
                     </div>
@@ -358,13 +358,13 @@ export default function NotesAndAttachments({ clientId }: NotesAndAttachmentsPro
                             }}
                             className="px-3 py-1 text-periwinkle hover:text-seasalt transition-colors"
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-3 h-3" />
                           </button>
                           <button
                             onClick={() => handleEditNote(note.id)}
                             className="flex items-center gap-1 px-3 py-1 bg-sgbus-green text-night rounded hover:bg-sgbus-green/90 transition-colors"
                           >
-                            <Save className="w-4 h-4" />
+                            <Save className="w-3 h-3" />
                           </button>
                         </div>
                       </div>
@@ -381,11 +381,11 @@ export default function NotesAndAttachments({ clientId }: NotesAndAttachmentsPro
 
       {/* Seção de Anexos */}
       <div className="bg-eerie-black rounded-xl border border-seasalt/10">
-        <div className="p-6 border-b border-seasalt/10">
+        <div className="p-4 border-b border-seasalt/10">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <Paperclip className="w-6 h-6 text-sgbus-green" />
-              <h3 className="text-xl font-semibold text-seasalt">Anexos</h3>
+              <Paperclip className="w-5 h-5 text-sgbus-green" />
+              <h3 className="text-lg font-semibold text-seasalt">Anexos</h3>
               <span className="px-2 py-1 bg-sgbus-green/20 text-sgbus-green text-sm rounded-full">
                 {attachments.length}
               </span>
@@ -408,9 +408,9 @@ export default function NotesAndAttachments({ clientId }: NotesAndAttachmentsPro
               className="flex items-center gap-2 px-4 py-2 bg-sgbus-green text-night rounded-lg hover:bg-sgbus-green/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {uploading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-3 h-3 animate-spin" />
               ) : (
-                <Upload className="w-4 h-4" />
+                <Upload className="w-3 h-3" />
               )}
               {uploading ? 'Enviando...' : 'Enviar Arquivos'}
             </button>
@@ -421,7 +421,7 @@ export default function NotesAndAttachments({ clientId }: NotesAndAttachmentsPro
         </div>
 
         {/* Lista de anexos */}
-        <div className="p-6">
+        <div className="p-4">
           {attachments.length === 0 ? (
             <div className="text-center py-8 text-periwinkle">
               Nenhum anexo ainda
@@ -456,13 +456,13 @@ export default function NotesAndAttachments({ clientId }: NotesAndAttachmentsPro
                           rel="noopener noreferrer"
                           className="p-1 text-periwinkle hover:text-sgbus-green transition-colors"
                         >
-                          <Download className="w-4 h-4" />
+                          <Download className="w-3 h-3" />
                         </a>
                         <button
                           onClick={() => handleDeleteAttachment(attachment.id)}
                           className="p-1 text-periwinkle hover:text-red-400 transition-colors"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
                     </div>
