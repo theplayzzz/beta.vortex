@@ -25,7 +25,7 @@ export async function GET(
   try {
     console.log('🔍 API GET /api/plannings/[id] chamada');
     
-    const { userId } = await auth();
+    const { userId } = auth();
     console.log('🔐 Auth resultado:', { userId: userId || 'NULL' });
     
     if (!userId) {
