@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma/client';
 import { z } from 'zod';
-import { webhookService } from '@/lib/planning/webhookService';
+// import { webhookService } from '@/lib/planning/webhookService'; // Temporariamente desabilitado
 
 // Schema para validação de filtros
 const FiltersSchema = z.object({
@@ -25,19 +25,26 @@ const CreatePlanningSchema = z.object({
 // GET /api/plannings - Listar planejamentos do usuário
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔍 [API] GET /api/plannings iniciado');
+    
     const { userId } = await auth();
+    console.log('🔍 [API] Auth resultado:', { userId: userId || 'NULL' });
     
     if (!userId) {
+      console.log('❌ [API] Usuário não autenticado');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Buscar usuário no banco
+    console.log('🔍 [API] Buscando usuário no banco...');
     const user = await prisma.user.findUnique({
       where: { clerkId: userId },
       select: { id: true }
     });
+    console.log('🔍 [API] Usuário encontrado:', user ? `ID: ${user.id}` : 'NULL');
 
     if (!user) {
+      console.log('❌ [API] Usuário não encontrado no banco');
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
@@ -76,6 +83,7 @@ export async function GET(request: NextRequest) {
     const skip = (filters.page - 1) * filters.limit;
 
     // Fetch plannings with client data
+    console.log('🔍 [API] Buscando planejamentos no banco...');
     const [plannings, total] = await Promise.all([
       prisma.strategicPlanning.findMany({
         where,
@@ -105,6 +113,9 @@ export async function GET(request: NextRequest) {
       prisma.strategicPlanning.count({ where }),
     ]);
 
+    console.log('✅ [API] Planejamentos encontrados:', plannings.length);
+    console.log('✅ [API] Total de planejamentos:', total);
+
     return NextResponse.json({
       plannings,
       pagination: {
@@ -116,9 +127,15 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error fetching plannings:', error);
+    console.error('❌ [API] Error fetching plannings:', error);
+    console.error('❌ [API] Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }
@@ -192,18 +209,18 @@ export async function POST(request: NextRequest) {
     console.log('✅ Planejamento criado no banco:', planning.id);
 
     // ✅ AÇÃO 2: WEBHOOK INDEPENDENTE (FIRE-AND-FORGET)
-    console.log('📡 Disparando webhook de forma assíncrona...');
+    console.log('📡 Webhook temporariamente desabilitado...');
     
-    // Disparo totalmente assíncrono - não aguarda nem bloqueia a resposta
-    webhookService.triggerWebhookAsync(
-      planning.id,
-      client,
-      data.formDataJSON,
-      user.id
-    ).catch(error => {
-      // Log interno apenas - não afeta a resposta
-      console.error(`🚨 Erro interno no webhook service para planning ${planning.id}:`, error);
-    });
+    // TODO: Reabilitar webhook após resolver problemas de importação
+    // webhookService.triggerWebhookAsync(
+    //   planning.id,
+    //   client,
+    //   data.formDataJSON,
+    //   user.id
+    // ).catch((error: any) => {
+    //   // Log interno apenas - não afeta a resposta
+    //   console.error(`🚨 Erro interno no webhook service para planning ${planning.id}:`, error);
+    // });
 
     console.log('🚀 Resposta sendo enviada imediatamente (webhook processando em background)');
 

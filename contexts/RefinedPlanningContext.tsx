@@ -427,7 +427,7 @@ export function RefinedPlanningProvider({
         action: 'stop'
       });
     }
-  }, [state.pollingState, state.currentPlanningId, stopPollingHook]); // ✅ DEPENDÊNCIAS LIMITADAS
+  }, [state.pollingState, state.currentPlanningId]); // ✅ DEPENDÊNCIAS LIMITADAS
 
   const setTabState = useCallback((tabState: TabState) => {
     dispatch({ type: 'SET_TAB_STATE', payload: tabState });

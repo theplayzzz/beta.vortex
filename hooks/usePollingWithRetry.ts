@@ -57,14 +57,14 @@ export function usePollingWithRetry<T>(
     setIsPolling(false);
     isPollingRef.current = false;
     console.log('🛑 Polling parado');
-  }, [clearAllTimers]);
+  }, []);
 
   const reset = useCallback(() => {
     stop();
     setData(null);
     setError(null);
     setRetryCount(0);
-  }, [stop]);
+  }, []);
 
   const executePoll = useCallback(async (): Promise<{ success: boolean; shouldStop?: boolean }> => {
     try {
@@ -84,7 +84,7 @@ export function usePollingWithRetry<T>(
       console.error('❌ Erro no polling:', error);
       return { success: false, shouldStop: false };
     }
-  }, [pollFn]);
+  }, []);
 
   const handleRetry = useCallback(async () => {
     if (retryCount >= config.maxRetries) {
@@ -113,7 +113,7 @@ export function usePollingWithRetry<T>(
         handleRetry();
       }
     }, delay);
-  }, [retryCount, config.maxRetries, config.retryDelay, stop, executePoll]);
+  }, [retryCount, config.maxRetries, config.retryDelay]);
 
   const start = useCallback(() => {
     if (isPollingRef.current) {
@@ -173,7 +173,7 @@ export function usePollingWithRetry<T>(
         }, config.interval);
       }
     });
-  }, [config, executePoll, handleRetry, stop]);
+  }, [config]);
 
   useEffect(() => {
     if (shouldPoll && !isPolling && !isPollingRef.current) {
@@ -183,7 +183,7 @@ export function usePollingWithRetry<T>(
       console.log('🛑 Auto-stop polling triggered');
       stop();
     }
-  }, [shouldPoll, isPolling, start, stop]);
+  }, [shouldPoll, isPolling]);
 
   useEffect(() => {
     return () => {
@@ -191,7 +191,7 @@ export function usePollingWithRetry<T>(
       isPollingRef.current = false;
       shouldPollRef.current = false;
     };
-  }, [clearAllTimers]);
+  }, []);
 
   return {
     data,
