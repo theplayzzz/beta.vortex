@@ -354,12 +354,18 @@ enum MessageRole {
 }
 
 enum PlanningStatus {
+  // ✅ Status básicos (para novos planejamentos)
   DRAFT
   ACTIVE
   COMPLETED
   ARCHIVED
   
-  // 🆕 Status para Plan-006 (IA)
+  // ✅ Status reais existentes no banco (249 planejamentos)
+  AWAITING_APPROVAL               // 83 planejamentos - Aguardando aprovação manual
+  GENERATING_REFINED              // 12 planejamentos - Gerando refinamento
+  REFINED_COMPLETED               // 154 planejamentos - Refinamento concluído
+  
+  // ✅ Status de IA (reservados para futuro)
   PENDING_AI_BACKLOG_GENERATION   // Aguardando geração IA
   AI_BACKLOG_VISIBLE              // Backlog IA visível
   PENDING_AI_REFINED_LIST         // Aguardando lista refinada

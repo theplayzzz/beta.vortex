@@ -1,7 +1,14 @@
 import { z } from 'zod'
 
 // Enum para status de planejamento
-export const PlanningStatusSchema = z.enum(['DRAFT', 'ACTIVE', 'COMPLETED', 'ARCHIVED'])
+export const PlanningStatusSchema = z.enum([
+  // Status básicos
+  'DRAFT', 'ACTIVE', 'COMPLETED', 'ARCHIVED',
+  // Status reais do banco (249 planejamentos)
+  'AWAITING_APPROVAL', 'GENERATING_REFINED', 'REFINED_COMPLETED',
+  // Status de IA (reservados)
+  'PENDING_AI_BACKLOG_GENERATION', 'AI_BACKLOG_VISIBLE', 'PENDING_AI_REFINED_LIST', 'AI_REFINED_LIST_VISIBLE'
+])
 
 // Enum para status de tarefa
 export const TaskStatusSchema = z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'BLOCKED'])
