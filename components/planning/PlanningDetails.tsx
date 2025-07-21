@@ -154,6 +154,7 @@ function hasRefinedTasks(scope?: string): boolean {
 }
 
 export function PlanningDetails({ planning, isLoading = false }: PlanningDetailsProps) {
+  // ✅ TODOS OS HOOKS PRIMEIRO - SEMPRE chamados na mesma ordem
   const [currentTab, setCurrentTab] = useState<'form_data' | 'objectives' | 'planejamento-refinado'>('form_data');
   const [currentPlanning, setCurrentPlanning] = useState(planning);
   
@@ -166,20 +167,6 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
     setCurrentPlanning(planning);
   }, [planning]);
 
-  if (isLoading) {
-    return (
-      <div className="p-6 space-y-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-eerie-black rounded w-1/3"></div>
-          <div className="h-4 bg-eerie-black rounded w-2/3"></div>
-          <div className="h-32 bg-eerie-black rounded"></div>
-        </div>
-      </div>
-    );
-  }
-
-  const status = statusConfig[currentPlanning.status as keyof typeof statusConfig] || statusConfig.DRAFT;
-  
   // Verificar estados das abas
   const hasSpecificObjectives = currentPlanning.specificObjectives && currentPlanning.specificObjectives.trim().length > 0;
   const hasTasksForRefinement = hasStructuredTasks(currentPlanning.specificObjectives);
@@ -236,6 +223,21 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
     };
   }, [isObjectivesProcessing, hasSpecificObjectives, currentPlanning.id]);
 
+  // ✅ APÓS todos os hooks, verificações condicionais
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-eerie-black rounded w-1/3"></div>
+          <div className="h-4 bg-eerie-black rounded w-2/3"></div>
+          <div className="h-32 bg-eerie-black rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  const status = statusConfig[currentPlanning.status as keyof typeof statusConfig] || statusConfig.DRAFT;
+  
   // ✅ NOVO: Estado da aba Objetivos Específicos (sempre visível)
   const getObjectivesTabState = () => {
     if (hasSpecificObjectives || hasTasksForRefinement || isObjectivesVisible) {
