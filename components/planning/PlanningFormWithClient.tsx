@@ -244,9 +244,9 @@ export function PlanningFormWithClient({
         }
       ));
 
-      // Redirecionar IMEDIATAMENTE para a página do planejamento criado
-      console.log(`🔄 Redirecionando imediatamente para o planejamento: ${createdPlanning.id}`);
-      router.push(`/planejamentos/${createdPlanning.id}`);
+      // Redirecionar IMEDIATAMENTE para a aba de objetivos específicos
+      console.log(`🔄 Redirecionando para objetivos específicos: ${createdPlanning.id}`);
+      router.push(`/planejamentos/${createdPlanning.id}?tab=objectives`);
       
     } catch (error) {
       console.error('❌ Erro ao criar planejamento:', error);

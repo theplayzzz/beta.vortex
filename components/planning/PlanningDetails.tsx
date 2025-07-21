@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { 
   ArrowLeft, 
   Calendar, 
@@ -155,7 +156,17 @@ function hasRefinedTasks(scope?: string): boolean {
 
 export function PlanningDetails({ planning, isLoading = false }: PlanningDetailsProps) {
   // ✅ TODOS OS HOOKS PRIMEIRO - SEMPRE chamados na mesma ordem
-  const [currentTab, setCurrentTab] = useState<'form_data' | 'objectives' | 'planejamento-refinado'>('form_data');
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
+  
+  // ✅ Definir aba inicial baseada na URL
+  const getInitialTab = (): 'form_data' | 'objectives' | 'planejamento-refinado' => {
+    if (tabFromUrl === 'objectives') return 'objectives';
+    if (tabFromUrl === 'planejamento-refinado') return 'planejamento-refinado';
+    return 'form_data';
+  };
+  
+  const [currentTab, setCurrentTab] = useState<'form_data' | 'objectives' | 'planejamento-refinado'>(getInitialTab());
   const [currentPlanning, setCurrentPlanning] = useState(planning);
   
   // Estados para modal de detalhes da tarefa
