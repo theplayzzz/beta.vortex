@@ -19,6 +19,7 @@ import { TaskRefinementInterface } from './TaskRefinementInterface';
 import { RefinedTaskList } from './RefinedTaskList';
 import { TaskDetailModal } from './TaskDetailModal';
 import { TabStateManager } from './TabStateManager';
+import { TabStatusIndicator } from './TabStatusIndicator';
 import { ObjectivesTab } from './ObjectivesTab';
 import { RefinedPlanningProvider } from '../../contexts/RefinedPlanningContext';
 import { RefinedPlanningContent } from './RefinedPlanningContent';
@@ -315,10 +316,12 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
             
             <button
               onClick={() => setCurrentTab('objectives')}
-              className={`pb-3 border-b-2 font-medium text-sm transition-colors mr-8 relative ${
+              className={`pb-3 border-b-2 font-medium text-sm transition-all duration-300 mr-8 relative ${
                 currentTab === 'objectives'
                   ? 'border-sgbus-green text-sgbus-green'
-                  : 'border-transparent text-periwinkle hover:text-seasalt hover:border-seasalt/40'
+                  : objectivesTabState === 'ready'
+                    ? 'border-transparent text-periwinkle hover:text-sgbus-green hover:border-sgbus-green/40 hover:bg-gradient-to-r hover:from-transparent hover:via-green-500/5 hover:to-transparent'
+                    : 'border-transparent text-periwinkle hover:text-seasalt hover:border-seasalt/40'
               }`}
             >
               <span className="flex items-center space-x-2">
@@ -327,6 +330,10 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
                   <Loader2 className="h-4 w-4 animate-spin text-sgbus-green" />
                 ) : objectivesTabState === 'waiting' ? (
                   <Target className="h-4 w-4 text-seasalt/60" />
+                ) : objectivesTabState === 'ready' ? (
+                  <svg className="h-4 w-4 text-sgbus-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 ) : (
                   <Target className="h-4 w-4" />
                 )}
@@ -334,25 +341,31 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
                 
                 {/* Indicador de status */}
                 {objectivesTabState === 'generating' && (
-                  <span className="text-xs bg-sgbus-green/20 text-sgbus-green px-2 py-1 rounded animate-pulse">
-                    IA Processando...
-                  </span>
+                  <TabStatusIndicator 
+                    state="generating"
+                    message="IA Processando..."
+                  />
                 )}
                 {objectivesTabState === 'waiting' && (
-                  <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-1 rounded">
-                    Aguardando IA
-                  </span>
+                  <TabStatusIndicator 
+                    state="waiting"
+                    message="Aguardando IA"
+                  />
                 )}
                 {objectivesTabState === 'ready' && (
-                  <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
-                    ✨ Processado
-                  </span>
+                  <TabStatusIndicator 
+                    state="ready"
+                    message="Pronto"
+                  />
                 )}
               </span>
               
               {/* Destaque visual para aba com atividade */}
               {objectivesTabState === 'generating' && (
                 <div className="absolute -top-1 -right-1 w-2 h-2 bg-sgbus-green rounded-full animate-ping"></div>
+              )}
+              {objectivesTabState === 'ready' && (
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
               )}
             </button>
 

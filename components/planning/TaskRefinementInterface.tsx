@@ -27,7 +27,7 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
   const [buttonsDisabled, setButtonsDisabled] = useState(false);
 
   // Hook do Context para gerenciar estado da aba refinada
-  const { handleApproval, setTabState, error, clearError, startPolling, stopPolling } = useRefinedPlanning();
+  const { handleApproval, setTabState, error, clearError, startPolling, stopPolling, resetLocalState } = useRefinedPlanning();
 
   // Extrair tarefas do specificObjectives
   useEffect(() => {
@@ -159,6 +159,10 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
       // ✅ NOVO: FEEDBACK IMEDIATO - ANTES DA API
       console.log('🎯 PASSO 1: Feedback imediato ao usuário...');
       
+      // 0. Resetar estado local primeiro (limpa interface antiga)
+      console.log('🧹 Resetando estado local para limpeza visual...');
+      resetLocalState();
+      
       // 1. Iniciar polling imediatamente (mostra "IA Gerando...")
       console.log('🔄 Iniciando polling imediatamente...');
       startPolling(planning.id);
@@ -167,27 +171,10 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
       console.log('🎯 Navegando para aba "Planejamento Refinado" imediatamente...');
       onCreateRefinedTab?.();
       
-      console.log('✅ Usuário movido para aba refinada com status "IA Gerando"');
+      console.log('✅ Usuário movido para aba refinada com status "IA Gerando" e interface limpa');
 
-      // ✅ PASSO 2: Limpar scope ANTES do processamento
-      console.log('🧹 PASSO 2: Limpando scope anterior...');
-      
-      try {
-        const clearResponse = await fetch(`/api/planning/${planning.id}/clear-scope`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (clearResponse.ok) {
-          console.log('✅ Scope limpo com sucesso');
-        } else {
-          console.warn('⚠️ Erro ao limpar scope, mas continuando...', clearResponse.status);
-        }
-      } catch (clearError) {
-        console.warn('⚠️ Erro na requisição clear-scope, mas continuando...', clearError);
-      }
+      // ✅ PASSO 2: Processo será limpo no backend pela nossa implementação
+      console.log('🧹 PASSO 2: Backend irá limpar scope automaticamente...');
 
       // ✅ PASSO 3: Processar aprovação em background
       console.log('📡 PASSO 3: Processando aprovação em background...');

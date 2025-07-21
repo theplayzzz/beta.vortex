@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       // ✅ SEGUNDO: Atualizar com novos dados
       const scopeData = {
         generated_at: new Date().toISOString(),
-        tasks: refined_tasks,
+        tarefas_refinadas: refined_tasks, // ✅ CORRIGIDO: usar campo que frontend espera
         version: '1.0'
       };
 

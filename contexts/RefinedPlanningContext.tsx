@@ -34,7 +34,7 @@ interface RefinedPlanningContextType {
   scopeContent: ScopeContent | null;
   setScopeContent: (content: ScopeContent | null) => void;
   
-  // Polling
+  // Polling (legacy)
   isPolling: boolean;
   startPolling: (planningId: string) => void;
   stopPolling: () => void;
@@ -46,6 +46,7 @@ interface RefinedPlanningContextType {
   // Actions
   handleApproval: (planningId: string, tasks: any[]) => Promise<void>;
   markAsViewed: () => void;
+  resetLocalState: () => void;
   
   // Estado geral
   pollingState: PollingState;
@@ -95,8 +96,10 @@ function refinedPlanningReducer(
         ...state,
         scopeContent: action.payload,
         lastUpdated: new Date(),
-        // Se há conteúdo novo e não foi visualizado, marcar como 'new'
-        tabState: action.payload && !state.isViewed ? 'new' : state.tabState
+        // Se há conteúdo com tarefas refinadas válidas, marcar como 'ready' (sempre Pronto)
+        tabState: action.payload && action.payload.tarefas_refinadas && action.payload.tarefas_refinadas.length > 0 
+          ? 'ready' 
+          : state.tabState
       };
     
     case 'SET_POLLING_STATE':
@@ -130,8 +133,7 @@ function refinedPlanningReducer(
     case 'MARK_AS_VIEWED':
       return {
         ...state,
-        isViewed: true,
-        tabState: state.tabState === 'new' ? 'ready' : state.tabState
+        isViewed: true
       };
     
     case 'CLEAR_ERROR':
@@ -222,10 +224,11 @@ export function RefinedPlanningProvider({
         console.log('🔍 VERIFICAÇÃO INICIAL - Checking refined planning state for:', planningId);
         
         // Fazer request para verificar estado atual do planejamento
-        const response = await fetch(`/api/plannings/${planningId}`, {
+        const response = await fetch(`/api/plannings/${planningId}?t=${Date.now()}`, {
           cache: 'no-store',
           headers: {
             'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
           },
         });
 
@@ -242,17 +245,30 @@ export function RefinedPlanningProvider({
           hasSpecificObjectives: !!planning.specificObjectives
         });
 
-        // ✅ STATUS 3: PRONTO - Verificar se já tem dados no scope (planejamento processado)
+        // ✅ PRIORIDADE MÁXIMA: VERIFICAR SE JÁ TEM DADOS PRONTOS (independente do status)
         if (planning.scope) {
           try {
             const parsed = JSON.parse(planning.scope);
             console.log('🔍 Scope data parsed:', parsed);
             
-            if (parsed.tarefas_refinadas && Array.isArray(parsed.tarefas_refinadas) && parsed.tarefas_refinadas.length > 0) {
-              console.log('✅ STATUS: PRONTO - Dados refinados encontrados no scope');
+            // ✅ Ler de ambos os campos por compatibilidade (prioridade: tarefas_refinadas)
+            const tarefasRefinadas = parsed.tarefas_refinadas || parsed.tasks || [];
+            
+            if (Array.isArray(tarefasRefinadas) && tarefasRefinadas.length > 0) {
+              console.log('✅ DADOS ENCONTRADOS - Planejamento refinado já pronto (ignorando status)');
+              
+              // ✅ Normalizar dados para formato esperado
+              const normalizedData = {
+                ...parsed,
+                tarefas_refinadas: tarefasRefinadas
+              };
+              
+              // ✅ SEMPRE definir como PRONTO quando há dados válidos
+              dispatch({ type: 'SET_SCOPE_CONTENT', payload: normalizedData });
               dispatch({ type: 'SET_TAB_STATE', payload: 'ready' });
-              dispatch({ type: 'SET_SCOPE_CONTENT', payload: parsed });
-              return;
+              
+              console.log('🎯 Estado definido como READY - dados existem');
+              return; // ← SAIR AQUI - dados prontos têm prioridade absoluta
             }
           } catch (parseError) {
             console.warn('⚠️ Erro ao parsear scope, mas continuando...', parseError);
@@ -285,9 +301,9 @@ export function RefinedPlanningProvider({
           return;
         }
 
-        // ✅ STATUS 2b: IA GERANDO REFINAMENTO - Verificar se está em processamento de refinamento
+        // ✅ STATUS 2b: IA GERANDO REFINAMENTO - SÓ se não há dados prontos
         if (planning.status === 'PENDING_AI_REFINED_LIST') {
-          console.log('🔄 STATUS: IA GERANDO REFINAMENTO - Processamento em andamento detectado');
+          console.log('🔄 STATUS: IA GERANDO REFINAMENTO - Processamento em andamento (sem dados no scope)');
           dispatch({ type: 'SET_TAB_STATE', payload: 'generating' });
           // NÃO iniciar polling automaticamente aqui - será iniciado pelo approve-tasks
           return;
@@ -356,10 +372,11 @@ export function RefinedPlanningProvider({
       action: 'start'
     });
 
-    const response = await fetch(`/api/plannings/${currentId}`, {
+    const response = await fetch(`/api/plannings/${currentId}?t=${Date.now()}`, {
       cache: 'no-store',
       headers: {
         'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
       },
     });
 
@@ -380,26 +397,27 @@ export function RefinedPlanningProvider({
     if (planning.scope) {
       try {
         const parsed = JSON.parse(planning.scope);
-        if (parsed.tarefas_refinadas && Array.isArray(parsed.tarefas_refinadas) && parsed.tarefas_refinadas.length > 0) {
+        // ✅ Ler de ambos os campos por compatibilidade (prioridade: tarefas_refinadas)
+        const tarefasRefinadas = parsed.tarefas_refinadas || parsed.tasks || [];
+        
+        if (Array.isArray(tarefasRefinadas) && tarefasRefinadas.length > 0) {
           console.log('🎉 POLLING - DADOS ENCONTRADOS! Mudando para STATUS: PRONTO');
-          console.log(`   📊 Tarefas encontradas: ${parsed.tarefas_refinadas.length}`);
+          console.log(`   📊 Tarefas encontradas: ${tarefasRefinadas.length}`);
           
           pollingLogger.logPollingEvent({
             planningId: currentId,
             action: 'success',
-            data: { tasksFound: parsed.tarefas_refinadas.length }
+            data: { tasksFound: tarefasRefinadas.length }
           });
           
-          // ✅ Atualizar scope content E estado da aba para PRONTO
+          // ✅ Atualizar scope content - o reducer irá automaticamente definir como 'new' se não foi visualizado
           dispatch({ 
             type: 'SET_SCOPE_CONTENT', 
             payload: {
-              tarefas_refinadas: parsed.tarefas_refinadas,
+              tarefas_refinadas: tarefasRefinadas,
               timestamp: new Date().toISOString()
             }
           });
-
-          dispatch({ type: 'SET_TAB_STATE', payload: 'ready' });
           
           console.log('✅ POLLING - Estado atualizado: scope content + tab state = ready');
           
@@ -426,65 +444,33 @@ export function RefinedPlanningProvider({
     return { shouldStop: false, data: planning };
   }, [state.currentPlanningId, state.tabState, planningId]);
 
-  // Hook de polling integrado
-  const shouldPoll = state.pollingState === 'active' && state.tabState === 'generating';
-  
-  const { isPolling, start: startPollingHook, stop: stopPollingHook, error: pollingError } = usePollingWithRetry(
+  // ✅ POLLING DESABILITADO - Controle manual apenas
+  const { isPolling, stop: stopPollingHook, error: pollingError } = usePollingWithRetry(
     fetchPlanningData,
-    shouldPoll,
+    false, // ← SEMPRE false - sem polling automático
     pollingConfig
   );
 
   console.log('🔄 Hook polling state:', {
     pollingState: state.pollingState,
     tabState: state.tabState,
-    shouldPoll,
     isPolling,
     currentPlanningId: state.currentPlanningId
   });
   
-  // Sync polling state
+  // ✅ FUNÇÃO SIMPLIFICADA - Apenas definir estados (sem polling real)
   const startPolling = useCallback((planningId: string) => {
-    console.log('🚀 startPolling chamado:', { 
+    console.log('🚀 startPolling chamado (somente estados):', { 
       planningId, 
-      currentState: state.pollingState,
-      currentPlanningId: state.currentPlanningId,
-      timestamp: new Date().toISOString()
+      currentState: state.pollingState
     });
-    
-    // ✅ CORREÇÃO DO LOOP: Evitar múltiplas chamadas
-    if (state.pollingState === 'active') {
-      console.log('⚠️ Polling já está ativo, ignorando...');
-      return;
-    }
-    
-    console.log('⚙️ Definindo estados para polling...');
-    console.log('📝 Dispatching SET_PLANNING_ID:', planningId);
+
+    // Apenas definir estado de "generating" para feedback visual
     dispatch({ type: 'SET_PLANNING_ID', payload: planningId });
-    
-    console.log('📝 Dispatching SET_POLLING_STATE: active');
-    dispatch({ type: 'SET_POLLING_STATE', payload: 'active' });
-    
-    console.log('📝 Dispatching SET_TAB_STATE: generating');
     dispatch({ type: 'SET_TAB_STATE', payload: 'generating' });
     
-    console.log('✅ Estados definidos: pollingState=active, tabState=generating');
-    
-    // Aguardar um ciclo para garantir que o estado foi atualizado
-    setTimeout(() => {
-      console.log('🔍 Estado após dispatches:', {
-        currentPlanningId: state.currentPlanningId,
-        pollingState: state.pollingState,
-        tabState: state.tabState
-      });
-    }, 100);
-    
-    pollingLogger.logPollingEvent({
-      planningId,
-      action: 'start',
-      interval: pollingConfig.interval
-    });
-  }, [state.pollingState]); // ✅ DEPENDÊNCIA LIMITADA
+    console.log('✅ Estados visuais definidos (sem polling real)');
+  }, []); // ✅ SEM DEPENDÊNCIAS
 
   const stopPolling = useCallback(() => {
     console.log('🛑 stopPolling chamado:', { currentState: state.pollingState });
@@ -515,6 +501,15 @@ export function RefinedPlanningProvider({
   const markAsViewed = useCallback(() => {
     dispatch({ type: 'MARK_AS_VIEWED' });
   }, []); // ✅ SEM DEPENDÊNCIAS - função pura
+
+  // 🧹 Função para resetar estado local (limpeza visual)
+  const resetLocalState = useCallback(() => {
+    console.log('🧹 Resetando estado local do planejamento refinado');
+    dispatch({ type: 'SET_SCOPE_CONTENT', payload: null });
+    dispatch({ type: 'SET_TAB_STATE', payload: 'generating' });
+    dispatch({ type: 'SET_POLLING_STATE', payload: 'active' });
+    dispatch({ type: 'CLEAR_ERROR' });
+  }, []);
 
   const handleApproval = useCallback(async (planningId: string, tasks: any[]) => {
     try {
@@ -558,18 +553,57 @@ export function RefinedPlanningProvider({
       const responseData = await approvalResponse.json();
       console.log('✅ Aprovação bem-sucedida:', responseData);
 
-      // ✅ CORREÇÃO: Verificar se polling já está ativo antes de iniciar
-      if (state.pollingState !== 'active') {
-        console.log('🔄 Polling não estava ativo, iniciando agora...');
-        startPolling(planningId);
-      } else {
-        console.log('✅ Polling já está ativo, confirmando configuração...');
-        // Garantir que o planningId está correto
-        if (state.currentPlanningId !== planningId) {
-          console.log('🔄 Atualizando planningId do polling...');
-          dispatch({ type: 'SET_PLANNING_ID', payload: planningId });
+      // 🧹 LIMPAR ESTADO LOCAL
+      console.log('🧹 Limpando estado local...');
+      dispatch({ type: 'SET_SCOPE_CONTENT', payload: null });
+      dispatch({ type: 'SET_TAB_STATE', payload: 'generating' });
+      dispatch({ type: 'CLEAR_ERROR' });
+      
+      // ✅ DADOS JÁ ESTÃO NO BANCO - BUSCAR DIRETAMENTE
+      console.log('🎯 Response 200 recebido - dados já estão no banco!');
+      console.log('🔍 Buscando dados finais...');
+      
+      // Pequeno delay para garantir consistência do banco
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      try {
+        const finalResponse = await fetch(`/api/plannings/${planningId}?t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
+        });
+        
+        if (finalResponse.ok) {
+          const finalData = await finalResponse.json();
+          console.log('📊 Dados finais:', { status: finalData.status, hasScope: !!finalData.scope });
+          
+          if (finalData.scope) {
+            try {
+              const parsed = JSON.parse(finalData.scope);
+              const tarefas = parsed.tarefas_refinadas || parsed.tasks || [];
+              
+              if (Array.isArray(tarefas) && tarefas.length > 0) {
+                dispatch({ 
+                  type: 'SET_SCOPE_CONTENT', 
+                  payload: { tarefas_refinadas: tarefas, timestamp: new Date().toISOString() }
+                });
+                console.log(`✅ Dados carregados: ${tarefas.length} tarefas refinadas`);
+              } else {
+                console.warn('⚠️ Nenhuma tarefa encontrada no scope');
+              }
+            } catch (parseError) {
+              console.error('❌ Erro ao parsear dados finais:', parseError);
+            }
+          } else {
+            console.warn('⚠️ Scope vazio na resposta final');
+          }
+        } else {
+          console.error('❌ Erro na busca final:', finalResponse.status);
         }
+      } catch (error) {
+        console.error('❌ Erro na busca final:', error);
       }
+      
+      console.log('✅ Processo de aprovação finalizado');
       
     } catch (error) {
       console.error('❌ ERRO em handleApproval:', error);
@@ -601,9 +635,12 @@ export function RefinedPlanningProvider({
     console.log('🔍 Verificando se API externa salvou specificObjectives...', planningId);
     
     try {
-      const response = await fetch(`/api/plannings/${planningId}`, {
+      const response = await fetch(`/api/plannings/${planningId}?t=${Date.now()}`, {
         cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' },
+        headers: { 
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
       });
 
       if (!response.ok) {
@@ -683,6 +720,7 @@ export function RefinedPlanningProvider({
     clearError,
     handleApproval,
     markAsViewed,
+    resetLocalState,
     pollingState: state.pollingState,
     lastUpdated: state.lastUpdated,
     isViewed: state.isViewed
@@ -700,7 +738,8 @@ export function RefinedPlanningProvider({
     stopPolling,
     clearError,
     handleApproval,
-    markAsViewed
+    markAsViewed,
+    resetLocalState
   ]); // ✅ TODAS AS DEPENDÊNCIAS INCLUÍDAS
 
   return (

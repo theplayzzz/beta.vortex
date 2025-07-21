@@ -7390,3 +7390,1424 @@ Error: Route "/" used `...headers()` or similar iteration. `headers()` should be
 Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
   
 }
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:08:29.572Z'
+}
+ GET /planejamentos 404 in 224ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Miss para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE FALLBACK] Direct Clerk query successful: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  cached: false,
+  timestamp: '2025-07-20T21:08:31.129Z'
+}
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:08:31.130Z'
+}
+ GET /planejamentos 404 in 221ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:08:32.527Z'
+}
+ GET /planejamentos 404 in 226ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:08:34.174Z'
+}
+ GET /planejamentos 404 in 244ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 221ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 219ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 216ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 231ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 214ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 221ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Miss para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE FALLBACK] Direct Clerk query successful: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  cached: false,
+  timestamp: '2025-07-20T21:11:12.298Z'
+}
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:12.298Z'
+}
+ GET /planejamentos 404 in 228ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:13.723Z'
+}
+ GET /planejamentos 404 in 222ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:15.118Z'
+}
+ GET /planejamentos 404 in 218ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:16.494Z'
+}
+ GET /planejamentos 404 in 222ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:18.209Z'
+}
+ GET /planejamentos 404 in 221ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:20.273Z'
+}
+ GET /planejamentos 404 in 222ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:22.221Z'
+}
+ GET /planejamentos 404 in 221ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:24.207Z'
+}
+ GET /planejamentos 404 in 220ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:26.212Z'
+}
+ GET /planejamentos 404 in 228ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:28.202Z'
+}
+ GET /planejamentos 404 in 222ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:30.214Z'
+}
+ GET /planejamentos 404 in 221ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:32.210Z'
+}
+ GET /planejamentos 404 in 221ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:34.219Z'
+}
+ GET /planejamentos 404 in 219ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:36.217Z'
+}
+ GET /planejamentos 404 in 215ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:38.213Z'
+}
+ GET /planejamentos 404 in 222ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:40.207Z'
+}
+ GET /planejamentos 404 in 224ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Miss para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE FALLBACK] Direct Clerk query successful: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  cached: false,
+  timestamp: '2025-07-20T21:11:42.324Z'
+}
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:42.324Z'
+}
+ GET /planejamentos 404 in 222ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:44.212Z'
+}
+ GET /planejamentos 404 in 221ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:46.221Z'
+}
+ GET /planejamentos 404 in 222ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:48.216Z'
+}
+ GET /planejamentos 404 in 231ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:50.207Z'
+}
+ GET /planejamentos 404 in 221ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:52.218Z'
+}
+ GET /planejamentos 404 in 224ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:54.233Z'
+}
+ GET /planejamentos 404 in 225ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:56.208Z'
+}
+ GET /planejamentos 404 in 218ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:11:58.218Z'
+}
+ GET /planejamentos 404 in 225ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:12:00.210Z'
+}
+ GET /planejamentos 404 in 218ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:12:02.210Z'
+}
+ GET /planejamentos 404 in 221ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:12:04.221Z'
+}
+ GET /planejamentos 404 in 217ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:12:06.212Z'
+}
+ GET /planejamentos 404 in 223ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:12:08.215Z'
+}
+ GET /planejamentos 404 in 217ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:12:10.219Z'
+}
+ GET /planejamentos 404 in 224ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Miss para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE FALLBACK] Direct Clerk query successful: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  cached: false,
+  timestamp: '2025-07-20T21:12:12.397Z'
+}
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:12:12.397Z'
+}
+ GET /planejamentos 404 in 216ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:12:14.224Z'
+}
+ GET /planejamentos 404 in 221ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:12:16.326Z'
+}
+ GET /planejamentos 404 in 216ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:12:18.300Z'
+}
+ GET /planejamentos 404 in 218ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/planejamentos'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/planejamentos',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-07-20T21:12:20.319Z'
+}
+ GET /planejamentos 404 in 218ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 220ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 224ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 223ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 219ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 217ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 236ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 226ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 216ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 222ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 225ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 225ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 221ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 219ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 229ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 221ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 227ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 224ms
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+ GET /sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3003%2Fplanejamentos 404 in 222ms

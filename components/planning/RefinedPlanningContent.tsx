@@ -21,7 +21,7 @@ export function RefinedPlanningContent({ tasks: propTasks, onTaskClick }: Refine
     return (
       <div className="text-center py-12">
         <div className="relative">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-sgbus-green loading-indicator" />
+          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-sgbus-green" />
         </div>
         <div className="bg-sgbus-green/10 border border-sgbus-green/20 rounded-lg p-4 mb-4 inline-block">
           <h3 className="text-lg font-semibold text-sgbus-green mb-2">
@@ -86,16 +86,23 @@ export function RefinedPlanningContent({ tasks: propTasks, onTaskClick }: Refine
     );
   }
 
-  // Estado padrão - não disponível
+  // Estado padrão - aguardando aprovação
   return (
     <div className="text-center py-12">
       <Sparkles className="h-8 w-8 mx-auto mb-4 text-seasalt/40" />
       <h3 className="text-lg font-semibold text-seasalt/70 mb-2">
-        Planejamento Refinado Não Disponível
+        Aguardando Aprovação
       </h3>
-      <p className="text-seasalt/50">
-        Esta aba será ativada após a aprovação de tarefas.
+      <p className="text-seasalt/50 mb-4">
+        Para gerar o planejamento refinado, você precisa:
       </p>
+             <div className="bg-sgbus-green/10 border border-sgbus-green/20 rounded-lg p-4 inline-block">
+         <p className="text-sgbus-green text-sm">
+           1. Vá para a aba &quot;Objetivos Específicos&quot;<br/>
+           2. Selecione as tarefas desejadas<br/>
+           3. Clique em &quot;Aprovar selecionadas&quot;
+         </p>
+       </div>
     </div>
   );
 } 

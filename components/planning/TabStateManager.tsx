@@ -49,52 +49,67 @@ export function TabStateManager({ planning, onTabChange, currentTab }: TabStateM
     return hasStructuredTasks(planning.specificObjectives);
   }, [planning.specificObjectives]);
   
-  // Auto-iniciar polling se necessário - COM PROTEÇÃO CONTRA MÚLTIPLAS CHAMADAS
+  // ✅ POLLING MANUAL APENAS - Removido auto-start
   useEffect(() => {
-    const shouldStartPolling = planning.status === 'PENDING_AI_REFINED_LIST' && 
-                               !hasValidRefinedTasks(scopeContent) && 
-                               !isPolling &&
-                               pollingStartedRef.current !== planning.id;
-                               
-    if (shouldStartPolling) {
-      console.log('🎯 Auto-iniciando polling para planejamento refinado...', planning.id);
-      pollingStartedRef.current = planning.id;
-      startPolling(planning.id);
+    // ✅ APENAS detectar se há dados para mostrar aba como "ready"
+    const hasDataInDatabase = planning.scope && (() => {
+      try {
+        const parsed = JSON.parse(planning.scope);
+        const tarefas = parsed.tarefas_refinadas || parsed.tasks || [];
+        return Array.isArray(tarefas) && tarefas.length > 0;
+      } catch {
+        return false;
+      }
+    })();
+
+    if (hasDataInDatabase && !hasValidRefinedTasks(scopeContent)) {
+      console.log('🎯 Dados encontrados no banco - Carregando no contexto', planning.id);
+      // Carregar dados no contexto sem iniciar polling
+      try {
+        const parsed = JSON.parse(planning.scope!);
+        const tarefas = parsed.tarefas_refinadas || parsed.tasks || [];
+        if (Array.isArray(tarefas) && tarefas.length > 0) {
+          // Usar o contexto para carregar os dados
+          // (isso será feito pelo próprio contexto na verificação inicial)
+        }
+      } catch (error) {
+        console.warn('Erro ao carregar dados do banco:', error);
+      }
     }
     
     // Reset ref se status mudou e não é mais PENDING
     if (planning.status !== 'PENDING_AI_REFINED_LIST') {
       pollingStartedRef.current = null;
     }
-  }, [planning.status, planning.id, scopeContent, isPolling, startPolling]);
+  }, [planning.status, planning.id, planning.scope, scopeContent]);
 
   // Marcar como visualizado quando aba é clicada
   const handleTabClick = () => {
-    // Só permitir clique se não estiver em estado waiting
-    if (tabState === 'waiting') {
-      return; // Não clicável no estado de espera
-    }
-    
-    if (tabState === 'new') {
-      markAsViewed();
-    }
+    // ✅ SEMPRE PERMITIR CLIQUE - aba nunca deve ser não clicável
+    markAsViewed();
     onTabChange('planejamento-refinado');
   };
 
   // Estados CSS para transições
   const getTabClasses = () => {
-    const baseClasses = 'pb-3 border-b-2 font-medium text-sm transition-colors relative tab-refined-planning tab-state-transition';
+    const baseClasses = 'pb-3 border-b-2 font-medium text-sm transition-all duration-300 relative';
     
     // Estado waiting - semi-transparente e não clicável
     if (tabState === 'waiting') {
       return `${baseClasses} border-transparent text-seasalt/40 cursor-not-allowed opacity-60`;
     }
     
+    // Aba ativa
     if (currentTab === 'planejamento-refinado') {
-      return `${baseClasses} border-sgbus-green text-sgbus-green state-${tabState}`;
+      return `${baseClasses} border-sgbus-green text-sgbus-green`;
     }
     
-    return `${baseClasses} border-transparent text-periwinkle hover:text-seasalt hover:border-seasalt/40 state-${tabState}`;
+    // Estado ready - hover especial verde com gradiente
+    if (tabState === 'ready') {
+      return `${baseClasses} border-transparent text-periwinkle hover:text-sgbus-green hover:border-sgbus-green/40 hover:bg-gradient-to-r hover:from-transparent hover:via-green-500/5 hover:to-transparent`;
+    }
+    
+    return `${baseClasses} border-transparent text-periwinkle hover:text-seasalt hover:border-seasalt/40`;
   };
 
   // SEMPRE renderizar se deve mostrar a aba (quando há tarefas estruturadas)
@@ -106,19 +121,17 @@ export function TabStateManager({ planning, onTabChange, currentTab }: TabStateM
     <button
       onClick={handleTabClick}
       className={getTabClasses()}
-      disabled={tabState === 'waiting'}
+      disabled={false}
     >
       <span className="flex items-center space-x-2">
         {/* Ícone baseado no estado */}
         {tabState === 'generating' && (
-          <div className="indicator-generating">
-            <div className="h-4 w-4 loading-indicator border-2 border-sgbus-green border-t-transparent rounded-full"></div>
-          </div>
+          <div className="h-4 w-4 border-2 border-sgbus-green border-t-transparent rounded-full animate-spin"></div>
         )}
         
-        {(tabState === 'ready' || tabState === 'new') && (
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 2.286A5.001 5.001 0 0 1 12 10h0a5.001 5.001 0 0 1-4.286-2.714L5.428 5M13 12v6a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-6m8-8v8m2-8v8" />
+        {tabState === 'ready' && (
+          <svg className="h-4 w-4 text-sgbus-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         )}
         
@@ -143,7 +156,6 @@ export function TabStateManager({ planning, onTabChange, currentTab }: TabStateM
             message={
               tabState === 'generating' ? 'IA Gerando...' :
               tabState === 'ready' ? 'Pronto' :
-              tabState === 'new' ? 'Novo' :
               tabState === 'waiting' ? 'Aguardando Aprovação' :
               tabState === 'error' ? 'Erro' :
               undefined
@@ -151,6 +163,11 @@ export function TabStateManager({ planning, onTabChange, currentTab }: TabStateM
           />
         )}
       </span>
+      
+      {/* Destaque visual com gradiente quando pronto */}
+      {tabState === 'ready' && (
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+      )}
     </button>
   );
 } 

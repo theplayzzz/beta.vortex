@@ -22,7 +22,7 @@ export function TabStatusIndicator({ state, message, className = '' }: TabStatus
     ready: {
       icon: <Check className="h-4 w-4" />,
       text: message || "Pronto",
-      className: "bg-green-500/20 text-green-400 border border-green-500/30",
+      className: "bg-gradient-to-r from-green-500/10 via-green-500/20 to-green-500/10 text-green-400 border border-green-500/30 hover:from-green-500/20 hover:via-green-500/30 hover:to-green-500/20",
       animation: "" // Sem animação para estado estável
     },
     new: {

@@ -129,15 +129,28 @@ export async function POST(
       executionMode: 'production'
     };
 
-    // ✅ CORREÇÃO CRÍTICA: STATUS SEMPRE ATUALIZADO PRIMEIRO
-    console.log('🚀 PASSO 1: Atualizando status (PRIORITÁRIO)');
-    await prisma.strategicPlanning.update({
-      where: { id: planningId },
-      data: {
-        status: 'PENDING_AI_REFINED_LIST'
-      }
-    });
-    console.log('✅ Status atualizado - POLLING GARANTIDO!');
+    // 🧹 PASSO 1: LIMPEZA SEGURA DO SCOPE (dados obsoletos)
+    console.log('🧹 PASSO 1: Limpando scope existente...');
+    try {
+      await prisma.strategicPlanning.update({
+        where: { id: planningId },
+        data: {
+          scope: null, // ✅ Limpa dados anteriores
+          status: 'PENDING_AI_REFINED_LIST'
+        }
+      });
+      console.log('✅ Scope limpo e status atualizado - PROCESSO LIMPO GARANTIDO!');
+    } catch (cleanupError) {
+      // ✅ Se limpeza falhar, ainda continua (tolerante a erro)
+      console.warn('⚠️ Erro na limpeza (continuando):', cleanupError);
+      await prisma.strategicPlanning.update({
+        where: { id: planningId },
+        data: {
+          status: 'PENDING_AI_REFINED_LIST'
+        }
+      });
+      console.log('✅ Status atualizado (sem limpeza) - POLLING GARANTIDO!');
+    }
 
     // ✅ PASSO 2: Webhook opcional (não pode falhar)
     const webhookUrl = process.env.REFINED_LIST_WEBHOOK_URL;
