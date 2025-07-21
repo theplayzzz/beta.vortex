@@ -10,6 +10,7 @@ interface QuestionFieldProps {
   onChange: (value: any) => void;
   onBlur: () => void;
   error?: string;
+  hasSubmitError?: boolean;
 }
 
 // Função para validar um campo específico baseado nas regras
@@ -95,7 +96,7 @@ const getFieldClasses = (hasError: boolean, baseClasses: string): string => {
   return `${baseClasses} border-seasalt/20 focus:border-sgbus-green focus:ring-sgbus-green/20`;
 };
 
-export const QuestionField = memo(function QuestionField({ question, value, onChange, onBlur, error }: QuestionFieldProps) {
+export const QuestionField = memo(function QuestionField({ question, value, onChange, onBlur, error, hasSubmitError = false }: QuestionFieldProps) {
   const { label, type, options = [], required, placeholder, description, formatCurrency } = question;
   
   // Estado local para evitar re-renderizações durante a digitação
@@ -125,7 +126,8 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
   };
 
   const renderField = () => {
-    const hasError = fieldError !== null;
+    // Determinar se há erro para mostrar visualmente (erro de validação em tempo real OU erro do submit)
+  const hasError = fieldError !== null || hasSubmitError;
 
     switch (type) {
       case 'text':
@@ -270,17 +272,12 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
       
       {renderField()}
       
-      {/* Mostrar erro de validação em tempo real */}
-      {fieldError && (
-        <p className="text-red-400 text-sm flex items-center">
+      {/* Mostrar erro de validação em tempo real ou do submit */}
+      {(fieldError || error) && (
+        <p className="text-red-400 text-sm flex items-center mt-1">
           <span className="mr-1">⚠️</span>
-          {fieldError}
+          {fieldError || error}
         </p>
-      )}
-      
-      {/* Mostrar erro externo se houver */}
-      {error && !fieldError && (
-        <p className="text-red-400 text-sm mt-1">{error}</p>
       )}
     </div>
   );

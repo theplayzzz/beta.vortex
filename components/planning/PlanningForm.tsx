@@ -9,6 +9,7 @@ import { MarketingTab } from './tabs/MarketingTab';
 import { CommercialTab } from './tabs/CommercialTab';
 import { PlanningFormData, getDefaultValues } from '@/lib/planning/formSchema';
 import { usePlanningForm } from '@/hooks/usePlanningForm';
+import { validateCompleteForm, ValidationError } from '@/lib/planning/formValidation';
 
 interface Client {
   id: string;
@@ -77,6 +78,9 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
   const [currentTabState, setCurrentTabState] = useState<number>(0);
   const [tabsWithErrors, setTabsWithErrors] = useState<Set<number>>(new Set());
   const [pendingTabNavigation, setPendingTabNavigation] = useState<number | null>(null);
+  
+  // Estado para armazenar erros de validação do submit
+  const [submitValidationErrors, setSubmitValidationErrors] = useState<Record<string, Record<string, string>>>({});
   
   // Getter que sempre retorna um valor válido
   const currentTab = normalizeTabIndex(currentTabState);
@@ -173,11 +177,23 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
     form.setValue(fieldPath as any, value, { shouldValidate: true, shouldDirty: true });
     console.log(`📝 Campo atualizado: ${fieldPath} = ${value}`);
 
+    // Limpar erro de validação do submit quando campo é alterado
+    if (submitValidationErrors[currentTabId]?.[field]) {
+      setSubmitValidationErrors(prev => {
+        const newErrors = { ...prev };
+        if (newErrors[currentTabId]) {
+          const { [field]: _, ...restErrors } = newErrors[currentTabId];
+          newErrors[currentTabId] = restErrors;
+        }
+        return newErrors;
+      });
+    }
+
     // Centralizar o auto-save aqui
     const currentFormData = form.getValues();
     updateFormData(currentFormData as Partial<PlanningFormData>);
 
-  }, [form, currentTab, updateFormData]);
+  }, [form, currentTab, updateFormData, submitValidationErrors]);
 
   const handleSaveDraft = useCallback(() => {
     const currentData = form.getValues();
@@ -218,11 +234,57 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
       isValidating: form.formState.isValidating,
       errors: form.formState.errors
     });
+
+    // Validar formulário completo antes do submit
+    const validationResult = validateCompleteForm(data);
+    
+    if (!validationResult.isValid) {
+      console.log('❌ Validação do submit falhou:', validationResult);
+      
+      // Organizar erros por aba para passar aos componentes
+      const errorsByTab: Record<string, Record<string, string>> = {};
+      
+      validationResult.errors.forEach(tabError => {
+        if (tabError.hasErrors) {
+          const tabId = getTabIdFromKey(tabError.tab);
+          errorsByTab[tabId] = tabError.fieldErrors;
+          
+          // Marcar aba como tendo erro
+          setTabsWithErrors(prev => new Set(Array.from(prev).concat([tabError.tabIndex])));
+        }
+      });
+      
+      // Atualizar estado de erros para passar aos componentes
+      setSubmitValidationErrors(errorsByTab);
+      
+      // Navegar para primeira aba com erro
+      if (validationResult.firstErrorTab !== undefined) {
+        setCurrentTab(validationResult.firstErrorTab);
+      }
+      
+      console.log('🚫 Submissão cancelada devido a erros de validação');
+      return;
+    }
+    
+    // Limpar erros se validação passou
+    setSubmitValidationErrors({});
+    setTabsWithErrors(new Set());
     
     console.log('📞 Chamando onSubmit com dados:', data);
     onSubmit(data);
     console.log('✅ onSubmit chamado com sucesso');
   }, [onSubmit, form]);
+
+  // Função helper para mapear tab key para tab id
+  const getTabIdFromKey = (tabKey: string): string => {
+    const mapping: Record<string, string> = {
+      'informacoes_basicas': 'informacoes_basicas',
+      'detalhes_do_setor': 'detalhes_setor',
+      'marketing': 'marketing',
+      'comercial': 'comercial'
+    };
+    return mapping[tabKey] || tabKey;
+  };
 
   const handleTabChange = useCallback((tabIndex: number) => {
     safeSetCurrentTab(tabIndex);
@@ -290,11 +352,14 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
 
     console.log(`🔍 Dados da aba ${currentTabConfig.id}:`, tabData);
 
+    // Obter erros específicos desta aba
+    const tabErrors = submitValidationErrors[currentTabConfig.id] || {};
+
     const commonProps = {
       formData: tabData || {},
       onFieldChange: handleFieldChange,
       onFieldBlur: handleSaveOnBlur,
-      errors: {} // Sempre vazio agora que removemos as mensagens
+      errors: tabErrors // Agora passa os erros reais de validação
     };
 
     try {

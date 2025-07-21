@@ -24,6 +24,17 @@ export const CommercialTab = memo(function CommercialTab({ formData, onFieldChan
     meta_comercial_personalizada: formData.meta_comercial_personalizada || ""
   });
 
+  // Função para obter classes CSS do campo baseado no estado de erro
+  const getFieldClasses = (field: string, baseClasses: string): string => {
+    const hasError = !!errors[field];
+    
+    if (hasError) {
+      return `${baseClasses.replace('border-seasalt/20', 'border-red-500/60')} focus:border-red-500 focus:ring-red-500/20`;
+    }
+    
+    return baseClasses;
+  };
+
   // Sincronizar estado local com formData quando formData mudar
   useEffect(() => {
     setLocalValues({
@@ -100,7 +111,7 @@ export const CommercialTab = memo(function CommercialTab({ formData, onFieldChan
           value={localValues.maturidade_comercial}
           onChange={(e) => handleMaturidadeChange(e.target.value)}
           onBlur={(e) => handleMaturidadeBlur(e.target.value)}
-          className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+          className={getFieldClasses('maturidade_comercial', "w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20")}
         >
           <option value="">Selecione o nível de maturidade...</option>
           {MATURIDADE_COMERCIAL.map((maturidade) => (
@@ -109,6 +120,14 @@ export const CommercialTab = memo(function CommercialTab({ formData, onFieldChan
             </option>
           ))}
         </select>
+        
+        {/* Mensagem de erro */}
+        {errors.maturidade_comercial && (
+          <p className="text-red-400 text-sm flex items-center mt-1">
+            <span className="mr-1">⚠️</span>
+            {errors.maturidade_comercial}
+          </p>
+        )}
       </div>
 
       {/* Descrição da Maturidade Selecionada */}
@@ -131,7 +150,7 @@ export const CommercialTab = memo(function CommercialTab({ formData, onFieldChan
             value={localValues.meta_comercial}
             onChange={(e) => handleMetaChange(e.target.value)}
             onBlur={(e) => handleMetaBlur(e.target.value)}
-            className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+            className={getFieldClasses('meta_comercial', "w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20")}
           >
             <option value="">Selecione uma meta...</option>
             {metas.map((meta) => (
@@ -140,6 +159,14 @@ export const CommercialTab = memo(function CommercialTab({ formData, onFieldChan
               </option>
             ))}
           </select>
+          
+          {/* Mensagem de erro */}
+          {errors.meta_comercial && (
+            <p className="text-red-400 text-sm flex items-center mt-1">
+              <span className="mr-1">⚠️</span>
+              {errors.meta_comercial}
+            </p>
+          )}
         </div>
       )}
 
@@ -157,8 +184,16 @@ export const CommercialTab = memo(function CommercialTab({ formData, onFieldChan
             onBlur={(e) => handleFieldBlur("meta_comercial_personalizada", e.target.value)}
             placeholder="Descreva qual é sua meta específica comercial..."
             rows={3}
-            className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20 resize-none"
+            className={getFieldClasses('meta_comercial_personalizada', "w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20 resize-none")}
           />
+          
+          {/* Mensagem de erro */}
+          {errors.meta_comercial_personalizada && (
+            <p className="text-red-400 text-sm flex items-center mt-1">
+              <span className="mr-1">⚠️</span>
+              {errors.meta_comercial_personalizada}
+            </p>
+          )}
         </div>
       )}
 

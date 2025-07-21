@@ -202,7 +202,7 @@ function detectInitialTabState(planningId?: string, initialPlanningData?: any): 
   }
   
   // ✅ VERIFICAÇÃO DE OBJETIVOS: Se há objetivos mas não há scope, aguardar aprovação
-  if (initialPlanningData?.specificObjectives && !initialPlanningData?.scope) {
+  if (initialPlanningData?.specificObjectives && !initialPlanningData?.scope && initialPlanningData?.status === 'AI_BACKLOG_VISIBLE') {
     try {
       const objectives = JSON.parse(initialPlanningData.specificObjectives);
       if (objectives.tarefas && Array.isArray(objectives.tarefas) && objectives.tarefas.length > 0) {
@@ -344,32 +344,9 @@ export function RefinedPlanningProvider({
           }
         }
 
-        // ✅ STATUS 2a: IA GERANDO OBJETIVOS - Verificar se está processando objetivos específicos
-        if (planning.status === 'PENDING_AI_BACKLOG_GENERATION') {
-          // ✅ VERIFICAÇÃO: Se specificObjectives já foi preenchido, não iniciar polling
-          const hasObjectives = planning.specificObjectives && planning.specificObjectives.trim().length > 0;
-          
-          if (hasObjectives) {
-            console.log('✅ SKIP POLLING: specificObjectives já existe - atualizando status diretamente');
-            // Atualizar status para AI_BACKLOG_VISIBLE sem polling
-            fetch(`/api/plannings/${planning.id}/update-status`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: 'AI_BACKLOG_VISIBLE' }),
-            }).then(() => {
-              dispatch({ type: 'SET_TAB_STATE', payload: 'ready' });
-            }).catch(console.error);
-            return;
-          }
-          
-          console.log('🔄 STATUS: IA GERANDO OBJETIVOS - Iniciando polling (dados ainda não disponíveis)');
-          dispatch({ type: 'SET_TAB_STATE', payload: 'waiting' });
-          dispatch({ type: 'SET_POLLING_STATE', payload: 'active' });
-          // Iniciar polling apenas se não há dados
-          objectivesPolling.start();
-          return;
-        }
-
+        // ✅ REMOVER VERIFICAÇÃO DE OBJETIVOS - Isso é responsabilidade do PlanningDetails
+        // O RefinedPlanningContext só deve se preocupar com o planejamento refinado
+        
         // ✅ STATUS 2b: IA GERANDO REFINAMENTO - SÓ se não há dados prontos
         if (planning.status === 'PENDING_AI_REFINED_LIST') {
           console.log('🔄 STATUS: IA GERANDO REFINAMENTO - Processamento em andamento (sem dados no scope)');
@@ -386,13 +363,17 @@ export function RefinedPlanningProvider({
           return;
         }
 
-        // ✅ STATUS 1: AGUARDANDO APROVAÇÃO - Verificar se há tarefas para aprovar
-        if (planning.specificObjectives) {
+        // ✅ STATUS 1: AGUARDANDO APROVAÇÃO - Se há objetivos mas não há refinamento
+        if (planning.status === 'AI_BACKLOG_VISIBLE' && planning.specificObjectives && !planning.scope) {
           try {
             const objectives = JSON.parse(planning.specificObjectives);
             if (objectives.tarefas && Array.isArray(objectives.tarefas) && objectives.tarefas.length > 0) {
               console.log('⏳ STATUS: AGUARDANDO APROVAÇÃO - Objetivos prontos, aguardando aprovação para refinamento');
               dispatch({ type: 'SET_TAB_STATE', payload: 'waiting' });
+              // ✅ GARANTIR que polling está parado
+              if (state.pollingState === 'active') {
+                dispatch({ type: 'SET_POLLING_STATE', payload: 'stopped' });
+              }
               return;
             }
           } catch (parseError) {
@@ -510,6 +491,13 @@ export function RefinedPlanningProvider({
       }
     }
 
+    // ✅ CONDIÇÃO ESPECIAL: Se objetivos prontos mas não estamos processando refinamento
+    if (planning.status === 'AI_BACKLOG_VISIBLE' && state.tabState !== 'generating') {
+      console.log('🛑 POLLING - Objetivos prontos, não há refinamento em andamento');
+      dispatch({ type: 'SET_POLLING_STATE', payload: 'stopped' });
+      return { shouldStop: true, data: planning };
+    }
+    
     // ✅ PRIORIDADE 2: Verificar se está em processamento (STATUS: IA GERANDO)
     if (planning.status === 'PENDING_AI_REFINED_LIST') {
       console.log('🔄 POLLING - Processamento em andamento, mantendo STATUS: IA GERANDO');
@@ -522,7 +510,9 @@ export function RefinedPlanningProvider({
 
     // ✅ PRIORIDADE 3: Verificar outros estados
     console.log('⏸️ POLLING - Nenhuma condição de continuidade, parando...');
-    return { shouldStop: false, data: planning };
+    // ✅ PARAR POLLING se não há condições de continuidade
+    dispatch({ type: 'SET_POLLING_STATE', payload: 'stopped' });
+    return { shouldStop: true, data: planning };
   }, [state.currentPlanningId, state.tabState, planningId]);
 
   // ✅ POLLING CONDICIONAL - Ativo quando pollingState é 'active'
@@ -676,82 +666,10 @@ export function RefinedPlanningProvider({
     }
   }, [pollingError, state.error]); // ✅ DEPENDÊNCIAS LIMITADAS
 
-  // ✅ NOVO: Função para detectar se specificObjectives foi preenchido pela API externa
-  const detectObjectivesCompletion = useCallback(async (planningId: string): Promise<boolean> => {
-    console.log('🔍 Verificando se API externa salvou specificObjectives...', planningId);
-    
-    try {
-      const response = await fetch(`/api/plannings/${planningId}?t=${Date.now()}`, {
-        cache: 'no-store',
-        headers: { 
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        },
-      });
+  // ✅ REMOVER POLLING DE OBJETIVOS - Isso é responsabilidade do PlanningDetails
+  // O RefinedPlanningContext só deve lidar com o planejamento refinado
 
-      if (!response.ok) {
-        throw new Error(`Erro HTTP: ${response.status}`);
-      }
-
-      const planning = await response.json();
-      
-      // Verificar se specificObjectives foi preenchido e status ainda é PENDING_AI_BACKLOG_GENERATION
-      if (planning.specificObjectives && 
-          planning.specificObjectives.trim().length > 0 && 
-          planning.status === 'PENDING_AI_BACKLOG_GENERATION') {
-        
-        console.log('✅ API externa salvou specificObjectives! Atualizando status...');
-        
-        // Atualizar status para AI_BACKLOG_VISIBLE
-        const updateResponse = await fetch(`/api/plannings/${planningId}/update-status`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'AI_BACKLOG_VISIBLE' }),
-        });
-
-        if (updateResponse.ok) {
-          console.log('✅ Status atualizado para AI_BACKLOG_VISIBLE');
-          dispatch({ type: 'SET_TAB_STATE', payload: 'ready' });
-          return true; // Objetivos completados
-        }
-      }
-      
-      return false; // Ainda aguardando
-    } catch (error) {
-      console.error('❌ Erro ao verificar objetivos específicos:', error);
-      throw error;
-    }
-  }, []);
-
-  // ✅ CORREÇÃO: Polling para objetivos específicos quando status = PENDING_AI_BACKLOG_GENERATION
-  const objectivesPolling = usePollingWithRetry(
-    () => detectObjectivesCompletion(state.currentPlanningId!),
-    false, // Controlado manualmente
-    {
-      interval: pollingConfig.interval,
-      maxRetries: pollingConfig.maxRetries,
-      timeout: pollingConfig.timeout,
-      retryDelay: pollingConfig.retryDelay || 1000
-    }
-  );
-
-  // Detectar quando objetivos foram completados
-  useEffect(() => {
-    if (objectivesPolling.data === true) {
-      console.log('🎯 Objetivos específicos detectados - parando polling');
-      objectivesPolling.stop();
-      dispatch({ type: 'SET_POLLING_STATE', payload: 'stopped' });
-    }
-  }, [objectivesPolling.data]);
-
-  // Detectar erros no polling de objetivos
-  useEffect(() => {
-    if (objectivesPolling.error) {
-      console.error('❌ Erro no polling de objetivos específicos:', objectivesPolling.error);
-      dispatch({ type: 'SET_ERROR', payload: objectivesPolling.error });
-      dispatch({ type: 'SET_POLLING_STATE', payload: 'error' });
-    }
-  }, [objectivesPolling.error]);
+  // ✅ POLLING DE OBJETIVOS REMOVIDO - PlanningDetails é responsável por isso
 
   // ✅ CLEANUP: Parar polling quando componente desmonta
   useEffect(() => {
