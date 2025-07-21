@@ -4,6 +4,32 @@ import { SetorPermitido } from '@/lib/planning/sectorConfig';
 import { QuestionField } from '../QuestionField';
 import { EyeOff } from 'lucide-react';
 
+/**
+ * Verifica se um campo condicional deve estar visível baseado no valor do campo dependente
+ */
+function checkConditionalVisibility(dependentValue: any, showWhen: string[]): boolean {
+  // Tratar valores undefined/null
+  if (dependentValue === undefined || dependentValue === null) {
+    return false;
+  }
+  
+  // Para valores boolean (campos toggle)
+  if (typeof dependentValue === 'boolean') {
+    const booleanString = dependentValue.toString(); // true -> "true", false -> "false"
+    return showWhen.includes(booleanString);
+  }
+  
+  // Para arrays (campos multiselect)
+  if (Array.isArray(dependentValue)) {
+    // Verificar se algum dos valores do array está em showWhen
+    return dependentValue.some(item => showWhen.includes(String(item)));
+  }
+  
+  // Para outros tipos, converter para string e comparar
+  const stringValue = String(dependentValue);
+  return showWhen.includes(stringValue);
+}
+
 interface SectorDetailsTabProps {
   sector: SetorPermitido;
   formData: Record<string, any>;
@@ -49,8 +75,7 @@ export const SectorDetailsTab = memo(function SectorDetailsTab({
       
       // Verificar se condição é atendida
       const dependentValue = formData[question.conditional.dependsOn];
-      const stringValue = String(dependentValue);
-      const shouldBeVisible = question.conditional.showWhen.includes(stringValue);
+      const shouldBeVisible = checkConditionalVisibility(dependentValue, question.conditional.showWhen);
       
       if (shouldBeVisible) {
         newVisibleFields.add(question.field);

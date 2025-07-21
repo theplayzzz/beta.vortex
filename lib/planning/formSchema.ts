@@ -16,7 +16,7 @@ const informacoesBasicasSchema = z.object({
   descricao_objetivo: z
     .string()
     .min(10, "Descrição deve ter pelo menos 10 caracteres")
-    .max(500, "Descrição deve ter no máximo 500 caracteres"),
+    .max(1000, "Descrição deve ter no máximo 1000 caracteres"),
   setor: z.string().min(1, "Setor é obrigatório")
 });
 
@@ -45,10 +45,10 @@ function createDetalhesSetorSchema(setor?: string): z.ZodSchema<any> {
           schemaObject[question.field] = z.string().min(1, `${question.label} é obrigatório`);
           break;
         case 'number':
-          schemaObject[question.field] = z.number({
+          schemaObject[question.field] = z.coerce.number({
             required_error: `${question.label} é obrigatório`,
             invalid_type_error: `${question.label} deve ser um número`
-          }).positive(`${question.label} deve ser maior que zero`);
+          }).min(0, `${question.label} deve ser um número positivo ou zero`);
           break;
         case 'multiselect':
           schemaObject[question.field] = z.array(z.string()).min(1, `Selecione pelo menos uma opção para ${question.label}`);
@@ -76,13 +76,12 @@ function createDetalhesSetorSchema(setor?: string): z.ZodSchema<any> {
             // Só validar campos condicionais que são obrigatórios
             if (question.conditional && question.required) {
               const dependentValue = data[question.conditional.dependsOn];
-              const stringValue = String(dependentValue);
-              const shouldBeVisible = question.conditional.showWhen.includes(stringValue);
+              const shouldBeVisible = checkConditionalVisibility(dependentValue, question.conditional.showWhen);
               
               // Se o campo deve estar visível e está vazio, é erro
               if (shouldBeVisible) {
                 const fieldValue = data[question.field];
-                if (!fieldValue || (Array.isArray(fieldValue) && fieldValue.length === 0) || fieldValue === '') {
+                if (isFieldEmpty(fieldValue)) {
                   conditionalErrors.push(`${question.label} é obrigatório quando "${question.conditional.dependsOn}" é "${dependentValue}"`);
                 }
               }
@@ -96,6 +95,58 @@ function createDetalhesSetorSchema(setor?: string): z.ZodSchema<any> {
         }
       )
     : z.record(z.any());
+}
+
+/**
+ * Verifica se um campo está vazio considerando diferentes tipos de valores
+ */
+function isFieldEmpty(value: any): boolean {
+  if (value === undefined || value === null || value === '') {
+    return true;
+  }
+  
+  // Para arrays (multiselect), verificar se está vazio
+  if (Array.isArray(value) && value.length === 0) {
+    return true;
+  }
+  
+  // Para booleanos, false não é considerado vazio (é uma escolha válida)
+  if (typeof value === 'boolean') {
+    return false;
+  }
+  
+  // Para números, 0 é um valor válido (não vazio)
+  if (typeof value === 'number') {
+    return false;
+  }
+  
+  return false;
+}
+
+/**
+ * Verifica se um campo condicional deve estar visível baseado no valor do campo dependente
+ */
+function checkConditionalVisibility(dependentValue: any, showWhen: string[]): boolean {
+  // Tratar valores undefined/null
+  if (dependentValue === undefined || dependentValue === null) {
+    return false;
+  }
+  
+  // Para valores boolean (campos toggle)
+  if (typeof dependentValue === 'boolean') {
+    const booleanString = dependentValue.toString(); // true -> "true", false -> "false"
+    return showWhen.includes(booleanString);
+  }
+  
+  // Para arrays (campos multiselect)
+  if (Array.isArray(dependentValue)) {
+    // Verificar se algum dos valores do array está em showWhen
+    return dependentValue.some(item => showWhen.includes(String(item)));
+  }
+  
+  // Para outros tipos, converter para string e comparar
+  const stringValue = String(dependentValue);
+  return showWhen.includes(stringValue);
 }
 
 /**

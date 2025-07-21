@@ -116,34 +116,35 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
     }
   }, [onTabChangeRef, safeSetCurrentTab]);
 
-  // Função para auto-save no onBlur
+  // Função para auto-save no onBlur - REMOVIDA PARA EVITAR REDUNDÂNCIA
   const handleSaveOnBlur = useCallback(() => {
     const currentFormData = form.getValues();
-    updateFormData(currentFormData as Partial<PlanningFormData>);
-    console.log('💾 Auto-save executado no onBlur');
-  }, [form, updateFormData]);
+    // A lógica de `updateFormData` agora é centralizada no `handleFieldChange`
+    // para evitar chamadas duplas. O hook já lida com o "auto-save".
+    console.log(' FYI: onBlur acionado, mas o salvamento agora é centralizado.');
+  }, [form]);
 
-  // Carregar dados salvos do localStorage apenas uma vez
+  // Carregar dados salvos do localStorage apenas uma vez na montagem
   useEffect(() => {
-    console.log('🔍 Verificando dados para carregar no formulário:', {
+    // Os dados iniciais vêm do hook, que já os carrega do localStorage.
+    // Aqui, apenas garantimos que o formulário seja populado com esses dados.
+    console.log('🔍 Verificando dados iniciais para carregar no formulário:', {
       formData,
-      hasData: formData && Object.keys(formData).length > 0,
-      isDirty: form.formState.isDirty,
-      isValid: form.formState.isValid
+      hasData: formData && Object.keys(formData).length > 0
     });
 
     if (formData && Object.keys(formData).length > 0) {
-      // Resetar o formulário com os dados salvos
-      console.log('🔄 Resetando formulário com dados salvos:', formData);
+      console.log('🔄 Resetando formulário com dados iniciais:', formData);
       form.reset(formData as PlanningFormData);
-      
-      // Forçar revalidação após reset
+
+      // Disparar validação após o reset para garantir que o estado de `isValid` reflita os dados carregados
       setTimeout(() => {
         form.trigger();
-        console.log('✅ Formulário resetado e revalidado');
+        console.log('✅ Formulário inicializado e revalidado com dados salvos.');
       }, 100);
     }
-  }, [formData, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // <-- Array de dependências VAZIO para rodar apenas uma vez
 
   const handleFieldChange = useCallback((field: string, value: any) => {
     // currentTab já é normalizado, mas vamos ser extra cuidadosos
@@ -169,9 +170,14 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
         fieldPath = field;
     }
 
-    form.setValue(fieldPath as any, value, { shouldValidate: false, shouldDirty: true });
+    form.setValue(fieldPath as any, value, { shouldValidate: true, shouldDirty: true });
     console.log(`📝 Campo atualizado: ${fieldPath} = ${value}`);
-  }, [form, currentTab]);
+
+    // Centralizar o auto-save aqui
+    const currentFormData = form.getValues();
+    updateFormData(currentFormData as Partial<PlanningFormData>);
+
+  }, [form, currentTab, updateFormData]);
 
   const handleSaveDraft = useCallback(() => {
     const currentData = form.getValues();
