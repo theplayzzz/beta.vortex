@@ -87,6 +87,23 @@ export const BasicInfoTab = memo(function BasicInfoTab({ client, formData, onFie
     onFieldBlur();
   };
 
+  // Função para validar em tempo real durante onChange
+  const handleFieldChange = (field: keyof typeof VALIDATION_RULES, value: string) => {
+    setLocalValues(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // Validar em tempo real para limpar erro se campo se tornar válido
+    const error = validateField(field, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [field]: error
+    }));
+    
+    onFieldChange(field, value);
+  };
+
   // Função para obter classes CSS do campo baseado no estado de erro
   const getFieldClasses = (field: keyof typeof VALIDATION_RULES, baseClasses: string): string => {
     const hasError = fieldErrors[field] !== null;
@@ -120,7 +137,7 @@ export const BasicInfoTab = memo(function BasicInfoTab({ client, formData, onFie
           <input
             type="text"
             value={localValues.titulo_planejamento}
-            onChange={(e) => setLocalValues(prev => ({ ...prev, titulo_planejamento: e.target.value }))}
+            onChange={(e) => handleFieldChange('titulo_planejamento', e.target.value)}
             onBlur={(e) => handleFieldBlur('titulo_planejamento', e.target.value)}
             placeholder="Ex: Expansão Digital 2024, Crescimento de Vendas Q1..."
             className={getFieldClasses('titulo_planejamento', 
@@ -153,7 +170,7 @@ export const BasicInfoTab = memo(function BasicInfoTab({ client, formData, onFie
         <div className="relative">
           <textarea
             value={localValues.descricao_objetivo}
-            onChange={(e) => setLocalValues(prev => ({ ...prev, descricao_objetivo: e.target.value }))}
+            onChange={(e) => handleFieldChange('descricao_objetivo', e.target.value)}
             onBlur={(e) => handleFieldBlur('descricao_objetivo', e.target.value)}
             placeholder="Descreva qual é o principal objetivo que você deseja alcançar com este planejamento..."
             rows={4}

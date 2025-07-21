@@ -125,6 +125,17 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
     onBlur();
   };
 
+  // Função para validar em tempo real durante onChange
+  const handleFieldChange = (newValue: any) => {
+    setLocalValue(newValue);
+    
+    // Validar em tempo real para limpar erro se campo se tornar válido
+    const validationError = validateField(question, newValue);
+    setFieldError(validationError);
+    
+    onChange(newValue);
+  };
+
   const renderField = () => {
     // Determinar se há erro para mostrar visualmente (erro de validação em tempo real OU erro do submit)
   const hasError = fieldError !== null || hasSubmitError;
@@ -135,7 +146,7 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
           <input
             type="text"
             value={localValue || ''}
-            onChange={(e) => setLocalValue(e.target.value)}
+            onChange={(e) => handleFieldChange(e.target.value)}
             onBlur={(e) => handleFieldBlur(e.target.value)}
             placeholder={placeholder}
             className={getFieldClasses(hasError, 
@@ -149,10 +160,9 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
           <NumericInputField
             value={localValue || 0}
             onChange={(newValue) => {
-              setLocalValue(newValue);
-              handleFieldBlur(newValue);
+              handleFieldChange(newValue);
             }}
-            onBlur={() => {}}
+            onBlur={() => handleFieldBlur(localValue)}
             placeholder={placeholder}
             formatCurrency={formatCurrency}
             hasError={hasError}
@@ -163,7 +173,7 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
         return (
           <textarea
             value={localValue || ''}
-            onChange={(e) => setLocalValue(e.target.value)}
+            onChange={(e) => handleFieldChange(e.target.value)}
             onBlur={(e) => handleFieldBlur(e.target.value)}
             placeholder={placeholder}
             rows={3}
@@ -188,8 +198,10 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
                   checked={localValue === option}
                   onChange={(e) => {
                     const newValue = e.target.value;
-                    setLocalValue(newValue);
-                    handleFieldBlur(newValue);
+                    handleFieldChange(newValue);
+                  }}
+                  onBlur={(e) => {
+                    handleFieldBlur(e.target.value);
                   }}
                   className={`w-4 h-4 text-sgbus-green bg-night focus:ring-2 ${
                     hasError ? 'border-red-500/60 focus:ring-red-500/20' : 'border-seasalt/20 focus:ring-sgbus-green'
@@ -208,10 +220,9 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
           <MultiSelectWithTagsField
             value={Array.isArray(localValue) ? localValue : []}
             onChange={(newValue) => {
-              setLocalValue(newValue);
-              handleFieldBlur(newValue);
+              handleFieldChange(newValue);
             }}
-            onBlur={() => {}}
+            onBlur={() => handleFieldBlur(localValue)}
             options={options}
             placeholder={placeholder}
             allowCustomTags={true}
@@ -224,10 +235,9 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
           <ToggleSwitchField
             value={Boolean(localValue)}
             onChange={(newValue) => {
-              setLocalValue(newValue);
-              handleFieldBlur(newValue);
+              handleFieldChange(newValue);
             }}
-            onBlur={() => {}}
+            onBlur={() => handleFieldBlur(localValue)}
             labels={{ on: 'Sim', off: 'Não' }}
           />
         );
@@ -238,8 +248,10 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
             value={localValue || ''}
             onChange={(e) => {
               const newValue = e.target.value;
-              setLocalValue(newValue);
-              handleFieldBlur(newValue);
+              handleFieldChange(newValue);
+            }}
+            onBlur={(e) => {
+              handleFieldBlur(e.target.value);
             }}
             className={getFieldClasses(hasError,
               "w-full px-4 py-3 bg-night rounded-lg text-seasalt focus:outline-none focus:ring-2 transition-all duration-200"

@@ -24,15 +24,25 @@ export const MarketingTab = memo(function MarketingTab({ formData, onFieldChange
     meta_marketing_personalizada: formData.meta_marketing_personalizada || ""
   });
 
+  // Estado para controlar erros locais (limpar quando campo se torna válido)
+  const [clearedErrors, setClearedErrors] = useState<Set<string>>(new Set());
+
   // Função para obter classes CSS do campo baseado no estado de erro
   const getFieldClasses = (field: string, baseClasses: string): string => {
-    const hasError = !!errors[field];
+    const hasError = !!errors[field] && !clearedErrors.has(field);
     
     if (hasError) {
       return `${baseClasses.replace('border-seasalt/20', 'border-red-500/60')} focus:border-red-500 focus:ring-red-500/20`;
     }
     
     return baseClasses;
+  };
+
+  // Função para limpar erro quando campo se torna válido
+  const clearErrorIfValid = (field: string, value: any) => {
+    if (errors[field] && value && value.toString().trim().length > 0) {
+      setClearedErrors(prev => new Set(Array.from(prev).concat([field])));
+    }
   };
 
   // Sincronizar estado local com formData quando formData mudar
@@ -43,6 +53,13 @@ export const MarketingTab = memo(function MarketingTab({ formData, onFieldChange
       meta_marketing_personalizada: formData.meta_marketing_personalizada || ""
     });
   }, [formData.maturidade_marketing, formData.meta_marketing, formData.meta_marketing_personalizada]);
+
+  // Resetar erros limpos quando novos erros chegam (novo submit)
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      setClearedErrors(new Set());
+    }
+  }, [errors]);
 
   const metas = localValues.maturidade_marketing ? getMetasForMaturidadeMarketing(localValues.maturidade_marketing as MaturidadeMarketing) : [];
   const descricao = localValues.maturidade_marketing ? DESCRICOES_MATURIDADE_MARKETING[localValues.maturidade_marketing as MaturidadeMarketing] : "";
@@ -61,6 +78,7 @@ export const MarketingTab = memo(function MarketingTab({ formData, onFieldChange
       meta_marketing: "",
       meta_marketing_personalizada: ""
     }));
+    clearErrorIfValid('maturidade_marketing', value);
   };
 
   const handleMaturidadeBlur = (value: string) => {
@@ -78,6 +96,7 @@ export const MarketingTab = memo(function MarketingTab({ formData, onFieldChange
       // Clear custom meta if not "Outro"
       meta_marketing_personalizada: value !== "Outro" ? "" : prev.meta_marketing_personalizada
     }));
+    clearErrorIfValid('meta_marketing', value);
   };
 
   const handleMetaBlur = (value: string) => {
@@ -153,7 +172,7 @@ export const MarketingTab = memo(function MarketingTab({ formData, onFieldChange
           </select>
           
           {/* Mensagem de erro */}
-          {errors.meta_marketing && (
+          {errors.meta_marketing && !clearedErrors.has('meta_marketing') && (
             <p className="text-red-400 text-sm flex items-center mt-1">
               <span className="mr-1">⚠️</span>
               {errors.meta_marketing}
@@ -172,7 +191,11 @@ export const MarketingTab = memo(function MarketingTab({ formData, onFieldChange
           
           <textarea
             value={localValues.meta_marketing_personalizada}
-            onChange={(e) => setLocalValues(prev => ({ ...prev, meta_marketing_personalizada: e.target.value }))}
+            onChange={(e) => {
+              const value = e.target.value;
+              setLocalValues(prev => ({ ...prev, meta_marketing_personalizada: value }));
+              clearErrorIfValid('meta_marketing_personalizada', value);
+            }}
             onBlur={(e) => handleFieldBlur("meta_marketing_personalizada", e.target.value)}
             placeholder="Descreva qual é sua meta específica de marketing..."
             rows={3}
@@ -180,7 +203,7 @@ export const MarketingTab = memo(function MarketingTab({ formData, onFieldChange
           />
           
           {/* Mensagem de erro */}
-          {errors.meta_marketing_personalizada && (
+          {errors.meta_marketing_personalizada && !clearedErrors.has('meta_marketing_personalizada') && (
             <p className="text-red-400 text-sm flex items-center mt-1">
               <span className="mr-1">⚠️</span>
               {errors.meta_marketing_personalizada}
