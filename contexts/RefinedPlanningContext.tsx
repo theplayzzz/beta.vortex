@@ -375,9 +375,13 @@ export function RefinedPlanningProvider({
           console.log('🔄 STATUS: IA GERANDO REFINAMENTO - Processamento em andamento (sem dados no scope)');
           dispatch({ type: 'SET_TAB_STATE', payload: 'generating' });
           
-          // ✅ INICIAR POLLING PARA AGUARDAR WEBHOOK
-          console.log('🚀 Iniciando polling para aguardar webhook...');
-          startPolling(planningId);
+          // ✅ SÓ INICIAR POLLING SE NÃO ESTIVER ATIVO
+          if (state.pollingState !== 'active') {
+            console.log('🚀 Iniciando polling para aguardar webhook...');
+            startPolling(planningId);
+          } else {
+            console.log('⚠️ Polling já ativo - não reiniciando');
+          }
           
           return;
         }
@@ -521,12 +525,12 @@ export function RefinedPlanningProvider({
     return { shouldStop: false, data: planning };
   }, [state.currentPlanningId, state.tabState, planningId]);
 
-  // ✅ POLLING CONDICIONAL - Ativo quando tabState é 'generating'
-  const shouldPoll = state.tabState === 'generating' && state.pollingState === 'active';
+  // ✅ POLLING CONDICIONAL - Ativo quando pollingState é 'active'
+  const shouldPoll = state.pollingState === 'active';
   
   const { isPolling, stop: stopPollingHook, error: pollingError } = usePollingWithRetry(
     fetchPlanningData,
-    shouldPoll, // ✅ Polling ativo quando estado é 'generating'
+    shouldPoll, // ✅ Polling ativo quando pollingState é 'active'
     pollingConfig
   );
 
@@ -639,9 +643,9 @@ export function RefinedPlanningProvider({
       dispatch({ type: 'SET_TAB_STATE', payload: 'generating' });
       dispatch({ type: 'CLEAR_ERROR' });
       
-      // ✅ INICIAR POLLING para aguardar webhook
-      console.log('🚀 Iniciando polling após aprovação...');
-      startPolling(planningId);
+      // ✅ ATIVAR POLLING STATE para que verificação inicial inicie polling
+      console.log('🚀 Ativando polling após aprovação...');
+      dispatch({ type: 'SET_POLLING_STATE', payload: 'active' });
       
       console.log('⏳ Aguardando webhook processar dados...');
       

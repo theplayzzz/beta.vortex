@@ -187,7 +187,13 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
   // ✅ VERIFICAÇÃO AUTOMÁTICA DO STATUS DE OBJETIVOS
   useEffect(() => {
     const checkAndUpdateObjectivesStatus = async () => {
-      // Só verificar se está processando e não tem dados ainda
+      // ✅ NÃO INTERFERIR quando planejamento refinado está sendo gerado
+      if (currentPlanning.status === 'PENDING_AI_REFINED_LIST') {
+        console.log(`🚫 [AutoCheck] Pulando verificação - planejamento refinado em processamento`);
+        return;
+      }
+      
+      // Só verificar se está processando objetivos E não tem dados ainda
       if (isObjectivesProcessing && !hasSpecificObjectives) {
         try {
           console.log(`🔍 [AutoCheck] Verificando objetivos para ${currentPlanning.id}...`);
