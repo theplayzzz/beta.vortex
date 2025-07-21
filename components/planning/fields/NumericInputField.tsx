@@ -9,6 +9,7 @@ interface NumericInputFieldProps {
   min?: number;
   max?: number;
   step?: number;
+  hasError?: boolean;
 }
 
 export function NumericInputField({ 
@@ -19,7 +20,8 @@ export function NumericInputField({
   formatCurrency = false,
   min,
   max,
-  step = 1
+  step = 1,
+  hasError = false
 }: NumericInputFieldProps) {
   const [displayValue, setDisplayValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -144,7 +146,11 @@ export function NumericInputField({
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+        className={`w-full px-4 py-3 bg-night rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:ring-2 transition-all duration-200 ${
+          hasError 
+            ? 'border border-red-500/60 focus:border-red-500 focus:ring-red-500/20 shadow-red-500/20' 
+            : 'border border-seasalt/20 focus:border-sgbus-green focus:ring-sgbus-green/20'
+        }`}
       />
       
       {/* Indicador de moeda */}

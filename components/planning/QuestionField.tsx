@@ -12,24 +12,121 @@ interface QuestionFieldProps {
   error?: string;
 }
 
+// Função para validar um campo específico baseado nas regras
+const validateField = (question: Question, value: any): string | null => {
+  // Se não é obrigatório, não validar
+  if (!question.required) {
+    return null;
+  }
+
+  // Validações por tipo de campo
+  switch (question.type) {
+    case 'text':
+    case 'textarea':
+      if (!value || (typeof value === 'string' && value.trim().length === 0)) {
+        return `${question.label} é obrigatório`;
+      }
+      break;
+
+    case 'radio':
+    case 'select':
+      if (!value || value === '') {
+        return `${question.label} é obrigatório`;
+      }
+      break;
+
+    case 'number':
+      if (value === undefined || value === null || value === '' || (typeof value === 'number' && isNaN(value))) {
+        return `${question.label} é obrigatório`;
+      }
+      if (typeof value === 'number' && value < 0) {
+        return `${question.label} deve ser um número positivo ou zero`;
+      }
+      break;
+
+    case 'multiselect':
+      if (!Array.isArray(value) || value.length === 0) {
+        return `Selecione pelo menos uma opção para ${question.label}`;
+      }
+      break;
+
+    case 'toggle':
+      // Para toggle, qualquer valor boolean (true/false) é válido
+      // Não há validação de "obrigatório" para toggle pois sempre tem um valor
+      break;
+
+    default:
+      if (!value || value === '') {
+        return `${question.label} é obrigatório`;
+      }
+      break;
+  }
+
+  return null;
+};
+
+// Função para obter valor padrão baseado no tipo de campo
+const getDefaultValue = (question: Question): any => {
+  switch (question.type) {
+    case 'text':
+    case 'textarea':
+      return '';
+    case 'radio':
+    case 'select':
+      return '';
+    case 'number':
+      return 0;
+    case 'multiselect':
+      return [];
+    case 'toggle':
+      // Valor padrão para toggle é false (representa "Não")
+      return false;
+    default:
+      return '';
+  }
+};
+
+// Função para obter classes CSS do campo baseado no estado de erro
+const getFieldClasses = (hasError: boolean, baseClasses: string): string => {
+  if (hasError) {
+    return `${baseClasses} border-red-500/60 focus:border-red-500 focus:ring-red-500/20 shadow-red-500/20`;
+  }
+  
+  return `${baseClasses} border-seasalt/20 focus:border-sgbus-green focus:ring-sgbus-green/20`;
+};
+
 export const QuestionField = memo(function QuestionField({ question, value, onChange, onBlur, error }: QuestionFieldProps) {
   const { label, type, options = [], required, placeholder, description, formatCurrency } = question;
   
   // Estado local para evitar re-renderizações durante a digitação
   const [localValue, setLocalValue] = useState(value);
+  
+  // Estado para controlar erros de validação em tempo real
+  const [fieldError, setFieldError] = useState<string | null>(null);
 
-  // Sincronizar estado local com value quando value mudar (ex: carregamento do localStorage)
+  // Inicializar com valor padrão se não há valor
   useEffect(() => {
-    setLocalValue(value);
-  }, [value]);
+    if (value === undefined || value === null) {
+      const defaultValue = getDefaultValue(question);
+      setLocalValue(defaultValue);
+      onChange(defaultValue);
+    } else {
+      setLocalValue(value);
+    }
+  }, [value, question, onChange]);
 
-  // Função para atualizar campo no formulário e salvar no localStorage
+  // Função para validar campo no onBlur
   const handleFieldBlur = (newValue: any) => {
+    const validationError = validateField(question, newValue);
+    setFieldError(validationError);
+
     onChange(newValue);
     onBlur();
   };
 
   const renderField = () => {
+    const hasError = fieldError !== null;
+
     switch (type) {
       case 'text':
         return (
@@ -39,7 +136,9 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
             onChange={(e) => setLocalValue(e.target.value)}
             onBlur={(e) => handleFieldBlur(e.target.value)}
             placeholder={placeholder}
-            className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+            className={getFieldClasses(hasError, 
+              "w-full px-4 py-3 bg-night rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:ring-2 transition-all duration-200"
+            )}
           />
         );
 
@@ -54,6 +153,7 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
             onBlur={() => {}}
             placeholder={placeholder}
             formatCurrency={formatCurrency}
+            hasError={hasError}
           />
         );
 
@@ -65,7 +165,9 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
             onBlur={(e) => handleFieldBlur(e.target.value)}
             placeholder={placeholder}
             rows={3}
-            className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20 resize-none"
+            className={getFieldClasses(hasError,
+              "w-full px-4 py-3 bg-night rounded-lg text-seasalt placeholder-periwinkle focus:outline-none focus:ring-2 resize-none transition-all duration-200"
+            )}
           />
         );
 
@@ -87,7 +189,9 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
                     setLocalValue(newValue);
                     handleFieldBlur(newValue);
                   }}
-                  className="w-4 h-4 text-sgbus-green bg-night border-seasalt/20 focus:ring-sgbus-green focus:ring-2"
+                  className={`w-4 h-4 text-sgbus-green bg-night focus:ring-2 ${
+                    hasError ? 'border-red-500/60 focus:ring-red-500/20' : 'border-seasalt/20 focus:ring-sgbus-green'
+                  }`}
                 />
                 <span className="text-seasalt group-hover:text-sgbus-green transition-colors">
                   {option}
@@ -109,6 +213,7 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
             options={options}
             placeholder={placeholder}
             allowCustomTags={true}
+            hasError={hasError}
           />
         );
 
@@ -134,7 +239,9 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
               setLocalValue(newValue);
               handleFieldBlur(newValue);
             }}
-            className="w-full px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt focus:outline-none focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20"
+            className={getFieldClasses(hasError,
+              "w-full px-4 py-3 bg-night rounded-lg text-seasalt focus:outline-none focus:ring-2 transition-all duration-200"
+            )}
           >
             <option value="">Selecione uma opção...</option>
             {options.map((option) => (
@@ -163,7 +270,16 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
       
       {renderField()}
       
-      {error && (
+      {/* Mostrar erro de validação em tempo real */}
+      {fieldError && (
+        <p className="text-red-400 text-sm flex items-center">
+          <span className="mr-1">⚠️</span>
+          {fieldError}
+        </p>
+      )}
+      
+      {/* Mostrar erro externo se houver */}
+      {error && !fieldError && (
         <p className="text-red-400 text-sm mt-1">{error}</p>
       )}
     </div>

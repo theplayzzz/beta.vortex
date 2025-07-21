@@ -270,6 +270,44 @@ export const finalPayloadSchema = z.object({
 export type FinalPayload = z.infer<typeof finalPayloadSchema>;
 
 /**
+ * Gera valores padrão para os campos de um setor específico
+ */
+function getSectorDefaultValues(setor?: string): Record<string, any> {
+  if (!setor) return {};
+  
+  const questions = getQuestionsForSector(setor as SetorPermitido);
+  const defaults: Record<string, any> = {};
+  
+  questions.forEach(question => {
+    switch (question.type) {
+      case 'text':
+      case 'textarea':
+        defaults[question.field] = '';
+        break;
+      case 'radio':
+      case 'select':
+        defaults[question.field] = '';
+        break;
+      case 'number':
+        defaults[question.field] = 0;
+        break;
+      case 'multiselect':
+        defaults[question.field] = [];
+        break;
+      case 'toggle':
+        // Valor padrão para toggle é false (representa "Não")
+        defaults[question.field] = false;
+        break;
+      default:
+        defaults[question.field] = '';
+        break;
+    }
+  });
+  
+  return defaults;
+}
+
+/**
  * Valores padrão para o formulário
  */
 export function getDefaultValues(clientIndustry?: string): {
@@ -284,7 +322,7 @@ export function getDefaultValues(clientIndustry?: string): {
       descricao_objetivo: "",
       setor: clientIndustry || "Outro"
     },
-    detalhes_do_setor: {},
+    detalhes_do_setor: getSectorDefaultValues(clientIndustry),
     marketing: {
       meta_marketing: "",
       meta_marketing_personalizada: ""

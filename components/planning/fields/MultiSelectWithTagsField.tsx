@@ -9,6 +9,7 @@ interface MultiSelectWithTagsFieldProps {
   options: string[];
   placeholder?: string;
   allowCustomTags?: boolean;
+  hasError?: boolean;
 }
 
 export function MultiSelectWithTagsField({ 
@@ -17,7 +18,8 @@ export function MultiSelectWithTagsField({
   onBlur, 
   options, 
   placeholder = "Digite para buscar ou adicionar...",
-  allowCustomTags = true 
+  allowCustomTags = true,
+  hasError = false
 }: MultiSelectWithTagsFieldProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -191,7 +193,11 @@ export function MultiSelectWithTagsField({
     <div ref={containerRef} className="relative dropdown-container">
       {/* Campo principal com tags */}
       <div 
-        className="w-full min-h-[48px] px-4 py-3 bg-night border border-seasalt/20 rounded-lg text-seasalt focus-within:border-sgbus-green focus-within:ring-2 focus-within:ring-sgbus-green/20 cursor-text"
+        className={`w-full min-h-[48px] px-4 py-3 bg-night rounded-lg text-seasalt cursor-text transition-all duration-200 ${
+          hasError 
+            ? 'border border-red-500/60 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-500/20 shadow-red-500/20' 
+            : 'border border-seasalt/20 focus-within:border-sgbus-green focus-within:ring-2 focus-within:ring-sgbus-green/20'
+        }`}
         onClick={(e) => {
           e.stopPropagation();
           setIsOpen(true);
