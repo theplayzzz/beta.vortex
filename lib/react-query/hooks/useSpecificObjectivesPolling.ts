@@ -31,46 +31,16 @@ export function useSpecificObjectivesPolling(
   const [timeLeft, setTimeLeft] = useState(90); // 90 segundos
   const [startTime, setStartTime] = useState<number | null>(null);
 
-  // Decidir se deve iniciar polling
+  // ✅ DESABILITADO - Polling movido para PlanningDetails para evitar loops
   useEffect(() => {
-    // ✅ VERIFICAÇÃO INTELIGENTE: Não iniciar polling se dados já existem
-    const hasData = initialData?.specificObjectives && initialData.specificObjectives.trim().length > 0;
+    console.log(`🚫 [Polling ${planningId}] DESABILITADO - Polling agora é feito automaticamente no PlanningDetails`);
     
-    // ✅ SE JÁ TEM DADOS: Não fazer nada, polling não é necessário
-    if (hasData) {
-      console.log(`✅ [Polling ${planningId}] SKIP - specificObjectives já existe, polling desnecessário`, {
-        objectivesLength: initialData.specificObjectives?.length || 0,
-        status: initialData.status
-      });
-      
-      // Se estava fazendo polling, parar
-      if (shouldPoll) {
-        setShouldPoll(false);
-        setStartTime(null);
-      }
-      return;
+    // Garantir que não está fazendo polling
+    if (shouldPoll) {
+      setShouldPoll(false);
+      setStartTime(null);
     }
-    
-    const shouldStartPolling = 
-      planningId && 
-      initialData && 
-      !hasData && // Não tem dados ainda
-      !hasTimedOut && // Não teve timeout ainda
-      !shouldPoll; // Não está já fazendo polling
-
-    if (shouldStartPolling) {
-      console.log(`🔄 [Polling ${planningId}] Iniciando polling de objetivos específicos`, {
-        hasData,
-        hasTimedOut,
-        currentlyPolling: shouldPoll,
-        status: initialData.status
-      });
-      setShouldPoll(true);
-      setStartTime(Date.now());
-      setTimeLeft(90);
-      setHasTimedOut(false); // Reset timeout quando iniciar novo polling
-    }
-  }, [planningId, initialData?.specificObjectives, hasTimedOut, shouldPoll]);
+  }, [planningId]);
 
   // Query de polling
   const pollingQuery = useQuery({
@@ -106,11 +76,34 @@ export function useSpecificObjectivesPolling(
       setShouldPoll(false);
       setStartTime(null);
       
-      // Atualizar cache específico do planejamento
-      queryClient.setQueryData(
-        queryKeys.plannings.detail(planningId),
-        pollingQuery.data
-      );
+      // ✅ ATUALIZAR STATUS PARA AI_BACKLOG_VISIBLE
+      const updateStatus = async () => {
+        try {
+          console.log(`🔄 [Polling ${planningId}] Atualizando status para AI_BACKLOG_VISIBLE...`);
+          const response = await fetch(`/api/plannings/${planningId}/update-status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'AI_BACKLOG_VISIBLE' }),
+          });
+          
+          if (response.ok) {
+            console.log(`✅ [Polling ${planningId}] Status atualizado para AI_BACKLOG_VISIBLE`);
+            
+            // Atualizar cache com novo status
+            const updatedData = { ...pollingQuery.data, status: 'AI_BACKLOG_VISIBLE' };
+            queryClient.setQueryData(
+              queryKeys.plannings.detail(planningId),
+              updatedData
+            );
+          } else {
+            console.warn(`⚠️ [Polling ${planningId}] Falha ao atualizar status:`, response.status);
+          }
+        } catch (error) {
+          console.error(`❌ [Polling ${planningId}] Erro ao atualizar status:`, error);
+        }
+      };
+      
+      updateStatus();
     }
   }, [pollingQuery.data?.specificObjectives, shouldPoll, planningId, queryClient]);
 

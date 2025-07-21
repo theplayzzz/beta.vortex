@@ -186,6 +186,56 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
   const isObjectivesProcessing = currentPlanning.status === 'PENDING_AI_BACKLOG_GENERATION';
   const isObjectivesVisible = currentPlanning.status === 'AI_BACKLOG_VISIBLE';
 
+  // ✅ VERIFICAÇÃO AUTOMÁTICA DO STATUS DE OBJETIVOS
+  useEffect(() => {
+    const checkAndUpdateObjectivesStatus = async () => {
+      // Só verificar se está processando e não tem dados ainda
+      if (isObjectivesProcessing && !hasSpecificObjectives) {
+        try {
+          console.log(`🔍 [AutoCheck] Verificando objetivos para ${currentPlanning.id}...`);
+          
+          const response = await fetch(`/api/plannings/${currentPlanning.id}?t=${Date.now()}`, {
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache' }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            
+            // Se objetivos chegaram, atualizar status
+            if (data.specificObjectives && data.specificObjectives.trim().length > 0) {
+              console.log(`✅ [AutoCheck] Objetivos encontrados! Atualizando status...`);
+              
+              const updateResponse = await fetch(`/api/plannings/${currentPlanning.id}/update-status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'AI_BACKLOG_VISIBLE' }),
+              });
+              
+              if (updateResponse.ok) {
+                console.log(`✅ [AutoCheck] Status atualizado para AI_BACKLOG_VISIBLE`);
+                // Atualizar estado local
+                setCurrentPlanning(prev => ({ ...prev, status: 'AI_BACKLOG_VISIBLE', specificObjectives: data.specificObjectives }));
+              }
+            }
+          }
+        } catch (error) {
+          console.warn(`⚠️ [AutoCheck] Erro na verificação:`, error);
+        }
+      }
+    };
+
+    // Verificar a cada 5 segundos se está processando
+    let interval: NodeJS.Timeout | null = null;
+    if (isObjectivesProcessing && !hasSpecificObjectives) {
+      interval = setInterval(checkAndUpdateObjectivesStatus, 5000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isObjectivesProcessing, hasSpecificObjectives, currentPlanning.id]);
+
   // ✅ NOVO: Estado da aba Objetivos Específicos (sempre visível)
   const getObjectivesTabState = () => {
     if (hasSpecificObjectives || hasTasksForRefinement || isObjectivesVisible) {
