@@ -49,39 +49,20 @@ export function TabStateManager({ planning, onTabChange, currentTab }: TabStateM
     return hasStructuredTasks(planning.specificObjectives);
   }, [planning.specificObjectives]);
   
-  // ✅ POLLING MANUAL APENAS - Removido auto-start
+  // ✅ REMOVER DETECÇÃO DUPLICADA - Deixar apenas o contexto responsável
   useEffect(() => {
-    // ✅ APENAS detectar se há dados para mostrar aba como "ready"
-    const hasDataInDatabase = planning.scope && (() => {
-      try {
-        const parsed = JSON.parse(planning.scope);
-        const tarefas = parsed.tarefas_refinadas || parsed.tasks || [];
-        return Array.isArray(tarefas) && tarefas.length > 0;
-      } catch {
-        return false;
-      }
-    })();
-
-    if (hasDataInDatabase && !hasValidRefinedTasks(scopeContent)) {
-      console.log('🎯 Dados encontrados no banco - Carregando no contexto', planning.id);
-      // Carregar dados no contexto sem iniciar polling
-      try {
-        const parsed = JSON.parse(planning.scope!);
-        const tarefas = parsed.tarefas_refinadas || parsed.tasks || [];
-        if (Array.isArray(tarefas) && tarefas.length > 0) {
-          // Usar o contexto para carregar os dados
-          // (isso será feito pelo próprio contexto na verificação inicial)
-        }
-      } catch (error) {
-        console.warn('Erro ao carregar dados do banco:', error);
-      }
-    }
-    
     // Reset ref se status mudou e não é mais PENDING
     if (planning.status !== 'PENDING_AI_REFINED_LIST') {
       pollingStartedRef.current = null;
     }
-  }, [planning.status, planning.id, planning.scope, scopeContent]);
+    
+    console.log('🎯 TabStateManager - Estado atual:', {
+      planningId: planning.id,
+      tabState,
+      scopeContentExists: !!scopeContent,
+      hasScope: !!planning.scope
+    });
+  }, [planning.status, planning.id, tabState, scopeContent, planning.scope]);
 
   // Marcar como visualizado quando aba é clicada
   const handleTabClick = () => {
@@ -150,18 +131,16 @@ export function TabStateManager({ planning, onTabChange, currentTab }: TabStateM
         <span>Planejamento Refinado</span>
         
         {/* Indicador de status */}
-        {tabState !== 'hidden' && (
-          <TabStatusIndicator 
-            state={tabState}
-            message={
-              tabState === 'generating' ? 'IA Gerando...' :
-              tabState === 'ready' ? 'Pronto' :
-              tabState === 'waiting' ? 'Aguardando Aprovação' :
-              tabState === 'error' ? 'Erro' :
-              undefined
-            }
-          />
-        )}
+        <TabStatusIndicator 
+          state={tabState}
+          message={
+            tabState === 'generating' ? 'IA Gerando...' :
+            tabState === 'ready' ? 'Pronto' :
+            tabState === 'waiting' ? 'Aguardando Aprovação' :
+            tabState === 'error' ? 'Erro' :
+            undefined
+          }
+        />
       </span>
       
       {/* Destaque visual com gradiente quando pronto */}

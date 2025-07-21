@@ -3,10 +3,11 @@
 import { createContext, useContext, useReducer, useMemo, ReactNode, useEffect, useCallback } from 'react';
 import { usePollingWithRetry } from '@/hooks/usePollingWithRetry';
 import { pollingLogger } from '../utils/pollingLogger';
+// import { useGlobalRefinedPlanningListener } from './GlobalRefinedPlanningListener';
 import type { Planning, TarefaRefinada } from '@/types/planning';
 
 // Tipos refinados conforme plano
-type TabState = 'hidden' | 'generating' | 'ready' | 'new' | 'error' | 'waiting';
+type TabState = 'generating' | 'ready' | 'new' | 'error' | 'waiting';
 type PollingState = 'idle' | 'active' | 'paused' | 'stopped' | 'error';
 
 interface ScopeContent {
@@ -69,7 +70,7 @@ type RefinedPlanningAction =
 
 // Estado inicial
 const initialState: RefinedPlanningState = {
-  tabState: 'hidden',
+  tabState: 'waiting',
   pollingState: 'idle',
   scopeContent: null,
   error: null,
@@ -123,7 +124,7 @@ function refinedPlanningReducer(
         currentPlanningId: action.payload,
         // Reset state quando mudar de planejamento
         ...(action.payload !== state.currentPlanningId ? {
-          tabState: 'hidden',
+          tabState: 'waiting',
           scopeContent: null,
           error: null,
           isViewed: false
@@ -140,7 +141,7 @@ function refinedPlanningReducer(
       return {
         ...state,
         error: null,
-        tabState: state.tabState === 'error' ? 'hidden' : state.tabState
+        tabState: state.tabState === 'error' ? 'waiting' : state.tabState
       };
     
     case 'UPDATE_TIMESTAMP':
@@ -158,7 +159,7 @@ function refinedPlanningReducer(
         currentPlanningId: action.payload,
         // Reset state quando mudar de planejamento
         ...(action.payload !== state.currentPlanningId ? {
-          tabState: 'hidden',
+          tabState: 'waiting',
           scopeContent: null,
           error: null,
           isViewed: false
@@ -181,19 +182,82 @@ const pollingConfig = {
   retryDelay: 1000 // 1s inicial
 };
 
+// Helper function para detectar dados prontos no planning
+function detectInitialTabState(planningId?: string, initialPlanningData?: any): TabState {
+  // Se não há planningId, estado inicial é waiting
+  if (!planningId) return 'waiting';
+  
+  // ✅ VERIFICAÇÃO SÍNCRONA: Se há dados de planning passados, verificar scope
+  if (initialPlanningData?.scope) {
+    try {
+      const parsed = JSON.parse(initialPlanningData.scope);
+      const tarefas = parsed.tarefas_refinadas || parsed.tasks || [];
+      if (Array.isArray(tarefas) && tarefas.length > 0) {
+        console.log('🚀 ESTADO INICIAL INTELIGENTE: Dados encontrados - iniciando como READY');
+        return 'ready';
+      }
+    } catch (error) {
+      console.warn('⚠️ Erro ao parsear scope no estado inicial:', error);
+    }
+  }
+  
+  // ✅ VERIFICAÇÃO DE OBJETIVOS: Se há objetivos mas não há scope, aguardar aprovação
+  if (initialPlanningData?.specificObjectives && !initialPlanningData?.scope) {
+    try {
+      const objectives = JSON.parse(initialPlanningData.specificObjectives);
+      if (objectives.tarefas && Array.isArray(objectives.tarefas) && objectives.tarefas.length > 0) {
+        console.log('🚀 ESTADO INICIAL INTELIGENTE: Objetivos prontos - aguardando aprovação');
+        return 'waiting';
+      }
+    } catch (error) {
+      console.warn('⚠️ Erro ao parsear objectives no estado inicial:', error);
+    }
+  }
+  
+  console.log('🚀 ESTADO INICIAL INTELIGENTE: Sem dados prontos - aguardando');
+  return 'waiting';
+}
+
 // Provider
 export function RefinedPlanningProvider({ 
   children, 
-  planningId 
+  planningId,
+  initialPlanningData
 }: { 
   children: ReactNode; 
   planningId?: string;
+  initialPlanningData?: any;
 }) {
-  // ✅ CORREÇÃO: Configurar estado inicial com planningId se disponível
-  const initialStateWithId = useMemo(() => ({
-    ...initialState,
-    currentPlanningId: planningId || null
-  }), [planningId]);
+  // const { startGlobalListener, stopGlobalListener } = useGlobalRefinedPlanningListener();
+  // ✅ CORREÇÃO: Configurar estado inicial inteligente
+  const initialStateWithId = useMemo(() => {
+    const intelligentTabState = detectInitialTabState(planningId, initialPlanningData);
+    
+    // ✅ Se já há dados prontos, carregar scope content imediatamente
+    let initialScopeContent = null;
+    if (intelligentTabState === 'ready' && initialPlanningData?.scope) {
+      try {
+        const parsed = JSON.parse(initialPlanningData.scope);
+        const tarefas = parsed.tarefas_refinadas || parsed.tasks || [];
+        if (Array.isArray(tarefas) && tarefas.length > 0) {
+          initialScopeContent = {
+            tarefas_refinadas: tarefas,
+            timestamp: new Date().toISOString()
+          };
+          console.log('🎯 SCOPE INICIAL CARREGADO:', tarefas.length, 'tarefas');
+        }
+      } catch (error) {
+        console.warn('⚠️ Erro ao carregar scope inicial:', error);
+      }
+    }
+    
+    return {
+      ...initialState,
+      currentPlanningId: planningId || null,
+      tabState: intelligentTabState,
+      scopeContent: initialScopeContent
+    };
+  }, [planningId, initialPlanningData]);
   
   const [state, dispatch] = useReducer(refinedPlanningReducer, initialStateWithId);
   
@@ -208,16 +272,19 @@ export function RefinedPlanningProvider({
 
   // 🚀 REQUEST INICIAL - Verificar estado da aba ao carregar página
   useEffect(() => {
-    // ✅ CORREÇÃO DO LOOP: Flag para evitar múltiplas execuções
-    let isInitialCheckExecuted = false;
-    
+    // ✅ CORREÇÃO DO LOOP: Flag para evitar múltiplas execuções por planningId
     const checkInitialRefinedPlanningState = async () => {
-      if (!planningId || isInitialCheckExecuted) {
-        console.log('🔍 Pulo verificação inicial:', { planningId, isInitialCheckExecuted });
+      if (!planningId) {
+        console.log('🔍 Pulo verificação inicial: sem planningId');
         return;
       }
 
-      isInitialCheckExecuted = true;
+      // ✅ Evitar execução múltipla para o mesmo planejamento
+      if (state.currentPlanningId === planningId && (state.tabState === 'ready' || state.scopeContent)) {
+        console.log('🔍 Pulo verificação inicial: dados já carregados para', planningId);
+        return;
+      }
+
       console.log('🔍 VERIFICAÇÃO INICIAL - Executing for:', planningId);
 
       try {
@@ -245,7 +312,7 @@ export function RefinedPlanningProvider({
           hasSpecificObjectives: !!planning.specificObjectives
         });
 
-        // ✅ PRIORIDADE MÁXIMA: VERIFICAR SE JÁ TEM DADOS PRONTOS (independente do status)
+        // ✅ PRIORIDADE MÁXIMA: VERIFICAR SE JÁ TEM DADOS PRONTOS NO SCOPE
         if (planning.scope) {
           try {
             const parsed = JSON.parse(planning.scope);
@@ -255,20 +322,22 @@ export function RefinedPlanningProvider({
             const tarefasRefinadas = parsed.tarefas_refinadas || parsed.tasks || [];
             
             if (Array.isArray(tarefasRefinadas) && tarefasRefinadas.length > 0) {
-              console.log('✅ DADOS ENCONTRADOS - Planejamento refinado já pronto (ignorando status)');
+              console.log('✅ DADOS ENCONTRADOS - Planejamento refinado já existe no banco!');
+              console.log(`📊 Total de tarefas: ${tarefasRefinadas.length}`);
               
               // ✅ Normalizar dados para formato esperado
               const normalizedData = {
                 ...parsed,
-                tarefas_refinadas: tarefasRefinadas
+                tarefas_refinadas: tarefasRefinadas,
+                timestamp: new Date().toISOString()
               };
               
-              // ✅ SEMPRE definir como PRONTO quando há dados válidos
+              // ✅ CARREGAR DADOS IMEDIATAMENTE - SEM POLLING
               dispatch({ type: 'SET_SCOPE_CONTENT', payload: normalizedData });
               dispatch({ type: 'SET_TAB_STATE', payload: 'ready' });
               
-              console.log('🎯 Estado definido como READY - dados existem');
-              return; // ← SAIR AQUI - dados prontos têm prioridade absoluta
+              console.log('🎯 Planejamento refinado carregado - PRONTO para uso');
+              return; // ← SAIR AQUI - dados prontos, não fazer mais nada
             }
           } catch (parseError) {
             console.warn('⚠️ Erro ao parsear scope, mas continuando...', parseError);
@@ -305,16 +374,20 @@ export function RefinedPlanningProvider({
         if (planning.status === 'PENDING_AI_REFINED_LIST') {
           console.log('🔄 STATUS: IA GERANDO REFINAMENTO - Processamento em andamento (sem dados no scope)');
           dispatch({ type: 'SET_TAB_STATE', payload: 'generating' });
-          // NÃO iniciar polling automaticamente aqui - será iniciado pelo approve-tasks
+          
+          // ✅ INICIAR POLLING PARA AGUARDAR WEBHOOK
+          console.log('🚀 Iniciando polling para aguardar webhook...');
+          startPolling(planningId);
+          
           return;
         }
 
-        // ✅ STATUS 1: AGUARDANDO PLANEJAMENTO - Verificar se há tarefas para aprovar
+        // ✅ STATUS 1: AGUARDANDO APROVAÇÃO - Verificar se há tarefas para aprovar
         if (planning.specificObjectives) {
           try {
             const objectives = JSON.parse(planning.specificObjectives);
             if (objectives.tarefas && Array.isArray(objectives.tarefas) && objectives.tarefas.length > 0) {
-              console.log('⏳ STATUS: AGUARDANDO PLANEJAMENTO - Tarefas disponíveis para aprovação');
+              console.log('⏳ STATUS: AGUARDANDO APROVAÇÃO - Objetivos prontos, aguardando aprovação para refinamento');
               dispatch({ type: 'SET_TAB_STATE', payload: 'waiting' });
               return;
             }
@@ -323,8 +396,9 @@ export function RefinedPlanningProvider({
           }
         }
 
-        console.log('❌ STATUS: HIDDEN - Nenhuma condição atendida');
-        dispatch({ type: 'SET_TAB_STATE', payload: 'hidden' });
+        // ✅ STATUS: WAITING - Ainda não há objetivos específicos
+        console.log('⏳ STATUS: WAITING - Aguardando objetivos específicos serem gerados');
+        dispatch({ type: 'SET_TAB_STATE', payload: 'waiting' });
 
       } catch (error) {
         console.error('❌ Erro na verificação inicial:', error);
@@ -336,12 +410,15 @@ export function RefinedPlanningProvider({
     if (planningId) {
       checkInitialRefinedPlanningState();
     }
+  }, [planningId, state.currentPlanningId, state.tabState]); // ✅ INCLUIR dependências para evitar re-execuções desnecessárias
 
-    // ✅ CORREÇÃO DO LOOP: Cleanup function para resetar flag
-    return () => {
-      isInitialCheckExecuted = false;
-    };
-  }, [planningId]); // ✅ DEPENDÊNCIA LIMITADA: Só planningId
+  // ✅ PARAR POLLING quando dados chegam via webhook
+  useEffect(() => {
+    if (state.tabState === 'ready' && state.pollingState === 'active') {
+      console.log('✅ Dados encontrados - parando polling');
+      dispatch({ type: 'SET_POLLING_STATE', payload: 'stopped' });
+    }
+  }, [state.tabState, state.pollingState]);
 
   // Função de polling
   const fetchPlanningData = useCallback(async () => {
@@ -444,10 +521,12 @@ export function RefinedPlanningProvider({
     return { shouldStop: false, data: planning };
   }, [state.currentPlanningId, state.tabState, planningId]);
 
-  // ✅ POLLING DESABILITADO - Controle manual apenas
+  // ✅ POLLING CONDICIONAL - Ativo quando tabState é 'generating'
+  const shouldPoll = state.tabState === 'generating' && state.pollingState === 'active';
+  
   const { isPolling, stop: stopPollingHook, error: pollingError } = usePollingWithRetry(
     fetchPlanningData,
-    false, // ← SEMPRE false - sem polling automático
+    shouldPoll, // ✅ Polling ativo quando estado é 'generating'
     pollingConfig
   );
 
@@ -458,18 +537,19 @@ export function RefinedPlanningProvider({
     currentPlanningId: state.currentPlanningId
   });
   
-  // ✅ FUNÇÃO SIMPLIFICADA - Apenas definir estados (sem polling real)
+  // ✅ FUNÇÃO PARA INICIAR POLLING REAL
   const startPolling = useCallback((planningId: string) => {
-    console.log('🚀 startPolling chamado (somente estados):', { 
+    console.log('🚀 startPolling chamado:', { 
       planningId, 
       currentState: state.pollingState
     });
 
-    // Apenas definir estado de "generating" para feedback visual
+    // Definir estados para iniciar polling
     dispatch({ type: 'SET_PLANNING_ID', payload: planningId });
     dispatch({ type: 'SET_TAB_STATE', payload: 'generating' });
+    dispatch({ type: 'SET_POLLING_STATE', payload: 'active' });
     
-    console.log('✅ Estados visuais definidos (sem polling real)');
+    console.log('✅ Polling iniciado para aguardar webhook');
   }, []); // ✅ SEM DEPENDÊNCIAS
 
   const stopPolling = useCallback(() => {
@@ -559,49 +639,11 @@ export function RefinedPlanningProvider({
       dispatch({ type: 'SET_TAB_STATE', payload: 'generating' });
       dispatch({ type: 'CLEAR_ERROR' });
       
-      // ✅ DADOS JÁ ESTÃO NO BANCO - BUSCAR DIRETAMENTE
-      console.log('🎯 Response 200 recebido - dados já estão no banco!');
-      console.log('🔍 Buscando dados finais...');
+      // ✅ INICIAR POLLING para aguardar webhook
+      console.log('🚀 Iniciando polling após aprovação...');
+      startPolling(planningId);
       
-      // Pequeno delay para garantir consistência do banco
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      try {
-        const finalResponse = await fetch(`/api/plannings/${planningId}?t=${Date.now()}`, {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
-        });
-        
-        if (finalResponse.ok) {
-          const finalData = await finalResponse.json();
-          console.log('📊 Dados finais:', { status: finalData.status, hasScope: !!finalData.scope });
-          
-          if (finalData.scope) {
-            try {
-              const parsed = JSON.parse(finalData.scope);
-              const tarefas = parsed.tarefas_refinadas || parsed.tasks || [];
-              
-              if (Array.isArray(tarefas) && tarefas.length > 0) {
-                dispatch({ 
-                  type: 'SET_SCOPE_CONTENT', 
-                  payload: { tarefas_refinadas: tarefas, timestamp: new Date().toISOString() }
-                });
-                console.log(`✅ Dados carregados: ${tarefas.length} tarefas refinadas`);
-              } else {
-                console.warn('⚠️ Nenhuma tarefa encontrada no scope');
-              }
-            } catch (parseError) {
-              console.error('❌ Erro ao parsear dados finais:', parseError);
-            }
-          } else {
-            console.warn('⚠️ Scope vazio na resposta final');
-          }
-        } else {
-          console.error('❌ Erro na busca final:', finalResponse.status);
-        }
-      } catch (error) {
-        console.error('❌ Erro na busca final:', error);
-      }
+      console.log('⏳ Aguardando webhook processar dados...');
       
       console.log('✅ Processo de aprovação finalizado');
       
@@ -706,6 +748,16 @@ export function RefinedPlanningProvider({
       dispatch({ type: 'SET_POLLING_STATE', payload: 'error' });
     }
   }, [objectivesPolling.error]);
+
+  // ✅ CLEANUP: Parar polling quando componente desmonta
+  useEffect(() => {
+    return () => {
+      if (state.pollingState === 'active') {
+        console.log(`🧹 Parando polling (cleanup)`);
+        stopPollingHook();
+      }
+    };
+  }, [state.pollingState, stopPollingHook]);
 
   // Context value memoizado
   const contextValue = useMemo(() => ({

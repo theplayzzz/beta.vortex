@@ -285,7 +285,10 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
   };
 
   return (
-    <RefinedPlanningProvider planningId={currentPlanning.id}>
+    <RefinedPlanningProvider 
+      planningId={currentPlanning.id}
+      initialPlanningData={currentPlanning}
+    >
       <div className="space-y-6">
         {/* Header Simplificado */}
         <div className="flex items-center justify-between">

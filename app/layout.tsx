@@ -6,6 +6,7 @@ import DynamicLayout from "@/components/layout/dynamic-layout";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ToastProvider } from "@/components/ui/toast";
 import { ProposalPollingProvider } from "@/components/proposals/ProposalPollingProvider";
+// import { GlobalRefinedPlanningListenerProvider } from "@/contexts/GlobalRefinedPlanningListener";
 
 export const metadata = {
   title: "Vortex Vault - Sistema de Planejamento e Gestão com IA",
