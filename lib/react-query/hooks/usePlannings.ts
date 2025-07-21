@@ -102,7 +102,13 @@ export function usePlanning(id: string) {
   return useQuery({
     queryKey: queryKeys.plannings.detail(id),
     queryFn: async () => {
-      const response = await fetch(`/api/plannings/${id}`);
+      const response = await fetch(`/api/plannings/${id}?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+      });
       
       if (!response.ok) {
         throw new Error('Failed to fetch planning');
@@ -111,7 +117,9 @@ export function usePlanning(id: string) {
       return response.json();
     },
     enabled: !!id, // Só executa se tiver ID
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0, // ✅ CORREÇÃO: Sempre considerar dados como stale para força refetch
     gcTime: 10 * 60 * 1000,
+    refetchOnMount: true, // ✅ CORREÇÃO: Sempre refetch ao montar
+    refetchOnWindowFocus: true, // ✅ CORREÇÃO: Refetch ao focar janela
   });
 } 

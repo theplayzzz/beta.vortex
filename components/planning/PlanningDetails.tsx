@@ -167,7 +167,19 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
   };
   
   const [currentTab, setCurrentTab] = useState<'form_data' | 'objectives' | 'planejamento-refinado'>(getInitialTab());
-  const [currentPlanning, setCurrentPlanning] = useState(planning);
+  // ✅ CORREÇÃO: Garantir estado correto desde o início
+  const getInitialPlanning = () => {
+    // Se tem objetivos mas status está como PENDING, corrigir
+    if (planning.specificObjectives && 
+        planning.specificObjectives.trim().length > 0 && 
+        planning.status === 'PENDING_AI_BACKLOG_GENERATION') {
+      console.log('🔧 Corrigindo status inicial - objetivos já existem');
+      return { ...planning, status: 'AI_BACKLOG_VISIBLE' as const };
+    }
+    return planning;
+  };
+  
+  const [currentPlanning, setCurrentPlanning] = useState(getInitialPlanning());
   
   // Estados para modal de detalhes da tarefa
   const [selectedTask, setSelectedTask] = useState<TarefaRefinada | null>(null);
@@ -175,7 +187,7 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
   
   // Atualizar estado quando prop planning mudar
   useEffect(() => {
-    setCurrentPlanning(planning);
+    setCurrentPlanning(getInitialPlanning());
   }, [planning]);
 
   // Verificar estados das abas
@@ -190,6 +202,27 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
       // ✅ NÃO INTERFERIR quando planejamento refinado está sendo gerado
       if (currentPlanning.status === 'PENDING_AI_REFINED_LIST') {
         console.log(`🚫 [AutoCheck] Pulando verificação - planejamento refinado em processamento`);
+        return;
+      }
+      
+      // ✅ CORREÇÃO: Se já tem objetivos mas status está errado, corrigir imediatamente
+      if (hasSpecificObjectives && currentPlanning.status === 'PENDING_AI_BACKLOG_GENERATION') {
+        console.log(`🔧 [AutoCheck] Corrigindo status - objetivos já existem`);
+        
+        try {
+          const updateResponse = await fetch(`/api/plannings/${currentPlanning.id}/update-status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'AI_BACKLOG_VISIBLE' }),
+          });
+          
+          if (updateResponse.ok) {
+            console.log(`✅ [AutoCheck] Status corrigido para AI_BACKLOG_VISIBLE`);
+            setCurrentPlanning(prev => ({ ...prev, status: 'AI_BACKLOG_VISIBLE' }));
+          }
+        } catch (error) {
+          console.warn(`⚠️ [AutoCheck] Erro ao corrigir status:`, error);
+        }
         return;
       }
       
@@ -229,6 +262,9 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
       }
     };
 
+    // ✅ EXECUTAR VERIFICAÇÃO IMEDIATAMENTE ao carregar página
+    checkAndUpdateObjectivesStatus();
+    
     // Verificar a cada 5 segundos se está processando
     let interval: NodeJS.Timeout | null = null;
     if (isObjectivesProcessing && !hasSpecificObjectives) {
@@ -238,7 +274,7 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isObjectivesProcessing, hasSpecificObjectives, currentPlanning.id]);
+  }, [isObjectivesProcessing, hasSpecificObjectives, currentPlanning.id, currentPlanning.status]);
 
   // ✅ APÓS todos os hooks, verificações condicionais
   if (isLoading) {

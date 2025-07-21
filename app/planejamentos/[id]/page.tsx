@@ -1,7 +1,10 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { usePlanning } from '@/lib/react-query/hooks/usePlannings';
+import { queryKeys } from '@/lib/react-query/queryKeys';
 import { PlanningDetails } from '@/components/planning';
 import Link from 'next/link';
 import { ArrowLeft, AlertTriangle, Loader2 } from 'lucide-react';
@@ -9,12 +12,29 @@ import { ArrowLeft, AlertTriangle, Loader2 } from 'lucide-react';
 export default function PlanejamentoPage() {
   const params = useParams();
   const planningId = params?.id as string;
+  const queryClient = useQueryClient();
 
   const { 
     data: planning, 
     isLoading, 
-    error 
+    error,
+    refetch 
   } = usePlanning(planningId);
+  
+  // ✅ CORREÇÃO: Invalidar cache e forçar refetch ao navegar entre páginas
+  useEffect(() => {
+    if (planningId) {
+      console.log(`🔄 Invalidando cache e forçando refetch para planejamento ${planningId}`);
+      
+      // Invalidar cache específico deste planejamento
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.plannings.detail(planningId)
+      });
+      
+      // Forçar refetch para garantir dados atualizados
+      refetch();
+    }
+  }, [planningId, queryClient, refetch]);
 
   // Loading state
   if (isLoading) {
