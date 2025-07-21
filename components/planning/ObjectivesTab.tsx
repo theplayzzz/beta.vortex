@@ -7,6 +7,7 @@ import type { PlanningWithClient } from '@/lib/react-query/hooks/usePlannings';
 
 interface ObjectivesTabProps {
   planning: PlanningWithClient;
+  onCreateRefinedTab?: () => void;
 }
 
 function LoadingState({ timeLeft, planning }: { timeLeft: number; planning: PlanningWithClient }) {
@@ -97,9 +98,10 @@ function ErrorState({ message, actions }: ErrorStateProps) {
 interface ObjectivesContentProps {
   data: string;
   planning: PlanningWithClient;
+  onCreateRefinedTab?: () => void;
 }
 
-function ObjectivesContent({ data, planning }: ObjectivesContentProps) {
+function ObjectivesContent({ data, planning, onCreateRefinedTab }: ObjectivesContentProps) {
   // Tentar parsear como JSON estruturado primeiro
   let structuredData;
   try {
@@ -134,8 +136,8 @@ function ObjectivesContent({ data, planning }: ObjectivesContentProps) {
             console.log('Planning atualizado:', updatedPlanning);
           }}
           onCreateRefinedTab={() => {
-            // Callback para criar aba refinada se necessário
-            console.log('Solicitação para criar aba refinada');
+            console.log('🎯 Solicitação para criar aba refinada');
+            onCreateRefinedTab?.();
           }}
         />
       </div>
@@ -165,7 +167,7 @@ function ObjectivesContent({ data, planning }: ObjectivesContentProps) {
   );
 }
 
-export function ObjectivesTab({ planning }: ObjectivesTabProps) {
+export function ObjectivesTab({ planning, onCreateRefinedTab }: ObjectivesTabProps) {
   const router = useRouter();
   
   // Hook de polling condicional
@@ -186,7 +188,7 @@ export function ObjectivesTab({ planning }: ObjectivesTabProps) {
   // Determinar o estado atual
   if (hasObjectives) {
     // ✅ Dados disponíveis - mostrar conteúdo
-    return <ObjectivesContent data={currentData.specificObjectives!} planning={currentData} />;
+    return <ObjectivesContent data={currentData.specificObjectives!} planning={currentData} onCreateRefinedTab={onCreateRefinedTab} />;
   }
   
   if (hasTimedOut) {

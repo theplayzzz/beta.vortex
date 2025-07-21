@@ -33,8 +33,23 @@ export function useSpecificObjectivesPolling(
 
   // Decidir se deve iniciar polling
   useEffect(() => {
-    // ✅ LÓGICA MAIS ROBUSTA: Iniciar polling se não há dados, independentemente do status
+    // ✅ VERIFICAÇÃO INTELIGENTE: Não iniciar polling se dados já existem
     const hasData = initialData?.specificObjectives && initialData.specificObjectives.trim().length > 0;
+    
+    // ✅ SE JÁ TEM DADOS: Não fazer nada, polling não é necessário
+    if (hasData) {
+      console.log(`✅ [Polling ${planningId}] SKIP - specificObjectives já existe, polling desnecessário`, {
+        objectivesLength: initialData.specificObjectives?.length || 0,
+        status: initialData.status
+      });
+      
+      // Se estava fazendo polling, parar
+      if (shouldPoll) {
+        setShouldPoll(false);
+        setStartTime(null);
+      }
+      return;
+    }
     
     const shouldStartPolling = 
       planningId && 
@@ -48,19 +63,12 @@ export function useSpecificObjectivesPolling(
         hasData,
         hasTimedOut,
         currentlyPolling: shouldPoll,
-        objectivesValue: initialData.specificObjectives
+        status: initialData.status
       });
       setShouldPoll(true);
       setStartTime(Date.now());
       setTimeLeft(90);
       setHasTimedOut(false); // Reset timeout quando iniciar novo polling
-    }
-    
-    // ✅ PARAR POLLING quando dados chegam
-    if (hasData && shouldPoll) {
-      console.log(`✅ [Polling ${planningId}] Dados encontrados - parando polling`);
-      setShouldPoll(false);
-      setStartTime(null);
     }
   }, [planningId, initialData?.specificObjectives, hasTimedOut, shouldPoll]);
 

@@ -183,14 +183,15 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
   const hasSpecificObjectives = currentPlanning.specificObjectives && currentPlanning.specificObjectives.trim().length > 0;
   const hasTasksForRefinement = hasStructuredTasks(currentPlanning.specificObjectives);
   const isObjectivesProcessing = currentPlanning.status === 'PENDING_AI_BACKLOG_GENERATION';
+  const isObjectivesVisible = currentPlanning.status === 'AI_BACKLOG_VISIBLE';
 
   // ✅ NOVO: Estado da aba Objetivos Específicos (sempre visível)
   const getObjectivesTabState = () => {
-    if (hasSpecificObjectives || hasTasksForRefinement) {
+    if (hasSpecificObjectives || hasTasksForRefinement || isObjectivesVisible) {
       return 'ready'; // Dados disponíveis
     }
     if (isObjectivesProcessing) {
-      return 'generating'; // IA está processando
+      return 'generating'; // IA está processando objetivos específicos
     }
     return 'waiting'; // Aguardando processamento da IA
   };
@@ -368,7 +369,13 @@ export function PlanningDetails({ planning, isLoading = false }: PlanningDetails
             {currentTab === 'form_data' ? (
               <FormDataDisplay formData={currentPlanning.formDataJSON} />
             ) : currentTab === 'objectives' ? (
-              <ObjectivesTab planning={currentPlanning} />
+              <ObjectivesTab 
+                planning={currentPlanning} 
+                onCreateRefinedTab={() => {
+                  console.log('🎯 Mudando para aba Planejamento Refinado após aprovação');
+                  setCurrentTab('planejamento-refinado');
+                }}
+              />
             ) : currentTab === 'planejamento-refinado' ? (
               <RefinedPlanningContent
                 tasks={getRefinedTasks()}

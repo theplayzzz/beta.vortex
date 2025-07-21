@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma/client';
 import { z } from 'zod';
-// import { webhookService } from '@/lib/planning/webhookService'; // Temporariamente desabilitado
+import { webhookService } from '@/lib/planning/webhookService';
 
 // Schema para validação de filtros
 const FiltersSchema = z.object({
@@ -209,23 +209,47 @@ export async function POST(request: NextRequest) {
     console.log('✅ Planejamento criado no banco:', planning.id);
 
     // ✅ AÇÃO 2: WEBHOOK INDEPENDENTE (FIRE-AND-FORGET)
-    console.log('📡 Webhook temporariamente desabilitado...');
+    console.log('📡 Webhook habilitado - enviando para IA externa...');
     
-    // TODO: Reabilitar webhook após resolver problemas de importação
-    // webhookService.triggerWebhookAsync(
-    //   planning.id,
-    //   client,
-    //   data.formDataJSON,
-    //   user.id
-    // ).catch((error: any) => {
-    //   // Log interno apenas - não afeta a resposta
-    //   console.error(`🚨 Erro interno no webhook service para planning ${planning.id}:`, error);
-    // });
+    // ✅ CORREÇÃO: Atualizar status para PENDING_AI_BACKLOG_GENERATION após enviar webhook
+    const webhookPromise = webhookService.triggerWebhookAsync(
+      planning.id,
+      client,
+      data.formDataJSON,
+      user.id
+    );
+
+    // Atualizar status após iniciar webhook (não aguarda conclusão)
+    console.log('🔄 Atualizando status para PENDING_AI_BACKLOG_GENERATION...');
+    const updatedPlanning = await prisma.strategicPlanning.update({
+      where: { id: planning.id },
+      data: { status: 'PENDING_AI_BACKLOG_GENERATION' },
+      include: {
+        Client: {
+          select: {
+            id: true,
+            name: true,
+            industry: true,
+            richnessScore: true,
+            businessDetails: true,
+            contactEmail: true,
+            website: true,
+          },
+        },
+      },
+    });
+
+    console.log('✅ Status atualizado - IA processando objetivos específicos');
+
+    // Capturar erros de webhook sem afetar resposta
+    webhookPromise.catch((error: any) => {
+      console.error(`🚨 Erro interno no webhook service para planning ${planning.id}:`, error);
+    });
 
     console.log('🚀 Resposta sendo enviada imediatamente (webhook processando em background)');
 
     // ✅ RESPOSTA IMEDIATA - Webhook não influencia o resultado
-    return NextResponse.json(planning, { status: 201 });
+    return NextResponse.json(updatedPlanning, { status: 201 });
 
   } catch (error) {
     console.error('❌ Erro ao criar planejamento:', error);

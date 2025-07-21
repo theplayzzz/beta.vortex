@@ -235,27 +235,18 @@ export function PlanningFormWithClient({
       // Limpar localStorage após sucesso
       localStorage.removeItem(`planning-form-draft-${client.id}`);
 
-      // Adicionar flag "novo" ao localStorage para destacar na listagem
-      const newPlannings = JSON.parse(localStorage.getItem('new-plannings') || '[]');
-      newPlannings.push(createdPlanning.id);
-      localStorage.setItem('new-plannings', JSON.stringify(newPlannings));
-
       // ✅ SUCESSO IMEDIATO + REDIRECIONAMENTO
       addToast(toast.success(
         'Planejamento criado com sucesso!',
-        `"${createdPlanning.title}" foi salvo. Os objetivos específicos serão gerados automaticamente.`,
+        `"${createdPlanning.title}" foi salvo. A IA está processando os objetivos específicos automaticamente.`,
         {
-          duration: 4000,
-          action: {
-            label: 'Visualizar',
-            onClick: () => router.push(`/planejamentos/${createdPlanning.id}`)
-          }
+          duration: 4000
         }
       ));
 
-      // Redirecionar IMEDIATAMENTE para a listagem de planejamentos
-      console.log('🔄 Redirecionando imediatamente para a listagem...');
-      router.push(`/planejamentos?highlight=${createdPlanning.id}`);
+      // Redirecionar IMEDIATAMENTE para a página do planejamento criado
+      console.log(`🔄 Redirecionando imediatamente para o planejamento: ${createdPlanning.id}`);
+      router.push(`/planejamentos/${createdPlanning.id}`);
       
     } catch (error) {
       console.error('❌ Erro ao criar planejamento:', error);

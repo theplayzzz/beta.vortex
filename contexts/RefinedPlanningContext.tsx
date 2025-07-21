@@ -187,15 +187,22 @@ export function RefinedPlanningProvider({
   children: ReactNode; 
   planningId?: string;
 }) {
-  const [state, dispatch] = useReducer(refinedPlanningReducer, initialState);
+  // ✅ CORREÇÃO: Configurar estado inicial com planningId se disponível
+  const initialStateWithId = useMemo(() => ({
+    ...initialState,
+    currentPlanningId: planningId || null
+  }), [planningId]);
   
-  // Configurar planningId no estado quando recebido
+  const [state, dispatch] = useReducer(refinedPlanningReducer, initialStateWithId);
+  
+  // Configurar planningId no estado quando recebido (sem dependência problemática)
   useEffect(() => {
+    console.log('🔧 useEffect planningId:', { planningId, currentPlanningId: state.currentPlanningId });
     if (planningId && planningId !== state.currentPlanningId) {
-      console.log('🔧 Configurando planningId no estado:', planningId);
+      console.log('🔧 Atualizando planningId no estado:', planningId);
       dispatch({ type: 'SET_CURRENT_PLANNING_ID', payload: planningId });
     }
-  }, [planningId, state.currentPlanningId]);
+  }, [planningId]); // ✅ Removido state.currentPlanningId para evitar loops
 
   // 🚀 REQUEST INICIAL - Verificar estado da aba ao carregar página
   useEffect(() => {
@@ -252,9 +259,35 @@ export function RefinedPlanningProvider({
           }
         }
 
-        // ✅ STATUS 2: IA GERANDO - Verificar se está em processamento
+        // ✅ STATUS 2a: IA GERANDO OBJETIVOS - Verificar se está processando objetivos específicos
+        if (planning.status === 'PENDING_AI_BACKLOG_GENERATION') {
+          // ✅ VERIFICAÇÃO: Se specificObjectives já foi preenchido, não iniciar polling
+          const hasObjectives = planning.specificObjectives && planning.specificObjectives.trim().length > 0;
+          
+          if (hasObjectives) {
+            console.log('✅ SKIP POLLING: specificObjectives já existe - atualizando status diretamente');
+            // Atualizar status para AI_BACKLOG_VISIBLE sem polling
+            fetch(`/api/plannings/${planning.id}/update-status`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'AI_BACKLOG_VISIBLE' }),
+            }).then(() => {
+              dispatch({ type: 'SET_TAB_STATE', payload: 'ready' });
+            }).catch(console.error);
+            return;
+          }
+          
+          console.log('🔄 STATUS: IA GERANDO OBJETIVOS - Iniciando polling (dados ainda não disponíveis)');
+          dispatch({ type: 'SET_TAB_STATE', payload: 'waiting' });
+          dispatch({ type: 'SET_POLLING_STATE', payload: 'active' });
+          // Iniciar polling apenas se não há dados
+          objectivesPolling.start();
+          return;
+        }
+
+        // ✅ STATUS 2b: IA GERANDO REFINAMENTO - Verificar se está em processamento de refinamento
         if (planning.status === 'PENDING_AI_REFINED_LIST') {
-          console.log('🔄 STATUS: IA GERANDO - Processamento em andamento detectado');
+          console.log('🔄 STATUS: IA GERANDO REFINAMENTO - Processamento em andamento detectado');
           dispatch({ type: 'SET_TAB_STATE', payload: 'generating' });
           // NÃO iniciar polling automaticamente aqui - será iniciado pelo approve-tasks
           return;
@@ -295,17 +328,35 @@ export function RefinedPlanningProvider({
   }, [planningId]); // ✅ DEPENDÊNCIA LIMITADA: Só planningId
 
   // Função de polling
-  const fetchPlanningData = async () => {
-    if (!state.currentPlanningId) {
+  const fetchPlanningData = useCallback(async () => {
+    // ✅ CORREÇÃO: Verificar currentPlanningId atualizado no momento da execução
+    const currentId = state.currentPlanningId;
+    
+    console.log('🔍 fetchPlanningData chamada:', {
+      currentId,
+      planningIdProp: planningId,
+      stateCurrentPlanningId: state.currentPlanningId,
+      pollingState: state.pollingState,
+      tabState: state.tabState,
+      timestamp: new Date().toISOString()
+    });
+    
+    if (!currentId) {
+      console.error('❌ fetchPlanningData: currentPlanningId não definido!', {
+        state: state,
+        planningIdProp: planningId,
+        stateKeys: Object.keys(state),
+        stateValues: state
+      });
       throw new Error('Nenhum planejamento selecionado');
     }
 
     pollingLogger.logPollingEvent({
-      planningId: state.currentPlanningId,
+      planningId: currentId,
       action: 'start'
     });
 
-    const response = await fetch(`/api/plannings/${state.currentPlanningId}`, {
+    const response = await fetch(`/api/plannings/${currentId}`, {
       cache: 'no-store',
       headers: {
         'Cache-Control': 'no-cache',
@@ -319,7 +370,7 @@ export function RefinedPlanningProvider({
     const planning: Planning = await response.json();
     
     console.log('🔄 POLLING - Verificando estado:', {
-      planningId: state.currentPlanningId,
+      planningId: currentId,
       status: planning.status,
       hasScope: !!planning.scope,
       currentTabState: state.tabState
@@ -334,7 +385,7 @@ export function RefinedPlanningProvider({
           console.log(`   📊 Tarefas encontradas: ${parsed.tarefas_refinadas.length}`);
           
           pollingLogger.logPollingEvent({
-            planningId: state.currentPlanningId,
+            planningId: currentId,
             action: 'success',
             data: { tasksFound: parsed.tarefas_refinadas.length }
           });
@@ -373,7 +424,7 @@ export function RefinedPlanningProvider({
     // ✅ PRIORIDADE 3: Verificar outros estados
     console.log('⏸️ POLLING - Nenhuma condição de continuidade, parando...');
     return { shouldStop: false, data: planning };
-  };
+  }, [state.currentPlanningId, state.tabState, planningId]);
 
   // Hook de polling integrado
   const shouldPoll = state.pollingState === 'active' && state.tabState === 'generating';
@@ -394,7 +445,12 @@ export function RefinedPlanningProvider({
   
   // Sync polling state
   const startPolling = useCallback((planningId: string) => {
-    console.log('🚀 startPolling chamado:', { planningId, currentState: state.pollingState });
+    console.log('🚀 startPolling chamado:', { 
+      planningId, 
+      currentState: state.pollingState,
+      currentPlanningId: state.currentPlanningId,
+      timestamp: new Date().toISOString()
+    });
     
     // ✅ CORREÇÃO DO LOOP: Evitar múltiplas chamadas
     if (state.pollingState === 'active') {
@@ -403,10 +459,25 @@ export function RefinedPlanningProvider({
     }
     
     console.log('⚙️ Definindo estados para polling...');
+    console.log('📝 Dispatching SET_PLANNING_ID:', planningId);
     dispatch({ type: 'SET_PLANNING_ID', payload: planningId });
+    
+    console.log('📝 Dispatching SET_POLLING_STATE: active');
     dispatch({ type: 'SET_POLLING_STATE', payload: 'active' });
+    
+    console.log('📝 Dispatching SET_TAB_STATE: generating');
     dispatch({ type: 'SET_TAB_STATE', payload: 'generating' });
+    
     console.log('✅ Estados definidos: pollingState=active, tabState=generating');
+    
+    // Aguardar um ciclo para garantir que o estado foi atualizado
+    setTimeout(() => {
+      console.log('🔍 Estado após dispatches:', {
+        currentPlanningId: state.currentPlanningId,
+        pollingState: state.pollingState,
+        tabState: state.tabState
+      });
+    }, 100);
     
     pollingLogger.logPollingEvent({
       planningId,
@@ -524,6 +595,80 @@ export function RefinedPlanningProvider({
       dispatch({ type: 'SET_ERROR', payload: pollingError });
     }
   }, [pollingError, state.error]); // ✅ DEPENDÊNCIAS LIMITADAS
+
+  // ✅ NOVO: Função para detectar se specificObjectives foi preenchido pela API externa
+  const detectObjectivesCompletion = useCallback(async (planningId: string): Promise<boolean> => {
+    console.log('🔍 Verificando se API externa salvou specificObjectives...', planningId);
+    
+    try {
+      const response = await fetch(`/api/plannings/${planningId}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`);
+      }
+
+      const planning = await response.json();
+      
+      // Verificar se specificObjectives foi preenchido e status ainda é PENDING_AI_BACKLOG_GENERATION
+      if (planning.specificObjectives && 
+          planning.specificObjectives.trim().length > 0 && 
+          planning.status === 'PENDING_AI_BACKLOG_GENERATION') {
+        
+        console.log('✅ API externa salvou specificObjectives! Atualizando status...');
+        
+        // Atualizar status para AI_BACKLOG_VISIBLE
+        const updateResponse = await fetch(`/api/plannings/${planningId}/update-status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'AI_BACKLOG_VISIBLE' }),
+        });
+
+        if (updateResponse.ok) {
+          console.log('✅ Status atualizado para AI_BACKLOG_VISIBLE');
+          dispatch({ type: 'SET_TAB_STATE', payload: 'ready' });
+          return true; // Objetivos completados
+        }
+      }
+      
+      return false; // Ainda aguardando
+    } catch (error) {
+      console.error('❌ Erro ao verificar objetivos específicos:', error);
+      throw error;
+    }
+  }, []);
+
+  // ✅ CORREÇÃO: Polling para objetivos específicos quando status = PENDING_AI_BACKLOG_GENERATION
+  const objectivesPolling = usePollingWithRetry(
+    () => detectObjectivesCompletion(state.currentPlanningId!),
+    false, // Controlado manualmente
+    {
+      interval: pollingConfig.interval,
+      maxRetries: pollingConfig.maxRetries,
+      timeout: pollingConfig.timeout,
+      retryDelay: pollingConfig.retryDelay || 1000
+    }
+  );
+
+  // Detectar quando objetivos foram completados
+  useEffect(() => {
+    if (objectivesPolling.data === true) {
+      console.log('🎯 Objetivos específicos detectados - parando polling');
+      objectivesPolling.stop();
+      dispatch({ type: 'SET_POLLING_STATE', payload: 'stopped' });
+    }
+  }, [objectivesPolling.data]);
+
+  // Detectar erros no polling de objetivos
+  useEffect(() => {
+    if (objectivesPolling.error) {
+      console.error('❌ Erro no polling de objetivos específicos:', objectivesPolling.error);
+      dispatch({ type: 'SET_ERROR', payload: objectivesPolling.error });
+      dispatch({ type: 'SET_POLLING_STATE', payload: 'error' });
+    }
+  }, [objectivesPolling.error]);
 
   // Context value memoizado
   const contextValue = useMemo(() => ({

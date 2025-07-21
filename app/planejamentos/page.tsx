@@ -23,24 +23,14 @@ export default function PlanejamentosPage() {
   });
   const [page, setPage] = useState(1);
   const [newPlannings, setNewPlannings] = useState<string[]>([]);
-  const [highlightedPlanning, setHighlightedPlanning] = useState<string | null>(null);
+  // Removed highlight functionality since we redirect directly to planning details
+  const highlightedPlanning = null;
 
-  // Verificar planejamentos "novos" e highlight no localStorage
+  // Verificar planejamentos "novos" no localStorage
   useEffect(() => {
     const storedNewPlannings = JSON.parse(localStorage.getItem('new-plannings') || '[]');
     setNewPlannings(storedNewPlannings);
-
-    // Verificar se há um planejamento para destacar
-    const highlightId = searchParams.get('highlight');
-    if (highlightId) {
-      setHighlightedPlanning(highlightId);
-      
-      // Remover highlight após alguns segundos
-      setTimeout(() => {
-        setHighlightedPlanning(null);
-      }, 5000);
-    }
-  }, [searchParams]);
+  }, []);
 
   // Marcar planejamentos como visualizados
   const markPlanningsAsViewed = (planningIds: string[]) => {

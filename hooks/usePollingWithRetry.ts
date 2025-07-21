@@ -68,6 +68,7 @@ export function usePollingWithRetry<T>(
 
   const executePoll = useCallback(async (): Promise<{ success: boolean; shouldStop?: boolean }> => {
     try {
+      console.log('🔍 executePoll: Chamando pollFn...');
       const result = await pollFn();
       setData(result);
       setError(null);
@@ -84,7 +85,7 @@ export function usePollingWithRetry<T>(
       console.error('❌ Erro no polling:', error);
       return { success: false, shouldStop: false };
     }
-  }, []);
+  }, [pollFn]); // ✅ CORREÇÃO: Adicionar pollFn às dependências
 
   const handleRetry = useCallback(async () => {
     if (retryCount >= config.maxRetries) {
@@ -113,7 +114,7 @@ export function usePollingWithRetry<T>(
         handleRetry();
       }
     }, delay);
-  }, [retryCount, config.maxRetries, config.retryDelay]);
+  }, [retryCount, config.maxRetries, config.retryDelay, executePoll, stop]);
 
   const start = useCallback(() => {
     if (isPollingRef.current) {
@@ -173,7 +174,7 @@ export function usePollingWithRetry<T>(
         }, config.interval);
       }
     });
-  }, [config]);
+  }, [config, executePoll, stop, handleRetry]);
 
   useEffect(() => {
     if (shouldPoll && !isPolling && !isPollingRef.current) {

@@ -20,30 +20,44 @@ export async function POST(
   context: { params: Promise<{ planningId: string }> }
 ) {
   try {
+    console.log('🚀 [APPROVE-TASKS] Início da requisição');
+    
     const { userId } = await auth();
     
     if (!userId) {
+      console.log('❌ [APPROVE-TASKS] Usuário não autenticado');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    
+    console.log('✅ [APPROVE-TASKS] Usuário autenticado:', userId);
 
     const params = await context.params;
     const planningId = params.planningId;
+    console.log('📋 [APPROVE-TASKS] Planning ID:', planningId);
 
     // Buscar usuário no banco
+    console.log('🔍 [APPROVE-TASKS] Buscando usuário no banco...');
     const user = await prisma.user.findUnique({
       where: { clerkId: userId },
       select: { id: true }
     });
 
     if (!user) {
+      console.log('❌ [APPROVE-TASKS] Usuário não encontrado no banco');
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
+    console.log('✅ [APPROVE-TASKS] Usuário encontrado:', user.id);
 
     // Parse request body
+    console.log('📥 [APPROVE-TASKS] Parseando request body...');
     const body = await request.json();
+    console.log('📄 [APPROVE-TASKS] Body recebido:', JSON.stringify(body, null, 2));
+    
     const { approvedTasks } = ApproveTasksSchema.parse(body);
+    console.log('✅ [APPROVE-TASKS] Schema validado - Tarefas aprovadas:', approvedTasks.length);
 
     // Verificar se o planejamento existe e pertence ao usuário
+    console.log('🔍 [APPROVE-TASKS] Buscando planejamento no banco...');
     const planning = await prisma.strategicPlanning.findFirst({
       where: {
         id: planningId,
@@ -62,11 +76,13 @@ export async function POST(
     });
 
     if (!planning) {
+      console.log('❌ [APPROVE-TASKS] Planejamento não encontrado ou não pertence ao usuário');
       return NextResponse.json(
         { error: 'Planning not found' },
         { status: 404 }
       );
     }
+    console.log('✅ [APPROVE-TASKS] Planejamento encontrado:', planning.title);
 
     // Validar que existem tarefas selecionadas
     const selectedTasks = approvedTasks.filter(task => task.selecionada);
