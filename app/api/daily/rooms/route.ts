@@ -51,9 +51,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const roomName = body.roomName || `transcription-room-${Date.now()}`;
+
+    // Se roomName foi especificado (sala persistente), verificar se já existe
+    if (body.roomName) {
+      console.log(`🔍 Verificando se sala já existe: ${roomName}`);
+      
+      try {
+        const existingRoomResponse = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${dailyApiKey}`
+          }
+        });
+
+        if (existingRoomResponse.ok) {
+          const existingRoom: DailyRoomResponse = await existingRoomResponse.json();
+          console.log(`✅ Sala já existe, reutilizando: ${roomName}`);
+          
+          return NextResponse.json({
+            success: true,
+            room: {
+              id: existingRoom.id,
+              name: existingRoom.name,
+              url: existingRoom.url,
+              domain: dailyDomain,
+              created_at: existingRoom.created_at,
+              privacy: existingRoom.privacy,
+              config: existingRoom.config,
+              isExisting: true // Flag para indicar que sala já existia
+            }
+          });
+        }
+      } catch (checkError) {
+        // Sala não existe, vamos criar uma nova
+        console.log(`📋 Sala não existe, criando nova: ${roomName}`);
+      }
+    }
+
     // Configuração simplificada da sala Daily (transcrição será iniciada separadamente)
     const roomConfig = {
-      name: body.roomName || `transcription-room-${Date.now()}`,
+      name: roomName,
       privacy: body.privacy || 'private',
       properties: {
         // Configurações básicas de áudio/vídeo
@@ -110,7 +148,8 @@ export async function POST(request: NextRequest) {
         domain: dailyDomain,
         created_at: roomData.created_at,
         privacy: roomData.privacy,
-        config: roomData.config
+        config: roomData.config,
+        isExisting: false // Flag para indicar que sala foi criada agora
       }
     });
 

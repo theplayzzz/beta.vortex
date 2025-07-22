@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
 import DailyIframe, { 
   DailyCall, 
   DailyEvent
@@ -76,6 +77,9 @@ const checkMediaDevicesSupport = () => {
 };
 
 export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
+  // Hook para acessar dados do usuário Clerk
+  const { user, isLoaded: isUserLoaded } = useUser();
+
   // Diagnóstico inicial - executar apenas uma vez
   useEffect(() => {
     checkMediaDevicesSupport();
@@ -327,82 +331,131 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     startAudioLevelMonitoring(callObject);
   }, [startAudioLevelMonitoring]);
 
+
+
   // Função para iniciar transcrição (compatível com Deepgram)
   const startListening = useCallback(async () => {
     try {
       setState(prev => ({ ...prev, error: null, isProcessing: true }));
 
-      // 1. Verificar permissões
+      // Verificar se usuário está carregado e logado
+      if (!isUserLoaded || !user) {
+        console.log('⏳ Aguardando dados do usuário...');
+        setState(prev => ({ ...prev, error: 'Aguardando autenticação do usuário', isProcessing: false }));
+        return;
+      }
+
+      // Verificar permissões de microfone
       const hasPermissions = await requestPermissions();
-      if (!hasPermissions) return;
-
-      // 2. Criar sala Daily.co
-      const roomResponse = await fetch('/api/daily/rooms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          language: config?.language || 'pt',
-          transcriptionModel: config?.model || 'nova-2-general',
-          enableTranscription: true
-        })
-      });
-
-      if (!roomResponse.ok) {
-        throw new Error('Erro ao criar sala Daily.co');
+      if (!hasPermissions) {
+        setState(prev => ({ ...prev, isProcessing: false }));
+        return;
       }
 
-      const roomData = await roomResponse.json();
-      roomNameRef.current = roomData.room.name;
+      // 1. Verificar se já estamos conectados à sala (reconexão)
+      let callObject = callObjectRef.current;
+      
+      if (!callObject || !state.isConnected) {
+        // Precisamos conectar à sala primeiro
+        
+        // Criar sala com clerk-id
+        const roomName = `transcription-${user.id}`;
+        console.log(`🏠 Verificando/criando sala persistente: ${roomName}`);
 
-      // 3. Criar token de acesso
-      const tokenResponse = await fetch('/api/daily/tokens', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          roomName: roomData.room.name,
-          enableTranscription: true,
-          permissions: {
-            canScreenshare: config?.enableScreenAudio !== false
+        // Verificar se sala já existe ou criar nova
+        let roomData;
+        try {
+          const roomResponse = await fetch('/api/daily/rooms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              roomName: roomName, // Nome específico baseado no clerk ID
+              language: config?.language || 'pt',
+              transcriptionModel: config?.model || 'nova-2-general',
+              enableTranscription: true
+            })
+          });
+
+          if (!roomResponse.ok) {
+            throw new Error('Erro ao criar/acessar sala Daily.co');
           }
-        })
-      });
 
-      if (!tokenResponse.ok) {
-        throw new Error('Erro ao criar token Daily.co');
+          roomData = await roomResponse.json();
+          roomNameRef.current = roomData.room.name;
+          
+          if (roomData.room.isExisting) {
+            console.log(`🔄 Reconectando à sala existente: ${roomData.room.name}`);
+          } else {
+            console.log(`✅ Nova sala criada: ${roomData.room.name}`);
+          }
+
+        } catch (error) {
+          console.error('❌ Erro ao preparar sala:', error);
+          setState(prev => ({ ...prev, error: 'Erro ao preparar sala de conferência', isProcessing: false }));
+          return;
+        }
+
+        // Criar token de acesso
+        const tokenResponse = await fetch('/api/daily/tokens', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roomName: roomData.room.name,
+            userName: `${user.firstName || 'Usuario'}-${user.id.slice(-6)}`,
+            enableTranscription: true,
+            permissions: {
+              canScreenshare: config?.enableScreenAudio !== false
+            }
+          })
+        });
+
+        if (!tokenResponse.ok) {
+          throw new Error('Erro ao criar token Daily.co');
+        }
+
+        const tokenData = await tokenResponse.json();
+
+        // Criar CallObject Daily.co
+        callObject = DailyIframe.createCallObject({
+          audioSource: true,
+          videoSource: false
+        });
+
+        callObjectRef.current = callObject;
+
+        // Setup event handlers
+        setupDailyEventHandlers(callObject);
+
+        // Entrar na sala
+        await callObject.join({
+          url: roomData.room.url,
+          token: tokenData.token,
+          userName: tokenData.userName
+        });
+
+        console.log(`✅ Conectado à sala ${roomData.room.name}`);
+        
+        setState(prev => ({
+          ...prev,
+          isConnected: true
+        }));
       }
 
-      const tokenData = await tokenResponse.json();
-
-      // 4. Criar CallObject Daily.co
-      const callObject = DailyIframe.createCallObject({
-        audioSource: true,
-        videoSource: false
-      });
-
-      callObjectRef.current = callObject;
-
-      // 5. Setup event handlers
-      setupDailyEventHandlers(callObject);
-
-      // 6. Entrar na sala
-      await callObject.join({
-        url: roomData.room.url,
-        token: tokenData.token,
-        userName: tokenData.userName
-      });
-
-      // 7. Iniciar transcrição
+      // 2. Iniciar transcrição
+      console.log('🎤 Iniciando transcrição...');
       await callObject.startTranscription({
         language: config?.language || 'pt'
       });
 
-      // 8. Configurar compartilhamento de tela se solicitado
+      // 3. Configurar compartilhamento de tela se solicitado
       if (config?.enableScreenAudio) {
         try {
+          console.log('🖥️ Iniciando compartilhamento de tela...');
           await callObject.startScreenShare({
-            audio: true
+            audio: true // Capturar áudio da tela
           });
           setState(prev => ({ ...prev, isScreenAudioCaptured: true }));
+          console.log('✅ Compartilhamento de tela ativo');
         } catch (screenError) {
           console.warn('⚠️ Compartilhamento de tela não disponível:', screenError);
         }
@@ -432,7 +485,7 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
         isConnected: false
       }));
     }
-  }, [config, requestPermissions, setupDailyEventHandlers]);
+  }, [user, isUserLoaded, state.isConnected, config, requestPermissions, setupDailyEventHandlers]);
 
   // Função para parar transcrição (compatível com Deepgram)
   const stopListening = useCallback(async () => {
@@ -546,6 +599,8 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
       };
     }
   }, [updateAvailableDevices]);
+
+
 
   // Retorno compatível com useDeepgramTranscription
   return {
