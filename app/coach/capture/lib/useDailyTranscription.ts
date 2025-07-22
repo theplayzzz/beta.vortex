@@ -1,0 +1,562 @@
+import { useState, useCallback, useRef, useEffect } from 'react';
+import DailyIframe, { 
+  DailyCall, 
+  DailyEvent
+} from '@daily-co/daily-js';
+
+// Interface compatível com Deepgram (mantendo mesma estrutura)
+export interface TranscriptionState {
+  transcript: string;
+  interimTranscript: string;
+  isListening: boolean;
+  isConnected: boolean;
+  isProcessing: boolean;
+  error: string | null;
+  connectionQuality: 'good' | 'poor' | 'disconnected';
+  audioLevel: number;
+  wordsTranscribed: number;
+  sessionDuration: number;
+  lastActivity: Date | null;
+  canForceFinalize: boolean;
+  devicePermissions: {
+    microphone: boolean;
+    speaker: boolean;
+  };
+  availableDevices: {
+    microphones: MediaDeviceInfo[];
+    speakers: MediaDeviceInfo[];
+  };
+  selectedDeviceId: string | null;
+  isScreenAudioCaptured: boolean;
+  transcriptionLanguage: string;
+  confidence: number;
+  isPaused: boolean;
+  segments: Array<{
+    text: string;
+    confidence: number;
+    timestamp: Date;
+    isFinal: boolean;
+  }>;
+}
+
+// Interface para configuração Daily
+interface DailyTranscriptionConfig {
+  language?: string;
+  model?: string;
+  profanityFilter?: boolean;
+  enableScreenAudio?: boolean;
+  enableInterimResults?: boolean;
+}
+
+// Interface para eventos de transcrição Daily
+interface DailyTranscriptionMessage {
+  type: 'transcription-message';
+  sessionId: string;
+  participantId: string;
+  text: string;
+  timestamp: string;
+  is_final: boolean;
+  confidence?: number;
+  language?: string;
+}
+
+// Função para diagnosticar disponibilidade de APIs
+const checkMediaDevicesSupport = () => {
+  const support = {
+    mediaDevices: !!navigator.mediaDevices,
+    getUserMedia: !!(navigator.mediaDevices?.getUserMedia),
+    enumerateDevices: !!(navigator.mediaDevices?.enumerateDevices),
+    addEventListener: !!(navigator.mediaDevices?.addEventListener),
+    isSecureContext: !!window.isSecureContext,
+    protocol: window.location.protocol
+  };
+  
+  console.log('📋 Diagnóstico MediaDevices:', support);
+  return support;
+};
+
+export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
+  // Diagnóstico inicial - executar apenas uma vez
+  useEffect(() => {
+    checkMediaDevicesSupport();
+  }, []);
+
+  // Estados principais compatíveis com Deepgram
+  const [state, setState] = useState<TranscriptionState>({
+    transcript: '',
+    interimTranscript: '',
+    isListening: false,
+    isConnected: false,
+    isProcessing: false,
+    error: null,
+    connectionQuality: 'disconnected',
+    audioLevel: 0,
+    wordsTranscribed: 0,
+    sessionDuration: 0,
+    lastActivity: null,
+    canForceFinalize: true,
+    devicePermissions: {
+      microphone: false,
+      speaker: false
+    },
+    availableDevices: {
+      microphones: [],
+      speakers: []
+    },
+    selectedDeviceId: null,
+    isScreenAudioCaptured: false,
+    transcriptionLanguage: config?.language || 'pt',
+    confidence: 0,
+    isPaused: false,
+    segments: []
+  });
+
+  // Refs para Daily.co
+  const callObjectRef = useRef<DailyCall | null>(null);
+  const roomNameRef = useRef<string | null>(null);
+  const startTimeRef = useRef<Date | null>(null);
+  const audioLevelIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Atualizar duração da sessão
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (state.isListening && startTimeRef.current) {
+      interval = setInterval(() => {
+        const now = new Date();
+        const duration = Math.floor((now.getTime() - startTimeRef.current!.getTime()) / 1000);
+        setState(prev => ({ ...prev, sessionDuration: duration }));
+      }, 1000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [state.isListening]);
+
+  // Função para obter permissões de mídia
+  const requestPermissions = useCallback(async () => {
+    try {
+      // Verificar se getUserMedia está disponível
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error('❌ getUserMedia não disponível - verifique se está em HTTPS');
+        setState(prev => ({
+          ...prev,
+          error: 'Acesso ao microfone não disponível (necessário HTTPS)',
+          devicePermissions: {
+            ...prev.devicePermissions,
+            microphone: false
+          }
+        }));
+        return false;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: true,
+        video: false 
+      });
+      
+      stream.getTracks().forEach(track => track.stop());
+      
+      setState(prev => ({
+        ...prev,
+        devicePermissions: {
+          ...prev.devicePermissions,
+          microphone: true
+        }
+      }));
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao obter permissões:', error);
+      setState(prev => ({
+        ...prev,
+        error: 'Permissão de microfone negada ou não disponível',
+        devicePermissions: {
+          ...prev.devicePermissions,
+          microphone: false
+        }
+      }));
+      
+      return false;
+    }
+  }, []);
+
+  // Função para listar dispositivos disponíveis
+  const updateAvailableDevices = useCallback(async () => {
+    try {
+      // Verificar se mediaDevices está disponível
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        console.warn('⚠️ navigator.mediaDevices não disponível');
+        return;
+      }
+
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      
+      setState(prev => ({
+        ...prev,
+        availableDevices: {
+          microphones: devices.filter(d => d.kind === 'audioinput'),
+          speakers: devices.filter(d => d.kind === 'audiooutput')
+        }
+      }));
+    } catch (error) {
+      console.error('❌ Erro ao listar dispositivos:', error);
+    }
+  }, []);
+
+  // Monitorar nível de áudio
+  const startAudioLevelMonitoring = useCallback((callObject: DailyCall) => {
+    if (audioLevelIntervalRef.current) {
+      clearInterval(audioLevelIntervalRef.current);
+    }
+
+    audioLevelIntervalRef.current = setInterval(async () => {
+      try {
+        const stats = await callObject.getNetworkStats();
+        const localAudio = stats?.stats?.latest?.recvBitsPerSecond || 0;
+        
+        setState(prev => ({
+          ...prev,
+          audioLevel: Math.min(100, Math.max(0, localAudio / 1000)) // Converter para 0-100
+        }));
+      } catch (error) {
+        // Silencioso - estatísticas podem não estar disponíveis
+      }
+    }, 100);
+  }, []);
+
+  // Handlers de eventos Daily.co
+  const setupDailyEventHandlers = useCallback((callObject: DailyCall) => {
+    // Evento de participante entrou
+    callObject.on('joined-meeting', () => {
+      console.log('✅ Conectado à sala Daily.co');
+      setState(prev => ({ 
+        ...prev, 
+        isConnected: true,
+        connectionQuality: 'good',
+        error: null
+      }));
+    });
+
+    // Evento de erro
+    callObject.on('error', (event) => {
+      console.error('❌ Erro Daily.co:', event);
+      setState(prev => ({
+        ...prev,
+        error: `Erro Daily.co: ${event.errorMsg || 'Erro desconhecido'}`,
+        isListening: false,
+        isConnected: false,
+        connectionQuality: 'disconnected'
+      }));
+    });
+
+    // Evento de transcrição iniciada
+    callObject.on('transcription-started', (event) => {
+      console.log('✅ Transcrição Daily.co iniciada:', event);
+      setState(prev => ({ 
+        ...prev, 
+        isProcessing: true,
+        lastActivity: new Date()
+      }));
+    });
+
+    // Evento de transcrição parada
+    callObject.on('transcription-stopped', (event) => {
+      console.log('⏹️ Transcrição Daily.co parada:', event);
+      setState(prev => ({ ...prev, isProcessing: false }));
+    });
+
+    // Evento principal: mensagens de transcrição via app-message
+    callObject.on('app-message', (event) => {
+      try {
+        // Filtrar apenas mensagens de transcrição do Daily.co/Deepgram
+        if (event.fromId === 'transcription' && event.data?.text) {
+          console.log('📝 Transcrição recebida:', event.data);
+          
+          const newSegment = {
+            text: event.data.text,
+            confidence: event.data.confidence || 0,
+            timestamp: new Date(),
+            isFinal: event.data.is_final || false
+          };
+
+          setState(prev => {
+            const updatedSegments = [...prev.segments, newSegment];
+            
+            if (event.data.is_final) {
+              // Texto final - adicionar ao transcript principal
+              const finalText = prev.transcript + (prev.transcript ? ' ' : '') + event.data.text;
+              
+              return {
+                ...prev,
+                transcript: finalText,
+                interimTranscript: '', // Limpar interim
+                segments: updatedSegments,
+                wordsTranscribed: finalText.split(' ').length,
+                lastActivity: new Date(),
+                confidence: event.data.confidence || 0
+              };
+            } else {
+              // Resultado interim - apenas atualizar interimTranscript
+              return {
+                ...prev,
+                interimTranscript: event.data.text,
+                segments: updatedSegments,
+                lastActivity: new Date(),
+                confidence: event.data.confidence || 0
+              };
+            }
+          });
+        }
+      } catch (error) {
+        console.error('❌ Erro ao processar mensagem de transcrição:', error);
+      }
+    });
+
+    // Monitorar qualidade da conexão
+    callObject.on('network-quality-change', (event) => {
+      const quality = event.quality;
+      setState(prev => ({
+        ...prev,
+        connectionQuality: quality > 0.5 ? 'good' : 'poor'
+      }));
+    });
+
+    // Iniciar monitoramento de áudio
+    startAudioLevelMonitoring(callObject);
+  }, [startAudioLevelMonitoring]);
+
+  // Função para iniciar transcrição (compatível com Deepgram)
+  const startListening = useCallback(async () => {
+    try {
+      setState(prev => ({ ...prev, error: null, isProcessing: true }));
+
+      // 1. Verificar permissões
+      const hasPermissions = await requestPermissions();
+      if (!hasPermissions) return;
+
+      // 2. Criar sala Daily.co
+      const roomResponse = await fetch('/api/daily/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          language: config?.language || 'pt',
+          transcriptionModel: config?.model || 'nova-2-general',
+          enableTranscription: true
+        })
+      });
+
+      if (!roomResponse.ok) {
+        throw new Error('Erro ao criar sala Daily.co');
+      }
+
+      const roomData = await roomResponse.json();
+      roomNameRef.current = roomData.room.name;
+
+      // 3. Criar token de acesso
+      const tokenResponse = await fetch('/api/daily/tokens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomName: roomData.room.name,
+          enableTranscription: true,
+          permissions: {
+            canScreenshare: config?.enableScreenAudio !== false
+          }
+        })
+      });
+
+      if (!tokenResponse.ok) {
+        throw new Error('Erro ao criar token Daily.co');
+      }
+
+      const tokenData = await tokenResponse.json();
+
+      // 4. Criar CallObject Daily.co
+      const callObject = DailyIframe.createCallObject({
+        audioSource: true,
+        videoSource: false
+      });
+
+      callObjectRef.current = callObject;
+
+      // 5. Setup event handlers
+      setupDailyEventHandlers(callObject);
+
+      // 6. Entrar na sala
+      await callObject.join({
+        url: roomData.room.url,
+        token: tokenData.token,
+        userName: tokenData.userName
+      });
+
+      // 7. Iniciar transcrição
+      await callObject.startTranscription({
+        language: config?.language || 'pt'
+      });
+
+      // 8. Configurar compartilhamento de tela se solicitado
+      if (config?.enableScreenAudio) {
+        try {
+          await callObject.startScreenShare({
+            audio: true
+          });
+          setState(prev => ({ ...prev, isScreenAudioCaptured: true }));
+        } catch (screenError) {
+          console.warn('⚠️ Compartilhamento de tela não disponível:', screenError);
+        }
+      }
+
+      startTimeRef.current = new Date();
+      setState(prev => ({
+        ...prev,
+        isListening: true,
+        isProcessing: false,
+        transcript: '',
+        interimTranscript: '',
+        segments: [],
+        wordsTranscribed: 0,
+        sessionDuration: 0
+      }));
+
+      console.log('✅ Transcrição Daily.co iniciada com sucesso');
+
+    } catch (error) {
+      console.error('❌ Erro ao iniciar Daily.co:', error);
+      setState(prev => ({
+        ...prev,
+        error: error instanceof Error ? error.message : 'Erro ao iniciar transcrição',
+        isListening: false,
+        isProcessing: false,
+        isConnected: false
+      }));
+    }
+  }, [config, requestPermissions, setupDailyEventHandlers]);
+
+  // Função para parar transcrição (compatível com Deepgram)
+  const stopListening = useCallback(async () => {
+    try {
+      if (callObjectRef.current) {
+        // Parar transcrição
+        await callObjectRef.current.stopTranscription();
+        
+        // Parar compartilhamento de tela se ativo
+        if (state.isScreenAudioCaptured) {
+          await callObjectRef.current.stopScreenShare();
+        }
+        
+        // Sair da sala
+        await callObjectRef.current.leave();
+        
+        // Destruir call object
+        await callObjectRef.current.destroy();
+        callObjectRef.current = null;
+      }
+
+      // Limpar intervalos
+      if (audioLevelIntervalRef.current) {
+        clearInterval(audioLevelIntervalRef.current);
+        audioLevelIntervalRef.current = null;
+      }
+
+      setState(prev => ({
+        ...prev,
+        isListening: false,
+        isConnected: false,
+        isProcessing: false,
+        connectionQuality: 'disconnected',
+        audioLevel: 0,
+        isScreenAudioCaptured: false
+      }));
+
+      console.log('✅ Transcrição Daily.co parada');
+
+    } catch (error) {
+      console.error('❌ Erro ao parar Daily.co:', error);
+      setState(prev => ({
+        ...prev,
+        error: error instanceof Error ? error.message : 'Erro ao parar transcrição'
+      }));
+    }
+  }, [state.isScreenAudioCaptured]);
+
+  // Pausar/retomar (compatível com Deepgram)
+  const pauseListening = useCallback(async () => {
+    // Daily.co não tem pausa nativa, simular pausando o processamento
+    setState(prev => ({ ...prev, isPaused: true }));
+  }, []);
+
+  const resumeListening = useCallback(async () => {
+    setState(prev => ({ ...prev, isPaused: false }));
+  }, []);
+
+  // Força finalização (compatível com Deepgram)
+  const forceFinalize = useCallback(async () => {
+    if (callObjectRef.current && state.interimTranscript) {
+      // Adicionar interim como final
+      setState(prev => ({
+        ...prev,
+        transcript: prev.transcript + (prev.transcript ? ' ' : '') + prev.interimTranscript,
+        interimTranscript: '',
+        wordsTranscribed: (prev.transcript + ' ' + prev.interimTranscript).split(' ').length
+      }));
+    }
+  }, [state.interimTranscript]);
+
+  // Limpar estados (compatível com Deepgram)
+  const clearTranscript = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      transcript: '',
+      interimTranscript: '',
+      segments: [],
+      wordsTranscribed: 0
+    }));
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (callObjectRef.current) {
+        try {
+          callObjectRef.current.destroy();
+        } catch (error) {
+          console.warn('⚠️ Erro ao destruir CallObject:', error);
+        }
+      }
+      if (audioLevelIntervalRef.current) {
+        clearInterval(audioLevelIntervalRef.current);
+      }
+    };
+  }, []);
+
+  // Atualizar dispositivos disponíveis no mount
+  useEffect(() => {
+    updateAvailableDevices();
+    
+    // Escutar mudanças de dispositivos - verificar disponibilidade
+    if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+      navigator.mediaDevices.addEventListener('devicechange', updateAvailableDevices);
+      
+      return () => {
+        if (navigator.mediaDevices && navigator.mediaDevices.removeEventListener) {
+          navigator.mediaDevices.removeEventListener('devicechange', updateAvailableDevices);
+        }
+      };
+    }
+  }, [updateAvailableDevices]);
+
+  // Retorno compatível com useDeepgramTranscription
+  return {
+    ...state,
+    startListening,
+    stopListening,
+    pauseListening,
+    resumeListening,
+    forceFinalize,
+    clearTranscript,
+    // Funções adicionais específicas Daily
+    updateAvailableDevices
+  };
+}; 
