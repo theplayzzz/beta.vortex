@@ -330,15 +330,26 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
       setState(prev => ({ ...prev, isProcessing: false }));
     });
 
-    // Handler otimizado com filtro ultra-rápido - early return
+    // HANDLER PRIMÁRIO: Evento dedicado transcription-message (RECOMENDADO)
+    callObject.on('transcription-message', (event) => {
+      console.log('📝 Transcription-message (primário):', event);
+      try {
+        handleTranscriptionMessage(event);
+      } catch (error) {
+        console.error('❌ Erro ao processar transcription-message:', error);
+      }
+    });
+
+    // HANDLER BACKUP: app-message para redundância (compatibilidade)
     callObject.on('app-message', (event) => {
-      // Filtro ultra-rápido - early return
-      if (event.fromId !== 'transcription' || !event.data?.text) return;
+      // Filtro para mensagens de transcrição
+      if (event.fromId !== 'transcription' || !event.data) return;
       
+      console.log('📝 App-message (backup):', event.data);
       try {
         handleTranscriptionMessage(event.data);
       } catch (error) {
-        console.error('❌ Erro ao processar mensagem de transcrição:', error);
+        console.error('❌ Erro ao processar app-message backup:', error);
       }
     });
 
