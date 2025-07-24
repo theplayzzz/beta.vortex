@@ -230,7 +230,72 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     }, 100);
   }, []);
 
-  // Handlers de eventos Daily.co
+  // Handler otimizado para transcrição iniciada
+  const handleTranscriptionStarted = useCallback((event: any) => {
+    console.log('✅ Transcrição Daily.co iniciada:', event);
+    setState(prev => ({ 
+      ...prev, 
+      isProcessing: true,
+      lastActivity: new Date()
+    }));
+  }, []);
+
+  // Handler otimizado para erro de transcrição
+  const handleTranscriptionError = useCallback((event: any) => {
+    console.error('❌ Erro de transcrição:', event);
+    setState(prev => ({
+      ...prev,
+      error: `Erro de transcrição: ${event.errorMsg || 'Erro desconhecido'}`,
+      isProcessing: false
+    }));
+  }, []);
+
+  // Handler otimizado para mensagem de transcrição
+  const handleTranscriptionMessage = useCallback((data: any) => {
+    const startTime = performance.now();
+    console.log('📝 Transcrição recebida:', data);
+    
+    const newSegment = {
+      text: data.text,
+      confidence: data.confidence || 0,
+      timestamp: new Date(),
+      isFinal: data.is_final || false
+    };
+
+    setState(prev => {
+      const updatedSegments = [...prev.segments, newSegment];
+      
+      if (data.is_final) {
+        // Texto final - adicionar ao transcript principal
+        const finalText = prev.transcript + (prev.transcript ? ' ' : '') + data.text;
+        
+        return {
+          ...prev,
+          transcript: finalText,
+          interimTranscript: '', // Limpar interim
+          segments: updatedSegments,
+          wordsTranscribed: finalText.split(' ').length,
+          lastActivity: new Date(),
+          confidence: data.confidence || 0
+        };
+      } else {
+        // Resultado interim - apenas atualizar interimTranscript
+        return {
+          ...prev,
+          interimTranscript: data.text,
+          segments: updatedSegments,
+          lastActivity: new Date(),
+          confidence: data.confidence || 0
+        };
+      }
+    });
+    
+    const endTime = performance.now();
+    const processingTime = endTime - startTime;
+    console.log(`⚡ Tempo de processamento: ${processingTime.toFixed(2)}ms`);
+  }, []);
+
+  // Handlers de eventos Daily.co com performance otimizada
   const setupDailyEventHandlers = useCallback((callObject: DailyCall) => {
     // Evento de participante entrou
     callObject.on('joined-meeting', () => {
@@ -255,64 +320,23 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
       }));
     });
 
-    // Evento de transcrição iniciada
-    callObject.on('transcription-started', (event) => {
-      console.log('✅ Transcrição Daily.co iniciada:', event);
-      setState(prev => ({ 
-        ...prev, 
-        isProcessing: true,
-        lastActivity: new Date()
-      }));
-    });
-
+    // Handlers específicos ultra-rápidos
+    callObject.on('transcription-started', handleTranscriptionStarted);
+    callObject.on('transcription-error', handleTranscriptionError);
+    
     // Evento de transcrição parada
     callObject.on('transcription-stopped', (event) => {
       console.log('⏹️ Transcrição Daily.co parada:', event);
       setState(prev => ({ ...prev, isProcessing: false }));
     });
 
-    // Evento principal: mensagens de transcrição via app-message
+    // Handler otimizado com filtro ultra-rápido - early return
     callObject.on('app-message', (event) => {
+      // Filtro ultra-rápido - early return
+      if (event.fromId !== 'transcription' || !event.data?.text) return;
+      
       try {
-        // Filtrar apenas mensagens de transcrição do Daily.co/Deepgram
-        if (event.fromId === 'transcription' && event.data?.text) {
-          console.log('📝 Transcrição recebida:', event.data);
-          
-          const newSegment = {
-            text: event.data.text,
-            confidence: event.data.confidence || 0,
-            timestamp: new Date(),
-            isFinal: event.data.is_final || false
-          };
-
-          setState(prev => {
-            const updatedSegments = [...prev.segments, newSegment];
-            
-            if (event.data.is_final) {
-              // Texto final - adicionar ao transcript principal
-              const finalText = prev.transcript + (prev.transcript ? ' ' : '') + event.data.text;
-              
-              return {
-                ...prev,
-                transcript: finalText,
-                interimTranscript: '', // Limpar interim
-                segments: updatedSegments,
-                wordsTranscribed: finalText.split(' ').length,
-                lastActivity: new Date(),
-                confidence: event.data.confidence || 0
-              };
-            } else {
-              // Resultado interim - apenas atualizar interimTranscript
-              return {
-                ...prev,
-                interimTranscript: event.data.text,
-                segments: updatedSegments,
-                lastActivity: new Date(),
-                confidence: event.data.confidence || 0
-              };
-            }
-          });
-        }
+        handleTranscriptionMessage(event.data);
       } catch (error) {
         console.error('❌ Erro ao processar mensagem de transcrição:', error);
       }
@@ -320,16 +344,17 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
 
     // Monitorar qualidade da conexão
     callObject.on('network-quality-change', (event) => {
-      const quality = event.quality;
+      // Daily.co agora usa threshold ao invés de quality
+      const threshold = (event as any).threshold || event.quality;
       setState(prev => ({
         ...prev,
-        connectionQuality: quality > 0.5 ? 'good' : 'poor'
+        connectionQuality: threshold > 0.5 ? 'good' : 'poor'
       }));
     });
 
     // Iniciar monitoramento de áudio
     startAudioLevelMonitoring(callObject);
-  }, [startAudioLevelMonitoring]);
+  }, [startAudioLevelMonitoring, handleTranscriptionStarted, handleTranscriptionError, handleTranscriptionMessage]);
 
 
 
@@ -462,7 +487,7 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
       if (config?.enableScreenAudio) {
         try {
           console.log('🖥️ Iniciando compartilhamento de tela...');
-          await callObject.startScreenShare({
+          callObject.startScreenShare({
             audio: true // Capturar áudio da tela
           });
           setState(prev => ({ ...prev, isScreenAudioCaptured: true }));
@@ -507,14 +532,14 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
         
         // Parar compartilhamento de tela se ativo
         if (state.isScreenAudioCaptured) {
-          await callObjectRef.current.stopScreenShare();
+          callObjectRef.current.stopScreenShare();
         }
         
         // Sair da sala
         await callObjectRef.current.leave();
         
         // Destruir call object
-        await callObjectRef.current.destroy();
+        callObjectRef.current.destroy();
         callObjectRef.current = null;
       }
 
