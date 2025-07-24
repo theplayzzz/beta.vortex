@@ -120,6 +120,11 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
   const roomNameRef = useRef<string | null>(null);
   const startTimeRef = useRef<Date | null>(null);
   const audioLevelIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Sistema de deduplicação específico para nosso contexto (1 usuário, 2 canais)
+  const processedMessagesRef = useRef<Map<string, number>>(new Map());
+  const processedInterimRef = useRef<Map<string, number>>(new Map()); // Cache separado para interim
+  const MESSAGE_CLEANUP_INTERVAL = 10000; // 10s cleanup
 
   // Atualizar duração da sessão
   useEffect(() => {
@@ -250,10 +255,62 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     }));
   }, []);
 
-  // Handler otimizado para mensagem de transcrição
+  // Sistema de deduplicação para nosso contexto específico
+  const isDuplicateMessage = useCallback((data: any) => {
+    const now = Date.now();
+    const isInterim = !data.is_final;
+    
+    // Gerar chave única baseada no conteúdo e contexto
+    // Para nosso caso: 1 usuário com 2 canais (microfone + tela)
+    const messageKey = `${data.text?.trim()}_${data.is_final ? 'final' : 'interim'}_${data.timestamp || now}`;
+    
+    // Para mensagens interim, usar cache separado com chave mais específica
+    if (isInterim) {
+      // Chave específica para interim: conteúdo + timestamp (mais sensível)
+      const interimKey = `${data.text?.trim()}_interim`;
+      
+      if (processedInterimRef.current.has(interimKey)) {
+        console.log('🔄 Mensagem interim duplicada ignorada:', interimKey.substring(0, 50) + '...');
+        return true;
+      }
+      
+      // Limpar cache interim anterior (manter apenas o mais recente)
+      processedInterimRef.current.clear();
+      processedInterimRef.current.set(interimKey, now);
+      
+      return false;
+    }
+    
+    // Para mensagens finais, usar cache normal
+    if (processedMessagesRef.current.has(messageKey)) {
+      console.log('🔄 Mensagem final duplicada ignorada:', messageKey.substring(0, 50) + '...');
+      return true;
+    }
+    
+    // Adicionar ao cache de mensagens processadas
+    processedMessagesRef.current.set(messageKey, now);
+    
+    // Cleanup automático - remover mensagens antigas (>10s)
+    const cutoffTime = now - MESSAGE_CLEANUP_INTERVAL;
+    for (const [key, timestamp] of processedMessagesRef.current.entries()) {
+      if (timestamp < cutoffTime) {
+        processedMessagesRef.current.delete(key);
+      }
+    }
+    
+    return false;
+  }, []);
+
+  // Handler otimizado para mensagem de transcrição com deduplicação
   const handleTranscriptionMessage = useCallback((data: any) => {
     const startTime = performance.now();
-    console.log('📝 Transcrição recebida:', data);
+    
+    // Verificar duplicata antes de processar
+    if (isDuplicateMessage(data)) {
+      return; // Ignorar mensagem duplicada
+    }
+    
+    console.log('📝 Transcrição processada (única):', data);
     
     const newSegment = {
       text: data.text,
@@ -279,7 +336,7 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
           confidence: data.confidence || 0
         };
       } else {
-        // Resultado interim - apenas atualizar interimTranscript
+        // Resultado interim - apenas atualizar interimTranscript (sem duplicação visual)
         return {
           ...prev,
           interimTranscript: data.text,
@@ -293,7 +350,7 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     const endTime = performance.now();
     const processingTime = endTime - startTime;
     console.log(`⚡ Tempo de processamento: ${processingTime.toFixed(2)}ms`);
-  }, []);
+  }, [isDuplicateMessage]);
 
   // Handlers de eventos Daily.co com performance otimizada
   const setupDailyEventHandlers = useCallback((callObject: DailyCall) => {
@@ -328,7 +385,7 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
               console.log('🔄 Reiniciando transcrição após erro de transport...');
               await callObjectRef.current.startTranscription({
                 language: 'pt-BR',
-                model: 'nova-2',
+                model: 'nova-2-general',
                 profanity_filter: false,
                 endpointing: 100,
                 extra: {
@@ -383,13 +440,16 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
       }
     });
 
-    // HANDLER BACKUP: app-message para redundância (compatibilidade)
+    // HANDLER BACKUP: app-message para redundância com fallback condicional
+    // Nosso contexto: 1 usuário, 2 canais - não precisa filtro por session_id
     callObject.on('app-message', (event) => {
-      // Filtro para mensagens de transcrição
+      // Filtro básico para mensagens de transcrição
       if (event.fromId !== 'transcription' || !event.data) return;
       
-      console.log('📝 App-message (backup):', event.data);
+      console.log('📝 App-message (backup/fallback):', event.data);
       try {
+        // Sistema de deduplicação já trata duplicatas automaticamente
+        // Permite redundância sem duplicação visual
         handleTranscriptionMessage(event.data);
       } catch (error) {
         console.error('❌ Erro ao processar app-message backup:', error);
@@ -671,6 +731,9 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
       if (audioLevelIntervalRef.current) {
         clearInterval(audioLevelIntervalRef.current);
       }
+      // Limpar cache de deduplicação
+      processedMessagesRef.current.clear();
+      processedInterimRef.current.clear();
     };
   }, []);
 
