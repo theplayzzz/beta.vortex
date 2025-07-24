@@ -441,11 +441,22 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
         }));
       }
 
-      // 2. Iniciar transcrição
-      console.log('🎤 Iniciando transcrição...');
-      await callObject.startTranscription({
-        language: config?.language || 'pt'
-      });
+      // 2. Iniciar transcrição com configuração otimizada
+      console.log('🎤 Iniciando transcrição com configuração otimizada...');
+      const transcriptionConfig = {
+        language: 'pt-BR',
+        model: 'nova-2',
+        profanityFilter: false,
+        endpointing: 100, // CRÍTICO: Reduz latência de 300ms para 100ms
+        extra: {
+          endpointing: 100,
+          interim_results: true,
+          punctuate: true,
+          utterance_end_ms: 1000
+        }
+      };
+      
+      await callObject.startTranscription(transcriptionConfig);
 
       // 3. Configurar compartilhamento de tela se solicitado
       if (config?.enableScreenAudio) {
