@@ -308,16 +308,59 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
       }));
     });
 
-    // Evento de erro
+    // Evento de erro com tratamento específico para transport
     callObject.on('error', (event) => {
       console.error('❌ Erro Daily.co:', event);
-      setState(prev => ({
-        ...prev,
-        error: `Erro Daily.co: ${event.errorMsg || 'Erro desconhecido'}`,
-        isListening: false,
-        isConnected: false,
-        connectionQuality: 'disconnected'
-      }));
+      
+      // Tratamento específico para erro de transport disconnected
+      if (event.errorMsg?.includes('transport') || event.errorMsg?.includes('disconnected')) {
+        console.log('🔄 Detectado erro de transport, tentando reconexão...');
+        setState(prev => ({
+          ...prev,
+          error: 'Reconectando...',
+          connectionQuality: 'poor'
+        }));
+        
+        // Tentar reconexão após delay
+        setTimeout(async () => {
+          try {
+            if (callObjectRef.current && state.isListening) {
+              console.log('🔄 Reiniciando transcrição após erro de transport...');
+              await callObjectRef.current.startTranscription({
+                language: 'pt-BR',
+                model: 'nova-2',
+                profanity_filter: false,
+                endpointing: 100,
+                extra: {
+                  interim_results: true,
+                  punctuate: true,
+                  utterance_end_ms: 1000
+                }
+              });
+              setState(prev => ({ ...prev, error: null, connectionQuality: 'good' }));
+              console.log('✅ Transcrição reconectada com sucesso');
+            }
+          } catch (reconnectError) {
+            console.error('❌ Falha na reconexão:', reconnectError);
+            setState(prev => ({
+              ...prev,
+              error: 'Falha na reconexão - tente reiniciar',
+              isListening: false,
+              isConnected: false,
+              connectionQuality: 'disconnected'
+            }));
+          }
+        }, 3000);
+      } else {
+        // Outros erros
+        setState(prev => ({
+          ...prev,
+          error: `Erro Daily.co: ${event.errorMsg || 'Erro desconhecido'}`,
+          isListening: false,
+          isConnected: false,
+          connectionQuality: 'disconnected'
+        }));
+      }
     });
 
     // Handlers específicos ultra-rápidos
