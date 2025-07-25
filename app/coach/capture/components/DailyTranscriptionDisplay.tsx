@@ -85,6 +85,10 @@ const DailyTranscriptionDisplay: React.FC = () => {
     wordsTranscribed,
     sessionDuration,
     devicePermissions,
+    segments,
+    trackInfo, // NOVO: Informações de tracks
+    diarizationEnabled, // NOVO: Status de diarização
+    speakerStats, // NOVO: Estatísticas de speakers
     startListening,
     stopListening,
     clearTranscript,
@@ -482,22 +486,30 @@ const DailyTranscriptionDisplay: React.FC = () => {
                 </div>
               </div>
 
-              {/* Estatísticas Daily.co */}
+              {/* Estatísticas Dual Stream Melhoradas */}
               <div className="grid grid-cols-4 gap-2 text-center">
-                <div className="bg-opacity-50 p-1.5 rounded" style={{ backgroundColor: 'rgba(249, 251, 252, 0.05)' }}>
-                  <div className="text-xs font-mono" style={{ color: 'var(--seasalt)' }}>
-                    {stats.finalResults}
+                <div className="bg-opacity-50 p-1.5 rounded" style={{ backgroundColor: 'rgba(107, 233, 76, 0.1)' }}>
+                  <div className="text-xs font-mono" style={{ color: 'var(--sgbus-green)' }}>
+                    {speakerStats.screenSegments}
+                  </div>
+                  <div className="text-xs" style={{ color: 'var(--sgbus-green)' }}>
+                    TELA
+                  </div>
+                </div>
+                <div className="bg-opacity-50 p-1.5 rounded" style={{ backgroundColor: 'rgba(207, 198, 254, 0.1)' }}>
+                  <div className="text-xs font-mono" style={{ color: 'var(--periwinkle)' }}>
+                    {speakerStats.microphoneSegments}
                   </div>
                   <div className="text-xs" style={{ color: 'var(--periwinkle)' }}>
-                    FINAL
+                    MIC
                   </div>
                 </div>
                 <div className="bg-opacity-50 p-1.5 rounded" style={{ backgroundColor: 'rgba(249, 251, 252, 0.05)' }}>
                   <div className="text-xs font-mono" style={{ color: 'var(--seasalt)' }}>
-                    {stats.interimResults}
+                    {speakerStats.totalSpeakers}
                   </div>
                   <div className="text-xs" style={{ color: 'var(--periwinkle)' }}>
-                    INTERIM
+                    SPKRS
                   </div>
                 </div>
                 <div className="bg-opacity-50 p-1.5 rounded" style={{ backgroundColor: 'rgba(249, 251, 252, 0.05)' }}>
@@ -506,14 +518,6 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   </div>
                   <div className="text-xs" style={{ color: 'var(--periwinkle)' }}>
                     CONF
-                  </div>
-                </div>
-                <div className="bg-opacity-50 p-1.5 rounded" style={{ backgroundColor: 'rgba(249, 251, 252, 0.05)' }}>
-                  <div className="text-xs font-mono" style={{ color: 'var(--seasalt)' }}>
-                    {stats.sessionTime}
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--periwinkle)' }}>
-                    TEMPO
                   </div>
                 </div>
               </div>
@@ -530,9 +534,29 @@ const DailyTranscriptionDisplay: React.FC = () => {
               >
                 {/* Header da transcrição */}
                 <div className="flex items-center justify-between p-4 border-b border-opacity-10" style={{ borderColor: 'var(--seasalt)' }}>
-                  <h3 className="text-sm font-medium" style={{ color: 'var(--seasalt)' }}>
-                    TRANSCRIÇÃO DAILY.CO
-                  </h3>
+                  <div className="flex items-center space-x-3">
+                    <h3 className="text-sm font-medium" style={{ color: 'var(--seasalt)' }}>
+                      TRANSCRIÇÃO DUAL STREAM
+                    </h3>
+                    {diarizationEnabled && (
+                      <div className="flex items-center space-x-1">
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--sgbus-green)' }}></div>
+                        <span className="text-xs" style={{ color: 'var(--sgbus-green)' }}>DIARIZAÇÃO</span>
+                      </div>
+                    )}
+                    {trackInfo.audioTrackActive && (
+                      <div className="flex items-center space-x-1">
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--periwinkle)' }}></div>
+                        <span className="text-xs" style={{ color: 'var(--periwinkle)' }}>MIC</span>
+                      </div>
+                    )}
+                    {trackInfo.screenAudioTrackActive && (
+                      <div className="flex items-center space-x-1">
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--sgbus-green)' }}></div>
+                        <span className="text-xs" style={{ color: 'var(--sgbus-green)' }}>TELA</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex items-center space-x-2">
                     {!isAutoScrollEnabled && (
                       <button
@@ -584,21 +608,89 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     </div>
                   )}
 
-                  {transcript && (
+                  {/* Renderizar segmentos finais com DUAL STREAM enhancement */}
+                  {segments.filter(s => s.isFinal).map((segment, index) => (
+                    <div 
+                      key={`final-${index}`}
+                      className="mb-3" 
+                      style={{ 
+                        backgroundColor: segment.color === 'green' ? 'rgba(107, 233, 76, 0.1)' : 
+                                        segment.color === 'blue' ? 'rgba(207, 198, 254, 0.1)' : 
+                                        'rgba(249, 251, 252, 0.05)',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        borderLeft: `3px solid ${
+                          segment.color === 'green' ? 'var(--sgbus-green)' : 
+                          segment.color === 'blue' ? 'var(--periwinkle)' : 
+                          'var(--seasalt)'
+                        }`
+                      }}
+                    >
+                      {/* Header do segmento com informações de fonte */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <div 
+                            className="w-2 h-2 rounded-full" 
+                            style={{ 
+                              backgroundColor: segment.color === 'green' ? 'var(--sgbus-green)' : 
+                                              segment.color === 'blue' ? 'var(--periwinkle)' : 
+                                              'var(--seasalt)'
+                            }}
+                          ></div>
+                          <span className="text-xs font-medium" style={{ 
+                            color: segment.color === 'green' ? 'var(--sgbus-green)' : 
+                                   segment.color === 'blue' ? 'var(--periwinkle)' : 
+                                   'var(--seasalt)'
+                          }}>
+                            {segment.audioSource === 'screen' ? '🖥️ TELA' : 
+                             segment.audioSource === 'microphone' ? '🎤 MICROFONE' : '👤 REMOTO'}
+                            {segment.speakerId && segment.speakerId !== 'unknown' && (
+                              <span className="ml-1">#{segment.speakerId}</span>
+                            )}
+                          </span>
+                        </div>
+                        <span className="text-xs opacity-70" style={{ color: 'var(--seasalt)' }}>
+                          {segment.timestamp.toLocaleTimeString()} | {(segment.confidence * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                      
+                      {/* Texto da transcrição */}
+                      <p 
+                        className="text-base leading-relaxed" 
+                        style={{ 
+                          color: segment.color === 'green' ? 'var(--sgbus-green)' : 
+                                 segment.color === 'blue' ? 'var(--periwinkle)' : 
+                                 'var(--seasalt)'
+                        }}
+                      >
+                        {segment.text}
+                      </p>
+                    </div>
+                  ))}
+
+                  {/* Mostrar texto interim atual */}
+                  {interimTranscript && (
+                    <p 
+                      className="text-base leading-relaxed opacity-70 italic"
+                      style={{ 
+                        color: 'var(--periwinkle)',
+                        backgroundColor: 'rgba(207, 198, 254, 0.05)',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        borderLeft: '3px solid var(--periwinkle)'
+                      }}
+                    >
+                      {interimTranscript}
+                    </p>
+                  )}
+
+                  {/* Fallback para transcrição consolidada (caso segments não estejam disponíveis) */}
+                  {!segments.length && transcript && (
                     <p 
                       className="text-base leading-relaxed mb-2" 
                       style={{ color: 'var(--seasalt)' }}
                     >
                       {transcript}
-                    </p>
-                  )}
-
-                  {interimTranscript && (
-                    <p 
-                      className="text-base leading-relaxed opacity-70 italic"
-                      style={{ color: 'var(--periwinkle)' }}
-                    >
-                      {interimTranscript}
                     </p>
                   )}
 
