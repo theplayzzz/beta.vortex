@@ -30,25 +30,31 @@ export function TranscriptionTest() {
     realMetrics: [] as number[]
   });
   
-  // Ref para armazenar timestamp do último segmento
-  const lastSegmentTimeRef = useRef<number>(0);
+  // Refs para detectar duplicatas em tempo real
   const previousSegmentCountRef = useRef<number>(0);
+  const lastInterimTextRef = useRef<string>('');
+  const duplicateDetectionRef = useRef<{
+    interimDuplicates: number;
+    finalDuplicates: number;
+    totalMessages: number;
+  }>({ interimDuplicates: 0, finalDuplicates: 0, totalMessages: 0 });
   
-  // Interceptar console.log para capturar métricas reais
+  // Interceptar console.log para capturar métricas reais e detectar duplicatas
   useEffect(() => {
     const originalLog = console.log;
     
     console.log = (...args) => {
       originalLog(...args);
       
-      // Capturar métricas de performance
       const message = args.join(' ');
+      
+      // Capturar métricas de performance
       if (message.includes('⚡ Tempo de processamento:')) {
         const match = message.match(/(\d+\.?\d*)ms/);
         if (match) {
           const time = parseFloat(match[1]);
           setPerformanceMetrics(prev => {
-            const newMetrics = [...prev.realMetrics, time].slice(-20); // Manter últimas 20
+            const newMetrics = [...prev.realMetrics, time].slice(-20);
             const avg = newMetrics.reduce((a, b) => a + b, 0) / newMetrics.length;
             
             return {
@@ -59,9 +65,24 @@ export function TranscriptionTest() {
               realMetrics: newMetrics
             };
           });
-          
-          setEventLog(prev => [...prev.slice(-9), `⚡ Processamento real: ${time.toFixed(2)}ms`]);
         }
+      }
+      
+      // Detectar mensagens duplicadas
+      if (message.includes('🔄 Mensagem') && message.includes('duplicada ignorada')) {
+        if (message.includes('interim')) {
+          duplicateDetectionRef.current.interimDuplicates++;
+          setEventLog(prev => [...prev.slice(-9), `🔄 Interim duplicada bloqueada (#${duplicateDetectionRef.current.interimDuplicates})`]);
+        } else {
+          duplicateDetectionRef.current.finalDuplicates++;
+          setEventLog(prev => [...prev.slice(-9), `🔄 Final duplicada bloqueada (#${duplicateDetectionRef.current.finalDuplicates})`]);
+        }
+      }
+      
+      // Detectar mensagens processadas
+      if (message.includes('📝 Transcrição processada (única)')) {
+        duplicateDetectionRef.current.totalMessages++;
+        setEventLog(prev => [...prev.slice(-9), `📝 Mensagem única processada (#${duplicateDetectionRef.current.totalMessages})`]);
       }
     };
     
@@ -70,14 +91,22 @@ export function TranscriptionTest() {
     };
   }, []);
 
-  // Monitor de segmentos
+  // Monitor de segmentos e detecção visual de duplicatas
   useEffect(() => {
     if (segments.length > previousSegmentCountRef.current) {
       previousSegmentCountRef.current = segments.length;
       const lastSegment = segments[segments.length - 1];
-      setEventLog(prev => [...prev.slice(-9), `📝 Transcrição recebida (${lastSegment.isFinal ? 'final' : 'interim'})`]);
+      setEventLog(prev => [...prev.slice(-9), `📝 Segmento adicionado (${lastSegment.isFinal ? 'final' : 'interim'}): "${lastSegment.text.substring(0, 30)}..."`]);
     }
   }, [segments]);
+
+  // Monitor de mudanças no interim text para detectar duplicatas visuais
+  useEffect(() => {
+    if (interimTranscript && interimTranscript !== lastInterimTextRef.current) {
+      lastInterimTextRef.current = interimTranscript;
+      setEventLog(prev => [...prev.slice(-9), `💬 Interim atualizado: "${interimTranscript.substring(0, 30)}..."`]);
+    }
+  }, [interimTranscript]);
 
   // Log de eventos
   useEffect(() => {
@@ -160,19 +189,27 @@ export function TranscriptionTest() {
         </div>
       </div>
 
-      {/* Performance */}
+      {/* Performance e Deduplicação */}
       <div className="p-4 bg-blue-50 rounded text-blue-900">
-        <h3 className="font-semibold mb-2 text-blue-900">Performance dos Event Handlers</h3>
+        <h3 className="font-semibold mb-2 text-blue-900">Performance & Sistema de Deduplicação</h3>
         <div className="text-sm space-y-1 text-blue-800">
           <div>Mensagens processadas: {performanceMetrics.messageCount}</div>
           <div>Último tempo real: {performanceMetrics.lastProcessingTime.toFixed(2)}ms</div>
           <div>Média real: {performanceMetrics.avgProcessingTime.toFixed(2)}ms</div>
-          <div className="text-xs text-blue-700 mt-2">
-            ⚡ Meta: &lt;10ms por mensagem (30-50% mais rápido que handler genérico)
+          
+          <div className="border-t pt-2 mt-2">
+            <div className="font-semibold text-blue-900">📊 Estatísticas de Duplicatas:</div>
+            <div>Total mensagens únicas: {duplicateDetectionRef.current.totalMessages}</div>
+            <div>Duplicatas interim bloqueadas: {duplicateDetectionRef.current.interimDuplicates}</div>
+            <div>Duplicatas finais bloqueadas: {duplicateDetectionRef.current.finalDuplicates}</div>
+            <div className="text-xs text-green-700 mt-1">
+              ✅ Eficiência: {duplicateDetectionRef.current.totalMessages + duplicateDetectionRef.current.interimDuplicates + duplicateDetectionRef.current.finalDuplicates > 0 ? 
+                ((duplicateDetectionRef.current.totalMessages / (duplicateDetectionRef.current.totalMessages + duplicateDetectionRef.current.interimDuplicates + duplicateDetectionRef.current.finalDuplicates)) * 100).toFixed(1) : 0}% (mensagens únicas processadas)
+            </div>
           </div>
-          <div className="text-xs text-orange-700 mt-2 p-2 bg-orange-100 rounded">
-            ℹ️ <strong>Nota:</strong> Abra o Console do navegador (F12) para ver os tempos reais de processamento.
-            Procure por mensagens com "⚡ Tempo de processamento: X.XXms"
+          
+          <div className="text-xs text-blue-700 mt-2">
+            ⚡ Meta: &lt;10ms por mensagem + 0 duplicatas visuais
           </div>
         </div>
       </div>
@@ -213,16 +250,45 @@ export function TranscriptionTest() {
         </div>
       )}
 
+      {/* Diagnóstico de Duplicatas */}
+      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-900">
+        <h3 className="font-semibold mb-2 text-yellow-900">🔍 Diagnóstico de Duplicatas:</h3>
+        <div className="space-y-2 text-yellow-800">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="font-semibold">Transcrição Final:</div>
+              <div className="text-xs">Palavras: {transcript.split(' ').filter(w => w.length > 0).length}</div>
+              <div className="text-xs">Chars: {transcript.length}</div>
+            </div>
+            <div>
+              <div className="font-semibold">Transcrição Interim:</div>
+              <div className="text-xs">Chars: {interimTranscript.length}</div>
+              <div className="text-xs">Última atualização: {lastInterimTextRef.current === interimTranscript ? '✅ Sem duplicata' : '⚠️ Possível duplicata'}</div>
+            </div>
+          </div>
+          <div className="border-t pt-2">
+            <div className="font-semibold">Segmentos:</div>
+            <div className="text-xs">Total: {segments.length}</div>
+            <div className="text-xs">Finais: {segments.filter(s => s.isFinal).length}</div>
+            <div className="text-xs">Interim: {segments.filter(s => !s.isFinal).length}</div>
+          </div>
+        </div>
+      </div>
+
       {/* Instruções de Teste */}
       <div className="p-4 bg-blue-100 rounded text-sm text-blue-900">
-        <h3 className="font-semibold mb-2 text-blue-900">Como testar:</h3>
+        <h3 className="font-semibold mb-2 text-blue-900">Como testar sistema de deduplicação:</h3>
         <ol className="list-decimal list-inside space-y-1 text-blue-800">
           <li>Clique em "Iniciar" e permita acesso ao microfone</li>
-          <li>Fale em português para testar a transcrição</li>
-          <li>Observe os tempos de processamento no painel de Performance</li>
-          <li>Verifique se o tempo médio está abaixo de 10ms (otimização funcionando)</li>
-          <li>Teste falando rápido para verificar o endpointing de 100ms</li>
+          <li>Fale em português devagar e observe o "Log de Eventos"</li>
+          <li>Verifique se aparecem mensagens "🔄 Duplicada bloqueada"</li>
+          <li>Observe se o texto interim aparece apenas uma vez (sem piscar)</li>
+          <li>Confira as "Estatísticas de Duplicatas" - quanto mais duplicatas bloqueadas, melhor!</li>
+          <li>Abra o Console (F12) para ver logs detalhados do sistema</li>
         </ol>
+        <div className="mt-2 p-2 bg-blue-200 rounded text-xs">
+          ⚠️ <strong>Se ainda houver duplicatas:</strong> Você verá mensagens repetidas no Log de Eventos ou textos "piscando" na transcrição.
+        </div>
       </div>
     </div>
   );
