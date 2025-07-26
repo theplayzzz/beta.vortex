@@ -503,13 +503,16 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
       localTracks: participants?.local?.tracks,
       isScreenCaptured: state.isScreenAudioCaptured,
       callObjectMethods: callObjectRef.current 
-        ? Object.getOwnPropertyNames(callObjectRef.current)
-            .filter(name => {
-              if (!callObjectRef.current) return false;
-              const descriptor = Object.getOwnPropertyDescriptor(callObjectRef.current, name);
-              return descriptor && typeof descriptor.value === 'function';
-            })
-            .slice(0, 10) 
+        ? (() => {
+            const callObject = callObjectRef.current;
+            if (!callObject) return [];
+            return Object.getOwnPropertyNames(callObject)
+              .filter(name => {
+                const descriptor = Object.getOwnPropertyDescriptor(callObject, name);
+                return descriptor && typeof descriptor.value === 'function';
+              })
+              .slice(0, 10);
+          })()
         : []
     });
     
