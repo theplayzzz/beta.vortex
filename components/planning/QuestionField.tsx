@@ -110,6 +110,9 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
   
   // Estado para controlar erros de validação em tempo real
   const [fieldError, setFieldError] = useState<string | null>(null);
+  
+  // Estado para rastrear se o campo foi tocado (focado e depois perdeu foco)
+  const [touched, setTouched] = useState(false);
 
   // Inicializar com valor padrão se não há valor
   useEffect(() => {
@@ -131,6 +134,10 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
         setLocalValue(value);
       }
     }
+    
+    // IMPORTANTE: Limpar qualquer erro inicial - campos devem iniciar limpos
+    setFieldError(null);
+    setTouched(false);
   }, [value, question, onChange]);
 
   // Função para validar em tempo real durante onChange
@@ -142,15 +149,22 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
     
     setLocalValue(newValue);
     
-    // Validar em tempo real para limpar erro se campo se tornar válido
-    const validationError = validateField(question, newValue);
-    setFieldError(validationError);
+    // IMPORTANTE: Só validar em tempo real se o campo JÁ foi tocado
+    // Isso permite limpar erros quando usuário corrige, mas não cria erros novos
+    if (touched) {
+      const validationError = validateField(question, newValue);
+      setFieldError(validationError);
+    }
     
     onChange(newValue);
   };
 
   // Função para validar campo no onBlur com verificação adicional
   const handleFieldBlur = (newValue: any) => {
+    // Marcar campo como tocado na primeira vez que perde o foco
+    setTouched(true);
+    
+    // Agora sim, validar o campo (só depois de tocado)
     const validationError = validateField(question, newValue);
     setFieldError(validationError);
 
@@ -167,8 +181,9 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
   };
 
   const renderField = () => {
-    // Determinar se há erro para mostrar visualmente (erro de validação em tempo real OU erro do submit)
-  const hasError = fieldError !== null || hasSubmitError;
+    // REGRA IMPORTANTE: Só mostrar erro de validação em tempo real se campo foi tocado
+    // Mas sempre mostrar erro de submit (quando usuário tentar submeter formulário)
+    const hasError = (fieldError !== null && touched) || hasSubmitError;
 
     switch (type) {
       case 'text':
@@ -315,10 +330,10 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
       {renderField()}
       
       {/* Mostrar erro de validação em tempo real ou do submit */}
-      {(fieldError || error) && (
+      {((fieldError && touched) || error) && (
         <p className="text-red-400 text-sm flex items-center mt-1">
           <span className="mr-1">⚠️</span>
-          {fieldError || error}
+          {(fieldError && touched) ? fieldError : error}
         </p>
       )}
     </div>

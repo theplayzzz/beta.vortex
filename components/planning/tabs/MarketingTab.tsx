@@ -12,7 +12,7 @@ import {
 interface MarketingTabProps {
   formData: Record<string, any>;
   onFieldChange: (field: string, value: any) => void;
-  onFieldBlur: () => void;
+  onFieldBlur: (field: string) => void;
   errors: Record<string, string>;
 }
 
@@ -67,7 +67,7 @@ export const MarketingTab = memo(function MarketingTab({ formData, onFieldChange
   // Função para atualizar campo no formulário e salvar no localStorage
   const handleFieldBlur = (field: string, value: any) => {
     onFieldChange(field, value);
-    onFieldBlur();
+    onFieldBlur(field);
   };
 
   const handleMaturidadeChange = (value: string) => {
@@ -86,7 +86,7 @@ export const MarketingTab = memo(function MarketingTab({ formData, onFieldChange
     // Reset meta when maturity changes
     onFieldChange("meta_marketing", "");
     onFieldChange("meta_marketing_personalizada", "");
-    onFieldBlur();
+    onFieldBlur("maturidade_marketing");
   };
 
   const handleMetaChange = (value: string) => {
@@ -105,7 +105,7 @@ export const MarketingTab = memo(function MarketingTab({ formData, onFieldChange
     if (value !== "Outro") {
       onFieldChange("meta_marketing_personalizada", "");
     }
-    onFieldBlur();
+    onFieldBlur("meta_marketing");
   };
 
   return (

@@ -12,7 +12,7 @@ import {
 interface CommercialTabProps {
   formData: Record<string, any>;
   onFieldChange: (field: string, value: any) => void;
-  onFieldBlur: () => void;
+  onFieldBlur: (field: string) => void;
   errors: Record<string, string>;
 }
 
@@ -67,7 +67,7 @@ export const CommercialTab = memo(function CommercialTab({ formData, onFieldChan
   // Função para atualizar campo no formulário e salvar no localStorage
   const handleFieldBlur = (field: string, value: any) => {
     onFieldChange(field, value);
-    onFieldBlur();
+    onFieldBlur(field);
   };
 
   const handleMaturidadeChange = (value: string) => {
@@ -86,7 +86,7 @@ export const CommercialTab = memo(function CommercialTab({ formData, onFieldChan
     // Reset meta when maturity changes
     onFieldChange("meta_comercial", "");
     onFieldChange("meta_comercial_personalizada", "");
-    onFieldBlur();
+    onFieldBlur("maturidade_comercial");
   };
 
   const handleMetaChange = (value: string) => {
@@ -105,7 +105,7 @@ export const CommercialTab = memo(function CommercialTab({ formData, onFieldChan
     if (value !== "Outro") {
       onFieldChange("meta_comercial_personalizada", "");
     }
-    onFieldBlur();
+    onFieldBlur("meta_comercial");
   };
 
   return (

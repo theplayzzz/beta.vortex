@@ -15,7 +15,7 @@ interface BasicInfoTabProps {
   client: Client;
   formData: Record<string, any>;
   onFieldChange: (field: string, value: any) => void;
-  onFieldBlur: () => void;
+  onFieldBlur: (field: string) => void;
   errors: Record<string, string>;
 }
 
@@ -84,7 +84,7 @@ export const BasicInfoTab = memo(function BasicInfoTab({ client, formData, onFie
 
     // Só chama onFieldChange se não houver erro ou se o campo estava vazio e agora tem conteúdo
     onFieldChange(field, value);
-    onFieldBlur();
+    onFieldBlur(field);
   };
 
   // Função para validar em tempo real durante onChange

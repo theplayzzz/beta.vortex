@@ -34,7 +34,7 @@ interface SectorDetailsTabProps {
   sector: SetorPermitido;
   formData: Record<string, any>;
   onFieldChange: (field: string, value: any) => void;
-  onFieldBlur: () => void;
+  onFieldBlur: (field: string) => void;
   errors: Record<string, string>;
 }
 
@@ -189,7 +189,7 @@ export const SectorDetailsTab = memo(function SectorDetailsTab({
               question={question}
               value={formData[question.field]}
               onChange={(value) => stableOnFieldChange(question.field, value)}
-              onBlur={onFieldBlur}
+              onBlur={() => onFieldBlur(question.field)}
               error={errors[question.field]}
             />
           </div>
