@@ -37,8 +37,13 @@ const validateField = (question: Question, value: any): string | null => {
       break;
 
     case 'number':
-      if (value === undefined || value === null || value === '' || (typeof value === 'number' && isNaN(value))) {
+      // Para campos numéricos, considerar inválido apenas se for undefined, null, string vazia ou NaN
+      // Zero é um valor válido!
+      if (value === undefined || value === null || value === '') {
         return `${question.label} é obrigatório`;
+      }
+      if (typeof value === 'number' && isNaN(value)) {
+        return `${question.label} deve ser um número válido`;
       }
       if (typeof value === 'number' && value < 0) {
         return `${question.label} deve ser um número positivo ou zero`;
@@ -76,7 +81,8 @@ const getDefaultValue = (question: Question): any => {
     case 'select':
       return '';
     case 'number':
-      return 0;
+      // Para campos numéricos, não forçar valor padrão - deixar undefined
+      return undefined;
     case 'multiselect':
       return [];
     case 'toggle':
@@ -107,26 +113,33 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
 
   // Inicializar com valor padrão se não há valor
   useEffect(() => {
-    if (value === undefined || value === null) {
-      const defaultValue = getDefaultValue(question);
-      setLocalValue(defaultValue);
-      onChange(defaultValue);
+    // Para campos numéricos, só inicializar se não há valor E não é zero válido
+    if (question.type === 'number') {
+      if (value === undefined || value === null) {
+        setLocalValue('');
+        // Não chamar onChange aqui para campos numéricos - deixar o usuário definir o valor
+      } else {
+        setLocalValue(value);
+      }
     } else {
-      setLocalValue(value);
+      // Para outros tipos, usar a lógica anterior
+      if (value === undefined || value === null) {
+        const defaultValue = getDefaultValue(question);
+        setLocalValue(defaultValue);
+        onChange(defaultValue);
+      } else {
+        setLocalValue(value);
+      }
     }
   }, [value, question, onChange]);
 
-  // Função para validar campo no onBlur
-  const handleFieldBlur = (newValue: any) => {
-    const validationError = validateField(question, newValue);
-    setFieldError(validationError);
-
-    onChange(newValue);
-    onBlur();
-  };
-
   // Função para validar em tempo real durante onChange
   const handleFieldChange = (newValue: any) => {
+    // Verificar se o valor realmente mudou antes de atualizar
+    if (localValue === newValue) {
+      return; // Não fazer nada se o valor não mudou
+    }
+    
     setLocalValue(newValue);
     
     // Validar em tempo real para limpar erro se campo se tornar válido
@@ -134,6 +147,23 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
     setFieldError(validationError);
     
     onChange(newValue);
+  };
+
+  // Função para validar campo no onBlur com verificação adicional
+  const handleFieldBlur = (newValue: any) => {
+    const validationError = validateField(question, newValue);
+    setFieldError(validationError);
+
+    // Para campos numéricos, o NumericInputField já chama onChange internamente
+    // então não precisamos chamar onChange novamente aqui para evitar loops
+    if (question.type !== 'number') {
+      // Só chamar onChange se o valor mudou e não é campo numérico
+      if (localValue !== newValue) {
+        onChange(newValue);
+      }
+    }
+    
+    onBlur();
   };
 
   const renderField = () => {
@@ -158,7 +188,7 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
       case 'number':
         return (
           <NumericInputField
-            value={localValue || 0}
+            value={localValue === undefined || localValue === null || localValue === 0 ? '' : localValue}
             onChange={(newValue) => {
               handleFieldChange(newValue);
             }}

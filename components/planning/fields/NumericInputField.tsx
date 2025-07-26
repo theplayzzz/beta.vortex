@@ -82,9 +82,10 @@ export function NumericInputField({
     if (!isFocused) {
       if (formatCurrency && typeof value === 'number' && value > 0) {
         setDisplayValue(formatCurrencyBR(value));
-      } else if (value !== undefined && value !== null && value !== '') {
+      } else if (value !== undefined && value !== null && value !== '' && value !== 0) {
         setDisplayValue(value.toString());
       } else {
+        // Se valor é 0, undefined, null ou string vazia, mostrar placeholder
         setDisplayValue('');
       }
     }
@@ -95,9 +96,10 @@ export function NumericInputField({
     // Quando foca, mostra valor numérico puro para edição
     if (formatCurrency && typeof value === 'number' && value > 0) {
       setDisplayValue(value.toString());
-    } else if (value !== undefined && value !== null && value !== '') {
+    } else if (value !== undefined && value !== null && value !== '' && value !== 0) {
       setDisplayValue(value.toString());
     }
+    // Se valor é 0 ou vazio, deixa displayValue vazio para mostrar placeholder
   };
 
   const handleBlur = () => {
@@ -127,19 +129,26 @@ export function NumericInputField({
         numericValue = max;
       }
       
-      onChange(numericValue);
+      // Só chamar onChange se o valor realmente mudou
+      if (numericValue !== value) {
+        onChange(numericValue);
+      }
     } else {
       // Se não conseguiu fazer parse, preserva o valor atual
       // Só muda para 0 se o campo estava realmente vazio
       if (!displayValue || displayValue.trim() === '') {
-        onChange(0);
+        // Só chamar onChange para 0 se o valor atual não for 0
+        if (value !== 0) {
+          onChange(0);
+        }
       } else {
         // Restaura o valor anterior (não muda o valor do formulário)
         if (formatCurrency && typeof value === 'number' && value > 0) {
           setDisplayValue(formatCurrencyBR(value));
-        } else if (value !== undefined && value !== null && value !== '') {
+        } else if (value !== undefined && value !== null && value !== '' && value !== 0) {
           setDisplayValue(value.toString());
         } else {
+          // Se valor é 0 ou vazio, deixa vazio para mostrar placeholder
           setDisplayValue('');
         }
       }
