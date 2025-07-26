@@ -471,7 +471,7 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     
     // Cleanup automático - remover mensagens antigas (>10s)
     const cutoffTime = now - MESSAGE_CLEANUP_INTERVAL;
-    for (const [key, timestamp] of processedMessagesRef.current.entries()) {
+    for (const [key, timestamp] of Array.from(processedMessagesRef.current.entries())) {
       if (timestamp < cutoffTime) {
         processedMessagesRef.current.delete(key);
       }
@@ -502,7 +502,15 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
       localParticipant: participants?.local,
       localTracks: participants?.local?.tracks,
       isScreenCaptured: state.isScreenAudioCaptured,
-      callObjectMethods: callObjectRef.current ? Object.getOwnPropertyNames(callObjectRef.current).filter(name => typeof callObjectRef.current[name] === 'function').slice(0, 10) : []
+      callObjectMethods: callObjectRef.current 
+        ? Object.getOwnPropertyNames(callObjectRef.current)
+            .filter(name => {
+              if (!callObjectRef.current) return false;
+              const descriptor = Object.getOwnPropertyDescriptor(callObjectRef.current, name);
+              return descriptor && typeof descriptor.value === 'function';
+            })
+            .slice(0, 10) 
+        : []
     });
     
     // NOVA ESTRATÉGIA: Usar função avançada de detecção de fonte
