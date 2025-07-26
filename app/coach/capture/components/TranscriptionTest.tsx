@@ -395,17 +395,17 @@ export function TranscriptionTest() {
       <div className="p-4 bg-blue-100 rounded text-sm text-blue-900">
         <h3 className="font-semibold mb-2 text-blue-900">Como testar DUAL STREAM com diarização avançada:</h3>
         <ol className="list-decimal list-inside space-y-1 text-blue-800">
-          <li>Clique em "Iniciar" e permita acesso ao microfone</li>
+          <li>Clique em &quot;Iniciar&quot; e permita acesso ao microfone</li>
           <li>Fale no microfone - deve aparecer azul 🎤 com speaker ID</li>
           <li>Se possível, compartilhe tela com áudio - deve aparecer verde 🖥️</li>
-          <li>Observe "Track Status" para ver quais tracks estão ativos</li>
-          <li>Confira "Dual Stream Analytics" - contadores por canal</li>
+          <li>Observe &quot;Track Status&quot; para ver quais tracks estão ativos</li>
+          <li>Confira &quot;Dual Stream Analytics&quot; - contadores por canal</li>
           <li>Verifique se diarização está ✅ ativada</li>
-          <li>No Console (F12): veja "📊 Enhanced Debug" e "🎤 Fonte detectada (Enhanced)"</li>
+          <li>No Console (F12): veja &quot;📊 Enhanced Debug&quot; e &quot;🎤 Fonte detectada (Enhanced)&quot;</li>
           <li>Teste múltiplos speakers - deve mostrar diferentes IDs</li>
         </ol>
         <div className="mt-2 p-2 bg-blue-200 rounded text-xs">
-          ⚠️ <strong>Se ainda houver duplicatas:</strong> Você verá mensagens repetidas no Log de Eventos ou textos "piscando" na transcrição.
+          ⚠️ <strong>Se ainda houver duplicatas:</strong> Você verá mensagens repetidas no Log de Eventos ou textos &quot;piscando&quot; na transcrição.
         </div>
       </div>
     </div>

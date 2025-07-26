@@ -37,8 +37,13 @@ const validateField = (question: Question, value: any): string | null => {
       break;
 
     case 'number':
-      if (value === undefined || value === null || value === '' || (typeof value === 'number' && isNaN(value))) {
+      // Para campos numéricos, considerar inválido apenas se for undefined, null, string vazia ou NaN
+      // Zero é um valor válido!
+      if (value === undefined || value === null || value === '') {
         return `${question.label} é obrigatório`;
+      }
+      if (typeof value === 'number' && isNaN(value)) {
+        return `${question.label} deve ser um número válido`;
       }
       if (typeof value === 'number' && value < 0) {
         return `${question.label} deve ser um número positivo ou zero`;
@@ -76,7 +81,8 @@ const getDefaultValue = (question: Question): any => {
     case 'select':
       return '';
     case 'number':
-      return 0;
+      // Para campos numéricos, não forçar valor padrão - deixar undefined
+      return undefined;
     case 'multiselect':
       return [];
     case 'toggle':
@@ -104,41 +110,80 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
   
   // Estado para controlar erros de validação em tempo real
   const [fieldError, setFieldError] = useState<string | null>(null);
+  
+  // Estado para rastrear se o campo foi tocado (focado e depois perdeu foco)
+  const [touched, setTouched] = useState(false);
 
   // Inicializar com valor padrão se não há valor
   useEffect(() => {
-    if (value === undefined || value === null) {
-      const defaultValue = getDefaultValue(question);
-      setLocalValue(defaultValue);
-      onChange(defaultValue);
+    // Para campos numéricos, só inicializar se não há valor E não é zero válido
+    if (question.type === 'number') {
+      if (value === undefined || value === null) {
+        setLocalValue('');
+        // Não chamar onChange aqui para campos numéricos - deixar o usuário definir o valor
+      } else {
+        setLocalValue(value);
+      }
     } else {
-      setLocalValue(value);
+      // Para outros tipos, usar a lógica anterior
+      if (value === undefined || value === null) {
+        const defaultValue = getDefaultValue(question);
+        setLocalValue(defaultValue);
+        onChange(defaultValue);
+      } else {
+        setLocalValue(value);
+      }
     }
+    
+    // IMPORTANTE: Limpar qualquer erro inicial - campos devem iniciar limpos
+    setFieldError(null);
+    setTouched(false);
   }, [value, question, onChange]);
-
-  // Função para validar campo no onBlur
-  const handleFieldBlur = (newValue: any) => {
-    const validationError = validateField(question, newValue);
-    setFieldError(validationError);
-
-    onChange(newValue);
-    onBlur();
-  };
 
   // Função para validar em tempo real durante onChange
   const handleFieldChange = (newValue: any) => {
+    // Verificar se o valor realmente mudou antes de atualizar
+    if (localValue === newValue) {
+      return; // Não fazer nada se o valor não mudou
+    }
+    
     setLocalValue(newValue);
     
-    // Validar em tempo real para limpar erro se campo se tornar válido
-    const validationError = validateField(question, newValue);
-    setFieldError(validationError);
+    // IMPORTANTE: Só validar em tempo real se o campo JÁ foi tocado
+    // Isso permite limpar erros quando usuário corrige, mas não cria erros novos
+    if (touched) {
+      const validationError = validateField(question, newValue);
+      setFieldError(validationError);
+    }
     
     onChange(newValue);
   };
 
+  // Função para validar campo no onBlur com verificação adicional
+  const handleFieldBlur = (newValue: any) => {
+    // Marcar campo como tocado na primeira vez que perde o foco
+    setTouched(true);
+    
+    // Agora sim, validar o campo (só depois de tocado)
+    const validationError = validateField(question, newValue);
+    setFieldError(validationError);
+
+    // Para campos numéricos, o NumericInputField já chama onChange internamente
+    // então não precisamos chamar onChange novamente aqui para evitar loops
+    if (question.type !== 'number') {
+      // Só chamar onChange se o valor mudou e não é campo numérico
+      if (localValue !== newValue) {
+        onChange(newValue);
+      }
+    }
+    
+    onBlur();
+  };
+
   const renderField = () => {
-    // Determinar se há erro para mostrar visualmente (erro de validação em tempo real OU erro do submit)
-  const hasError = fieldError !== null || hasSubmitError;
+    // REGRA IMPORTANTE: Só mostrar erro de validação em tempo real se campo foi tocado
+    // Mas sempre mostrar erro de submit (quando usuário tentar submeter formulário)
+    const hasError = (fieldError !== null && touched) || hasSubmitError;
 
     switch (type) {
       case 'text':
@@ -158,7 +203,7 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
       case 'number':
         return (
           <NumericInputField
-            value={localValue || 0}
+            value={localValue === undefined || localValue === null || localValue === 0 ? '' : localValue}
             onChange={(newValue) => {
               handleFieldChange(newValue);
             }}
@@ -285,10 +330,10 @@ export const QuestionField = memo(function QuestionField({ question, value, onCh
       {renderField()}
       
       {/* Mostrar erro de validação em tempo real ou do submit */}
-      {(fieldError || error) && (
+      {((fieldError && touched) || error) && (
         <p className="text-red-400 text-sm flex items-center mt-1">
           <span className="mr-1">⚠️</span>
-          {fieldError || error}
+          {(fieldError && touched) ? fieldError : error}
         </p>
       )}
     </div>

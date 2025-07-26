@@ -82,6 +82,12 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
   // Estado para armazenar erros de validação do submit
   const [submitValidationErrors, setSubmitValidationErrors] = useState<Record<string, Record<string, string>>>({});
   
+  // Estado para campos que foram tocados (focados e depois perderam o foco)
+  const [touchedFields, setTouchedFields] = useState<Record<string, Set<string>>>({});
+  
+  // Estado para erros dinâmicos em tempo real
+  const [realTimeErrors, setRealTimeErrors] = useState<Record<string, Record<string, string>>>({});
+  
   // Getter que sempre retorna um valor válido
   const currentTab = normalizeTabIndex(currentTabState);
   
@@ -127,6 +133,93 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
     // para evitar chamadas duplas. O hook já lida com o "auto-save".
     console.log(' FYI: onBlur acionado, mas o salvamento agora é centralizado.');
   }, [form]);
+
+  // Função para marcar campo como tocado (touched)
+  const markFieldAsTouched = useCallback((tabId: string, fieldName: string) => {
+    setTouchedFields(prev => {
+      const newTouched = { ...prev };
+      if (!newTouched[tabId]) {
+        newTouched[tabId] = new Set();
+      }
+      newTouched[tabId].add(fieldName);
+      return newTouched;
+    });
+  }, []);
+
+  // Função para validar campo em tempo real e atualizar erros
+  const validateFieldRealTime = useCallback((tabId: string, fieldName: string, value: any) => {
+    let error: string | null = null;
+    
+    // Validação mais inteligente baseada no tipo de campo
+    // Para campos numéricos, 0 é um valor válido
+    if (tabId === 'detalhes_setor') {
+      // Para detalhes do setor, importar as perguntas e validar baseado no tipo
+      if (value === undefined || value === null || value === '' || 
+          (Array.isArray(value) && value.length === 0)) {
+        error = `Campo obrigatório`;
+      }
+      // Para campos numéricos, não considerar 0 como erro
+      if (typeof value === 'number' && value >= 0) {
+        error = null; // 0 ou qualquer número positivo é válido
+      }
+    } else {
+      // Para outras abas, validação básica
+      if (value === undefined || value === null || value === '' || 
+          (Array.isArray(value) && value.length === 0)) {
+        error = `Campo obrigatório`;
+      }
+    }
+    
+    setRealTimeErrors(prev => {
+      const newErrors = { ...prev };
+      if (!newErrors[tabId]) {
+        newErrors[tabId] = {};
+      }
+      
+      if (error) {
+        newErrors[tabId][fieldName] = error;
+      } else {
+        delete newErrors[tabId][fieldName];
+        // Se não há mais erros nesta aba, remover o objeto
+        if (Object.keys(newErrors[tabId]).length === 0) {
+          delete newErrors[tabId];
+        }
+      }
+      
+      return newErrors;
+    });
+  }, []);
+
+  // Função para calcular quais abas têm erro baseado em campos tocados
+  const updateTabErrorState = useCallback(() => {
+    const tabsWithErrorsSet = new Set<number>();
+    
+    // Combinar erros do submit + erros em tempo real
+    const allErrors = { ...submitValidationErrors, ...realTimeErrors };
+    
+    Object.entries(allErrors).forEach(([tabId, tabErrors]) => {
+      const tabIndex = TABS.findIndex(tab => tab.id === tabId);
+      if (tabIndex === -1) return;
+      
+      const touchedFieldsForTab = touchedFields[tabId] || new Set();
+      
+      // Verificar se há algum campo tocado com erro
+      const hasTouchedFieldWithError = Object.entries(tabErrors).some(([fieldName, error]) => {
+        return touchedFieldsForTab.has(fieldName) && error;
+      });
+      
+      if (hasTouchedFieldWithError) {
+        tabsWithErrorsSet.add(tabIndex);
+      }
+    });
+    
+    setTabsWithErrors(tabsWithErrorsSet);
+  }, [submitValidationErrors, realTimeErrors, touchedFields]);
+
+  // Atualizar estado de erro das abas quando algo mudar
+  useEffect(() => {
+    updateTabErrorState();
+  }, [updateTabErrorState]);
 
   // Carregar dados salvos do localStorage apenas uma vez na montagem
   useEffect(() => {
@@ -189,11 +282,52 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
       });
     }
 
+    // Validar campo em tempo real se foi tocado
+    const touchedFieldsForTab = touchedFields[currentTabId] || new Set();
+    if (touchedFieldsForTab.has(field)) {
+      validateFieldRealTime(currentTabId, field, value);
+    }
+
     // Centralizar o auto-save aqui
     const currentFormData = form.getValues();
     updateFormData(currentFormData as Partial<PlanningFormData>);
 
-  }, [form, currentTab, updateFormData, submitValidationErrors]);
+  }, [form, currentTab, updateFormData, submitValidationErrors, touchedFields, validateFieldRealTime]);
+
+  // Nova função para lidar com onBlur
+  const handleFieldBlur = useCallback((field: string) => {
+    const safeCurrentTab = normalizeTabIndex(currentTab);
+    const currentTabId = TABS[safeCurrentTab].id;
+    
+    // Marcar campo como tocado
+    markFieldAsTouched(currentTabId, field);
+    
+    // Obter valor atual do campo para validar
+    const currentFormData = form.getValues();
+    let currentValue: any;
+    
+    switch (currentTabId) {
+      case 'informacoes_basicas':
+        currentValue = (currentFormData.informacoes_basicas as any)?.[field];
+        break;
+      case 'detalhes_setor':
+        currentValue = (currentFormData.detalhes_do_setor as any)?.[field];
+        break;
+      case 'marketing':
+        currentValue = (currentFormData.marketing as any)?.[field];
+        break;
+      case 'comercial':
+        currentValue = (currentFormData.comercial as any)?.[field];
+        break;
+      default:
+        currentValue = (currentFormData as any)[field];
+    }
+    
+    // Validar campo em tempo real
+    validateFieldRealTime(currentTabId, field, currentValue);
+    
+    console.log(`🔍 Campo ${field} perdeu foco - marcado como touched`);
+  }, [currentTab, form, markFieldAsTouched, validateFieldRealTime]);
 
   const handleSaveDraft = useCallback(() => {
     const currentData = form.getValues();
@@ -249,8 +383,10 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
           const tabId = getTabIdFromKey(tabError.tab);
           errorsByTab[tabId] = tabError.fieldErrors;
           
-          // Marcar aba como tendo erro
-          setTabsWithErrors(prev => new Set(Array.from(prev).concat([tabError.tabIndex])));
+          // Marcar TODOS os campos com erro como tocados para mostrar os erros
+          Object.keys(tabError.fieldErrors).forEach(fieldName => {
+            markFieldAsTouched(tabId, fieldName);
+          });
         }
       });
       
@@ -268,12 +404,13 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
     
     // Limpar erros se validação passou
     setSubmitValidationErrors({});
-    setTabsWithErrors(new Set());
+    setRealTimeErrors({});
+    setTouchedFields({});
     
     console.log('📞 Chamando onSubmit com dados:', data);
     onSubmit(data);
     console.log('✅ onSubmit chamado com sucesso');
-  }, [onSubmit, form]);
+  }, [onSubmit, form, markFieldAsTouched]);
 
   // Função helper para mapear tab key para tab id
   const getTabIdFromKey = (tabKey: string): string => {
@@ -352,14 +489,33 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
 
     console.log(`🔍 Dados da aba ${currentTabConfig.id}:`, tabData);
 
-    // Obter erros específicos desta aba
-    const tabErrors = submitValidationErrors[currentTabConfig.id] || {};
+    // Obter erros específicos desta aba - combinar erros de submit + tempo real
+    const submitErrors = submitValidationErrors[currentTabConfig.id] || {};
+    const realTimeTabErrors = realTimeErrors[currentTabConfig.id] || {};
+    const touchedFieldsForTab = touchedFields[currentTabConfig.id] || new Set();
+    
+    // REGRA IMPORTANTE: Só mostrar erros para campos que foram tocados pelo usuário
+    const tabErrors: Record<string, string> = {};
+    
+    // Erros de submit (SÓ para campos tocados - nunca mostrar erro sem interação)
+    Object.entries(submitErrors).forEach(([fieldName, error]) => {
+      if (touchedFieldsForTab.has(fieldName)) {
+        tabErrors[fieldName] = error;
+      }
+    });
+    
+    // Erros em tempo real (só para campos tocados)
+    Object.entries(realTimeTabErrors).forEach(([fieldName, error]) => {
+      if (touchedFieldsForTab.has(fieldName)) {
+        tabErrors[fieldName] = error;
+      }
+    });
 
     const commonProps = {
       formData: tabData || {},
       onFieldChange: handleFieldChange,
-      onFieldBlur: handleSaveOnBlur,
-      errors: tabErrors // Agora passa os erros reais de validação
+      onFieldBlur: handleFieldBlur,
+      errors: tabErrors // Agora passa os erros filtrados por campos tocados
     };
 
     try {

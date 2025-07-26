@@ -36,16 +36,27 @@ export function NumericInputField({
   };
 
   // Parser de moeda (remove formatação)
-  const parseCurrency = (str: string): number => {
+  const parseCurrency = (str: string): number | null => {
+    // Se string vazia, retorna null (não zero!)
+    if (!str || str.trim() === '') {
+      return null;
+    }
+    
     // Remove tudo exceto números, vírgula e ponto
     const cleanStr = str.replace(/[^\d.,]/g, '');
+    
+    // Se após limpeza não há números, retorna null
+    if (!cleanStr || !/\d/.test(cleanStr)) {
+      return null;
+    }
     
     // Se tem vírgula, assume formato brasileiro (1.234,56)
     if (cleanStr.includes(',')) {
       const parts = cleanStr.split(',');
       const integerPart = parts[0].replace(/\./g, ''); // Remove pontos dos milhares
       const decimalPart = parts[1] || '00';
-      return parseFloat(`${integerPart}.${decimalPart.slice(0, 2)}`);
+      const parsed = parseFloat(`${integerPart}.${decimalPart.slice(0, 2)}`);
+      return isNaN(parsed) ? null : parsed;
     }
     
     // Se só tem ponto, pode ser decimal em inglês ou separador de milhares
@@ -53,14 +64,17 @@ export function NumericInputField({
       const parts = cleanStr.split('.');
       // Se a última parte tem 1-2 dígitos, assume que é decimal
       if (parts[parts.length - 1].length <= 2) {
-        return parseFloat(cleanStr);
+        const parsed = parseFloat(cleanStr);
+        return isNaN(parsed) ? null : parsed;
       } else {
         // Assume separador de milhares
-        return parseFloat(cleanStr.replace(/\./g, ''));
+        const parsed = parseFloat(cleanStr.replace(/\./g, ''));
+        return isNaN(parsed) ? null : parsed;
       }
     }
     
-    return parseFloat(cleanStr) || 0;
+    const parsed = parseFloat(cleanStr);
+    return isNaN(parsed) ? null : parsed;
   };
 
   // Atualizar display value quando value mudar
@@ -68,8 +82,11 @@ export function NumericInputField({
     if (!isFocused) {
       if (formatCurrency && typeof value === 'number' && value > 0) {
         setDisplayValue(formatCurrencyBR(value));
+      } else if (value !== undefined && value !== null && value !== '' && value !== 0) {
+        setDisplayValue(value.toString());
       } else {
-        setDisplayValue(value?.toString() || '');
+        // Se valor é 0, undefined, null ou string vazia, mostrar placeholder
+        setDisplayValue('');
       }
     }
   }, [value, formatCurrency, isFocused]);
@@ -77,31 +94,66 @@ export function NumericInputField({
   const handleFocus = () => {
     setIsFocused(true);
     // Quando foca, mostra valor numérico puro para edição
-    if (formatCurrency && typeof value === 'number') {
+    if (formatCurrency && typeof value === 'number' && value > 0) {
+      setDisplayValue(value.toString());
+    } else if (value !== undefined && value !== null && value !== '' && value !== 0) {
       setDisplayValue(value.toString());
     }
+    // Se valor é 0 ou vazio, deixa displayValue vazio para mostrar placeholder
   };
 
   const handleBlur = () => {
     setIsFocused(false);
     
     // Parse do valor e atualização
-    let numericValue: number;
+    let numericValue: number | null;
     if (formatCurrency) {
       numericValue = parseCurrency(displayValue);
     } else {
-      numericValue = parseFloat(displayValue) || 0;
+      // Para campos não monetários, tenta parse simples
+      if (!displayValue || displayValue.trim() === '') {
+        numericValue = null;
+      } else {
+        const parsed = parseFloat(displayValue.replace(/[^\d.-]/g, ''));
+        numericValue = isNaN(parsed) ? null : parsed;
+      }
     }
 
-    // Aplicar limites
-    if (min !== undefined && numericValue < min) {
-      numericValue = min;
+    // Se conseguiu fazer parse válido
+    if (numericValue !== null) {
+      // Aplicar limites
+      if (min !== undefined && numericValue < min) {
+        numericValue = min;
+      }
+      if (max !== undefined && numericValue > max) {
+        numericValue = max;
+      }
+      
+      // Só chamar onChange se o valor realmente mudou
+      if (numericValue !== value) {
+        onChange(numericValue);
+      }
+    } else {
+      // Se não conseguiu fazer parse, preserva o valor atual
+      // Só muda para 0 se o campo estava realmente vazio
+      if (!displayValue || displayValue.trim() === '') {
+        // Só chamar onChange para 0 se o valor atual não for 0
+        if (value !== 0) {
+          onChange(0);
+        }
+      } else {
+        // Restaura o valor anterior (não muda o valor do formulário)
+        if (formatCurrency && typeof value === 'number' && value > 0) {
+          setDisplayValue(formatCurrencyBR(value));
+        } else if (value !== undefined && value !== null && value !== '' && value !== 0) {
+          setDisplayValue(value.toString());
+        } else {
+          // Se valor é 0 ou vazio, deixa vazio para mostrar placeholder
+          setDisplayValue('');
+        }
+      }
     }
-    if (max !== undefined && numericValue > max) {
-      numericValue = max;
-    }
-
-    onChange(numericValue);
+    
     onBlur();
   };
 
@@ -129,6 +181,11 @@ export function NumericInputField({
 
     // Para campos numéricos simples, permitir ponto para decimais
     if (!formatCurrency && e.key === '.') {
+      return;
+    }
+
+    // Para campos numéricos simples, permitir sinal negativo no início
+    if (!formatCurrency && e.key === '-' && displayValue.length === 0) {
       return;
     }
 

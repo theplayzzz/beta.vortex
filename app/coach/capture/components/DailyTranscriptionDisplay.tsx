@@ -697,7 +697,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   {!transcript && !interimTranscript && !isListening && (
                     <div className="text-center py-12">
                       <p className="text-lg mb-2" style={{ color: 'var(--periwinkle)' }}>
-                        🎙️ Pressione "INICIAR" para começar a transcrição
+                        🎙️ Pressione &quot;INICIAR&quot; para começar a transcrição
                       </p>
                       <p className="text-sm opacity-70" style={{ color: 'var(--seasalt)' }}>
                         Daily.co capturará áudio do microfone e da tela
@@ -764,7 +764,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                 {!newFieldText && (
                   <div className="text-center py-8">
                     <p className="text-sm opacity-70" style={{ color: 'var(--seasalt)' }}>
-                      Clique em "ANALISAR" para enviar o contexto da transcrição para IA
+                      Clique em &quot;ANALISAR&quot; para enviar o contexto da transcrição para IA
                     </p>
                   </div>
                 )}
