@@ -574,6 +574,58 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
       };
       
       if (data.is_final) {
+        // FASE 4: Lógica de Separação - Criando Novos Blocos
+        const lastBlock = prev.blocks[prev.blocks.length - 1];
+        let updatedBlocks;
+        
+        // Verificações para criação de novo bloco
+        const shouldCreateNewBlock = !lastBlock || 
+                                   lastBlock.source !== audioSource || 
+                                   lastBlock.text.length > 500;
+        
+        if (shouldCreateNewBlock) {
+          // CONDIÇÃO ATINGIDA: Criar um NOVO bloco
+          const newBlock: TranscriptionBlock = {
+            id: `block-${Date.now()}`,
+            source: audioSource,
+            color: color,
+            startTime: new Date(),
+            text: data.text
+          };
+          updatedBlocks = [...prev.blocks, newBlock];
+          
+          // Logs específicos da Fase 4
+          if (!lastBlock) {
+            console.log('🆕 Criado primeiro bloco:', newBlock);
+          } else if (lastBlock.source !== audioSource) {
+            console.log('🔄 Novo bloco criado - mudança de fonte:', {
+              anterior: lastBlock.source,
+              nova: audioSource,
+              novoBloco: newBlock
+            });
+          } else if (lastBlock.text.length > 500) {
+            console.log('📏 Novo bloco criado - limite de 500 caracteres atingido:', {
+              tamanhoAnterior: lastBlock.text.length,
+              novoBloco: newBlock
+            });
+          }
+        } else {
+          // CONDIÇÃO NÃO ATINGIDA: Anexar ao bloco existente
+          const updatedBlock = {
+            ...lastBlock,
+            text: lastBlock.text + (lastBlock.text ? ' ' : '') + data.text
+          };
+          updatedBlocks = [...prev.blocks.slice(0, -1), updatedBlock];
+          console.log('📝 Texto anexado ao bloco existente:', {
+            tamanhoAtual: updatedBlock.text.length,
+            fonte: updatedBlock.source,
+            bloco: updatedBlock
+          });
+        }
+        
+        // Log para debug da Fase 4
+        console.log('🔍 Estado dos blocos (Fase 4):', JSON.stringify(updatedBlocks, null, 2));
+        
         // Texto final - adicionar ao transcript principal
         const finalText = prev.transcript + (prev.transcript ? ' ' : '') + data.text;
         
@@ -582,6 +634,7 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
           transcript: finalText,
           interimTranscript: '', // Limpar interim
           segments: updatedSegments,
+          blocks: updatedBlocks, // NOVO: Atualizar blocos
           wordsTranscribed: finalText.split(' ').length,
           lastActivity: new Date(),
           confidence: data.confidence || 0,
