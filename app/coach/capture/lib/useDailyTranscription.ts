@@ -5,6 +5,15 @@ import DailyIframe, {
   DailyEvent
 } from '@daily-co/daily-js';
 
+// Interface para blocos de transcrição (Fase 2)
+interface TranscriptionBlock {
+  id: string; // Ex: `block-${Date.now()}`
+  source: 'microphone' | 'screen' | 'remote';
+  color: 'blue' | 'green' | 'gray';
+  startTime: Date;
+  text: string; // O texto consolidado do bloco
+}
+
 // Interface compatível com Deepgram (mantendo mesma estrutura) + Enhanced Dual Stream
 export interface TranscriptionState {
   transcript: string;
@@ -42,6 +51,7 @@ export interface TranscriptionState {
     speakerId?: string; // NOVO: ID do speaker via diarização
     trackType?: 'audio' | 'screenAudio'; // NOVO: Tipo de track do Daily.co
   }>;
+  blocks: TranscriptionBlock[]; // NOVO: Sistema de blocos (Fase 2)
   // NOVOS CAMPOS para Dual Stream Enhancement
   trackInfo: {
     audioTrackActive: boolean;
@@ -129,6 +139,7 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     confidence: 0,
     isPaused: false,
     segments: [],
+    blocks: [], // NOVO: Sistema de blocos inicializado (Fase 2)
     // NOVOS CAMPOS INICIALIZADOS
     trackInfo: {
       audioTrackActive: false,

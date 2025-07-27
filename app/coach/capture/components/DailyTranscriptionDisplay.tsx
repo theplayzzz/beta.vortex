@@ -608,7 +608,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Renderizar segmentos finais com DUAL STREAM enhancement */}
+                  {/* FASE 1: Bloco de renderização dos segmentos finais COMENTADO
                   {segments.filter(s => s.isFinal).map((segment, index) => (
                     <div 
                       key={`final-${index}`}
@@ -626,7 +626,6 @@ const DailyTranscriptionDisplay: React.FC = () => {
                         }`
                       }}
                     >
-                      {/* Header do segmento com informações de fonte */}
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
                           <div 
@@ -654,7 +653,6 @@ const DailyTranscriptionDisplay: React.FC = () => {
                         </span>
                       </div>
                       
-                      {/* Texto da transcrição */}
                       <p 
                         className="text-base leading-relaxed" 
                         style={{ 
@@ -667,6 +665,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                       </p>
                     </div>
                   ))}
+                  FIM DO BLOCO COMENTADO - FASE 1 */}
 
                   {/* Mostrar texto interim atual */}
                   {interimTranscript && (
