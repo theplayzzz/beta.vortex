@@ -86,6 +86,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
     sessionDuration,
     devicePermissions,
     segments,
+    blocks, // NOVO: Sistema de blocos (Fase 5)
     trackInfo, // NOVO: Informações de tracks
     diarizationEnabled, // NOVO: Status de diarização
     speakerStats, // NOVO: Estatísticas de speakers
@@ -608,80 +609,73 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     </div>
                   )}
 
-                  {/* FASE 1: Bloco de renderização dos segmentos finais COMENTADO
-                  {segments.filter(s => s.isFinal).map((segment, index) => (
+                  {/* FASE 5: Renderizar blocos com sistema de blocos incremental */}
+                  {blocks.map((block, index) => (
                     <div 
-                      key={`final-${index}`}
+                      key={`block-${block.id}`}
                       className="mb-3" 
                       style={{ 
-                        backgroundColor: segment.color === 'green' ? 'rgba(107, 233, 76, 0.1)' : 
-                                        segment.color === 'blue' ? 'rgba(207, 198, 254, 0.1)' : 
+                        backgroundColor: block.color === 'green' ? 'rgba(107, 233, 76, 0.1)' : 
+                                        block.color === 'blue' ? 'rgba(207, 198, 254, 0.1)' : 
                                         'rgba(249, 251, 252, 0.05)',
                         padding: '12px',
                         borderRadius: '8px',
                         borderLeft: `3px solid ${
-                          segment.color === 'green' ? 'var(--sgbus-green)' : 
-                          segment.color === 'blue' ? 'var(--periwinkle)' : 
+                          block.color === 'green' ? 'var(--sgbus-green)' : 
+                          block.color === 'blue' ? 'var(--periwinkle)' : 
                           'var(--seasalt)'
                         }`
                       }}
                     >
+                      {/* Header do bloco com informações de fonte */}
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
                           <div 
                             className="w-2 h-2 rounded-full" 
                             style={{ 
-                              backgroundColor: segment.color === 'green' ? 'var(--sgbus-green)' : 
-                                              segment.color === 'blue' ? 'var(--periwinkle)' : 
+                              backgroundColor: block.color === 'green' ? 'var(--sgbus-green)' : 
+                                              block.color === 'blue' ? 'var(--periwinkle)' : 
                                               'var(--seasalt)'
                             }}
                           ></div>
                           <span className="text-xs font-medium" style={{ 
-                            color: segment.color === 'green' ? 'var(--sgbus-green)' : 
-                                   segment.color === 'blue' ? 'var(--periwinkle)' : 
+                            color: block.color === 'green' ? 'var(--sgbus-green)' : 
+                                   block.color === 'blue' ? 'var(--periwinkle)' : 
                                    'var(--seasalt)'
                           }}>
-                            {segment.audioSource === 'screen' ? '🖥️ TELA' : 
-                             segment.audioSource === 'microphone' ? '🎤 MICROFONE' : '👤 REMOTO'}
-                            {segment.speakerId && segment.speakerId !== 'unknown' && (
-                              <span className="ml-1">#{segment.speakerId}</span>
-                            )}
+                            {block.source === 'screen' ? '🖥️ TELA' : 
+                             block.source === 'microphone' ? '🎤 MICROFONE' : '👤 REMOTO'}
                           </span>
                         </div>
                         <span className="text-xs opacity-70" style={{ color: 'var(--seasalt)' }}>
-                          {segment.timestamp.toLocaleTimeString()} | {(segment.confidence * 100).toFixed(0)}%
+                          {block.startTime.toLocaleTimeString()} | {block.text.length} chars
                         </span>
                       </div>
                       
+                      {/* Texto da transcrição */}
                       <p 
                         className="text-base leading-relaxed" 
                         style={{ 
-                          color: segment.color === 'green' ? 'var(--sgbus-green)' : 
-                                 segment.color === 'blue' ? 'var(--periwinkle)' : 
+                          color: block.color === 'green' ? 'var(--sgbus-green)' : 
+                                 block.color === 'blue' ? 'var(--periwinkle)' : 
                                  'var(--seasalt)'
                         }}
                       >
-                        {segment.text}
+                        {block.text}
+                        {/* FASE 5: Mostrar texto interim no último bloco */}
+                        {index === blocks.length - 1 && interimTranscript && (
+                          <span 
+                            className="opacity-70 italic ml-1"
+                            style={{ color: 'var(--periwinkle)' }}
+                          >
+                            {interimTranscript}
+                          </span>
+                        )}
                       </p>
                     </div>
                   ))}
-                  FIM DO BLOCO COMENTADO - FASE 1 */}
 
-                  {/* Mostrar texto interim atual */}
-                  {interimTranscript && (
-                    <p 
-                      className="text-base leading-relaxed opacity-70 italic"
-                      style={{ 
-                        color: 'var(--periwinkle)',
-                        backgroundColor: 'rgba(207, 198, 254, 0.05)',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        borderLeft: '3px solid var(--periwinkle)'
-                      }}
-                    >
-                      {interimTranscript}
-                    </p>
-                  )}
+                  {/* FASE 5: Texto interim agora é exibido dentro do último bloco */}
 
                   {/* Fallback para transcrição consolidada (caso segments não estejam disponíveis) */}
                   {!segments.length && transcript && (
