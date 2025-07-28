@@ -477,9 +477,9 @@ const DailyTranscriptionDisplay: React.FC = () => {
               style={{ 
                 backgroundColor: 'var(--eerie-black)', 
                 border: '1px solid rgba(249, 251, 252, 0.1)',
-                height: '196px',
-                minHeight: '196px',
-                maxHeight: '196px'
+                height: '140px',
+                minHeight: '140px',
+                maxHeight: '140px'
               }}
             >
               {/* Status de Conexão */}
@@ -503,77 +503,93 @@ const DailyTranscriptionDisplay: React.FC = () => {
                 </button>
               </div>
 
-              {/* Grid de Controles Reorganizado */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                {/* Controles Principais */}
-                <div className="space-y-2">
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={isListening ? stopListening : startListening}
-                      disabled={false}
-                      className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50"
-                      style={{
-                        backgroundColor: isListening ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 233, 76, 0.2)',
-                        color: isListening ? '#ef4444' : 'var(--sgbus-green)',
-                        border: isListening ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(107, 233, 76, 0.3)'
-                      }}
-                    >
-                      {isListening ? '⏹️ PARAR' : '🎙️ INICIAR'}
-                    </button>
-                    
-                    <button
-                      onClick={clearTranscriptionHistory}
-                      disabled={blocks.length === 0}
-                      className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{
-                        backgroundColor: 'rgba(207, 198, 254, 0.2)',
-                        color: 'var(--periwinkle)',
-                        border: '1px solid rgba(207, 198, 254, 0.3)'
-                      }}
-                      title="Limpar histórico de transcrição"
-                    >
-                      🗑️
-                    </button>
-                  </div>
+              {/* Layout Reorganizado */}
+              <div className="space-y-3">
+                {/* Primeira linha - Controles principais */}
+                <div className="flex space-x-2">
+                  <button
+                    onClick={isListening ? stopListening : startListening}
+                    disabled={false}
+                    className="flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50"
+                    style={{
+                      backgroundColor: isListening ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 233, 76, 0.2)',
+                      color: isListening ? '#ef4444' : 'var(--sgbus-green)',
+                      border: isListening ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(107, 233, 76, 0.3)'
+                    }}
+                  >
+                    {isListening ? '⏹️ PARAR' : '🎙️ INICIAR'}
+                  </button>
                   
-                  {/* Substitua o botão antigo por esta estrutura */}
-                  <div className="flex w-full gap-2">
-                    {/* Botão do Microfone - Com ícones dinâmicos */}
-                    <button 
-                      onClick={toggleMicrophone}
-                      className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
-                      style={isMicrophoneEnabled ? 
-                        { backgroundColor: 'rgba(74, 222, 128, 0.2)', color: 'rgb(34, 197, 94)', border: '1px solid rgba(74, 222, 128, 0.3)' } :
-                        { backgroundColor: 'rgba(239, 68, 68, 0.2)', color: 'rgb(239, 68, 68)', border: '1px solid rgba(239, 68, 68, 0.3)' }
-                      }
-                    >
-                      {isMicrophoneEnabled ? <Mic size={16} /> : <MicOff size={16} />}
-                      <span>{isMicrophoneEnabled ? 'MIC ON' : 'MIC OFF'}</span>
-                    </button>
+                  <button
+                    onClick={clearTranscriptionHistory}
+                    disabled={blocks.length === 0}
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      backgroundColor: 'rgba(207, 198, 254, 0.2)',
+                      color: 'var(--periwinkle)',
+                      border: '1px solid rgba(207, 198, 254, 0.3)'
+                    }}
+                    title="Limpar histórico de transcrição"
+                  >
+                    🗑️
+                  </button>
+                </div>
+                
+                {/* Segunda linha - Controles de áudio */}
+                <div className="flex w-full gap-2">
+                  {/* Botão do Microfone */}
+                  <button 
+                    onClick={toggleMicrophone}
+                    className="flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 flex items-center justify-center gap-1"
+                    style={isMicrophoneEnabled ? 
+                      { backgroundColor: 'rgba(74, 222, 128, 0.2)', color: 'rgb(34, 197, 94)', border: '1px solid rgba(74, 222, 128, 0.3)' } :
+                      { backgroundColor: 'rgba(239, 68, 68, 0.2)', color: 'rgb(239, 68, 68)', border: '1px solid rgba(239, 68, 68, 0.3)' }
+                    }
+                  >
+                    {isMicrophoneEnabled ? <Mic size={14} /> : <MicOff size={14} />}
+                    <span>{isMicrophoneEnabled ? 'MIC' : 'MIC'}</span>
+                  </button>
 
-                    {/* Botão de Áudio da Tela - Com ícones dinâmicos */}
-                    <button 
-                      onClick={toggleScreenAudio}
-                      className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
-                      style={isScreenAudioEnabled ? 
-                        { backgroundColor: 'rgba(74, 222, 128, 0.2)', color: 'rgb(34, 197, 94)', border: '1px solid rgba(74, 222, 128, 0.3)' } :
-                        { backgroundColor: 'rgba(239, 68, 68, 0.2)', color: 'rgb(239, 68, 68)', border: '1px solid rgba(239, 68, 68, 0.3)' }
-                      }
-                    >
-                      <MonitorSpeaker size={16} />
-                      <span>{isScreenAudioEnabled ? 'TELA ON' : 'TELA OFF'}</span>
-                    </button>
-                  </div>
+                  {/* Botão de Áudio da Tela */}
+                  <button 
+                    onClick={toggleScreenAudio}
+                    className="flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 flex items-center justify-center gap-1"
+                    style={isScreenAudioEnabled ? 
+                      { backgroundColor: 'rgba(74, 222, 128, 0.2)', color: 'rgb(34, 197, 94)', border: '1px solid rgba(74, 222, 128, 0.3)' } :
+                      { backgroundColor: 'rgba(239, 68, 68, 0.2)', color: 'rgb(239, 68, 68)', border: '1px solid rgba(239, 68, 68, 0.3)' }
+                    }
+                  >
+                    <MonitorSpeaker size={14} />
+                    <span>TELA</span>
+                  </button>
                 </div>
 
-                {/* Níveis de Áudio - Adaptado para Daily.co */}
-                <div className="space-y-2">
-                  <CompactAudioLevelBar level={audioLevel / 100} label="MIC" color="blue" />
-                  <CompactAudioLevelBar 
-                    level={isScreenAudioCaptured ? audioLevel / 100 : 0} 
-                    label="TELA" 
-                    color="green" 
-                  />
+                {/* Terceira linha - Níveis de áudio compactos */}
+                <div className="flex justify-center space-x-4">
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs" style={{ color: 'var(--periwinkle)' }}>MIC</span>
+                    <div className="w-16 h-1 rounded-full" style={{ backgroundColor: 'rgba(249, 251, 252, 0.1)' }}>
+                      <div
+                        className="h-full rounded-full transition-all duration-200"
+                        style={{ 
+                          width: `${Math.min(audioLevel, 100)}%`,
+                          backgroundColor: 'var(--periwinkle)'
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs" style={{ color: 'var(--sgbus-green)' }}>TELA</span>
+                    <div className="w-16 h-1 rounded-full" style={{ backgroundColor: 'rgba(249, 251, 252, 0.1)' }}>
+                      <div
+                        className="h-full rounded-full transition-all duration-200"
+                        style={{ 
+                          width: `${isScreenAudioCaptured ? Math.min(audioLevel, 100) : 0}%`,
+                          backgroundColor: 'var(--sgbus-green)'
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -766,9 +782,9 @@ const DailyTranscriptionDisplay: React.FC = () => {
               style={{ 
                 backgroundColor: 'var(--eerie-black)', 
                 border: '1px solid rgba(249, 251, 252, 0.1)',
-                height: '196px',
-                minHeight: '196px',
-                maxHeight: '196px'
+                height: '140px',
+                minHeight: '140px',
+                maxHeight: '140px'
               }}
             >
               <div className="flex items-center justify-between mb-4">
