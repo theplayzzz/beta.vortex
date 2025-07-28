@@ -237,26 +237,42 @@ const DailyTranscriptionDisplay: React.FC = () => {
     setTimeout(scrollToBottom, 50);
   }, [scrollToBottom]);
 
-  // Função para análise de contexto (mantida idêntica - webhook continua igual)
+  // Função para envio ao webhook de análise (FASE 1: Adaptada do GoogleCloudTranscriptionDisplay)
   const sendToWebhook = async (contexto: string) => {
-    const response = await fetch('/api/webhooks/analyze-context', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: contexto,
-        source: 'daily_co_transcription', // Alterado para identificar fonte Daily.co
-        timestamp: new Date().toISOString()
-      })
-    });
+    try {
+      const webhookUrl = process.env.NEXT_PUBLIC_ANALYSIS_WEBHOOK_URL;
+      if (!webhookUrl) {
+        console.error('❌ URL do webhook de análise não configurada. Verifique a variável de ambiente NEXT_PUBLIC_ANALYSIS_WEBHOOK_URL.');
+        throw new Error('Webhook URL not configured');
+      }
 
-    if (!response.ok) {
-      throw new Error(`Erro HTTP ${response.status}`);
+      console.log('📡 Enviando contexto para webhook...');
+      console.log('🔍 Source identificado como: daily-co-transcription');
+      
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contexto: contexto,
+          timestamp: new Date().toISOString(),
+          source: 'daily-co-transcription' // ✅ FASE 1: Campo source atualizado conforme solicitado
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.text();
+      console.log('✅ Resposta do webhook:', data);
+      
+      return data;
+    } catch (error) {
+      console.error('❌ Erro ao enviar para webhook:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    return data.response || 'Análise concluída';
   };
 
   // Funções do histórico de análises (mantidas idênticas)
@@ -284,59 +300,32 @@ const DailyTranscriptionDisplay: React.FC = () => {
     );
   };
 
-  // Função principal de análise (adaptada para Daily.co)
-  const handleAnalyzeContext = async () => {
+  // FASE 2: Função handleAnalyze com nova lógica de consolidação de contexto
+  const handleAnalyze = async () => {
     if (isAnalyzing) return;
     
     setIsAnalyzing(true);
     let loadingId: string | null = null;
     
     try {
-      setNewFieldText('🔄 Coletando contexto atual...');
-      console.log('🔍 Iniciando análise de contexto Daily.co');
+      // FASE 2: Coleta do Contexto Completo (crítica conforme planejamento)
+      const finalBlocksText = blocks.map(block => block.text).join(' \n');
+      const currentInterimText = interimTranscript; // Captura o texto intermediário atual
 
-      // Aguardar estabilização da transcrição
-      const interimInicial = interimTranscript;
-      let tentativas = 0;
-      const maxTentativas = 30;
+      // Junta os dois, garantindo um espaço se ambos existirem.
+      const contextoCompleto = `${finalBlocksText} ${currentInterimText}`.trim();
       
-      let interimAnterior = interimTranscript;
-      let contagemSemMudanca = 0;
+      // FASE 2: Log de teste conforme solicitado no critério de teste
+      console.log('Contexto para análise:', contextoCompleto);
       
-      while (tentativas < maxTentativas) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        tentativas++;
-        
-        // Se interim foi limpo, transcrição final foi recebida
-        if (!interimTranscript && interimInicial) {
-          console.log('✅ Transcrição final recebida (interim limpo)');
-          break;
-        }
-        
-        // Se interim não mudou por 10 tentativas (1 segundo), assumir que acabou
-        if (interimTranscript === interimAnterior) {
-          contagemSemMudanca++;
-          if (contagemSemMudanca >= 10) {
-            console.log('⏱️ Transcrição estável por 1 segundo');
-            break;
-          }
-        } else {
-          contagemSemMudanca = 0;
-          interimAnterior = interimTranscript;
-        }
-      }
-
-      console.log(`🔍 Aguardou ${tentativas * 100}ms pela finalização`);
-      
-      // Incluir qualquer transcrição interim restante no contexto final
-      const contextoCompleto = transcript + (interimTranscript ? ' ' + interimTranscript : '');
-      
-      if (!contextoCompleto.trim()) {
+      if (!contextoCompleto) {
         setNewFieldText('⚠️ Nenhum contexto disponível para análise');
         return;
       }
       
       console.log('📋 Contexto coletado:', contextoCompleto.length, 'caracteres');
+      console.log('🔍 Blocos finalizados:', blocks.length);
+      console.log('🔍 Texto interim atual:', currentInterimText ? currentInterimText.length + ' chars' : 'vazio');
       
       // Criar entrada de loading no histórico
       loadingId = createLoadingEntry(contextoCompleto);
@@ -732,7 +721,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   ANÁLISE DE IA
                 </h3>
                 <button
-                  onClick={handleAnalyzeContext}
+                  onClick={handleAnalyze}
                   disabled={isAnalyzing || !transcript}
                   className="px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 disabled:opacity-50"
                   style={{
