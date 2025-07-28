@@ -577,41 +577,6 @@ const DailyTranscriptionDisplay: React.FC = () => {
                 </div>
               </div>
 
-              {/* Estatísticas Dual Stream Melhoradas */}
-              <div className="grid grid-cols-4 gap-2 text-center">
-                <div className="bg-opacity-50 p-1.5 rounded" style={{ backgroundColor: 'rgba(107, 233, 76, 0.1)' }}>
-                  <div className="text-xs font-mono" style={{ color: 'var(--sgbus-green)' }}>
-                    {speakerStats.screenSegments}
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--sgbus-green)' }}>
-                    TELA
-                  </div>
-                </div>
-                <div className="bg-opacity-50 p-1.5 rounded" style={{ backgroundColor: 'rgba(207, 198, 254, 0.1)' }}>
-                  <div className="text-xs font-mono" style={{ color: 'var(--periwinkle)' }}>
-                    {speakerStats.microphoneSegments}
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--periwinkle)' }}>
-                    MIC
-                  </div>
-                </div>
-                <div className="bg-opacity-50 p-1.5 rounded" style={{ backgroundColor: 'rgba(249, 251, 252, 0.05)' }}>
-                  <div className="text-xs font-mono" style={{ color: 'var(--seasalt)' }}>
-                    {speakerStats.totalSpeakers}
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--periwinkle)' }}>
-                    SPKRS
-                  </div>
-                </div>
-                <div className="bg-opacity-50 p-1.5 rounded" style={{ backgroundColor: 'rgba(249, 251, 252, 0.05)' }}>
-                  <div className="text-xs font-mono" style={{ color: 'var(--seasalt)' }}>
-                    {Math.round(confidence * 100)}%
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--periwinkle)' }}>
-                    CONF
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* ÁREA DE TRANSCRIÇÃO - EXPANSÍVEL */}
@@ -662,17 +627,6 @@ const DailyTranscriptionDisplay: React.FC = () => {
                       </button>
                     )}
                     
-                    <button
-                      onClick={forceFinalize}
-                      disabled={!interimTranscript || !isListening}
-                      className="px-2 py-1 rounded text-xs transition-all duration-200 disabled:opacity-50"
-                      style={{ 
-                        backgroundColor: 'rgba(107, 233, 76, 0.2)',
-                        color: 'var(--sgbus-green)'
-                      }}
-                    >
-                      ⚡ FINALIZAR
-                    </button>
                   </div>
                 </div>
 

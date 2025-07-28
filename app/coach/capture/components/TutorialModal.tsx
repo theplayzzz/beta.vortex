@@ -35,13 +35,9 @@ export default function TutorialModal({ isOpen, onClose }: TutorialModalProps) {
         {/* Body */}
         <div className="p-6 space-y-6">
           {/* Introdução */}
-          <div className="text-center mb-8">
-            <p className="text-lg mb-2" style={{ color: 'var(--seasalt)' }}>
-              Esta plataforma oferece transcrição em tempo real com separação de áudio dual (microfone + tela) 
-              e análise de IA integrada para seus conteúdos.
-            </p>
-            <p className="text-sm opacity-70" style={{ color: 'var(--periwinkle)' }}>
-              Siga os passos abaixo para usar todas as funcionalidades disponíveis.
+          <div className="text-center mb-6">
+            <p className="text-base mb-2" style={{ color: 'var(--seasalt)' }}>
+              🎯 <strong>Transcrição dual stream + IA</strong> em 3 passos simples
             </p>
           </div>
 
@@ -52,11 +48,10 @@ export default function TutorialModal({ isOpen, onClose }: TutorialModalProps) {
             </div>
             <div>
               <h3 className="font-semibold mb-2" style={{ color: 'var(--sgbus-green)' }}>
-                1. Clique em "INICIAR" para começar
+                1. Clique "🎙️ INICIAR"
               </h3>
               <p className="text-sm" style={{ color: 'var(--seasalt)' }}>
-                O botão verde "🎙️ INICIAR" ativa o sistema de transcrição. A conexão será estabelecida 
-                automaticamente e você verá o status mudar para "CONECTADO".
+                ⏳ Aguarde o popup de compartilhamento de tela abrir automaticamente
               </p>
             </div>
           </div>
@@ -68,14 +63,13 @@ export default function TutorialModal({ isOpen, onClose }: TutorialModalProps) {
             </div>
             <div>
               <h3 className="font-semibold mb-2" style={{ color: 'var(--periwinkle)' }}>
-                2. Compartilhe sua tela com áudio
+                2. ✅ Marque "Compartilhar áudio da aba"
               </h3>
               <p className="text-sm mb-2" style={{ color: 'var(--seasalt)' }}>
-                O navegador solicitará permissão para compartilhar sua tela. <strong>Certifique-se de marcar a opção 
-                "Compartilhar áudio da aba"</strong> para capturar o som da tela (vídeos, áudios, chamadas, etc.).
+                <strong>Essencial:</strong> Ative o áudio para capturar som de vídeos, músicas, chamadas, etc.
               </p>
               <p className="text-xs opacity-70" style={{ color: 'var(--periwinkle)' }}>
-                💡 Dica: Escolha compartilhar uma aba específica com áudio para melhor qualidade.
+                💡 Prefira compartilhar aba específica (melhor qualidade)
               </p>
             </div>
           </div>
@@ -89,11 +83,10 @@ export default function TutorialModal({ isOpen, onClose }: TutorialModalProps) {
             </div>
             <div>
               <h3 className="font-semibold mb-2" style={{ color: 'var(--seasalt)' }}>
-                3. Aguarde a conexão ser estabelecida
+                3. 🟢 Status "CONECTADO" = Pronto!
               </h3>
               <p className="text-sm" style={{ color: 'var(--seasalt)' }}>
-                Quando o status mostrar "CONECTADO" com um ponto verde, o sistema está pronto. 
-                As barras de áudio "MIC" e "TELA" começarão a mostrar os níveis de som detectados.
+                ⏱️ A transcrição pode levar até 3 segundos para iniciar
               </p>
             </div>
           </div>
@@ -101,77 +94,59 @@ export default function TutorialModal({ isOpen, onClose }: TutorialModalProps) {
           {/* Controles Disponíveis */}
           <div className="border-t pt-6" style={{ borderColor: 'rgba(249, 251, 252, 0.1)' }}>
             <h3 className="font-semibold mb-4" style={{ color: 'var(--seasalt)' }}>
-              Controles Disponíveis:
+              🎛️ Controles:
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Controles de Microfone */}
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 p-3 rounded-lg" style={{ backgroundColor: 'rgba(74, 222, 128, 0.1)' }}>
-                  <Mic size={16} style={{ color: 'rgb(34, 197, 94)' }} />
-                  <span className="text-sm font-medium" style={{ color: 'rgb(34, 197, 94)' }}>MIC ON</span>
-                </div>
-                <div className="flex items-center space-x-2 p-3 rounded-lg" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
+            {/* Controles de Áudio - Resumido */}
+            <div className="flex justify-center space-x-6 mb-6">
+              <div className="text-center">
+                <div className="flex items-center space-x-2 mb-1">
                   <MicOff size={16} style={{ color: 'rgb(239, 68, 68)' }} />
-                  <span className="text-sm font-medium" style={{ color: 'rgb(239, 68, 68)' }}>MIC OFF</span>
+                  <Mic size={16} style={{ color: 'rgb(34, 197, 94)' }} />
                 </div>
-                <p className="text-xs" style={{ color: 'var(--seasalt)' }}>
-                  Controla a captura do seu microfone. Inicia desligado por padrão.
-                </p>
+                <p className="text-xs" style={{ color: 'var(--seasalt)' }}>🎤 Microfone</p>
               </div>
-
-              {/* Controles de Áudio da Tela */}
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 p-3 rounded-lg" style={{ backgroundColor: 'rgba(74, 222, 128, 0.1)' }}>
+              <div className="text-center">
+                <div className="flex items-center space-x-2 mb-1">
                   <MonitorSpeaker size={16} style={{ color: 'rgb(34, 197, 94)' }} />
-                  <span className="text-sm font-medium" style={{ color: 'rgb(34, 197, 94)' }}>TELA ON</span>
-                </div>
-                <div className="flex items-center space-x-2 p-3 rounded-lg" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
                   <MonitorSpeaker size={16} style={{ color: 'rgb(239, 68, 68)' }} />
-                  <span className="text-sm font-medium" style={{ color: 'rgb(239, 68, 68)' }}>TELA OFF</span>
                 </div>
-                <p className="text-xs" style={{ color: 'var(--seasalt)' }}>
-                  Controla a captura do áudio da tela. Inicia ligado por padrão.
+                <p className="text-xs" style={{ color: 'var(--seasalt)' }}>🖥️ Tela</p>
+              </div>
+            </div>
+
+            {/* Botões Principais - Separados */}
+            <div className="space-y-4">
+              {/* Botão de Análise */}
+              <div className="p-4 rounded-lg" style={{ backgroundColor: 'rgba(107, 233, 76, 0.1)', border: '1px solid rgba(107, 233, 76, 0.2)' }}>
+                <div className="flex items-center space-x-3 mb-2">
+                  <Brain size={20} style={{ color: 'var(--sgbus-green)' }} />
+                  <h4 className="font-semibold" style={{ color: 'var(--sgbus-green)' }}>🧠 ANALISAR</h4>
+                </div>
+                <p className="text-sm" style={{ color: 'var(--seasalt)' }}>
+                  Reúne <strong>todo o contexto do histórico</strong> de transcrição e envia para a IA analisar
                 </p>
               </div>
 
               {/* Botão de Limpeza */}
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 p-3 rounded-lg" style={{ backgroundColor: 'rgba(207, 198, 254, 0.1)' }}>
-                  <Trash2 size={16} style={{ color: 'var(--periwinkle)' }} />
-                  <span className="text-sm font-medium" style={{ color: 'var(--periwinkle)' }}>LIMPEZA</span>
+              <div className="p-4 rounded-lg" style={{ backgroundColor: 'rgba(207, 198, 254, 0.1)', border: '1px solid rgba(207, 198, 254, 0.2)' }}>
+                <div className="flex items-center space-x-3 mb-2">
+                  <Trash2 size={20} style={{ color: 'var(--periwinkle)' }} />
+                  <h4 className="font-semibold" style={{ color: 'var(--periwinkle)' }}>🗑️ LIMPEZA</h4>
                 </div>
-                <p className="text-xs" style={{ color: 'var(--seasalt)' }}>
-                  Remove todo o histórico de transcrição acumulado.
-                </p>
-              </div>
-
-              {/* Botão de Análise */}
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 p-3 rounded-lg" style={{ backgroundColor: 'rgba(107, 233, 76, 0.1)' }}>
-                  <Brain size={16} style={{ color: 'var(--sgbus-green)' }} />
-                  <span className="text-sm font-medium" style={{ color: 'var(--sgbus-green)' }}>🧠 ANALISAR</span>
-                </div>
-                <p className="text-xs" style={{ color: 'var(--seasalt)' }}>
-                  Envia todo o contexto transcrito para análise de IA.
+                <p className="text-sm" style={{ color: 'var(--seasalt)' }}>
+                  Apaga o histórico transcrito para <strong>análise focada</strong> apenas no conteúdo relevante, evitando contexto antigo
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Observação Importante */}
-          <div className="flex items-start space-x-4 p-4 rounded-lg" style={{ backgroundColor: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
-            <div className="flex-shrink-0">
-              <AlertCircle size={24} style={{ color: '#f59e0b' }} />
-            </div>
+          {/* Dica Importante */}
+          <div className="flex items-start space-x-3 p-3 rounded-lg" style={{ backgroundColor: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+            <AlertCircle size={20} style={{ color: '#f59e0b' }} />
             <div>
-              <h3 className="font-semibold mb-2" style={{ color: '#f59e0b' }}>
-                ⚠️ Observação Importante sobre Contexto
-              </h3>
               <p className="text-sm" style={{ color: 'var(--seasalt)' }}>
-                A análise de IA considera <strong>todo o contexto transcrito</strong> (tanto blocos finalizados quanto 
-                texto em andamento). Para melhores resultados, use a função "ANALISAR" quando tiver uma quantidade 
-                significativa de conteúdo transcrito.
+                <strong style={{ color: '#f59e0b' }}>💡 Dica:</strong> A IA analisa <strong>todo o contexto transcrito</strong>. Use "ANALISAR" após acumular conteúdo suficiente.
               </p>
             </div>
           </div>
