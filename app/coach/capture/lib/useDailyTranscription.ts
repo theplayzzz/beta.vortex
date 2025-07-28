@@ -927,6 +927,12 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
         }
       }
 
+      // 4. Configurar estado inicial do microfone (desligado conforme planejamento)
+      if (callObject) {
+        console.log('🎤 Configurando microfone inicial como DESLIGADO...');
+        callObject.setLocalAudio(false); // Desligar microfone no início
+      }
+
       startTimeRef.current = new Date();
       setState(prev => ({
         ...prev,
@@ -936,7 +942,9 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
         interimTranscript: '',
         segments: [],
         wordsTranscribed: 0,
-        sessionDuration: 0
+        sessionDuration: 0,
+        // Garantir que estado inicial do microfone está correto
+        isMicrophoneEnabled: false // Confirma estado inicial
       }));
 
       console.log('✅ Transcrição Daily.co iniciada com sucesso');
