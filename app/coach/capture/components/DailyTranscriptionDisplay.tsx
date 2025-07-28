@@ -86,6 +86,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
     sessionDuration,
     devicePermissions,
     segments,
+    blocks, // NOVO: Sistema de blocos (Fase 5)
     trackInfo, // NOVO: Informações de tracks
     diarizationEnabled, // NOVO: Status de diarização
     speakerStats, // NOVO: Estatísticas de speakers
@@ -95,7 +96,8 @@ const DailyTranscriptionDisplay: React.FC = () => {
     forceFinalize,
     pauseListening,
     resumeListening,
-    isPaused
+    isPaused,
+    clearTranscriptionHistory // NOVO: Função de limpeza de histórico
   } = useDailyTranscription({
     language: 'pt',
     enableScreenAudio: true,
@@ -236,26 +238,139 @@ const DailyTranscriptionDisplay: React.FC = () => {
     setTimeout(scrollToBottom, 50);
   }, [scrollToBottom]);
 
-  // Função para análise de contexto (mantida idêntica - webhook continua igual)
+  // Função para envio ao webhook de análise (FASE 1: Adaptada do GoogleCloudTranscriptionDisplay)
   const sendToWebhook = async (contexto: string) => {
-    const response = await fetch('/api/webhooks/analyze-context', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: contexto,
-        source: 'daily_co_transcription', // Alterado para identificar fonte Daily.co
-        timestamp: new Date().toISOString()
-      })
-    });
+    try {
+      const webhookUrl = process.env.NEXT_PUBLIC_ANALYSIS_WEBHOOK_URL;
+      if (!webhookUrl) {
+        console.error('❌ URL do webhook de análise não configurada. Verifique a variável de ambiente NEXT_PUBLIC_ANALYSIS_WEBHOOK_URL.');
+        throw new Error('Webhook URL not configured');
+      }
 
-    if (!response.ok) {
-      throw new Error(`Erro HTTP ${response.status}`);
+      console.log('📡 Enviando contexto para webhook...');
+      console.log('🔍 Source identificado como: daily-co-transcription');
+      
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contexto: contexto,
+          timestamp: new Date().toISOString(),
+          source: 'daily-co-transcription' // ✅ FASE 1: Campo source atualizado conforme solicitado
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.text();
+      console.log('✅ Resposta do webhook:', data);
+      
+      return data;
+    } catch (error) {
+      console.error('❌ Erro ao enviar para webhook:', error);
+      throw error;
     }
+  };
 
-    const data = await response.json();
-    return data.response || 'Análise concluída';
+  // FASE 3: Função para formatar resposta do webhook (com suporte a HTML)
+  const formatWebhookResponse = (rawResponse: string): string => {
+    try {
+      console.log('🔍 Raw response recebida:', rawResponse);
+      
+      // Tentar fazer parse do JSON
+      const parsed = JSON.parse(rawResponse);
+      console.log('🔍 JSON parseado:', parsed);
+      
+      // Verificar múltiplas variações possíveis do campo
+      let analysisText = parsed.analise_resposta || 
+                        parsed['analise_resposta '] || // Com espaço
+                        parsed.analysis || 
+                        parsed.response ||
+                        parsed.resposta;
+      
+      console.log('🔍 Texto da análise extraído:', analysisText);
+      
+      if (analysisText) {
+        // Remover marcadores markdown de código (```html, ```, etc)
+        analysisText = analysisText
+          .replace(/```html\s*/g, '')  // Remove ```html
+          .replace(/```\s*/g, '')      // Remove ``` no final
+          .replace(/^```.*$/gm, '')    // Remove qualquer linha que comece com ```
+          .trim();
+        
+        // Se contém HTML, processar adequadamente
+        if (analysisText.includes('<') && analysisText.includes('>')) {
+          console.log('✅ HTML detectado, processando formatação HTML');
+          return analysisText
+            .replace(/\\"/g, '"')  // Converter aspas escapadas
+            .trim();
+        } else {
+          // Texto simples - converter quebras de linha
+          console.log('✅ Texto simples detectado');
+          return analysisText
+            .replace(/\\n/g, '\n')
+            .replace(/\n\n+/g, '\n\n')
+            .trim();
+        }
+      }
+      
+      // Se não encontrou nenhum campo conhecido, retornar o valor do primeiro campo
+      const firstValue = Object.values(parsed)[0];
+      if (typeof firstValue === 'string') {
+        let cleanedValue = firstValue
+          .replace(/```html\s*/g, '')  // Remove ```html
+          .replace(/```\s*/g, '')      // Remove ``` no final
+          .replace(/^```.*$/gm, '')    // Remove qualquer linha que comece com ```
+          .trim();
+        
+        if (cleanedValue.includes('<') && cleanedValue.includes('>')) {
+          return cleanedValue.replace(/\\"/g, '"').trim();
+        } else {
+          return cleanedValue.replace(/\\n/g, '\n').replace(/\n\n+/g, '\n\n').trim();
+        }
+      }
+      
+      // Se não conseguiu extrair, retornar como texto
+      return rawResponse;
+    } catch (error) {
+      console.log('⚠️ Erro ao fazer parse do JSON, tratando como texto simples');
+      
+      // Se não é JSON válido, tentar extrair texto entre aspas
+      const textMatch = rawResponse.match(/"([^"]*(?:\\.[^"]*)*)"/);
+      if (textMatch && textMatch[1]) {
+        const extractedText = textMatch[1]
+          .replace(/```html\s*/g, '')  // Remove ```html
+          .replace(/```\s*/g, '')      // Remove ``` no final
+          .replace(/^```.*$/gm, '')    // Remove qualquer linha que comece com ```
+          .trim();
+        
+        return extractedText
+          .replace(/\\n/g, '\n')
+          .replace(/\\"/g, '"')
+          .replace(/\n\n+/g, '\n\n')
+          .trim();
+      }
+      
+      // Último recurso: retornar como texto formatado
+      return rawResponse
+        .replace(/```html\s*/g, '')  // Remove ```html
+        .replace(/```\s*/g, '')      // Remove ``` no final
+        .replace(/^```.*$/gm, '')    // Remove qualquer linha que comece com ```
+        .replace(/\\n/g, '\n')
+        .replace(/\n\n+/g, '\n\n')
+        .trim();
+    }
+  };
+
+  // FASE 3: Função para verificar se a resposta contém HTML
+  const isHtmlContent = (content: string): boolean => {
+    return content.includes('<') && content.includes('>') && 
+           (content.includes('<p>') || content.includes('<b>') || content.includes('<strong>') || 
+            content.includes('<em>') || content.includes('<br>') || content.includes('<div>'));
   };
 
   // Funções do histórico de análises (mantidas idênticas)
@@ -277,65 +392,38 @@ const DailyTranscriptionDisplay: React.FC = () => {
     setAnalysisHistory(prev => 
       prev.map(entry => 
         entry.id === id 
-          ? { ...entry, resposta, isProcessing: false }
+          ? { ...entry, resposta: formatWebhookResponse(resposta), isProcessing: false }
           : entry
       )
     );
   };
 
-  // Função principal de análise (adaptada para Daily.co)
-  const handleAnalyzeContext = async () => {
+  // FASE 2: Função handleAnalyze com nova lógica de consolidação de contexto
+  const handleAnalyze = async () => {
     if (isAnalyzing) return;
     
     setIsAnalyzing(true);
     let loadingId: string | null = null;
     
     try {
-      setNewFieldText('🔄 Coletando contexto atual...');
-      console.log('🔍 Iniciando análise de contexto Daily.co');
+      // FASE 2: Coleta do Contexto Completo (crítica conforme planejamento)
+      const finalBlocksText = blocks.map(block => block.text).join(' \n');
+      const currentInterimText = interimTranscript; // Captura o texto intermediário atual
 
-      // Aguardar estabilização da transcrição
-      const interimInicial = interimTranscript;
-      let tentativas = 0;
-      const maxTentativas = 30;
+      // Junta os dois, garantindo um espaço se ambos existirem.
+      const contextoCompleto = `${finalBlocksText} ${currentInterimText}`.trim();
       
-      let interimAnterior = interimTranscript;
-      let contagemSemMudanca = 0;
+      // FASE 2: Log de teste conforme solicitado no critério de teste
+      console.log('Contexto para análise:', contextoCompleto);
       
-      while (tentativas < maxTentativas) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        tentativas++;
-        
-        // Se interim foi limpo, transcrição final foi recebida
-        if (!interimTranscript && interimInicial) {
-          console.log('✅ Transcrição final recebida (interim limpo)');
-          break;
-        }
-        
-        // Se interim não mudou por 10 tentativas (1 segundo), assumir que acabou
-        if (interimTranscript === interimAnterior) {
-          contagemSemMudanca++;
-          if (contagemSemMudanca >= 10) {
-            console.log('⏱️ Transcrição estável por 1 segundo');
-            break;
-          }
-        } else {
-          contagemSemMudanca = 0;
-          interimAnterior = interimTranscript;
-        }
-      }
-
-      console.log(`🔍 Aguardou ${tentativas * 100}ms pela finalização`);
-      
-      // Incluir qualquer transcrição interim restante no contexto final
-      const contextoCompleto = transcript + (interimTranscript ? ' ' + interimTranscript : '');
-      
-      if (!contextoCompleto.trim()) {
+      if (!contextoCompleto) {
         setNewFieldText('⚠️ Nenhum contexto disponível para análise');
         return;
       }
       
       console.log('📋 Contexto coletado:', contextoCompleto.length, 'caracteres');
+      console.log('🔍 Blocos finalizados:', blocks.length);
+      console.log('🔍 Texto interim atual:', currentInterimText ? currentInterimText.length + ' chars' : 'vazio');
       
       // Criar entrada de loading no histórico
       loadingId = createLoadingEntry(contextoCompleto);
@@ -449,13 +537,15 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     </button>
                     
                     <button
-                      onClick={clearTranscript}
-                      className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                      onClick={clearTranscriptionHistory}
+                      disabled={blocks.length === 0}
+                      className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{
                         backgroundColor: 'rgba(207, 198, 254, 0.2)',
                         color: 'var(--periwinkle)',
                         border: '1px solid rgba(207, 198, 254, 0.3)'
                       }}
+                      title="Limpar histórico de transcrição"
                     >
                       🗑️
                     </button>
@@ -608,49 +698,46 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Renderizar segmentos finais com DUAL STREAM enhancement */}
-                  {segments.filter(s => s.isFinal).map((segment, index) => (
+                  {/* FASE 5: Renderizar blocos com sistema de blocos incremental */}
+                  {blocks.map((block, index) => (
                     <div 
-                      key={`final-${index}`}
+                      key={`block-${block.id}`}
                       className="mb-3" 
                       style={{ 
-                        backgroundColor: segment.color === 'green' ? 'rgba(107, 233, 76, 0.1)' : 
-                                        segment.color === 'blue' ? 'rgba(207, 198, 254, 0.1)' : 
+                        backgroundColor: block.color === 'green' ? 'rgba(107, 233, 76, 0.1)' : 
+                                        block.color === 'blue' ? 'rgba(207, 198, 254, 0.1)' : 
                                         'rgba(249, 251, 252, 0.05)',
                         padding: '12px',
                         borderRadius: '8px',
                         borderLeft: `3px solid ${
-                          segment.color === 'green' ? 'var(--sgbus-green)' : 
-                          segment.color === 'blue' ? 'var(--periwinkle)' : 
+                          block.color === 'green' ? 'var(--sgbus-green)' : 
+                          block.color === 'blue' ? 'var(--periwinkle)' : 
                           'var(--seasalt)'
                         }`
                       }}
                     >
-                      {/* Header do segmento com informações de fonte */}
+                      {/* Header do bloco com informações de fonte */}
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
                           <div 
                             className="w-2 h-2 rounded-full" 
                             style={{ 
-                              backgroundColor: segment.color === 'green' ? 'var(--sgbus-green)' : 
-                                              segment.color === 'blue' ? 'var(--periwinkle)' : 
+                              backgroundColor: block.color === 'green' ? 'var(--sgbus-green)' : 
+                                              block.color === 'blue' ? 'var(--periwinkle)' : 
                                               'var(--seasalt)'
                             }}
                           ></div>
                           <span className="text-xs font-medium" style={{ 
-                            color: segment.color === 'green' ? 'var(--sgbus-green)' : 
-                                   segment.color === 'blue' ? 'var(--periwinkle)' : 
+                            color: block.color === 'green' ? 'var(--sgbus-green)' : 
+                                   block.color === 'blue' ? 'var(--periwinkle)' : 
                                    'var(--seasalt)'
                           }}>
-                            {segment.audioSource === 'screen' ? '🖥️ TELA' : 
-                             segment.audioSource === 'microphone' ? '🎤 MICROFONE' : '👤 REMOTO'}
-                            {segment.speakerId && segment.speakerId !== 'unknown' && (
-                              <span className="ml-1">#{segment.speakerId}</span>
-                            )}
+                            {block.source === 'screen' ? '🖥️ TELA' : 
+                             block.source === 'microphone' ? '🎤 MICROFONE' : '👤 REMOTO'}
                           </span>
                         </div>
                         <span className="text-xs opacity-70" style={{ color: 'var(--seasalt)' }}>
-                          {segment.timestamp.toLocaleTimeString()} | {(segment.confidence * 100).toFixed(0)}%
+                          {block.startTime.toLocaleTimeString()} | {block.text.length} chars
                         </span>
                       </div>
                       
@@ -658,31 +745,26 @@ const DailyTranscriptionDisplay: React.FC = () => {
                       <p 
                         className="text-base leading-relaxed" 
                         style={{ 
-                          color: segment.color === 'green' ? 'var(--sgbus-green)' : 
-                                 segment.color === 'blue' ? 'var(--periwinkle)' : 
+                          color: block.color === 'green' ? 'var(--sgbus-green)' : 
+                                 block.color === 'blue' ? 'var(--periwinkle)' : 
                                  'var(--seasalt)'
                         }}
                       >
-                        {segment.text}
+                        {block.text}
+                        {/* FASE 5: Mostrar texto interim no último bloco */}
+                        {index === blocks.length - 1 && interimTranscript && (
+                          <span 
+                            className="opacity-70 italic ml-1"
+                            style={{ color: 'var(--periwinkle)' }}
+                          >
+                            {interimTranscript}
+                          </span>
+                        )}
                       </p>
                     </div>
                   ))}
 
-                  {/* Mostrar texto interim atual */}
-                  {interimTranscript && (
-                    <p 
-                      className="text-base leading-relaxed opacity-70 italic"
-                      style={{ 
-                        color: 'var(--periwinkle)',
-                        backgroundColor: 'rgba(207, 198, 254, 0.05)',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        borderLeft: '3px solid var(--periwinkle)'
-                      }}
-                    >
-                      {interimTranscript}
-                    </p>
-                  )}
+                  {/* FASE 5: Texto interim agora é exibido dentro do último bloco */}
 
                   {/* Fallback para transcrição consolidada (caso segments não estejam disponíveis) */}
                   {!segments.length && transcript && (
@@ -739,8 +821,8 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   ANÁLISE DE IA
                 </h3>
                 <button
-                  onClick={handleAnalyzeContext}
-                  disabled={isAnalyzing || !transcript}
+                  onClick={handleAnalyze}
+                  disabled={isAnalyzing || (blocks.length === 0 && !interimTranscript.trim())}
                   className="px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 disabled:opacity-50"
                   style={{
                     backgroundColor: 'rgba(107, 233, 76, 0.2)',
@@ -748,7 +830,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     border: '1px solid rgba(107, 233, 76, 0.3)'
                   }}
                 >
-                  {isAnalyzing ? '⏳ ANALISANDO...' : '🧠 ANALISAR'}
+                  {isAnalyzing ? 'ANALISANDO...' : '🧠 ANALISAR'}
                 </button>
               </div>
 
@@ -823,11 +905,22 @@ const DailyTranscriptionDisplay: React.FC = () => {
                       </div>
                       
                       {analysis.resposta && (
-                        <div 
-                          className="text-sm analysis-content" 
-                          style={{ color: 'var(--seasalt)' }}
-                          dangerouslySetInnerHTML={{ __html: analysis.resposta }}
-                        />
+                        isHtmlContent(analysis.resposta) ? (
+                          <div 
+                            className="text-sm leading-relaxed analysis-content"
+                            style={{ 
+                              color: 'var(--seasalt)',
+                            }}
+                            dangerouslySetInnerHTML={{ __html: analysis.resposta }}
+                          />
+                        ) : (
+                          <div 
+                            className="text-sm leading-relaxed whitespace-pre-wrap"
+                            style={{ color: 'var(--seasalt)' }}
+                          >
+                            {analysis.resposta}
+                          </div>
+                        )
                       )}
                     </div>
                   ))}
