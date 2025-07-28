@@ -275,6 +275,103 @@ const DailyTranscriptionDisplay: React.FC = () => {
     }
   };
 
+  // FASE 3: Função para formatar resposta do webhook (com suporte a HTML)
+  const formatWebhookResponse = (rawResponse: string): string => {
+    try {
+      console.log('🔍 Raw response recebida:', rawResponse);
+      
+      // Tentar fazer parse do JSON
+      const parsed = JSON.parse(rawResponse);
+      console.log('🔍 JSON parseado:', parsed);
+      
+      // Verificar múltiplas variações possíveis do campo
+      let analysisText = parsed.analise_resposta || 
+                        parsed['analise_resposta '] || // Com espaço
+                        parsed.analysis || 
+                        parsed.response ||
+                        parsed.resposta;
+      
+      console.log('🔍 Texto da análise extraído:', analysisText);
+      
+      if (analysisText) {
+        // Remover marcadores markdown de código (```html, ```, etc)
+        analysisText = analysisText
+          .replace(/```html\s*/g, '')  // Remove ```html
+          .replace(/```\s*/g, '')      // Remove ``` no final
+          .replace(/^```.*$/gm, '')    // Remove qualquer linha que comece com ```
+          .trim();
+        
+        // Se contém HTML, processar adequadamente
+        if (analysisText.includes('<') && analysisText.includes('>')) {
+          console.log('✅ HTML detectado, processando formatação HTML');
+          return analysisText
+            .replace(/\\"/g, '"')  // Converter aspas escapadas
+            .trim();
+        } else {
+          // Texto simples - converter quebras de linha
+          console.log('✅ Texto simples detectado');
+          return analysisText
+            .replace(/\\n/g, '\n')
+            .replace(/\n\n+/g, '\n\n')
+            .trim();
+        }
+      }
+      
+      // Se não encontrou nenhum campo conhecido, retornar o valor do primeiro campo
+      const firstValue = Object.values(parsed)[0];
+      if (typeof firstValue === 'string') {
+        let cleanedValue = firstValue
+          .replace(/```html\s*/g, '')  // Remove ```html
+          .replace(/```\s*/g, '')      // Remove ``` no final
+          .replace(/^```.*$/gm, '')    // Remove qualquer linha que comece com ```
+          .trim();
+        
+        if (cleanedValue.includes('<') && cleanedValue.includes('>')) {
+          return cleanedValue.replace(/\\"/g, '"').trim();
+        } else {
+          return cleanedValue.replace(/\\n/g, '\n').replace(/\n\n+/g, '\n\n').trim();
+        }
+      }
+      
+      // Se não conseguiu extrair, retornar como texto
+      return rawResponse;
+    } catch (error) {
+      console.log('⚠️ Erro ao fazer parse do JSON, tratando como texto simples');
+      
+      // Se não é JSON válido, tentar extrair texto entre aspas
+      const textMatch = rawResponse.match(/"([^"]*(?:\\.[^"]*)*)"/);
+      if (textMatch && textMatch[1]) {
+        const extractedText = textMatch[1]
+          .replace(/```html\s*/g, '')  // Remove ```html
+          .replace(/```\s*/g, '')      // Remove ``` no final
+          .replace(/^```.*$/gm, '')    // Remove qualquer linha que comece com ```
+          .trim();
+        
+        return extractedText
+          .replace(/\\n/g, '\n')
+          .replace(/\\"/g, '"')
+          .replace(/\n\n+/g, '\n\n')
+          .trim();
+      }
+      
+      // Último recurso: retornar como texto formatado
+      return rawResponse
+        .replace(/```html\s*/g, '')  // Remove ```html
+        .replace(/```\s*/g, '')      // Remove ``` no final
+        .replace(/^```.*$/gm, '')    // Remove qualquer linha que comece com ```
+        .replace(/\\n/g, '\n')
+        .replace(/\n\n+/g, '\n\n')
+        .trim();
+    }
+  };
+
+  // FASE 3: Função para verificar se a resposta contém HTML
+  const isHtmlContent = (content: string): boolean => {
+    return content.includes('<') && content.includes('>') && 
+           (content.includes('<p>') || content.includes('<b>') || content.includes('<strong>') || 
+            content.includes('<em>') || content.includes('<br>') || content.includes('<div>'));
+  };
+
   // Funções do histórico de análises (mantidas idênticas)
   const createLoadingEntry = (contexto: string): string => {
     const id = `analysis-${Date.now()}`;
@@ -294,7 +391,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
     setAnalysisHistory(prev => 
       prev.map(entry => 
         entry.id === id 
-          ? { ...entry, resposta, isProcessing: false }
+          ? { ...entry, resposta: formatWebhookResponse(resposta), isProcessing: false }
           : entry
       )
     );
@@ -722,7 +819,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                 </h3>
                 <button
                   onClick={handleAnalyze}
-                  disabled={isAnalyzing || !transcript}
+                  disabled={isAnalyzing || (blocks.length === 0 && !interimTranscript.trim())}
                   className="px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 disabled:opacity-50"
                   style={{
                     backgroundColor: 'rgba(107, 233, 76, 0.2)',
@@ -730,7 +827,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     border: '1px solid rgba(107, 233, 76, 0.3)'
                   }}
                 >
-                  {isAnalyzing ? '⏳ ANALISANDO...' : '🧠 ANALISAR'}
+                  {isAnalyzing ? 'ANALISANDO...' : '🧠 ANALISAR'}
                 </button>
               </div>
 
@@ -805,11 +902,22 @@ const DailyTranscriptionDisplay: React.FC = () => {
                       </div>
                       
                       {analysis.resposta && (
-                        <div 
-                          className="text-sm analysis-content" 
-                          style={{ color: 'var(--seasalt)' }}
-                          dangerouslySetInnerHTML={{ __html: analysis.resposta }}
-                        />
+                        isHtmlContent(analysis.resposta) ? (
+                          <div 
+                            className="text-sm leading-relaxed analysis-content"
+                            style={{ 
+                              color: 'var(--seasalt)',
+                            }}
+                            dangerouslySetInnerHTML={{ __html: analysis.resposta }}
+                          />
+                        ) : (
+                          <div 
+                            className="text-sm leading-relaxed whitespace-pre-wrap"
+                            style={{ color: 'var(--seasalt)' }}
+                          >
+                            {analysis.resposta}
+                          </div>
+                        )
                       )}
                     </div>
                   ))}
