@@ -64,6 +64,9 @@ export interface TranscriptionState {
     screenSegments: number;
     totalSpeakers: number;
   };
+  // NOVOS CAMPOS para Controles Independentes (Fase 2)
+  isMicrophoneEnabled: boolean;
+  isScreenAudioEnabled: boolean;
 }
 
 // Interface para configuração Daily
@@ -151,7 +154,10 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
       microphoneSegments: 0,
       screenSegments: 0,
       totalSpeakers: 0
-    }
+    },
+    // NOVOS CAMPOS INICIALIZADOS (Fase 2)
+    isMicrophoneEnabled: false, // Microfone inicia desligado
+    isScreenAudioEnabled: true   // Áudio da tela inicia ligado
   });
 
   // Refs para Daily.co
@@ -1056,6 +1062,53 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     }));
   }, []);
 
+  // FASE 2: Funções de Controle de Áudio Independentes
+  
+  // Função para o microfone do usuário
+  const toggleMicrophone = useCallback(() => {
+    const nextState = !state.isMicrophoneEnabled;
+    callObjectRef.current?.setLocalAudio(nextState);
+    setState(prev => ({ ...prev, isMicrophoneEnabled: nextState }));
+    console.log(`🎤 Microfone foi ${nextState ? 'LIGADO' : 'DESLIGADO'}`);
+  }, [state.isMicrophoneEnabled]);
+
+  // Função para o áudio da tela
+  const toggleScreenAudio = useCallback(() => {
+    const nextState = !state.isScreenAudioEnabled;
+    
+    if (callObjectRef.current) {
+      try {
+        if (nextState) {
+          // Iniciar screen share com áudio se ainda não estiver ativo
+          if (!state.isScreenAudioCaptured) {
+            console.log('🖥️ Iniciando compartilhamento de tela com áudio...');
+            callObjectRef.current.startScreenShare({ audio: true });
+            setState(prev => ({ 
+              ...prev, 
+              isScreenAudioEnabled: true,
+              isScreenAudioCaptured: true 
+            }));
+          } else {
+            // Screen share já ativo, apenas habilitar áudio
+            setState(prev => ({ ...prev, isScreenAudioEnabled: true }));
+          }
+        } else {
+          // Desabilitar apenas o áudio da tela, manter screen share visual
+          console.log('🖥️ Desabilitando apenas áudio da tela...');
+          setState(prev => ({ ...prev, isScreenAudioEnabled: false }));
+          // Nota: Mantemos isScreenAudioCaptured=true para preservar screen share visual
+        }
+      } catch (error) {
+        console.error('❌ Erro ao controlar áudio da tela:', error);
+        setState(prev => ({ ...prev, isScreenAudioEnabled: !nextState })); // Reverter estado
+      }
+    } else {
+      setState(prev => ({ ...prev, isScreenAudioEnabled: nextState }));
+    }
+    
+    console.log(`🖥️ Áudio da tela foi ${nextState ? 'LIGADO' : 'DESLIGADO'}`);
+  }, [state.isScreenAudioEnabled, state.isScreenAudioCaptured]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -1108,6 +1161,11 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     forceSourceDetection,
     toggleForcedSource,
     // NOVO: Função de limpeza de histórico
-    clearTranscriptionHistory
+    clearTranscriptionHistory,
+    // FASE 2: Novos estados e funções de controle
+    isMicrophoneEnabled: state.isMicrophoneEnabled,
+    isScreenAudioEnabled: state.isScreenAudioEnabled,
+    toggleMicrophone,
+    toggleScreenAudio
   };
 }; 

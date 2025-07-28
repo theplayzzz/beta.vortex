@@ -98,7 +98,12 @@ const DailyTranscriptionDisplay: React.FC = () => {
     pauseListening,
     resumeListening,
     isPaused,
-    clearTranscriptionHistory // NOVO: Função de limpeza de histórico
+    clearTranscriptionHistory, // NOVO: Função de limpeza de histórico
+    // FASE 3: Novos estados e funções de controle
+    isMicrophoneEnabled,
+    isScreenAudioEnabled,
+    toggleMicrophone,
+    toggleScreenAudio
   } = useDailyTranscription({
     language: 'pt',
     enableScreenAudio: true,
@@ -546,22 +551,30 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   
                   {/* Substitua o botão antigo por esta estrutura */}
                   <div className="flex w-full gap-2">
-                    {/* Botão do Microfone - Sem função ainda */}
+                    {/* Botão do Microfone - Com ícones dinâmicos */}
                     <button 
+                      onClick={toggleMicrophone}
                       className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
-                      style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', color: 'rgb(239, 68, 68)', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+                      style={isMicrophoneEnabled ? 
+                        { backgroundColor: 'rgba(74, 222, 128, 0.2)', color: 'rgb(34, 197, 94)', border: '1px solid rgba(74, 222, 128, 0.3)' } :
+                        { backgroundColor: 'rgba(239, 68, 68, 0.2)', color: 'rgb(239, 68, 68)', border: '1px solid rgba(239, 68, 68, 0.3)' }
+                      }
                     >
-                      <MicOff size={16} />
-                      <span>MIC OFF</span>
+                      {isMicrophoneEnabled ? <Mic size={16} /> : <MicOff size={16} />}
+                      <span>{isMicrophoneEnabled ? 'MIC ON' : 'MIC OFF'}</span>
                     </button>
 
-                    {/* Botão de Áudio da Tela - Sem função ainda */}
+                    {/* Botão de Áudio da Tela - Com ícones dinâmicos */}
                     <button 
+                      onClick={toggleScreenAudio}
                       className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
-                      style={{ backgroundColor: 'rgba(74, 222, 128, 0.2)', color: 'rgb(34, 197, 94)', border: '1px solid rgba(74, 222, 128, 0.3)' }}
+                      style={isScreenAudioEnabled ? 
+                        { backgroundColor: 'rgba(74, 222, 128, 0.2)', color: 'rgb(34, 197, 94)', border: '1px solid rgba(74, 222, 128, 0.3)' } :
+                        { backgroundColor: 'rgba(239, 68, 68, 0.2)', color: 'rgb(239, 68, 68)', border: '1px solid rgba(239, 68, 68, 0.3)' }
+                      }
                     >
                       <MonitorSpeaker size={16} />
-                      <span>TELA ON</span>
+                      <span>{isScreenAudioEnabled ? 'TELA ON' : 'TELA OFF'}</span>
                     </button>
                   </div>
                 </div>
