@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useDailyTranscription } from '../lib/useDailyTranscription';
 import { Mic, MicOff, MonitorSpeaker } from 'lucide-react';
 import TutorialModal from './TutorialModal';
+import { useFirstVisit } from '../lib/useFirstVisit';
 
 interface AudioLevelBarProps {
   level: number;
@@ -129,6 +130,16 @@ const DailyTranscriptionDisplay: React.FC = () => {
   
   const [analysisHistory, setAnalysisHistory] = useState<AnalysisHistory[]>([]);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  
+  // Hook para detectar primeira visita
+  const { isFirstVisit, isLoading, markAsVisited } = useFirstVisit('daily-co-tutorial');
+
+  // Abrir modal automaticamente na primeira visita
+  useEffect(() => {
+    if (!isLoading && isFirstVisit) {
+      setIsTutorialOpen(true);
+    }
+  }, [isFirstVisit, isLoading]);
 
   // Simulação de stats para Daily.co (compatibilidade com interface Deepgram)
   const stats = {
@@ -905,7 +916,12 @@ const DailyTranscriptionDisplay: React.FC = () => {
       {/* Modal Tutorial Completo */}
       <TutorialModal 
         isOpen={isTutorialOpen}
-        onClose={() => setIsTutorialOpen(false)}
+        onClose={() => {
+          setIsTutorialOpen(false);
+          if (isFirstVisit) {
+            markAsVisited();
+          }
+        }}
       />
     </div>
   );
