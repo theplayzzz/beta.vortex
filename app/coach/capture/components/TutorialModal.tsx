@@ -48,7 +48,7 @@ export default function TutorialModal({ isOpen, onClose }: TutorialModalProps) {
             </div>
             <div>
               <h3 className="font-semibold mb-2" style={{ color: 'var(--sgbus-green)' }}>
-                1. Clique "🎙️ INICIAR"
+                1. Clique &quot;🎙️ INICIAR&quot;
               </h3>
               <p className="text-sm" style={{ color: 'var(--seasalt)' }}>
                 ⏳ Aguarde o popup de compartilhamento de tela abrir automaticamente
@@ -63,7 +63,7 @@ export default function TutorialModal({ isOpen, onClose }: TutorialModalProps) {
             </div>
             <div>
               <h3 className="font-semibold mb-2" style={{ color: 'var(--periwinkle)' }}>
-                2. ✅ Marque "Compartilhar áudio da aba"
+                2. ✅ Marque &quot;Compartilhar áudio da aba&quot;
               </h3>
               <p className="text-sm mb-2" style={{ color: 'var(--seasalt)' }}>
                 <strong>Essencial:</strong> Ative o áudio para capturar som de vídeos, músicas, chamadas, etc.
@@ -83,7 +83,7 @@ export default function TutorialModal({ isOpen, onClose }: TutorialModalProps) {
             </div>
             <div>
               <h3 className="font-semibold mb-2" style={{ color: 'var(--seasalt)' }}>
-                3. 🟢 Status "CONECTADO" = Pronto!
+                3. 🟢 Status &quot;CONECTADO&quot; = Pronto!
               </h3>
               <p className="text-sm" style={{ color: 'var(--seasalt)' }}>
                 ⏱️ A transcrição pode levar até 3 segundos para iniciar
@@ -146,7 +146,7 @@ export default function TutorialModal({ isOpen, onClose }: TutorialModalProps) {
             <AlertCircle size={20} style={{ color: '#f59e0b' }} />
             <div>
               <p className="text-sm" style={{ color: 'var(--seasalt)' }}>
-                <strong style={{ color: '#f59e0b' }}>💡 Dica:</strong> A IA analisa <strong>todo o contexto transcrito</strong>. Use "ANALISAR" após acumular conteúdo suficiente.
+                <strong style={{ color: '#f59e0b' }}>💡 Dica:</strong> A IA analisa <strong>todo o contexto transcrito</strong>. Use &quot;ANALISAR&quot; após acumular conteúdo suficiente.
               </p>
             </div>
           </div>
