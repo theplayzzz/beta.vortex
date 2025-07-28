@@ -1,98 +1,272 @@
-### **Plano de Implementação Detalhado: Botão "Analisar" com Finalização de Contexto**
 
-**Objetivo Final:** Fazer com que o botão "🧠 ANALISAR" crie um "instantâneo" do contexto atual, que inclui todo o texto dos blocos já finalizados **mais** o texto da transcrição intermediária em andamento. Este contexto consolidado será enviado ao webhook, **sem em nenhum momento interromper ou pausar o processo contínuo de transcrição da Daily.co**.
+### **Plano de Implementação: Substituição do Botão Reconectar por Tutorial + Modal**
+
+**Objetivo Final:** 
+1. **Remover completamente** o botão "RECONECTAR" e toda sua lógica
+2. **Substituir** por um botão "TUTORIAL" no mesmo local
+3. **Implementar** o modal de tutorial funcional
+4. **Configurar** aparição automática na primeira visita
 
 ---
 
-### **Fase 1: Preparação e Adaptação da Função de Webhook**
+### **Fase 1: Remoção Completa do Botão Reconectar**
 
-**Objetivo:** Trazer a função de comunicação com o webhook para nosso componente atual e garantir que suas configurações essenciais estejam corretas.
+**Objetivo:** Eliminar totalmente o botão "RECONECTAR" e qualquer lógica de reconexão associada a ele.
 
-*   **Ação 1.1: Copiar e Adaptar a Função `sendToWebhook`**
+*   **Ação 1.1: Localizar e Remover o Botão Reconectar**
     *   **Onde:** No arquivo `app/coach/capture/components/DailyTranscriptionDisplay.tsx`.
-    *   **O que fazer:** Copiar a função `sendToWebhook` do antigo `GoogleCloudTranscriptionDisplay.tsx` e colá-la dentro do componente `DailyTranscriptionDisplay`.
+    *   **O que fazer:** Encontrar e **deletar completamente** o botão "RECONECTAR" e seu JSX.
+    ```jsx
+    // REMOVER ESTE BLOCO COMPLETAMENTE:
+    <button 
+      className="px-2 py-1 rounded text-xs transition-all duration-200" 
+      style="background-color: rgba(207, 198, 254, 0.2); color: var(--periwinkle);"
+      onClick={...} // qualquer função que esteja aqui
+    >
+      RECONECTAR
+    </button>
+    ```
 
-*   **⚠️ Pontos de Atenção (Fase 1):**
-    1.  **Variável de Ambiente:** Conforme solicitado, assumimos que a variável `NEXT_PUBLIC_ANALYSIS_WEBHOOK_URL` **já existe e está configurada** no arquivo `.env.local`. A função irá utilizá-la diretamente.
-    2.  **Identificação da Fonte (Payload):** É mandatório atualizar o campo `source` no corpo da requisição para que a API externa saiba que a origem dos dados agora é o nosso sistema com Daily.co.
-        ```typescript
-        // Dentro da função sendToWebhook...
-        body: JSON.stringify({
-          // ...
-          source: 'daily-co-transcription' // Assegurar esta alteração
-        })
-        ```
+*   **Ação 1.2: Remover Lógica de Reconexão (se existir)**
+    *   **Onde:** No arquivo `app/coach/capture/lib/useDailyTranscription.ts`.
+    *   **O que fazer:** Procurar por qualquer função relacionada à reconexão (como `reconnect`, `handleReconnect`, etc.) e **remover completamente**.
+    ```typescript
+    // PROCURAR E REMOVER funções como:
+    // - const reconnect = ...
+    // - const handleReconnect = ...
+    // - qualquer lógica de reconnect no return do hook
+    ```
+
+*   **Ação 1.3: Limpar Imports e Estados Relacionados**
+    *   **Onde:** Em ambos os arquivos (`DailyTranscriptionDisplay.tsx` e `useDailyTranscription.ts`).
+    *   **O que fazer:** Remover qualquer import, estado ou variável que era usada exclusivamente para reconexão.
 
 *   **Critério de Teste (Fase 1):**
-    *   **Como testar:** Salve o arquivo e execute a aplicação.
-    *   **Resultado esperado:** A aplicação deve carregar e funcionar perfeitamente, sem erros no console. A função `sendToWebhook` está agora disponível em nosso componente, pronta para ser chamada. Esta fase valida que a preparação do ambiente foi bem-sucedida.
+    *   **Como testar:** Salvar os arquivos e rodar a aplicação.
+    *   **Resultado esperado:** A aplicação deve funcionar normalmente, mas **sem o botão "RECONECTAR"**. Não deve haver erros no console relacionados a funções de reconexão inexistentes.
 
 ---
 
-### **Fase 2: Lógica de Coleta com Consolidação de Contexto e Gerenciamento de Estado**
+### **Fase 2: Criação do Botão Tutorial**
 
-**Objetivo:** Implementar a lógica principal que, no momento do clique, captura o estado atual dos blocos finalizados e da transcrição intermediária, tratando-os como um único contexto para a análise.
+**Objetivo:** Adicionar o novo botão "TUTORIAL" no local onde estava o "RECONECTAR" e torná-lo funcional para abrir o modal.
 
-*   **Ação 2.1: Adicionar Estado de Carregamento (`isAnalyzing`)**
-    *   **Onde:** No topo do componente `DailyTranscriptionDisplay.tsx`.
-    *   **O que fazer:** Adicionar o estado para controlar a interface durante a chamada ao webhook.
-        ```typescript
-        const [isAnalyzing, setIsAnalyzing] = useState(false);
-        ```
+*   **Ação 2.1: Adicionar Estado para Controlar o Modal**
+    *   **Onde:** No arquivo `app/coach/capture/components/DailyTranscriptionDisplay.tsx`.
+    *   **O que fazer:** Adicionar o estado que controlará a abertura/fechamento do modal.
+    ```typescript
+    // Adicionar no início do componente, junto com outros useState
+    const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+    ```
 
-*   **Ação 2.2: Criar a Função `handleAnalyze` com a Nova Lógica**
-    *   **Onde:** Dentro do componente `DailyTranscriptionDisplay.tsx`.
-    *   **O que fazer:** Criar a função que orquestra a análise.
+*   **Ação 2.2: Adicionar o Botão Tutorial**
+    *   **Onde:** No arquivo `app/coach/capture/components/DailyTranscriptionDisplay.tsx`.
+    *   **O que fazer:** Inserir o novo botão "TUTORIAL" **exatamente no local** onde estava o botão "RECONECTAR".
+    ```jsx
+    {/* Adicionar no local onde estava o botão RECONECTAR */}
+    <button 
+      className="px-2 py-1 rounded text-xs transition-all duration-200" 
+      style={{ backgroundColor: 'rgba(207, 198, 254, 0.2)', color: 'var(--periwinkle)' }}
+      onClick={() => setIsTutorialOpen(true)}
+    >
+      TUTORIAL
+    </button>
+    ```
 
-*   **⚠️ Pontos de Atenção (Fase 2):**
-    1.  **Coleta do Contexto Completo:** Esta é a mudança mais crítica. A função não deve apenas pegar os `blocks`. Ela deve pegar os `blocks` E o `interimTranscript` atual para formar um "instantâneo" completo do que foi dito até aquele milissegundo.
-        ```typescript
-        // Dentro da função handleAnalyze...
-        const finalBlocksText = blocks.map(block => block.text).join(' \n');
-        const currentInterimText = interimTranscript; // Captura o texto intermediário atual
-
-        // Junta os dois, garantindo um espaço se ambos existirem.
-        const contextoCompleto = `${finalBlocksText} ${currentInterimText}`.trim();
-        ```
-    2.  **Operação Não-Destrutiva:** É fundamental entender que esta operação é de **leitura**. Nós estamos criando uma nova variável (`contextoCompleto`) baseada no estado atual. **Nós não modificamos, limpamos ou alteramos os estados `blocks` ou `interimTranscript`**. Isso garante que, enquanto a análise é enviada em segundo plano, o hook `useDailyTranscription` continue recebendo mensagens da Daily.co e atualizando a interface normalmente, sem qualquer interrupção.
+*   **Ação 2.3: Criar Modal Temporário para Teste**
+    *   **Onde:** No arquivo `app/coach/capture/components/DailyTranscriptionDisplay.tsx`.
+    *   **O que fazer:** Adicionar um modal simples temporário para testar se o botão está funcionando.
+    ```jsx
+    {/* Adicionar no final do JSX principal, antes do fechamento */}
+    {isTutorialOpen && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg max-w-md">
+          <h2 className="text-xl font-bold mb-4">Tutorial Modal</h2>
+          <p>Este é um teste do modal de tutorial!</p>
+          <button 
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+            onClick={() => setIsTutorialOpen(false)}
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
+    )}
+    ```
 
 *   **Critério de Teste (Fase 2):**
-    *   **Como testar:** Adicione um `console.log('Contexto para análise:', contextoCompleto);` dentro da função `handleAnalyze`.
-    *   **Resultado esperado:** A aplicação continua funcionando sem alterações visuais. A lógica está pronta. Ao chamar manualmente a função pelo console do navegador (se possível), o log deve mostrar a junção dos textos dos blocos e do texto intermediário.
+    *   **Como testar:** 
+        1. Salvar os arquivos e rodar a aplicação
+        2. Localizar o botão "TUTORIAL" onde antes estava "RECONECTAR"
+        3. Clicar no botão "TUTORIAL"
+        4. Verificar se o modal simples abre
+        5. Clicar em "Fechar" e verificar se o modal fecha
+    *   **Resultado esperado:** Botão "TUTORIAL" visível e funcional, abrindo/fechando o modal de teste corretamente.
 
 ---
 
-### **Fase 3: Conexão com a Interface e Feedback Visual ao Usuário**
+### **Fase 3: Criação do Componente Modal Completo**
 
-**Objetivo:** Conectar a nova lógica ao botão, fornecer feedback claro e garantir que a experiência do usuário seja fluida, mesmo com a análise acontecendo em segundo plano.
+**Objetivo:** Substituir o modal temporário por um componente completo e profissional com todo o conteúdo do tutorial.
 
-*   **Ação 3.1: Conectar o `onClick` e Controlar o Estado do Botão**
-    *   **Onde:** No JSX do botão "ANALISAR" em `DailyTranscriptionDisplay.tsx`.
-    *   **O que fazer:** Conectar o evento `onClick` a `handleAnalyze` e usar `isAnalyzing` para controlar a aparência e o comportamento do botão.
-        ```jsx
-        <button
-          onClick={handleAnalyze}
-          disabled={isAnalyzing || (blocks.length === 0 && !interimTranscript)}
-          className="..."
-        >
-          {isAnalyzing ? 'ANALISANDO...' : '🧠 ANALISAR'}
-        </button>
-        ```
+*   **Ação 3.1: Criar o Componente TutorialModal**
+    *   **Onde:** Criar novo arquivo `app/coach/capture/components/TutorialModal.tsx`.
+    *   **O que fazer:** Criar componente modal responsivo com conteúdo completo.
+    ```typescript
+    import { X, Play, Monitor, Mic, MicOff, MonitorSpeaker, Trash2, Brain, AlertCircle } from 'lucide-react';
 
-*   **⚠️ Pontos de Atenção (Fase 3):**
-    1.  **Lógica de Habilitação do Botão:** O botão só deve estar clicável se houver algo para analisar. A condição para desabilitar agora é: "está analisando" OU ("não há blocos finalizados" E "não há texto intermediário").
-        ```jsx
-        disabled={isAnalyzing || (blocks.length === 0 && !interimTranscript.trim())}
-        ```
-    2.  **Garantia de Não-Interrupção (Teste Visual):** O teste final deve validar explicitamente que a transcrição continua. O usuário precisa ver o texto intermediário na tela mudando enquanto a análise acontece.
+    interface TutorialModalProps {
+      isOpen: boolean;
+      onClose: () => void;
+    }
+
+    export default function TutorialModal({ isOpen, onClose }: TutorialModalProps) {
+      if (!isOpen) return null;
+
+      return (
+        // Modal com:
+        // - Overlay escuro clicável para fechar
+        // - Container responsivo (max-w-4xl)
+        // - Header com título e botão X
+        // - Body com scroll (max-h-[80vh] overflow-y-auto)
+        // - Conteúdo estruturado em seções
+        // - Footer com botão "Entendi"
+      );
+    }
+    ```
+
+*   **Ação 3.2: Estruturar o Conteúdo do Tutorial**
+    *   **Onde:** Dentro do componente `TutorialModal.tsx`.
+    *   **O que fazer:** Criar o conteúdo completo solicitado, organizando em seções visuais.
+    ```jsx
+    // Estrutura do conteúdo:
+    // 1. Título: "Como usar a Plataforma de Transcrição e Análise"
+    // 2. Introdução: Explicação breve da funcionalidade
+    // 3. Passo 1: Clicar em INICIAR (com ícone Play)
+    // 4. Passo 2: Compartilhamento de tela + áudio (com ícone Monitor)
+    // 5. Passo 3: Aguardar conexão (status conectado)
+    // 6. Controles disponíveis:
+    //    - Botões de microfone (Mic/MicOff)
+    //    - Botão de áudio da tela (MonitorSpeaker)
+    //    - Botão de limpeza (Trash2)
+    //    - Botão de análise (Brain)
+    // 7. Observação importante sobre contexto (com ícone AlertCircle)
+    ```
+
+*   **Ação 3.3: Substituir Modal Temporário**
+    *   **Onde:** No arquivo `app/coach/capture/components/DailyTranscriptionDisplay.tsx`.
+    *   **O que fazer:** Remover o modal temporário e importar/usar o componente completo.
+    ```typescript
+    // Adicionar import
+    import TutorialModal from './TutorialModal';
+
+    // Substituir o modal temporário por:
+    <TutorialModal 
+      isOpen={isTutorialOpen}
+      onClose={() => setIsTutorialOpen(false)}
+    />
+    ```
 
 *   **Critério de Teste (Fase 3):**
-    *   **Como testar:** Este é o teste funcional completo da funcionalidade.
-        1.  Inicie a aplicação e a transcrição. Fale uma ou duas frases e faça uma pausa (para criar blocos finalizados).
-        2.  Comece a falar uma nova frase, mas **não pare de falar**.
-        3.  Enquanto a frase intermediária está aparecendo e mudando na tela, **clique no botão "ANALISAR"**.
-        4.  **Verifique o Comportamento Imediato:**
-            *   O botão deve mudar para "ANALISANDO..." e ficar desabilitado.
-            *   **Crucial:** A transcrição intermediária na tela deve **continuar a ser atualizada** enquanto você fala, provando que o processo não foi interrompido.
-        5.  **Verifique o Console:** Você verá o log do `contextoCompleto`, que deve conter o texto dos blocos finalizados e o "instantâneo" do texto intermediário que existia no momento do clique.
-        6.  **Verifique a Conclusão:** Após a resposta do webhook, um `alert` aparecerá. Ao fechá-lo, o botão voltará ao normal ("🧠 ANALISAR" e habilitado), pronto para uma nova análise.
+    *   **Como testar:** 
+        1. Clicar no botão "TUTORIAL"
+        2. Verificar se o modal completo abre com todo o conteúdo
+        3. Testar responsividade (redimensionar janela)
+        4. Testar scroll (se necessário)
+        5. Testar fechamento (botão X, overlay, botão "Entendi")
+    *   **Resultado esperado:** Modal profissional, responsivo, com conteúdo completo e bem estruturado.
+
+---
+
+### **Fase 4: Sistema de Primeira Visita**
+
+**Objetivo:** Implementar a detecção de primeira visita para abrir o modal automaticamente.
+
+*   **Ação 4.1: Criar Hook de Primeira Visita**
+    *   **Onde:** Criar novo arquivo `app/coach/capture/lib/useFirstVisit.ts`.
+    *   **O que fazer:** Implementar hook para gerenciar primeira visita.
+    ```typescript
+    import { useState, useEffect, useCallback } from 'react';
+
+    export function useFirstVisit(pageKey: string) {
+      const [isFirstVisit, setIsFirstVisit] = useState<boolean>(false);
+      const [isLoading, setIsLoading] = useState<boolean>(true);
+
+      useEffect(() => {
+        const visitKey = `first-visit-${pageKey}`;
+        const hasVisited = localStorage.getItem(visitKey);
+        
+        setIsFirstVisit(!hasVisited);
+        setIsLoading(false);
+      }, [pageKey]);
+
+      const markAsVisited = useCallback(() => {
+        const visitKey = `first-visit-${pageKey}`;
+        localStorage.setItem(visitKey, 'true');
+        setIsFirstVisit(false);
+      }, [pageKey]);
+
+      return { isFirstVisit, isLoading, markAsVisited };
+    }
+    ```
+
+*   **Ação 4.2: Integrar Hook no Componente**
+    *   **Onde:** No arquivo `app/coach/capture/components/DailyTranscriptionDisplay.tsx`.
+    *   **O que fazer:** Usar o hook e configurar abertura automática.
+    ```typescript
+    // Adicionar import
+    import { useFirstVisit } from '../lib/useFirstVisit';
+
+    // Dentro do componente, adicionar:
+    const { isFirstVisit, isLoading, markAsVisited } = useFirstVisit('daily-co-tutorial');
+
+    // useEffect para abrir modal na primeira visita
+    useEffect(() => {
+      if (!isLoading && isFirstVisit) {
+        setIsTutorialOpen(true);
+      }
+    }, [isFirstVisit, isLoading]);
+    ```
+
+*   **Ação 4.3: Atualizar Modal para Marcar Visita**
+    *   **Onde:** No arquivo `app/coach/capture/components/DailyTranscriptionDisplay.tsx`.
+    *   **O que fazer:** Modificar a função `onClose` do modal para marcar como visitado quando for primeira visita.
+    ```jsx
+    <TutorialModal 
+      isOpen={isTutorialOpen}
+      onClose={() => {
+        setIsTutorialOpen(false);
+        if (isFirstVisit) {
+          markAsVisited();
+        }
+      }}
+    />
+    ```
+
+*   **Critério de Teste (Fase 4):**
+    *   **Como testar:** Teste completo da funcionalidade:
+        1. **Limpar localStorage:** Abrir DevTools → Application → Storage → Clear All
+        2. **Primeira visita:** Acessar `/coach/capture/daily-co` - modal deve abrir automaticamente
+        3. **Fechar modal:** Modal deve fechar e marcar como visitado
+        4. **Recarregar página:** Modal não deve abrir automaticamente
+        5. **Botão manual:** Clicar em "TUTORIAL" deve abrir modal
+        6. **Nova primeira visita:** Limpar localStorage novamente e repetir teste
+    *   **Resultado esperado:** Sistema completo funcionando - modal abre automaticamente na primeira visita e pode ser aberto manualmente via botão "TUTORIAL".
+
+---
+
+### **Resumo dos Arquivos Afetados:**
+
+**Arquivos Novos:**
+- `app/coach/capture/components/TutorialModal.tsx` - Componente do modal completo
+- `app/coach/capture/lib/useFirstVisit.ts` - Hook para detecção de primeira visita
+
+**Arquivos Modificados:**
+- `app/coach/capture/components/DailyTranscriptionDisplay.tsx` - Remoção do botão reconectar, adição do botão tutorial e integração do modal
+- `app/coach/capture/lib/useDailyTranscription.ts` - Remoção de qualquer lógica de reconexão (se existir)
+
+**Fluxo Final:**
+1. **Primeira visita:** Modal abre automaticamente
+2. **Visitas posteriores:** Modal disponível via botão "TUTORIAL"
+3. **Conteúdo:** Tutorial completo sobre uso da ferramenta
+4. **UX:** Modal responsivo, com scroll e múltiplas formas de fechamento
