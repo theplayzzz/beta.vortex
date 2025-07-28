@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useDailyTranscription } from '../lib/useDailyTranscription';
+import { Mic, MicOff, MonitorSpeaker } from 'lucide-react';
 
 interface AudioLevelBarProps {
   level: number;
@@ -454,14 +455,6 @@ const DailyTranscriptionDisplay: React.FC = () => {
     }
   };
 
-  // Função para alternar microfone (adaptada para Daily.co)
-  const toggleMicrophone = useCallback(() => {
-    if (isPaused) {
-      resumeListening();
-    } else {
-      pauseListening();
-    }
-  }, [isPaused, pauseListening, resumeListening]);
 
   return (
     <div className="min-h-screen p-6">
@@ -551,18 +544,26 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     </button>
                   </div>
                   
-                  <button
-                    onClick={toggleMicrophone}
-                    disabled={!isListening}
-                    className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50"
-                    style={{
-                      backgroundColor: !isPaused && isListening ? 'rgba(107, 233, 76, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                      color: !isPaused && isListening ? 'var(--sgbus-green)' : '#ef4444',
-                      border: !isPaused && isListening ? '1px solid rgba(107, 233, 76, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)'
-                    }}
-                  >
-                    {!isPaused && isListening ? '🎙️ MIC ON' : '🎙️ MIC OFF'}
-                  </button>
+                  {/* Substitua o botão antigo por esta estrutura */}
+                  <div className="flex w-full gap-2">
+                    {/* Botão do Microfone - Sem função ainda */}
+                    <button 
+                      className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
+                      style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', color: 'rgb(239, 68, 68)', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+                    >
+                      <MicOff size={16} />
+                      <span>MIC OFF</span>
+                    </button>
+
+                    {/* Botão de Áudio da Tela - Sem função ainda */}
+                    <button 
+                      className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
+                      style={{ backgroundColor: 'rgba(74, 222, 128, 0.2)', color: 'rgb(34, 197, 94)', border: '1px solid rgba(74, 222, 128, 0.3)' }}
+                    >
+                      <MonitorSpeaker size={16} />
+                      <span>TELA ON</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Níveis de Áudio - Adaptado para Daily.co */}
