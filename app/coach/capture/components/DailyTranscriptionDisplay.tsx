@@ -96,7 +96,8 @@ const DailyTranscriptionDisplay: React.FC = () => {
     forceFinalize,
     pauseListening,
     resumeListening,
-    isPaused
+    isPaused,
+    clearTranscriptionHistory // NOVO: Função de limpeza de histórico
   } = useDailyTranscription({
     language: 'pt',
     enableScreenAudio: true,
@@ -536,13 +537,15 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     </button>
                     
                     <button
-                      onClick={clearTranscript}
-                      className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                      onClick={clearTranscriptionHistory}
+                      disabled={blocks.length === 0}
+                      className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{
                         backgroundColor: 'rgba(207, 198, 254, 0.2)',
                         color: 'var(--periwinkle)',
                         border: '1px solid rgba(207, 198, 254, 0.3)'
                       }}
+                      title="Limpar histórico de transcrição"
                     >
                       🗑️
                     </button>

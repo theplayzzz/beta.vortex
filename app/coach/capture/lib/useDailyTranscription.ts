@@ -1046,6 +1046,16 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     console.log(`🔄 Alternando fonte forçada para: ${forcedSourceRef.current || 'automático'}`);
   }, []);
 
+  // NOVO: Função de limpeza de histórico (preserva texto intermediário)
+  const clearTranscriptionHistory = useCallback(() => {
+    console.log('🧹 Limpando blocos finalizados. Texto intermediário será preservado.');
+    setState(prevState => ({
+      ...prevState,
+      blocks: [], // Ação principal: esvazia APENAS a lista de blocos.
+      // O estado 'interimTranscript' e todos os outros são intencionalmente preservados.
+    }));
+  }, []);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -1096,6 +1106,8 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     updateAvailableDevices,
     // NOVAS: Funções de debug para fonte
     forceSourceDetection,
-    toggleForcedSource
+    toggleForcedSource,
+    // NOVO: Função de limpeza de histórico
+    clearTranscriptionHistory
   };
 }; 
