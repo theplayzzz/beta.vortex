@@ -3,6 +3,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useDailyTranscription } from '../lib/useDailyTranscription';
 import { Mic, MicOff, MonitorSpeaker } from 'lucide-react';
+import TutorialModal from './TutorialModal';
 
 interface AudioLevelBarProps {
   level: number;
@@ -127,6 +128,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
   }
   
   const [analysisHistory, setAnalysisHistory] = useState<AnalysisHistory[]>([]);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   // Simulação de stats para Daily.co (compatibilidade com interface Deepgram)
   const stats = {
@@ -490,30 +492,15 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   <span className="text-xs font-medium" style={{ color: 'var(--seasalt)' }}>
                     {isConnected ? 'CONECTADO' : 'DESCONECTADO'}
                   </span>
-                  {/* Provider e Modelo - Adaptado para Daily.co */}
-                  <div className="flex items-center space-x-2 ml-4">
-                    <div className="h-3 w-px" style={{ backgroundColor: 'rgba(249, 251, 252, 0.2)' }} />
-                    <span className="text-xs font-medium" style={{ color: 'var(--periwinkle)' }}>
-                      DAILY.CO
-                    </span>
-                    <span className="text-xs font-mono" style={{ color: 'var(--seasalt)' }}>
-                      DEEPGRAM
-                    </span>
-                  </div>
                 </div>
                 
-                {!isConnected && (
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="px-2 py-1 rounded text-xs transition-all duration-200"
-                    style={{ 
-                      backgroundColor: 'rgba(207, 198, 254, 0.2)',
-                      color: 'var(--periwinkle)'
-                    }}
-                  >
-                    RECONECTAR
-                  </button>
-                )}
+                <button 
+                  className="px-2 py-1 rounded text-xs transition-all duration-200" 
+                  style={{ backgroundColor: 'rgba(207, 198, 254, 0.2)', color: 'var(--periwinkle)' }}
+                  onClick={() => setIsTutorialOpen(true)}
+                >
+                  TUTORIAL
+                </button>
               </div>
 
               {/* Grid de Controles Reorganizado */}
@@ -796,7 +783,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                         🎙️ Pressione &quot;INICIAR&quot; para começar a transcrição
                       </p>
                       <p className="text-sm opacity-70" style={{ color: 'var(--seasalt)' }}>
-                        Daily.co capturará áudio do microfone e da tela
+                        Sistema capturará áudio do microfone e da tela
                       </p>
                     </div>
                   )}
@@ -944,6 +931,12 @@ const DailyTranscriptionDisplay: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* Modal Tutorial Completo */}
+      <TutorialModal 
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+      />
     </div>
   );
 };

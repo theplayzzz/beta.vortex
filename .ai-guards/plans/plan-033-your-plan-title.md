@@ -1,193 +1,272 @@
-Com certeza! Vou refazer o planejamento usando os ícones da biblioteca **Lucide React** em vez de emojis.
+
+### **Plano de Implementação: Substituição do Botão Reconectar por Tutorial + Modal**
+
+**Objetivo Final:** 
+1. **Remover completamente** o botão "RECONECTAR" e toda sua lógica
+2. **Substituir** por um botão "TUTORIAL" no mesmo local
+3. **Implementar** o modal de tutorial funcional
+4. **Configurar** aparição automática na primeira visita
 
 ---
 
-### **Plano de Implementação: Controles de Áudio Independentes (Microfone e Tela) - Versão Lucide**
+### **Fase 1: Remoção Completa do Botão Reconectar**
 
-**Objetivo Final:** Substituir o botão de microfone único por dois botões distintos e funcionais usando ícones Lucide.
-1.  **Botão de Microfone:** Usar `Mic` (ligado) e `MicOff` (desligado). Inicia **desligado**.
-2.  **Botão de Áudio da Tela:** Usar `MonitorSpeaker` para representar áudio da tela. Inicia **ligado**.
+**Objetivo:** Eliminar totalmente o botão "RECONECTAR" e qualquer lógica de reconexão associada a ele.
 
----
-
-### **Fase 1: Limpeza da Lógica Antiga e Reestruturação da Interface**
-
-**Objetivo:** Remover completamente a funcionalidade atual do botão de microfone e redesenhar a interface para acomodar dois novos botões com ícones Lucide.
-
-*   **Ação 1.1: Remover Lógica Existente (Hook)**
-    *   **Onde:** No arquivo `app/coach/capture/lib/useDailyTranscription.ts`.
-    *   **O que fazer:** Localize qualquer função ou lógica de `setState` que esteja sendo usada para ligar/desligar o microfone (ex: `toggleMicrofone`, `toggleMute`, etc.). **Remova completamente** essa função e sua exportação no `return` do hook.
-
-*   **Ação 1.2: Adicionar Importações dos Ícones Lucide**
+*   **Ação 1.1: Localizar e Remover o Botão Reconectar**
     *   **Onde:** No arquivo `app/coach/capture/components/DailyTranscriptionDisplay.tsx`.
-    *   **O que fazer:** Adicione os imports dos ícones que vamos usar:
-    ```typescript
-    import { Mic, MicOff, MonitorSpeaker } from 'lucide-react';
-    ```
-
-*   **Ação 1.3: Reestruturar a Interface (Componente)**
-    *   **Onde:** No arquivo `app/coach/capture/components/DailyTranscriptionDisplay.tsx`.
-    *   **O que fazer:** Encontre o `<button>` do microfone existente. **Substitua-o** por uma `div` que conterá os dois novos botões, lado a lado, usando os ícones Lucide. Por enquanto, eles não terão funcionalidade.
-
+    *   **O que fazer:** Encontrar e **deletar completamente** o botão "RECONECTAR" e seu JSX.
     ```jsx
-    {/* Substitua o botão antigo por esta estrutura */}
-    <div className="flex w-full gap-2">
-      {/* Botão do Microfone - Sem função ainda */}
-      <button 
-        className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
-        style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', color: 'rgb(239, 68, 68)', border: '1px solid rgba(239, 68, 68, 0.3)' }}
-      >
-        <MicOff size={16} />
-        <span>MIC OFF</span>
-      </button>
-
-      {/* Botão de Áudio da Tela - Sem função ainda */}
-      <button 
-        className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
-        style={{ backgroundColor: 'rgba(74, 222, 128, 0.2)', color: 'rgb(34, 197, 94)', border: '1px solid rgba(74, 222, 128, 0.3)' }}
-      >
-        <MonitorSpeaker size={16} />
-        <span>TELA ON</span>
-      </button>
-    </div>
+    // REMOVER ESTE BLOCO COMPLETAMENTE:
+    <button 
+      className="px-2 py-1 rounded text-xs transition-all duration-200" 
+      style="background-color: rgba(207, 198, 254, 0.2); color: var(--periwinkle);"
+      onClick={...} // qualquer função que esteja aqui
+    >
+      RECONECTAR
+    </button>
     ```
+
+*   **Ação 1.2: Remover Lógica de Reconexão (se existir)**
+    *   **Onde:** No arquivo `app/coach/capture/lib/useDailyTranscription.ts`.
+    *   **O que fazer:** Procurar por qualquer função relacionada à reconexão (como `reconnect`, `handleReconnect`, etc.) e **remover completamente**.
+    ```typescript
+    // PROCURAR E REMOVER funções como:
+    // - const reconnect = ...
+    // - const handleReconnect = ...
+    // - qualquer lógica de reconnect no return do hook
+    ```
+
+*   **Ação 1.3: Limpar Imports e Estados Relacionados**
+    *   **Onde:** Em ambos os arquivos (`DailyTranscriptionDisplay.tsx` e `useDailyTranscription.ts`).
+    *   **O que fazer:** Remover qualquer import, estado ou variável que era usada exclusivamente para reconexão.
 
 *   **Critério de Teste (Fase 1):**
-    *   **Como testar:** Salve os arquivos e rode a aplicação.
-    *   **Resultado esperado:** No lugar do botão único de microfone, você deve ver **dois novos botões** com ícones Lucide: um com `MicOff` e texto "MIC OFF" (vermelho) e outro com `MonitorSpeaker` e texto "TELA ON" (verde). Clicar neles não fará nada. O código antigo foi removido, garantindo que não haverá conflitos.
+    *   **Como testar:** Salvar os arquivos e rodar a aplicação.
+    *   **Resultado esperado:** A aplicação deve funcionar normalmente, mas **sem o botão "RECONECTAR"**. Não deve haver erros no console relacionados a funções de reconexão inexistentes.
 
 ---
 
-### **Fase 2: Implementação da Nova Lógica de Controle no Hook**
+### **Fase 2: Criação do Botão Tutorial**
 
-**Objetivo:** Criar os estados e as funções de controle para o microfone e o áudio da tela dentro do hook `useDailyTranscription`, usando os métodos corretos da SDK do Daily.co.
+**Objetivo:** Adicionar o novo botão "TUTORIAL" no local onde estava o "RECONECTAR" e torná-lo funcional para abrir o modal.
 
-*   **Ação 2.1: Adicionar Novos Estados**
-    *   **Onde:** Na interface `TranscriptionState` em `useDailyTranscription.ts`.
-    *   **O que fazer:** Adicione dois booleanos para rastrear o estado de cada fonte de áudio.
-        ```typescript
-        export interface TranscriptionState {
-          // ...outros estados
-          isMicrophoneEnabled: boolean;
-          isScreenAudioEnabled: boolean;
-        }
-        ```
-    *   No `useState` inicial, defina os valores padrão conforme solicitado:
-        ```typescript
-        useState<TranscriptionState>({
-          // ...outros estados
-          isMicrophoneEnabled: false, // Microfone inicia desligado
-          isScreenAudioEnabled: true,  // Áudio da tela inicia ligado
-        });
-        ```
-
-*   **Ação 2.2: Criar Funções de Controle**
-    *   **Onde:** Dentro do hook `useDailyTranscription.ts`.
-    *   **O que fazer:** Crie duas novas funções, uma para cada botão, e exponha-as no `return`.
-
+*   **Ação 2.1: Adicionar Estado para Controlar o Modal**
+    *   **Onde:** No arquivo `app/coach/capture/components/DailyTranscriptionDisplay.tsx`.
+    *   **O que fazer:** Adicionar o estado que controlará a abertura/fechamento do modal.
     ```typescript
-    // Função para o microfone do usuário
-    const toggleMicrophone = useCallback(() => {
-      const nextState = !state.isMicrophoneEnabled;
-      callObjectRef.current?.setMicrophone(nextState);
-      setState(prev => ({ ...prev, isMicrophoneEnabled: nextState }));
-      console.log(`🎤 Microfone foi ${nextState ? 'LIGADO' : 'DESLIGADO'}`);
-    }, [state.isMicrophoneEnabled]);
-
-    // Função para o áudio da tela
-    const toggleScreenAudio = useCallback(() => {
-      const nextState = !state.isScreenAudioEnabled;
-      callObjectRef.current?.setScreenAudio(nextState);
-      setState(prev => ({ ...prev, isScreenAudioEnabled: nextState }));
-      console.log(`🖥️ Áudio da tela foi ${nextState ? 'LIGADO' : 'DESLIGADO'}`);
-    }, [state.isScreenAudioEnabled]);
-
-    // Exponha tudo no return do hook
-    return {
-      // ...outros retornos
-      isMicrophoneEnabled: state.isMicrophoneEnabled,
-      isScreenAudioEnabled: state.isScreenAudioEnabled,
-      toggleMicrophone,
-      toggleScreenAudio,
-    };
+    // Adicionar no início do componente, junto com outros useState
+    const [isTutorialOpen, setIsTutorialOpen] = useState(false);
     ```
 
-*   **⚠️ Pontos de Atenção (Fase 2):**
-    1.  **Métodos Corretos da SDK:** Usar `callObjectRef.current?.setMicrophone(boolean)` e `callObjectRef.current?.setScreenAudio(boolean)` é crucial. Esses métodos da Daily.co ativam/desativam a **transmissão de áudio** da faixa específica, sem parar a faixa em si (o vídeo da tela continua).
-    2.  **Estado Inicial:** A definição dos estados iniciais (`isMicrophoneEnabled: false`, `isScreenAudioEnabled: true`) é fundamental para que a aplicação comece no estado desejado pelo usuário.
+*   **Ação 2.2: Adicionar o Botão Tutorial**
+    *   **Onde:** No arquivo `app/coach/capture/components/DailyTranscriptionDisplay.tsx`.
+    *   **O que fazer:** Inserir o novo botão "TUTORIAL" **exatamente no local** onde estava o botão "RECONECTAR".
+    ```jsx
+    {/* Adicionar no local onde estava o botão RECONECTAR */}
+    <button 
+      className="px-2 py-1 rounded text-xs transition-all duration-200" 
+      style={{ backgroundColor: 'rgba(207, 198, 254, 0.2)', color: 'var(--periwinkle)' }}
+      onClick={() => setIsTutorialOpen(true)}
+    >
+      TUTORIAL
+    </button>
+    ```
+
+*   **Ação 2.3: Criar Modal Temporário para Teste**
+    *   **Onde:** No arquivo `app/coach/capture/components/DailyTranscriptionDisplay.tsx`.
+    *   **O que fazer:** Adicionar um modal simples temporário para testar se o botão está funcionando.
+    ```jsx
+    {/* Adicionar no final do JSX principal, antes do fechamento */}
+    {isTutorialOpen && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg max-w-md">
+          <h2 className="text-xl font-bold mb-4">Tutorial Modal</h2>
+          <p>Este é um teste do modal de tutorial!</p>
+          <button 
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+            onClick={() => setIsTutorialOpen(false)}
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
+    )}
+    ```
 
 *   **Critério de Teste (Fase 2):**
-    *   **Como testar:** Salve o arquivo. A aplicação deve funcionar sem erros.
-    *   **Resultado esperado:** A lógica de controle agora existe no hook, pronta para ser conectada à interface. Nenhuma mudança visual ocorrerá ainda.
+    *   **Como testar:** 
+        1. Salvar os arquivos e rodar a aplicação
+        2. Localizar o botão "TUTORIAL" onde antes estava "RECONECTAR"
+        3. Clicar no botão "TUTORIAL"
+        4. Verificar se o modal simples abre
+        5. Clicar em "Fechar" e verificar se o modal fecha
+    *   **Resultado esperado:** Botão "TUTORIAL" visível e funcional, abrindo/fechando o modal de teste corretamente.
 
 ---
 
-### **Fase 3: Conexão Final da Interface e Testes Funcionais**
+### **Fase 3: Criação do Componente Modal Completo**
 
-**Objetivo:** Conectar as novas funções e estados aos botões na interface, implementando a lógica de estilo e ícones dinâmicos.
+**Objetivo:** Substituir o modal temporário por um componente completo e profissional com todo o conteúdo do tutorial.
 
-*   **Ação 3.1: Conectar o Botão do Microfone**
-    *   **Onde:** Em `DailyTranscriptionDisplay.tsx`.
-    *   **O que fazer:** Primeiro, consuma os novos valores do hook. Depois, atualize o botão `MIC` com ícones dinâmicos.
+*   **Ação 3.1: Criar o Componente TutorialModal**
+    *   **Onde:** Criar novo arquivo `app/coach/capture/components/TutorialModal.tsx`.
+    *   **O que fazer:** Criar componente modal responsivo com conteúdo completo.
+    ```typescript
+    import { X, Play, Monitor, Mic, MicOff, MonitorSpeaker, Trash2, Brain, AlertCircle } from 'lucide-react';
 
-    ```jsx
-    // Consuma do hook
-    const { 
-      isMicrophoneEnabled, 
-      toggleMicrophone, 
-      isScreenAudioEnabled, 
-      toggleScreenAudio 
-    } = useDailyTranscription(...);
+    interface TutorialModalProps {
+      isOpen: boolean;
+      onClose: () => void;
+    }
 
-    // Atualize o JSX do botão do microfone com ícones dinâmicos
-    <button 
-      onClick={toggleMicrophone}
-      className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
-      style={isMicrophoneEnabled ? 
-        { backgroundColor: 'rgba(74, 222, 128, 0.2)', color: 'rgb(34, 197, 94)', border: '1px solid rgba(74, 222, 128, 0.3)' } :
-        { backgroundColor: 'rgba(239, 68, 68, 0.2)', color: 'rgb(239, 68, 68)', border: '1px solid rgba(239, 68, 68, 0.3)' }
-      }
-    >
-      {isMicrophoneEnabled ? <Mic size={16} /> : <MicOff size={16} />}
-      <span>{isMicrophoneEnabled ? 'MIC ON' : 'MIC OFF'}</span>
-    </button>
+    export default function TutorialModal({ isOpen, onClose }: TutorialModalProps) {
+      if (!isOpen) return null;
+
+      return (
+        // Modal com:
+        // - Overlay escuro clicável para fechar
+        // - Container responsivo (max-w-4xl)
+        // - Header com título e botão X
+        // - Body com scroll (max-h-[80vh] overflow-y-auto)
+        // - Conteúdo estruturado em seções
+        // - Footer com botão "Entendi"
+      );
+    }
     ```
 
-*   **Ação 3.2: Conectar o Botão de Áudio da Tela**
-    *   **Onde:** Em `DailyTranscriptionDisplay.tsx`.
-    *   **O que fazer:** Atualize o botão `TELA` de forma similar, mantendo sempre o ícone `MonitorSpeaker`.
+*   **Ação 3.2: Estruturar o Conteúdo do Tutorial**
+    *   **Onde:** Dentro do componente `TutorialModal.tsx`.
+    *   **O que fazer:** Criar o conteúdo completo solicitado, organizando em seções visuais.
     ```jsx
-    <button 
-      onClick={toggleScreenAudio}
-      className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
-      style={isScreenAudioEnabled ? 
-        { backgroundColor: 'rgba(74, 222, 128, 0.2)', color: 'rgb(34, 197, 94)', border: '1px solid rgba(74, 222, 128, 0.3)' } :
-        { backgroundColor: 'rgba(239, 68, 68, 0.2)', color: 'rgb(239, 68, 68)', border: '1px solid rgba(239, 68, 68, 0.3)' }
-      }
-    >
-      <MonitorSpeaker size={16} />
-      <span>{isScreenAudioEnabled ? 'TELA ON' : 'TELA OFF'}</span>
-    </button>
+    // Estrutura do conteúdo:
+    // 1. Título: "Como usar a Plataforma de Transcrição e Análise"
+    // 2. Introdução: Explicação breve da funcionalidade
+    // 3. Passo 1: Clicar em INICIAR (com ícone Play)
+    // 4. Passo 2: Compartilhamento de tela + áudio (com ícone Monitor)
+    // 5. Passo 3: Aguardar conexão (status conectado)
+    // 6. Controles disponíveis:
+    //    - Botões de microfone (Mic/MicOff)
+    //    - Botão de áudio da tela (MonitorSpeaker)
+    //    - Botão de limpeza (Trash2)
+    //    - Botão de análise (Brain)
+    // 7. Observação importante sobre contexto (com ícone AlertCircle)
+    ```
+
+*   **Ação 3.3: Substituir Modal Temporário**
+    *   **Onde:** No arquivo `app/coach/capture/components/DailyTranscriptionDisplay.tsx`.
+    *   **O que fazer:** Remover o modal temporário e importar/usar o componente completo.
+    ```typescript
+    // Adicionar import
+    import TutorialModal from './TutorialModal';
+
+    // Substituir o modal temporário por:
+    <TutorialModal 
+      isOpen={isTutorialOpen}
+      onClose={() => setIsTutorialOpen(false)}
+    />
     ```
 
 *   **Critério de Teste (Fase 3):**
-    *   **Como testar:** Este é o teste funcional completo.
-        1.  **Teste de Estado Inicial:** Inicie a aplicação e a transcrição. Compartilhe uma tela com áudio (ex: um vídeo do YouTube).
-            *   **Verifique:** O botão do microfone deve estar vermelho com ícone `MicOff` e texto "MIC OFF". O botão da tela deve estar verde com ícone `MonitorSpeaker` e texto "TELA ON". O áudio do vídeo deve ser transcrito, mas sua voz não.
-        2.  **Teste do Microfone:**
-            *   Clique no botão "MIC OFF". Ele deve ficar verde com ícone `Mic` e texto "MIC ON".
-            *   **Verifique:** Agora sua voz deve ser transcrita.
-            *   Clique no botão "MIC ON". Ele deve ficar vermelho com ícone `MicOff` e texto "MIC OFF".
-            *   **Verifique:** A transcrição da sua voz deve parar.
-        3.  **Teste do Áudio da Tela:**
-            *   Clique no botão "TELA ON". Ele deve ficar vermelho com ícone `MonitorSpeaker` e texto "TELA OFF".
-            *   **Verifique:** A transcrição do áudio do vídeo deve parar, mas o compartilhamento de tela visual não é interrompido.
-            *   Clique no botão "TELA OFF". Ele deve ficar verde com ícone `MonitorSpeaker` e texto "TELA ON".
-            *   **Verifique:** A transcrição do áudio do vídeo deve recomeçar.
+    *   **Como testar:** 
+        1. Clicar no botão "TUTORIAL"
+        2. Verificar se o modal completo abre com todo o conteúdo
+        3. Testar responsividade (redimensionar janela)
+        4. Testar scroll (se necessário)
+        5. Testar fechamento (botão X, overlay, botão "Entendi")
+    *   **Resultado esperado:** Modal profissional, responsivo, com conteúdo completo e bem estruturado.
 
 ---
 
-**Resumo dos Ícones Lucide Utilizados:**
-- **`Mic`** - Microfone ligado (verde)
-- **`MicOff`** - Microfone desligado (vermelho) 
-- **`MonitorSpeaker`** - Áudio da tela (sempre o mesmo ícone, cores mudam conforme estado)
+### **Fase 4: Sistema de Primeira Visita**
+
+**Objetivo:** Implementar a detecção de primeira visita para abrir o modal automaticamente.
+
+*   **Ação 4.1: Criar Hook de Primeira Visita**
+    *   **Onde:** Criar novo arquivo `app/coach/capture/lib/useFirstVisit.ts`.
+    *   **O que fazer:** Implementar hook para gerenciar primeira visita.
+    ```typescript
+    import { useState, useEffect, useCallback } from 'react';
+
+    export function useFirstVisit(pageKey: string) {
+      const [isFirstVisit, setIsFirstVisit] = useState<boolean>(false);
+      const [isLoading, setIsLoading] = useState<boolean>(true);
+
+      useEffect(() => {
+        const visitKey = `first-visit-${pageKey}`;
+        const hasVisited = localStorage.getItem(visitKey);
+        
+        setIsFirstVisit(!hasVisited);
+        setIsLoading(false);
+      }, [pageKey]);
+
+      const markAsVisited = useCallback(() => {
+        const visitKey = `first-visit-${pageKey}`;
+        localStorage.setItem(visitKey, 'true');
+        setIsFirstVisit(false);
+      }, [pageKey]);
+
+      return { isFirstVisit, isLoading, markAsVisited };
+    }
+    ```
+
+*   **Ação 4.2: Integrar Hook no Componente**
+    *   **Onde:** No arquivo `app/coach/capture/components/DailyTranscriptionDisplay.tsx`.
+    *   **O que fazer:** Usar o hook e configurar abertura automática.
+    ```typescript
+    // Adicionar import
+    import { useFirstVisit } from '../lib/useFirstVisit';
+
+    // Dentro do componente, adicionar:
+    const { isFirstVisit, isLoading, markAsVisited } = useFirstVisit('daily-co-tutorial');
+
+    // useEffect para abrir modal na primeira visita
+    useEffect(() => {
+      if (!isLoading && isFirstVisit) {
+        setIsTutorialOpen(true);
+      }
+    }, [isFirstVisit, isLoading]);
+    ```
+
+*   **Ação 4.3: Atualizar Modal para Marcar Visita**
+    *   **Onde:** No arquivo `app/coach/capture/components/DailyTranscriptionDisplay.tsx`.
+    *   **O que fazer:** Modificar a função `onClose` do modal para marcar como visitado quando for primeira visita.
+    ```jsx
+    <TutorialModal 
+      isOpen={isTutorialOpen}
+      onClose={() => {
+        setIsTutorialOpen(false);
+        if (isFirstVisit) {
+          markAsVisited();
+        }
+      }}
+    />
+    ```
+
+*   **Critério de Teste (Fase 4):**
+    *   **Como testar:** Teste completo da funcionalidade:
+        1. **Limpar localStorage:** Abrir DevTools → Application → Storage → Clear All
+        2. **Primeira visita:** Acessar `/coach/capture/daily-co` - modal deve abrir automaticamente
+        3. **Fechar modal:** Modal deve fechar e marcar como visitado
+        4. **Recarregar página:** Modal não deve abrir automaticamente
+        5. **Botão manual:** Clicar em "TUTORIAL" deve abrir modal
+        6. **Nova primeira visita:** Limpar localStorage novamente e repetir teste
+    *   **Resultado esperado:** Sistema completo funcionando - modal abre automaticamente na primeira visita e pode ser aberto manualmente via botão "TUTORIAL".
+
+---
+
+### **Resumo dos Arquivos Afetados:**
+
+**Arquivos Novos:**
+- `app/coach/capture/components/TutorialModal.tsx` - Componente do modal completo
+- `app/coach/capture/lib/useFirstVisit.ts` - Hook para detecção de primeira visita
+
+**Arquivos Modificados:**
+- `app/coach/capture/components/DailyTranscriptionDisplay.tsx` - Remoção do botão reconectar, adição do botão tutorial e integração do modal
+- `app/coach/capture/lib/useDailyTranscription.ts` - Remoção de qualquer lógica de reconexão (se existir)
+
+**Fluxo Final:**
+1. **Primeira visita:** Modal abre automaticamente
+2. **Visitas posteriores:** Modal disponível via botão "TUTORIAL"
+3. **Conteúdo:** Tutorial completo sobre uso da ferramenta
+4. **UX:** Modal responsivo, com scroll e múltiplas formas de fechamento
