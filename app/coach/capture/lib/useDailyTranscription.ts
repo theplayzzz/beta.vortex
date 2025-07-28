@@ -1086,9 +1086,14 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     
     if (callObjectRef.current) {
       try {
+        const participants = callObjectRef.current.participants();
+        const localParticipant = participants?.local;
+        const screenAudioTrack = localParticipant?.tracks?.screenAudio;
+        
         if (nextState) {
-          // Iniciar screen share com áudio se ainda não estiver ativo
+          // Ligar áudio da tela
           if (!state.isScreenAudioCaptured) {
+            // Se screen share não existe, iniciar com áudio
             console.log('🖥️ Iniciando compartilhamento de tela com áudio...');
             callObjectRef.current.startScreenShare({ audio: true });
             setState(prev => ({ 
@@ -1096,15 +1101,43 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
               isScreenAudioEnabled: true,
               isScreenAudioCaptured: true 
             }));
-          } else {
-            // Screen share já ativo, apenas habilitar áudio
+          } else if (screenAudioTrack?.track) {
+            // Se screen share existe mas áudio está mutado, desmute
+            console.log('🖥️ Habilitando áudio da tela existente...');
+            screenAudioTrack.track.enabled = true;
             setState(prev => ({ ...prev, isScreenAudioEnabled: true }));
+          } else {
+            // Reiniciar screen share com áudio
+            console.log('🖥️ Reiniciando screen share com áudio...');
+            callObjectRef.current.stopScreenShare();
+            setTimeout(() => {
+              callObjectRef.current?.startScreenShare({ audio: true });
+            }, 100);
+            setState(prev => ({ 
+              ...prev, 
+              isScreenAudioEnabled: true,
+              isScreenAudioCaptured: true 
+            }));
           }
         } else {
-          // Desabilitar apenas o áudio da tela, manter screen share visual
-          console.log('🖥️ Desabilitando apenas áudio da tela...');
-          setState(prev => ({ ...prev, isScreenAudioEnabled: false }));
-          // Nota: Mantemos isScreenAudioCaptured=true para preservar screen share visual
+          // Desligar apenas o áudio da tela
+          if (screenAudioTrack?.track) {
+            console.log('🖥️ Desabilitando áudio da tela (mantendo vídeo)...');
+            screenAudioTrack.track.enabled = false;
+            setState(prev => ({ ...prev, isScreenAudioEnabled: false }));
+          } else {
+            console.log('🖥️ Reiniciando screen share sem áudio...');
+            // Se não conseguir controlar o track diretamente, reiniciar sem áudio
+            callObjectRef.current.stopScreenShare();
+            setTimeout(() => {
+              callObjectRef.current?.startScreenShare({ audio: false });
+            }, 100);
+            setState(prev => ({ 
+              ...prev, 
+              isScreenAudioEnabled: false,
+              isScreenAudioCaptured: true // Mantém screen share ativo
+            }));
+          }
         }
       } catch (error) {
         console.error('❌ Erro ao controlar áudio da tela:', error);
