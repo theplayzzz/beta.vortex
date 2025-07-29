@@ -33,6 +33,10 @@ yarn-error.log*
 .env.local.backup
 .env.local.backup-prod
 
+#plan
+.ai-guards/
+.ai-guards2/
+
 
 # vercel
 .vercel
