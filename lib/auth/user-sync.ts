@@ -22,12 +22,15 @@ export async function syncUserWithDatabase(clerkId: string): Promise<string | nu
   let userEmail: string | undefined // Declarar fora do try-catch
 
   try {
-    // 🔒 PROTEÇÃO: Nunca sincronizar em massa
+    console.log(`${logPrefix} 🔄 Iniciando sincronização segura para clerkId: ${clerkId}`)
+    
+    // 🔒 PROTEÇÃO CORRIGIDA: Verificar sincronizações recentes usando updatedAt
     const recentSyncs = await prisma.user.count({
       where: {
-        createdAt: {
-          gte: new Date(Date.now() - 60000) // Últimos 60s
+        updatedAt: {
+          gte: new Date(Date.now() - 5 * 60 * 1000) // Últimos 5 minutos
         }
+        // Contar todas as atualizações recentes como proteção contra massa
       }
     })
 
@@ -35,7 +38,7 @@ export async function syncUserWithDatabase(clerkId: string): Promise<string | nu
       throw new Error('MASS_SYNC_BLOCKED: Tentativa de sincronização em massa detectada')
     }
 
-    // Buscar usuário no Clerk
+    // 1. Buscar usuário no Clerk
     const clerkUser = await clerkClient.users.getUser(clerkId)
     const primaryEmail = clerkUser.emailAddresses.find(email => email.id === clerkUser.primaryEmailAddressId)
     
@@ -44,21 +47,14 @@ export async function syncUserWithDatabase(clerkId: string): Promise<string | nu
     }
 
     userEmail = primaryEmail.emailAddress
-    console.log(`${logPrefix} 🔍 Processando usuário: ${userEmail}`)
+    console.log(`${logPrefix} 📧 Email identificado: ${userEmail}`)
 
-    // Verificar se usuário já existe no banco
-    const existingUser = await prisma.user.findFirst({
-      where: { 
-        OR: [
-          { clerkId },
-          { email: userEmail }
-        ]
-      },
+    // 2. Verificar se usuário já existe no banco com o clerkId correto
+    let dbUser = await prisma.user.findUnique({
+      where: { clerkId },
       select: { 
         id: true, 
-        clerkId: true, 
         email: true,
-        approvalStatus: true,
         _count: {
           select: {
             Client: true,
@@ -69,23 +65,92 @@ export async function syncUserWithDatabase(clerkId: string): Promise<string | nu
       }
     })
 
-    if (existingUser) {
-      console.log(`${logPrefix} 👤 Usuário existente encontrado: ${existingUser.email}`)
-      
-      if (existingUser.clerkId && existingUser.clerkId !== clerkId) {
-        console.log(`${logPrefix} ⚠️ ClerkId divergente: ${existingUser.clerkId} vs ${clerkId}`)
-      }
-
-      if (!existingUser.clerkId) {
-        console.log(`${logPrefix} 🔄 Sincronizando clerkId para usuário existente`)
-        await prisma.user.update({
-          where: { id: existingUser.id },
-          data: { clerkId }
-        })
-      }
-
-      return existingUser.id
+    if (dbUser) {
+      console.log(`${logPrefix} ✅ Usuário já sincronizado corretamente: ${dbUser.id}`)
+      console.log(`${logPrefix} 📊 Dados preservados: ${dbUser._count.Client} clientes, ${dbUser._count.StrategicPlanning} planejamentos, ${dbUser._count.CommercialProposal} propostas`)
+      return dbUser.id
     }
+
+    // 3. 🔍 CENÁRIO CRÍTICO: Verificar se existe usuário com mesmo email mas clerkId diferente
+    const existingUserByEmail = await prisma.user.findFirst({
+      where: { email: userEmail },
+      select: { 
+        id: true, 
+        clerkId: true, 
+        approvalStatus: true,
+        firstName: true,
+        lastName: true,
+        createdAt: true,
+        version: true,
+        _count: {
+          select: {
+            Client: true,
+            StrategicPlanning: true,
+            CommercialProposal: true
+          }
+        }
+      }
+    })
+
+    if (existingUserByEmail) {
+      console.log(`${logPrefix} 🎯 SINCRONIZAÇÃO DE CONVITE/MIGRAÇÃO DETECTADA:`)
+      console.log(`${logPrefix} 👤 Usuário existente: ${existingUserByEmail.id}`)
+      console.log(`${logPrefix} 📊 Dados a preservar: ${existingUserByEmail._count.Client} clientes, ${existingUserByEmail._count.StrategicPlanning} planejamentos, ${existingUserByEmail._count.CommercialProposal} propostas`)
+      console.log(`${logPrefix} 🔄 ClerkId: ${existingUserByEmail.clerkId} → ${clerkId}`)
+      console.log(`${logPrefix} 📅 Conta criada em: ${existingUserByEmail.createdAt}`)
+
+      // 🛡️ CORREÇÃO: SEMPRE atualizar clerkId, mesmo se não for nulo
+      console.log(`${logPrefix} 🔄 Atualizando clerkId para usuário existente`)
+      const updatedUser = await prisma.user.update({
+        where: { 
+          id: existingUserByEmail.id,
+          version: existingUserByEmail.version // Optimistic locking
+        },
+        data: { 
+          clerkId,
+          // Preservar dados pessoais existentes, mas permitir atualização se novos dados estão disponíveis
+          firstName: clerkUser.firstName || existingUserByEmail.firstName,
+          lastName: clerkUser.lastName || existingUserByEmail.lastName,
+          profileImageUrl: clerkUser.imageUrl || undefined,
+          version: existingUserByEmail.version + 1,
+          updatedAt: new Date()
+        }
+      })
+
+      // 📝 Atualizar metadados no Clerk com dados preservados
+      const metadata = clerkUser.publicMetadata as any
+      await clerkClient.users.updateUserMetadata(clerkId, {
+        publicMetadata: {
+          ...metadata,
+          dbUserId: existingUserByEmail.id,
+          approvalStatus: existingUserByEmail.approvalStatus,
+          syncedFromInvite: true,
+          originalClerkId: existingUserByEmail.clerkId,
+          syncedAt: new Date().toISOString(),
+          dataPreserved: {
+            clients: existingUserByEmail._count.Client,
+            plannings: existingUserByEmail._count.StrategicPlanning,
+            proposals: existingUserByEmail._count.CommercialProposal
+          }
+        }
+      })
+
+      // 📊 Log de auditoria detalhado
+      console.log(`${logPrefix} ✅ SINCRONIZAÇÃO CONCLUÍDA COM SUCESSO:`)
+      console.log(`${logPrefix} 🆔 ID do usuário: ${existingUserByEmail.id}`)
+      console.log(`${logPrefix} 📧 Email: ${userEmail}`)
+      console.log(`${logPrefix} 🔄 ClerkId atualizado: ${existingUserByEmail.clerkId} → ${clerkId}`)
+      console.log(`${logPrefix} 📊 Status: ${existingUserByEmail.approvalStatus}`)
+      console.log(`${logPrefix} 💾 Dados preservados: ${existingUserByEmail._count.Client} clientes, ${existingUserByEmail._count.StrategicPlanning} planejamentos, ${existingUserByEmail._count.CommercialProposal} propostas`)
+      console.log(`${logPrefix} ⏱️ Tempo de execução: ${Date.now() - startTime}ms`)
+
+      return existingUserByEmail.id
+    }
+
+    // 4. 🆕 NOVO USUÁRIO: Verificação de aprovação automática ANTES de criar
+    console.log(`${logPrefix} 🆕 Criando novo usuário no banco:`)
+    console.log(`${logPrefix} 📧 Email: ${userEmail}`)
+    console.log(`${logPrefix} 🆔 ClerkId: ${clerkId}`)
 
     // 🆕 INTEGRAÇÃO: Verificação de aprovação automática via webhook ANTES de criar o usuário
     let initialStatus = 'PENDING'
@@ -111,8 +176,6 @@ export async function syncUserWithDatabase(clerkId: string): Promise<string | nu
       console.error(`${logPrefix} ⚠️ Erro na verificação de webhook, continuando com status PENDING:`, webhookError)
       // initialStatus permanece PENDING
     }
-
-    console.log(`${logPrefix} 🆔 ClerkId: ${clerkId}`)
 
     const clerkMetadata = clerkUser.publicMetadata as any
     const role = clerkMetadata.role || 'USER'
