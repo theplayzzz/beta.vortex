@@ -71,7 +71,8 @@ const menuItems: MenuItem[] = [
 ];
 
 export default function Sidebar() {
-  const [isExpanded, setIsExpanded] = useState(false);
+  // const [isExpanded, setIsExpanded] = useState(false);
+  const isExpanded = true; // Temporary hardcoded for Phase 1
   const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null);
   const pathname = usePathname();
   const { user } = useUser();
@@ -89,17 +90,17 @@ export default function Sidebar() {
   });
 
   // Carregar estado do localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem("sidebar-expanded");
-    if (saved !== null) {
-      setIsExpanded(JSON.parse(saved));
-    }
-  }, []);
+  // useEffect(() => {
+  //   const saved = localStorage.getItem("sidebar-expanded");
+  //   if (saved !== null) {
+  //     setIsExpanded(JSON.parse(saved));
+  //   }
+  // }, []);
 
   // Salvar estado no localStorage
-  useEffect(() => {
-    localStorage.setItem("sidebar-expanded", JSON.stringify(isExpanded));
-  }, [isExpanded]);
+  // useEffect(() => {
+  //   localStorage.setItem("sidebar-expanded", JSON.stringify(isExpanded));
+  // }, [isExpanded]);
 
   const toggleSidebar = () => {
     setIsExpanded(!isExpanded);
@@ -122,7 +123,7 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Toggle Button */}
+      {/* Toggle Button - Commented out for Phase 1 
       <motion.button
         onClick={toggleSidebar}
         className="absolute top-1/2 -translate-y-1/2 z-40 bg-[#2A1B45] hover:bg-[#3A2B55] text-seasalt p-2 rounded-r-md transition-colors"
@@ -132,12 +133,14 @@ export default function Sidebar() {
       >
         {isExpanded ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
       </motion.button>
+      */}
 
       {/* Sidebar */}
       <motion.aside
         className="bg-eerie-black border-r border-accent/20 z-30 flex flex-col"
-        animate={{ width: isExpanded ? "200px" : "72px" }}
-        transition={{ duration: 0.2, ease: "easeInOut" }}
+        // animate={{ width: isExpanded ? "200px" : "72px" }}
+        // transition={{ duration: 0.2, ease: "easeInOut" }}
+        style={{ width: "200px" }}
       >
         {/* Logo Section */}
         <div className="h-16 flex items-center border-b border-accent/20 px-4">
