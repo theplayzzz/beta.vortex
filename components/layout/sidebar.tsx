@@ -123,7 +123,7 @@ export default function Sidebar() {
             <div key={item.label}>
                       {item.disabled ? (
                         <div className="flex items-center my-2 rounded-lg text-seasalt/50 cursor-not-allowed opacity-50" style={{ padding: "0.875rem 1rem" }}>
-                          <item.icon className="h-5 w-5 flex-shrink-0" style={{ marginRight: "1.25rem" }} />
+                          <item.icon className="h-5 w-5 flex-shrink-0 mr-5" />
                           <span className="whitespace-nowrap">{item.label}</span>
                         </div>
                       ) : (
@@ -140,7 +140,7 @@ export default function Sidebar() {
                             padding: "0.875rem 1rem"
                           }}
                         >
-                          <item.icon className="h-5 w-5 flex-shrink-0" style={{ marginRight: "1.25rem" }} />
+                          <item.icon className="h-5 w-5 flex-shrink-0 mr-5" />
                           <span className="whitespace-nowrap">
                             {item.label}
                             {item.adminOnly && " ADMIN"}
