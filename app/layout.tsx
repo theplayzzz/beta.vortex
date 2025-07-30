@@ -1,4 +1,5 @@
 import "./globals.css";
+import "../styles/sidebar-touch-effects.css";
 import cx from "classnames";
 import { sfPro, inter } from "./fonts";
 import { ClerkProvider } from "@clerk/nextjs";
