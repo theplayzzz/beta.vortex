@@ -14,9 +14,20 @@ interface DynamicLayoutProps {
 export default function DynamicLayout({ children }: DynamicLayoutProps) {
   const { isLoaded, isSignedIn } = useUser()
 
-  // Mostrar layout simples enquanto carrega
+  // Se ainda está carregando, mostra o layout com header mas só sidebar após auth
   if (!isLoaded) {
-    return <>{children}</>
+    return (
+      <SidebarProvider>
+        <div className="flex h-screen overflow-hidden bg-background">
+          <TopHeader />
+          <main className="flex-1 flex flex-col" style={{ paddingTop: "70px" }}>
+            <div className="flex-1 overflow-auto">
+              {children}
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    )
   }
 
   // Layout do Dashboard para usuários autenticados
@@ -28,8 +39,6 @@ export default function DynamicLayout({ children }: DynamicLayoutProps) {
           <Overlay />
           <Sidebar />
           <main className="flex-1 flex flex-col" style={{ paddingTop: "70px" }}>
-            {/* Old Header - Temporarily kept for reference */}
-            {/* <Header /> */}
             <div className="flex-1 overflow-auto">
               {children}
             </div>

@@ -129,12 +129,12 @@ export default function Sidebar() {
                       ) : (
                         <Link
                           href={item.href}
-                          className={`flex items-center my-2 rounded-lg transition-all duration-200 ${
+                          className={`sidebar-nav-item flex items-center my-2 rounded-lg ${
                             isActive(item.href)
-                              ? "bg-sgbus-green text-night font-medium"
+                              ? "active bg-sgbus-green text-night font-medium"
                               : item.adminOnly
-                              ? "bg-sgbus-green/10 text-sgbus-green border border-sgbus-green hover:bg-sgbus-green/20"
-                              : "text-periwinkle hover:bg-periwinkle/10 hover:text-seasalt"
+                              ? "admin bg-sgbus-green/10 text-sgbus-green"
+                              : "text-periwinkle"
                           }`}
                           style={{ 
                             padding: "0.875rem 1rem"

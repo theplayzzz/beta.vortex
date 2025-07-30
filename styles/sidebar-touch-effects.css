@@ -1,0 +1,39 @@
+/* Estilos simples para itens da sidebar */
+
+/* Efeito hover para desktop */
+@media (hover: hover) and (pointer: fine) {
+  .sidebar-nav-item:hover {
+    background-color: rgba(207, 198, 254, 0.1);
+    color: var(--seasalt);
+  }
+  
+  .sidebar-nav-item.admin:hover {
+    background-color: rgba(107, 233, 76, 0.15);
+  }
+}
+
+/* Efeito de press/click para todos os dispositivos */
+.sidebar-nav-item:active {
+  background-color: rgba(207, 198, 254, 0.2);
+  color: var(--seasalt);
+}
+
+.sidebar-nav-item.admin:active {
+  background-color: rgba(107, 233, 76, 0.25);
+}
+
+/* Remove highlight padrão do browser em dispositivos touch */
+.sidebar-nav-item {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+/* Estados ativos (página atual) */
+.sidebar-nav-item.active {
+  background-color: var(--sgbus-green) !important;
+  color: var(--night) !important;
+  font-weight: 500;
+}

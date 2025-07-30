@@ -1,12 +1,13 @@
 "use client";
 
-import { Menu, Bell, Search } from "lucide-react";
-import { UserButton } from "@clerk/nextjs";
+import { Menu, Bell, Search, User } from "lucide-react";
+import { UserButton, useUser } from "@clerk/nextjs";
 import GlobalSearch from "@/components/global-search";
 import { useSidebar } from "../../contexts/SidebarContext";
 
 export default function TopHeader() {
   const { toggleSidebar } = useSidebar();
+  const { isLoaded, isSignedIn } = useUser();
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-eerie-black border-b border-accent/20 flex items-center justify-between px-6" style={{ height: "70px", zIndex: 1000 }}>
@@ -51,18 +52,25 @@ export default function TopHeader() {
           {/* <span className="absolute -top-1 -right-1 h-3 w-3 bg-sgbus-green rounded-full"></span> */}
         </button>
 
-        {/* User Menu */}
-        <UserButton
-          appearance={{
-            elements: {
-              avatarBox: "h-8 w-8",
-              userButtonPopoverCard: "bg-eerie-black border border-accent/20",
-              userButtonPopoverActionButton: "text-seasalt hover:bg-white/5",
-              userButtonPopoverActionButtonText: "text-seasalt",
-              userButtonPopoverFooter: "hidden",
-            },
-          }}
-        />
+        {/* User Menu - Show skeleton while loading */}
+        {isLoaded && isSignedIn ? (
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: "h-8 w-8",
+                userButtonPopoverCard: "bg-eerie-black border border-accent/20",
+                userButtonPopoverActionButton: "text-seasalt hover:bg-white/5",
+                userButtonPopoverActionButtonText: "text-seasalt",
+                userButtonPopoverFooter: "hidden",
+              },
+            }}
+          />
+        ) : (
+          /* Loading skeleton */
+          <div className="h-8 w-8 bg-seasalt/20 rounded-full animate-pulse flex items-center justify-center">
+            <User className="h-4 w-4 text-seasalt/50" />
+          </div>
+        )}
       </div>
     </header>
   );
