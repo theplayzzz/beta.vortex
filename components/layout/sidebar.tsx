@@ -97,6 +97,7 @@ export default function Sidebar() {
           zIndex: 1100,
           boxShadow: isOpen ? "0 0 40px rgba(0,0,0,0.5)" : "none"
         }}
+        initial={{ x: "-100%" }}
         animate={{ 
           x: isOpen ? 0 : "-100%" 
         }}
