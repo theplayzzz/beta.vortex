@@ -166,8 +166,6 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
   const startTimeRef = useRef<Date | null>(null);
   const audioLevelIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  // NOVO: Ref para forçar fonte específica (debug/teste)
-  const forcedSourceRef = useRef<'screen' | 'microphone' | null>(null);
   
   // Sistema de deduplicação específico para nosso contexto (1 usuário, 2 canais)
   const processedMessagesRef = useRef<Map<string, number>>(new Map());
@@ -186,18 +184,7 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
       hasParticipantId: !!data.participant_id,
       screenCaptureActive: state.isScreenAudioCaptured,
       availableDataFields: Object.keys(data),
-      forcedSource: forcedSourceRef.current
     });
-
-    // 0. PRIMEIRO: Verificar se há fonte forçada (debug/teste)
-    if (forcedSourceRef.current) {
-      console.log('🎯 Usando fonte forçada:', forcedSourceRef.current);
-      return {
-        audioSource: forcedSourceRef.current,
-        trackType: forcedSourceRef.current === 'screen' ? 'screenAudio' : 'audio',
-        confidence: 1.0
-      };
-    }
 
     // 1. PRIMEIRO: Verificar se há informações diretas de track no evento
     if (data.track_type) {
@@ -544,6 +531,7 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
       audioSource === 'screen' ? 'green' : 
       audioSource === 'microphone' ? 'blue' : 'gray';
     
+
     console.log('📊 Enhanced Debug Daily.co:', {
       data,
       sourceAnalysis,
@@ -1042,23 +1030,6 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     }));
   }, []);
 
-  // NOVO: Funções para forçar fonte específica (debug/teste)
-  const forceSourceDetection = useCallback((source: 'screen' | 'microphone' | null) => {
-    forcedSourceRef.current = source;
-    console.log(source ? `🎯 Forçando detecção para: ${source}` : '🔄 Voltando para detecção automática');
-  }, []);
-
-  const toggleForcedSource = useCallback(() => {
-    const currentForced = forcedSourceRef.current;
-    if (!currentForced) {
-      forcedSourceRef.current = 'screen';
-    } else if (currentForced === 'screen') {
-      forcedSourceRef.current = 'microphone';
-    } else {
-      forcedSourceRef.current = null; // Voltar para automático
-    }
-    console.log(`🔄 Alternando fonte forçada para: ${forcedSourceRef.current || 'automático'}`);
-  }, []);
 
   // NOVO: Função de limpeza de histórico (preserva texto intermediário)
   const clearTranscriptionHistory = useCallback(() => {
@@ -1198,9 +1169,6 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     clearTranscript,
     // Funções adicionais específicas Daily
     updateAvailableDevices,
-    // NOVAS: Funções de debug para fonte
-    forceSourceDetection,
-    toggleForcedSource,
     // NOVO: Função de limpeza de histórico
     clearTranscriptionHistory,
     // FASE 2: Novos estados e funções de controle
