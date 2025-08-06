@@ -1,6 +1,4 @@
 ---
-description: Use esta regra sempre que a tarefa envolver decisões sobre cores, estilos visuais, temas, criação ou alteração de componentes de interface, ou qualquer ajuste em CSS/SCSS. Não é necessário consultar esta regra para tarefas exclusivamente de lógica, backend, manipulação de dados ou funcionalidades sem impacto visual.
-globs: 
 alwaysApply: false
 ---
 # Regras de Design e Cores - Dashboard App
