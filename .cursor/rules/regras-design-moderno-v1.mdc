@@ -1,5 +1,1039 @@
 ---
-description:
-globs:
+description: Use esta regra sempre que a tarefa envolver decisões sobre cores, estilos visuais, temas, criação ou alteração de componentes de interface, ou qualquer ajuste em CSS/SCSS. Não é necessário consultar esta regra para tarefas exclusivamente de lógica, backend, manipulação de dados ou funcionalidades sem impacto visual.
 alwaysApply: false
 ---
+# Regras de Design Moderno - Sistema de Cores v2
+
+## Sistema de Cores Principal (Tema Escuro)
+
+### Variáveis CSS Principais
+```css
+:root {
+  --background: #1a1b1e;
+  --foreground: #f0f0f0;
+  --card: #222327;
+  --card-foreground: #f0f0f0;
+  --popover: #222327;
+  --popover-foreground: #f0f0f0;
+  --primary: #8c5cff;
+  --primary-foreground: #dadada;
+  --secondary: #262626;
+  --secondary-foreground: #dadada;
+  --muted: #2a2c33;
+  --muted-foreground: #a0a0a0;
+  --accent: #1a1b1e;
+  --accent-foreground: #dadada;
+  --destructive: #f87171;
+  --destructive-foreground: #ffffff;
+  --border: #33353a;
+  --input: #33353a;
+  --ring: #8c5cff;
+}
+```
+
+### Variáveis Sidebar Específicas
+```css
+:root {
+  --sidebar: #161618;
+  --sidebar-foreground: #f0f0f0;
+  --sidebar-primary: #8c5cff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2a2c33;
+  --sidebar-accent-foreground: #8c5cff;
+  --sidebar-border: #33353a;
+  --sidebar-ring: #8c5cff;
+}
+```
+
+### Variáveis de Charts
+```css
+:root {
+  --chart-1: #4ade80;
+  --chart-2: #8c5cff;
+  --chart-3: #fca5a5;
+  --chart-4: #5993f4;
+  --chart-5: #a0a0a0;
+}
+```
+
+## Sistema de Tipografia
+
+### Fontes Principais
+```css
+:root {
+  --font-sans: Plus Jakarta Sans, sans-serif;
+  --font-serif: Lora, serif;
+  --font-mono: IBM Plex Mono, monospace;
+}
+```
+
+### Letter Spacing
+```css
+:root {
+  --tracking-normal: -0.025em;
+}
+
+body {
+  letter-spacing: var(--tracking-normal);
+}
+
+@theme inline {
+  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-normal: var(--tracking-normal);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+}
+```
+
+### Hierarquia Tipográfica
+1. **Texto Principal**: `var(--foreground)` (#f0f0f0) com `var(--font-sans)`
+2. **Texto Secundário**: `var(--muted-foreground)` (#a0a0a0)
+3. **Texto de Destaque**: `var(--primary)` (#8c5cff)
+4. **Texto sobre Cards**: `var(--card-foreground)` (#f0f0f0)
+
+## Sistema de Border Radius
+
+### Variáveis de Radius
+```css
+:root {
+  --radius: 1.4rem;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+```
+
+### Aplicação de Radius
+- **Pequenos elementos**: `var(--radius-sm)` - 1.2rem
+- **Elementos médios**: `var(--radius-md)` - 1.3rem  
+- **Cards e containers**: `var(--radius-lg)` - 1.4rem
+- **Elementos grandes**: `var(--radius-xl)` - 1.8rem
+
+## Sistema de Sombras
+
+### Variáveis de Shadow
+```css
+:root {
+  --shadow-2xs: 0px 2px 3px 0px hsl(0 0% 0% / 0.08);
+  --shadow-xs: 0px 2px 3px 0px hsl(0 0% 0% / 0.08);
+  --shadow-sm: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 1px 2px -1px hsl(0 0% 0% / 0.16);
+  --shadow: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 1px 2px -1px hsl(0 0% 0% / 0.16);
+  --shadow-md: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 2px 4px -1px hsl(0 0% 0% / 0.16);
+  --shadow-lg: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 4px 6px -1px hsl(0 0% 0% / 0.16);
+  --shadow-xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 8px 10px -1px hsl(0 0% 0% / 0.16);
+  --shadow-2xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.40);
+}
+```
+
+### Hierarquia de Sombras
+1. **Elementos flutuantes**: `var(--shadow-2xs)` ou `var(--shadow-xs)`
+2. **Cards simples**: `var(--shadow-sm)` ou `var(--shadow)`
+3. **Cards elevados**: `var(--shadow-md)`
+4. **Modais e dropdowns**: `var(--shadow-lg)`
+5. **Elementos de destaque**: `var(--shadow-xl)`
+6. **Elementos críticos**: `var(--shadow-2xl)`
+
+## Sistema de Bordas
+
+### Variáveis de Border Width
+```css
+:root {
+  --border-width-none: 0px;
+  --border-width-thin: 1px;
+  --border-width-medium: 2px;
+  --border-width-thick: 3px;
+  --border-width-heavy: 4px;
+}
+```
+
+### Hierarquia de Bordas
+1. **Elementos sem borda**: `var(--border-width-none)` - 0px
+2. **Bordas padrão**: `var(--border-width-thin)` - 1px
+3. **Bordas de destaque**: `var(--border-width-medium)` - 2px
+4. **Estados de foco**: `var(--border-width-thick)` - 3px
+5. **Elementos críticos**: `var(--border-width-heavy)` - 4px
+
+### Aplicação de Bordas por Componente
+- **Cards**: `var(--border-width-thin)` solid `var(--border)`
+- **Inputs**: `var(--border-width-thin)` solid `var(--border)`
+- **Inputs (focus)**: `var(--border-width-medium)` solid `var(--ring)`
+- **Botões secundários**: `var(--border-width-thin)` solid `var(--primary)`
+- **Sidebar separadores**: `var(--border-width-thin)` solid `var(--sidebar-border)`
+- **Divisores**: `var(--border-width-thin)` solid `var(--border)`
+- **Estados de erro**: `var(--border-width-medium)` solid `var(--destructive)`
+
+### Cores de Bordas por Contexto
+- **Padrão**: `var(--border)` (#33353a)
+- **Sidebar**: `var(--sidebar-border)` (#33353a)
+- **Foco/Ativo**: `var(--ring)` (#8c5cff)
+- **Erro**: `var(--destructive)` (#f87171)
+- **Sucesso**: `var(--chart-1)` (#4ade80)
+- **Transparente sutil**: `rgba(51, 53, 58, 0.3)`
+
+## Sistema de Spacing
+
+### Spacing Base
+```css
+:root {
+  --spacing: 0.27rem;
+}
+```
+
+### Escala de Spacing
+- **xs**: `calc(var(--spacing) * 0.5)` - 0.135rem
+- **sm**: `var(--spacing)` - 0.27rem  
+- **md**: `calc(var(--spacing) * 2)` - 0.54rem
+- **lg**: `calc(var(--spacing) * 3)` - 0.81rem
+- **xl**: `calc(var(--spacing) * 4)` - 1.08rem
+- **2xl**: `calc(var(--spacing) * 6)` - 1.62rem
+
+## Regras de Componentes Modernos
+
+### Cards
+```css
+.card {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: var(--border-width-thin) solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-elevated {
+  border: var(--border-width-medium) solid var(--border);
+  box-shadow: var(--shadow-md);
+}
+```
+
+### Botões
+```css
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border: var(--border-width-none);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  letter-spacing: var(--tracking-normal);
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+  border: var(--border-width-thin) solid var(--primary);
+  border-radius: var(--radius-md);
+}
+
+.btn-destructive {
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
+  border: var(--border-width-none);
+  border-radius: var(--radius-md);
+}
+```
+
+### Inputs
+```css
+.input {
+  background-color: var(--input);
+  color: var(--foreground);
+  border: var(--border-width-thin) solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+}
+
+.input:focus {
+  outline: var(--border-width-medium) solid var(--ring);
+  outline-offset: 2px;
+  border: var(--border-width-medium) solid var(--ring);
+}
+
+.input.error {
+  border: var(--border-width-medium) solid var(--destructive);
+}
+```
+
+### Popovers e Modais
+```css
+.popover {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  border: var(--border-width-thin) solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+```
+
+### Sidebar
+```css
+.sidebar {
+  background-color: var(--sidebar);
+  color: var(--sidebar-foreground);
+  border-right: var(--border-width-thin) solid var(--sidebar-border);
+}
+
+.sidebar-item {
+  border: var(--border-width-none);
+  border-radius: var(--radius-sm);
+}
+
+.sidebar-item-active {
+  background-color: var(--sidebar-accent);
+  color: var(--sidebar-accent-foreground);
+  border: var(--border-width-thin) solid var(--sidebar-ring);
+}
+
+.sidebar-primary {
+  background-color: var(--sidebar-primary);
+  color: var(--sidebar-primary-foreground);
+  border: var(--border-width-none);
+}
+```
+
+### Divisores e Separadores
+```css
+.divider {
+  border-top: var(--border-width-thin) solid var(--border);
+}
+
+.divider-thick {
+  border-top: var(--border-width-medium) solid var(--border);
+}
+
+.divider-subtle {
+  border-top: var(--border-width-thin) solid rgba(51, 53, 58, 0.3);
+}
+```
+
+## Estados Interativos
+
+### Estados de Hover
+- **Botões**: Aumentar brightness em 110%
+- **Cards**: Aplicar `var(--shadow-md)` e `transform: translateY(-1px)`
+- **Links**: Cor `var(--primary)` com underline
+- **Cards com hover**: Adicionar `border: var(--border-width-medium) solid var(--primary)`
+
+### Estados de Foco
+- **Ring**: `var(--ring)` (#8c5cff) com `outline: var(--border-width-medium) solid`
+- **Offset**: `outline-offset: 2px`
+- **Box Shadow**: `0 0 0 3px rgba(140, 92, 255, 0.3)`
+- **Border Focus**: `var(--border-width-medium) solid var(--ring)`
+
+### Estados Ativos
+- **Botões**: Reduzir brightness em 90%
+- **Elementos selecionados**: Background `var(--accent)` com foreground `var(--accent-foreground)`
+- **Border Ativo**: `var(--border-width-thick) solid var(--primary)`
+
+### Estados de Erro
+- **Inputs com erro**: `border: var(--border-width-medium) solid var(--destructive)`
+- **Cards com erro**: `border: var(--border-width-medium) solid var(--destructive)`
+- **Outline de erro**: `outline: var(--border-width-medium) solid var(--destructive)`
+
+## Biblioteca de Ícones
+
+### Bibliotecas Principais Obrigatórias
+✅ **SEMPRE** usar ícones das duas bibliotecas principais:
+1. **Lucide React** - Biblioteca primária para ícones gerais
+2. **Heroicons** - Biblioteca secundária para ícones complementares
+
+### Cores dos Ícones por Contexto
+- **Padrão**: `var(--foreground)` (#f0f0f0)
+- **Secundário**: `var(--muted-foreground)` (#a0a0a0)
+- **Primário**: `var(--primary)` (#8c5cff)
+- **Sidebar**: `var(--sidebar-foreground)` (#f0f0f0)
+- **Sidebar Ativo**: `var(--sidebar-accent-foreground)` (#8c5cff)
+
+### Regras de Seleção de Ícones
+1. **Prioridade**: Lucide React primeiro, Heroicons como alternativa
+2. **Consistência**: Manter o mesmo estilo de ícone em contextos similares
+3. **Tamanho Padrão**: 20px (w-5 h-5) para ícones em botões e navegação
+4. **Tamanho Secundário**: 16px (w-4 h-4) para ícones em inputs e elementos menores
+
+### Estados dos Ícones
+- **Padrão**: `var(--foreground)` (#f0f0f0)
+- **Hover**: `var(--primary)` (#8c5cff)
+- **Ativo/Selecionado**: `var(--primary)` (#8c5cff)
+- **Desabilitado**: `opacity: 0.5`
+
+## Sistema de Charts
+
+### Cores para Gráficos
+```css
+.chart-1 { color: var(--chart-1); }
+.chart-2 { color: var(--chart-2); }
+.chart-3 { color: var(--chart-3); }
+.chart-4 { color: var(--chart-4); }
+.chart-5 { color: var(--chart-5); }
+```
+
+### Aplicação em Charts
+- **Chart 1**: Verde - `#4ade80`
+- **Chart 2**: Roxo primário - `#8c5cff` (usar `var(--primary)`)
+- **Chart 3**: Rosa claro - `#fca5a5`
+- **Chart 4**: Azul - `#5993f4`
+- **Chart 5**: Cinza - `#a0a0a0`
+
+## Regras de Transições
+
+### Transições Padrão
+```css
+.transition-default {
+  transition: all 0.2s ease;
+}
+
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.transition-bounce {
+  transition: transform 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.transition-border {
+  transition: border-color 0.2s ease, border-width 0.2s ease;
+}
+```
+
+## Tema Inline System
+
+### Mapeamento de Cores
+```css
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+```
+
+## Regras de Acessibilidade
+
+### Contraste
+- **Texto principal**: Contraste adequado com `var(--foreground)` (#f0f0f0)
+- **Texto secundário**: Contraste mínimo 4.5:1 com `var(--muted-foreground)` (#a0a0a0)
+- **Estados de foco**: Sempre visíveis com `var(--ring)` (#8c5cff)
+- **Elementos interativos**: Contraste mínimo 3:1
+- **Bordas**: Contraste mínimo 3:1 com o fundo
+
+### Estados de Foco
+```css
+.focus-visible {
+  outline: var(--border-width-medium) solid var(--ring);
+  outline-offset: 2px;
+}
+```
+
+## Implementação de Tema
+
+### Aplicação Automática do Tema Escuro
+```css
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  letter-spacing: var(--tracking-normal);
+}
+```
+
+## Proibições Absolutas
+
+❌ **NUNCA** usar cores hardcoded - sempre usar variáveis CSS
+❌ **NUNCA** usar cores fora do sistema definido
+❌ **NUNCA** usar border-radius fixo - sempre usar variáveis `--radius-*`
+❌ **NUNCA** usar border-width fixo - sempre usar variáveis `--border-width-*`
+❌ **NUNCA** usar sombras hardcoded - sempre usar variáveis `--shadow-*`
+❌ **NUNCA** usar fontes diferentes das definidas em `--font-*`
+❌ **NUNCA** ignorar o `letter-spacing: var(--tracking-normal)`
+❌ **NUNCA** usar spacing fixo - sempre usar múltiplos de `var(--spacing)`
+❌ **NUNCA** usar ícones padrões do sistema/navegador - sempre usar Lucide React ou Heroicons
+
+## Diretrizes Obrigatórias
+
+✅ **SEMPRE** usar tema escuro como padrão
+✅ **SEMPRE** usar o sistema de cores definido
+✅ **SEMPRE** aplicar `var(--radius-*)` para border-radius
+✅ **SEMPRE** usar `var(--border-width-*)` para espessura de bordas
+✅ **SEMPRE** usar `var(--shadow-*)` para box-shadow
+✅ **SEMPRE** aplicar `var(--font-sans)` como fonte padrão
+✅ **SEMPRE** usar `var(--tracking-normal)` para letter-spacing
+✅ **SEMPRE** considerar `prefers-reduced-motion` para animações
+✅ **SEMPRE** usar Lucide React ou Heroicons para ícones
+✅ **SEMPRE** testar contraste e acessibilidade
+✅ **SEMPRE** usar variáveis de spacing baseadas em `var(--spacing)`
+✅ **SEMPRE** priorizar `var(--primary)` (#8c5cff) para elementos de destaque
+✅ **SEMPRE** manter consistência visual em todos os componentes
+✅ **SEMPRE** usar bordas apropriadas para cada contexto
+
+## Paleta de Cores Resumo
+
+### Cores Principais do Sistema
+- **Background**: `#1a1b1e` - Fundo principal da aplicação
+- **Card**: `#222327` - Cards, containers, elementos elevados
+- **Primary**: `#8c5cff` - Cor primária, botões principais, elementos de destaque
+- **Foreground**: `#f0f0f0` - Texto principal, ícones
+- **Muted Foreground**: `#a0a0a0` - Texto secundário, elementos menos importantes
+- **Border**: `#33353a` - Bordas, separadores
+- **Destructive**: `#f87171` - Estados de erro, ações destrutivas
+
+### Sistema de Bordas Resumo
+- **Nenhuma**: `0px` - Botões primários, elementos sem divisão
+- **Fina**: `1px` - Cards, inputs, divisores padrão
+- **Média**: `2px` - Estados de foco, elementos de destaque
+- **Grossa**: `3px` - Estados de foco críticos
+- **Pesada**: `4px` - Elementos de alta prioridade, alertas
+
+Esta estrutura garante um sistema de design moderno, consistente e acessível usando exclusivamente o tema escuro com cores e bordas otimizadas para melhor percepção visual e contraste.# Regras de Design Moderno - Sistema de Cores v2
+
+## Sistema de Cores Principal (Tema Escuro)
+
+### Variáveis CSS Principais
+```css
+:root {
+  --background: #1a1b1e;
+  --foreground: #f0f0f0;
+  --card: #222327;
+  --card-foreground: #f0f0f0;
+  --popover: #222327;
+  --popover-foreground: #f0f0f0;
+  --primary: #8c5cff;
+  --primary-foreground: #dadada;
+  --secondary: #262626;
+  --secondary-foreground: #dadada;
+  --muted: #2a2c33;
+  --muted-foreground: #a0a0a0;
+  --accent: #1a1b1e;
+  --accent-foreground: #dadada;
+  --destructive: #f87171;
+  --destructive-foreground: #ffffff;
+  --border: #33353a;
+  --input: #33353a;
+  --ring: #8c5cff;
+}
+```
+
+### Variáveis Sidebar Específicas
+```css
+:root {
+  --sidebar: #161618;
+  --sidebar-foreground: #f0f0f0;
+  --sidebar-primary: #8c5cff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2a2c33;
+  --sidebar-accent-foreground: #8c5cff;
+  --sidebar-border: #33353a;
+  --sidebar-ring: #8c5cff;
+}
+```
+
+### Variáveis de Charts
+```css
+:root {
+  --chart-1: #4ade80;
+  --chart-2: #8c5cff;
+  --chart-3: #fca5a5;
+  --chart-4: #5993f4;
+  --chart-5: #a0a0a0;
+}
+```
+
+## Sistema de Tipografia
+
+### Fontes Principais
+```css
+:root {
+  --font-sans: Plus Jakarta Sans, sans-serif;
+  --font-serif: Lora, serif;
+  --font-mono: IBM Plex Mono, monospace;
+}
+```
+
+### Letter Spacing
+```css
+:root {
+  --tracking-normal: -0.025em;
+}
+
+body {
+  letter-spacing: var(--tracking-normal);
+}
+
+@theme inline {
+  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-normal: var(--tracking-normal);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+}
+```
+
+### Hierarquia Tipográfica
+1. **Texto Principal**: `var(--foreground)` (#f0f0f0) com `var(--font-sans)`
+2. **Texto Secundário**: `var(--muted-foreground)` (#a0a0a0)
+3. **Texto de Destaque**: `var(--primary)` (#8c5cff)
+4. **Texto sobre Cards**: `var(--card-foreground)` (#f0f0f0)
+
+## Sistema de Border Radius
+
+### Variáveis de Radius
+```css
+:root {
+  --radius: 1.4rem;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+```
+
+### Aplicação de Radius
+- **Pequenos elementos**: `var(--radius-sm)` - 1.2rem
+- **Elementos médios**: `var(--radius-md)` - 1.3rem  
+- **Cards e containers**: `var(--radius-lg)` - 1.4rem
+- **Elementos grandes**: `var(--radius-xl)` - 1.8rem
+
+## Sistema de Sombras
+
+### Variáveis de Shadow
+```css
+:root {
+  --shadow-2xs: 0px 2px 3px 0px hsl(0 0% 0% / 0.08);
+  --shadow-xs: 0px 2px 3px 0px hsl(0 0% 0% / 0.08);
+  --shadow-sm: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 1px 2px -1px hsl(0 0% 0% / 0.16);
+  --shadow: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 1px 2px -1px hsl(0 0% 0% / 0.16);
+  --shadow-md: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 2px 4px -1px hsl(0 0% 0% / 0.16);
+  --shadow-lg: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 4px 6px -1px hsl(0 0% 0% / 0.16);
+  --shadow-xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 8px 10px -1px hsl(0 0% 0% / 0.16);
+  --shadow-2xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.40);
+}
+```
+
+### Hierarquia de Sombras
+1. **Elementos flutuantes**: `var(--shadow-2xs)` ou `var(--shadow-xs)`
+2. **Cards simples**: `var(--shadow-sm)` ou `var(--shadow)`
+3. **Cards elevados**: `var(--shadow-md)`
+4. **Modais e dropdowns**: `var(--shadow-lg)`
+5. **Elementos de destaque**: `var(--shadow-xl)`
+6. **Elementos críticos**: `var(--shadow-2xl)`
+
+## Sistema de Bordas
+
+### Variáveis de Border Width
+```css
+:root {
+  --border-width-none: 0px;
+  --border-width-thin: 1px;
+  --border-width-medium: 2px;
+  --border-width-thick: 3px;
+  --border-width-heavy: 4px;
+}
+```
+
+### Hierarquia de Bordas
+1. **Elementos sem borda**: `var(--border-width-none)` - 0px
+2. **Bordas padrão**: `var(--border-width-thin)` - 1px
+3. **Bordas de destaque**: `var(--border-width-medium)` - 2px
+4. **Estados de foco**: `var(--border-width-thick)` - 3px
+5. **Elementos críticos**: `var(--border-width-heavy)` - 4px
+
+### Aplicação de Bordas por Componente
+- **Cards**: `var(--border-width-thin)` solid `var(--border)`
+- **Inputs**: `var(--border-width-thin)` solid `var(--border)`
+- **Inputs (focus)**: `var(--border-width-medium)` solid `var(--ring)`
+- **Botões secundários**: `var(--border-width-thin)` solid `var(--primary)`
+- **Sidebar separadores**: `var(--border-width-thin)` solid `var(--sidebar-border)`
+- **Divisores**: `var(--border-width-thin)` solid `var(--border)`
+- **Estados de erro**: `var(--border-width-medium)` solid `var(--destructive)`
+
+### Cores de Bordas por Contexto
+- **Padrão**: `var(--border)` (#33353a)
+- **Sidebar**: `var(--sidebar-border)` (#33353a)
+- **Foco/Ativo**: `var(--ring)` (#8c5cff)
+- **Erro**: `var(--destructive)` (#f87171)
+- **Sucesso**: `var(--chart-1)` (#4ade80)
+- **Transparente sutil**: `rgba(51, 53, 58, 0.3)`
+
+## Sistema de Spacing
+
+### Spacing Base
+```css
+:root {
+  --spacing: 0.27rem;
+}
+```
+
+### Escala de Spacing
+- **xs**: `calc(var(--spacing) * 0.5)` - 0.135rem
+- **sm**: `var(--spacing)` - 0.27rem  
+- **md**: `calc(var(--spacing) * 2)` - 0.54rem
+- **lg**: `calc(var(--spacing) * 3)` - 0.81rem
+- **xl**: `calc(var(--spacing) * 4)` - 1.08rem
+- **2xl**: `calc(var(--spacing) * 6)` - 1.62rem
+
+## Regras de Componentes Modernos
+
+### Cards
+```css
+.card {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: var(--border-width-thin) solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-elevated {
+  border: var(--border-width-medium) solid var(--border);
+  box-shadow: var(--shadow-md);
+}
+```
+
+### Botões
+```css
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border: var(--border-width-none);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  letter-spacing: var(--tracking-normal);
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+  border: var(--border-width-thin) solid var(--primary);
+  border-radius: var(--radius-md);
+}
+
+.btn-destructive {
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
+  border: var(--border-width-none);
+  border-radius: var(--radius-md);
+}
+```
+
+### Inputs
+```css
+.input {
+  background-color: var(--input);
+  color: var(--foreground);
+  border: var(--border-width-thin) solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+}
+
+.input:focus {
+  outline: var(--border-width-medium) solid var(--ring);
+  outline-offset: 2px;
+  border: var(--border-width-medium) solid var(--ring);
+}
+
+.input.error {
+  border: var(--border-width-medium) solid var(--destructive);
+}
+```
+
+### Popovers e Modais
+```css
+.popover {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  border: var(--border-width-thin) solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+```
+
+### Sidebar
+```css
+.sidebar {
+  background-color: var(--sidebar);
+  color: var(--sidebar-foreground);
+  border-right: var(--border-width-thin) solid var(--sidebar-border);
+}
+
+.sidebar-item {
+  border: var(--border-width-none);
+  border-radius: var(--radius-sm);
+}
+
+.sidebar-item-active {
+  background-color: var(--sidebar-accent);
+  color: var(--sidebar-accent-foreground);
+  border: var(--border-width-thin) solid var(--sidebar-ring);
+}
+
+.sidebar-primary {
+  background-color: var(--sidebar-primary);
+  color: var(--sidebar-primary-foreground);
+  border: var(--border-width-none);
+}
+```
+
+### Divisores e Separadores
+```css
+.divider {
+  border-top: var(--border-width-thin) solid var(--border);
+}
+
+.divider-thick {
+  border-top: var(--border-width-medium) solid var(--border);
+}
+
+.divider-subtle {
+  border-top: var(--border-width-thin) solid rgba(51, 53, 58, 0.3);
+}
+```
+
+## Estados Interativos
+
+### Estados de Hover
+- **Botões**: Aumentar brightness em 110%
+- **Cards**: Aplicar `var(--shadow-md)` e `transform: translateY(-1px)`
+- **Links**: Cor `var(--primary)` com underline
+- **Cards com hover**: Adicionar `border: var(--border-width-medium) solid var(--primary)`
+
+### Estados de Foco
+- **Ring**: `var(--ring)` (#8c5cff) com `outline: var(--border-width-medium) solid`
+- **Offset**: `outline-offset: 2px`
+- **Box Shadow**: `0 0 0 3px rgba(140, 92, 255, 0.3)`
+- **Border Focus**: `var(--border-width-medium) solid var(--ring)`
+
+### Estados Ativos
+- **Botões**: Reduzir brightness em 90%
+- **Elementos selecionados**: Background `var(--accent)` com foreground `var(--accent-foreground)`
+- **Border Ativo**: `var(--border-width-thick) solid var(--primary)`
+
+### Estados de Erro
+- **Inputs com erro**: `border: var(--border-width-medium) solid var(--destructive)`
+- **Cards com erro**: `border: var(--border-width-medium) solid var(--destructive)`
+- **Outline de erro**: `outline: var(--border-width-medium) solid var(--destructive)`
+
+## Biblioteca de Ícones
+
+### Bibliotecas Principais Obrigatórias
+✅ **SEMPRE** usar ícones das duas bibliotecas principais:
+1. **Lucide React** - Biblioteca primária para ícones gerais
+2. **Heroicons** - Biblioteca secundária para ícones complementares
+
+### Cores dos Ícones por Contexto
+- **Padrão**: `var(--foreground)` (#f0f0f0)
+- **Secundário**: `var(--muted-foreground)` (#a0a0a0)
+- **Primário**: `var(--primary)` (#8c5cff)
+- **Sidebar**: `var(--sidebar-foreground)` (#f0f0f0)
+- **Sidebar Ativo**: `var(--sidebar-accent-foreground)` (#8c5cff)
+
+### Regras de Seleção de Ícones
+1. **Prioridade**: Lucide React primeiro, Heroicons como alternativa
+2. **Consistência**: Manter o mesmo estilo de ícone em contextos similares
+3. **Tamanho Padrão**: 20px (w-5 h-5) para ícones em botões e navegação
+4. **Tamanho Secundário**: 16px (w-4 h-4) para ícones em inputs e elementos menores
+
+### Estados dos Ícones
+- **Padrão**: `var(--foreground)` (#f0f0f0)
+- **Hover**: `var(--primary)` (#8c5cff)
+- **Ativo/Selecionado**: `var(--primary)` (#8c5cff)
+- **Desabilitado**: `opacity: 0.5`
+
+## Sistema de Charts
+
+### Cores para Gráficos
+```css
+.chart-1 { color: var(--chart-1); }
+.chart-2 { color: var(--chart-2); }
+.chart-3 { color: var(--chart-3); }
+.chart-4 { color: var(--chart-4); }
+.chart-5 { color: var(--chart-5); }
+```
+
+### Aplicação em Charts
+- **Chart 1**: Verde - `#4ade80`
+- **Chart 2**: Roxo primário - `#8c5cff` (usar `var(--primary)`)
+- **Chart 3**: Rosa claro - `#fca5a5`
+- **Chart 4**: Azul - `#5993f4`
+- **Chart 5**: Cinza - `#a0a0a0`
+
+## Regras de Transições
+
+### Transições Padrão
+```css
+.transition-default {
+  transition: all 0.2s ease;
+}
+
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.transition-bounce {
+  transition: transform 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.transition-border {
+  transition: border-color 0.2s ease, border-width 0.2s ease;
+}
+```
+
+## Tema Inline System
+
+### Mapeamento de Cores
+```css
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+```
+
+## Regras de Acessibilidade
+
+### Contraste
+- **Texto principal**: Contraste adequado com `var(--foreground)` (#f0f0f0)
+- **Texto secundário**: Contraste mínimo 4.5:1 com `var(--muted-foreground)` (#a0a0a0)
+- **Estados de foco**: Sempre visíveis com `var(--ring)` (#8c5cff)
+- **Elementos interativos**: Contraste mínimo 3:1
+- **Bordas**: Contraste mínimo 3:1 com o fundo
+
+### Estados de Foco
+```css
+.focus-visible {
+  outline: var(--border-width-medium) solid var(--ring);
+  outline-offset: 2px;
+}
+```
+
+## Implementação de Tema
+
+### Aplicação Automática do Tema Escuro
+```css
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  letter-spacing: var(--tracking-normal);
+}
+```
+
+## Proibições Absolutas
+
+❌ **NUNCA** usar cores hardcoded - sempre usar variáveis CSS
+❌ **NUNCA** usar cores fora do sistema definido
+❌ **NUNCA** usar border-radius fixo - sempre usar variáveis `--radius-*`
+❌ **NUNCA** usar border-width fixo - sempre usar variáveis `--border-width-*`
+❌ **NUNCA** usar sombras hardcoded - sempre usar variáveis `--shadow-*`
+❌ **NUNCA** usar fontes diferentes das definidas em `--font-*`
+❌ **NUNCA** ignorar o `letter-spacing: var(--tracking-normal)`
+❌ **NUNCA** usar spacing fixo - sempre usar múltiplos de `var(--spacing)`
+❌ **NUNCA** usar ícones padrões do sistema/navegador - sempre usar Lucide React ou Heroicons
+
+## Diretrizes Obrigatórias
+
+✅ **SEMPRE** usar tema escuro como padrão
+✅ **SEMPRE** usar o sistema de cores definido
+✅ **SEMPRE** aplicar `var(--radius-*)` para border-radius
+✅ **SEMPRE** usar `var(--border-width-*)` para espessura de bordas
+✅ **SEMPRE** usar `var(--shadow-*)` para box-shadow
+✅ **SEMPRE** aplicar `var(--font-sans)` como fonte padrão
+✅ **SEMPRE** usar `var(--tracking-normal)` para letter-spacing
+✅ **SEMPRE** considerar `prefers-reduced-motion` para animações
+✅ **SEMPRE** usar Lucide React ou Heroicons para ícones
+✅ **SEMPRE** testar contraste e acessibilidade
+✅ **SEMPRE** usar variáveis de spacing baseadas em `var(--spacing)`
+✅ **SEMPRE** priorizar `var(--primary)` (#8c5cff) para elementos de destaque
+✅ **SEMPRE** manter consistência visual em todos os componentes
+✅ **SEMPRE** usar bordas apropriadas para cada contexto
+
+## Paleta de Cores Resumo
+
+### Cores Principais do Sistema
+- **Background**: `#1a1b1e` - Fundo principal da aplicação
+- **Card**: `#222327` - Cards, containers, elementos elevados
+- **Primary**: `#8c5cff` - Cor primária, botões principais, elementos de destaque
+- **Foreground**: `#f0f0f0` - Texto principal, ícones
+- **Muted Foreground**: `#a0a0a0` - Texto secundário, elementos menos importantes
+- **Border**: `#33353a` - Bordas, separadores
+- **Destructive**: `#f87171` - Estados de erro, ações destrutivas
+
+### Sistema de Bordas Resumo
+- **Nenhuma**: `0px` - Botões primários, elementos sem divisão
+- **Fina**: `1px` - Cards, inputs, divisores padrão
+- **Média**: `2px` - Estados de foco, elementos de destaque
+- **Grossa**: `3px` - Estados de foco críticos
+- **Pesada**: `4px` - Elementos de alta prioridade, alertas
+
+Esta estrutura garante um sistema de design moderno, consistente e acessível usando exclusivamente o tema escuro com cores e bordas otimizadas para melhor percepção visual e contraste.
