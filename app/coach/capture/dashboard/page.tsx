@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function TranscriptionDashboardPage() {
   return (
-    <main className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
+    <main style={{ minHeight: '100vh', backgroundColor: '#1a1b1e', color: '#f0f0f0' }}>
       <TranscriptionDashboard />
     </main>
   );

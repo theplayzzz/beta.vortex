@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Mic, 
   MonitorSpeaker, 
@@ -9,19 +9,39 @@ import {
   Eye,
   Trash2,
   Play,
-  BarChart3,
-  Menu,
-  Bell,
-  User,
-  Settings,
-  Activity,
-  Clock,
-  Brain,
-  MessageSquare,
   Target,
-  TrendingUp,
-  List
+  BarChart3,
+  Clock,
+  Bot,
+  CreditCard,
+  Zap,
+  Rocket,
+  Settings,
+  Globe,
+  FileText,
+  ScrollText,
+  CheckCircle,
+  AlertCircle,
+  Clock3,
+  TrendingUp
 } from 'lucide-react';
+
+// Design System Colors - seguindo regras-design-moderno-v1.mdc
+const designColors = {
+  background: '#1a1b1e',
+  foreground: '#f0f0f0', 
+  card: '#222327',
+  cardForeground: '#f0f0f0',
+  primary: '#8c5cff',
+  primaryForeground: '#dadada',
+  secondary: '#262626',
+  secondaryForeground: '#dadada',
+  muted: '#2a2c33',
+  mutedForeground: '#a0a0a0',
+  border: '#33353a',
+  input: '#33353a',
+  destructive: '#f87171',
+};
 
 // Dados mock para demonstração
 const mockMetrics = {
@@ -163,98 +183,92 @@ export default function TranscriptionDashboard() {
   const currentMetrics = mockMetrics[selectedPeriod as keyof typeof mockMetrics];
   const selectedPeriodLabel = periodOptions.find(p => p.value === selectedPeriod)?.label;
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'var(--chart-1)'; // Verde
-      case 'processing': return '#fbbf24'; // Amarelo
-      case 'error': return 'var(--chart-3)'; // Rosa/Vermelho
-      default: return 'var(--muted-foreground)';
-    }
-  };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed': return '🟢';
-      case 'processing': return '🟡';
-      case 'error': return '🔴';
-      default: return '⚪';
+      case 'completed': return <CheckCircle size={14} style={{ color: '#4ade80' }} />;
+      case 'processing': return <AlertCircle size={14} style={{ color: '#facc15' }} />;
+      case 'error': return <AlertCircle size={14} style={{ color: designColors.destructive }} />;
+      default: return <AlertCircle size={14} style={{ color: designColors.mutedForeground }} />;
     }
   };
 
   const handleStartSession = () => {
-    // Aqui implementar navegação para a página de transcrição
     window.location.href = '/coach/capture/daily-co';
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
+    <div style={{
+      padding: '1.5rem',
+      maxWidth: '1200px',
+      margin: '0 auto',
+      backgroundColor: designColors.background,
+      color: designColors.foreground,
+      fontFamily: 'Plus Jakarta Sans, ui-sans-serif, system-ui, sans-serif',
+      letterSpacing: '-0.025em',
+      minHeight: '100vh',
+    }}>
       {/* Header */}
-      <header className="border-b px-6 py-3" style={{ borderColor: 'var(--border)' }}>
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div className="flex items-center space-x-4">
-            <button className="p-2 rounded-lg transition-colors hover:bg-muted" style={{ color: 'var(--foreground)' }}>
-              <Menu size={20} />
-            </button>
-            <h1 className="text-xl font-semibold" style={{ 
-              fontFamily: 'var(--font-sans)', 
-              letterSpacing: 'var(--tracking-normal)',
-              color: 'var(--foreground)'
-            }}>
-              TranscriptAI Dashboard
-            </h1>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <button className="p-2 rounded-lg transition-colors hover:bg-muted relative" style={{ color: 'var(--foreground)' }}>
-              <Bell size={16} />
-              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--primary)' }}></span>
-            </button>
-            <button className="p-2 rounded-lg transition-colors hover:bg-muted" style={{ color: 'var(--foreground)' }}>
-              <User size={16} />
-            </button>
-            <button className="p-2 rounded-lg transition-colors hover:bg-muted" style={{ color: 'var(--foreground)' }}>
-              <Settings size={16} />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto p-6 space-y-6">
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 style={{
+          fontSize: '2.25rem',
+          fontWeight: '700',
+          color: designColors.foreground,
+          letterSpacing: '-0.025em',
+          marginBottom: '0.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem'
+        }}>
+          <Target size={32} style={{ color: designColors.primary }} />
+          Dashboard Transcrição
+        </h1>
+      </div>
 
       {/* Métricas Principais */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold" style={{ 
-            color: 'var(--foreground)',
-            fontFamily: 'var(--font-sans)',
-            letterSpacing: 'var(--tracking-normal)'
+      <div style={{ marginBottom: '2rem' }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          marginBottom: '1.5rem'
+        }}>
+          <h2 style={{
+            fontSize: '1.25rem',
+            fontWeight: '600',
+            color: designColors.foreground,
+            letterSpacing: '-0.025em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
           }}>
-            📊 Métricas Principais
+            <BarChart3 size={20} style={{ color: designColors.primary }} />
+            Métricas Principais
           </h2>
           
           {/* Seletor de Período */}
-          <div className="relative">
+          <div style={{ position: 'relative' }}>
             <button
               onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
-              className="flex items-center space-x-2 px-4 py-2 transition-all duration-200"
               style={{
-                backgroundColor: 'var(--card)',
-                border: 'var(--border-width-thin) solid var(--border)',
-                borderRadius: 'var(--radius-md)',
-                color: 'var(--foreground)',
-                fontSize: '0.875rem',
-                fontFamily: 'var(--font-sans)',
-                letterSpacing: 'var(--tracking-normal)',
-                boxShadow: 'var(--shadow-sm)'
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.75rem 1rem',
+                backgroundColor: designColors.card,
+                color: designColors.cardForeground,
+                border: `1px solid ${designColors.border}`,
+                borderRadius: '1.3rem',
+                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.1)',
+                fontWeight: '500',
+                letterSpacing: '-0.025em',
+                transition: 'all 0.2s ease',
+                cursor: 'pointer'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--primary)';
-                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.2)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border)';
-                e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.1)';
               }}
             >
               <Calendar size={16} />
@@ -263,34 +277,43 @@ export default function TranscriptionDashboard() {
             </button>
 
             {showPeriodDropdown && (
-              <div 
-                className="absolute right-0 top-full mt-2 w-48 z-50"
-                style={{
-                  backgroundColor: 'var(--popover)',
-                  border: 'var(--border-width-thin) solid var(--border)',
-                  borderRadius: 'var(--radius-lg)',
-                  boxShadow: 'var(--shadow-lg)'
-                }}
-              >
-                {periodOptions.map((option) => (
+              <div style={{
+                position: 'absolute',
+                right: 0,
+                top: '100%',
+                marginTop: '0.5rem',
+                width: '12rem',
+                zIndex: 50,
+                backgroundColor: designColors.card,
+                color: designColors.cardForeground,
+                border: `1px solid ${designColors.border}`,
+                borderRadius: '1.4rem',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+              }}>
+                {periodOptions.map((option, index) => (
                   <button
                     key={option.value}
                     onClick={() => {
                       setSelectedPeriod(option.value);
                       setShowPeriodDropdown(false);
                     }}
-                    className="w-full text-left px-4 py-2 transition-colors"
                     style={{
-                      color: selectedPeriod === option.value ? 'var(--primary-foreground)' : 'var(--popover-foreground)',
-                      backgroundColor: selectedPeriod === option.value ? 'var(--primary)' : 'transparent',
-                      fontFamily: 'var(--font-sans)',
-                      letterSpacing: 'var(--tracking-normal)',
-                      borderRadius: option === periodOptions[0] ? 'var(--radius-lg) var(--radius-lg) 0 0' : 
-                                   option === periodOptions[periodOptions.length - 1] ? '0 0 var(--radius-lg) var(--radius-lg)' : '0'
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '0.75rem 1rem',
+                      transition: 'colors 0.2s',
+                      fontFamily: 'Plus Jakarta Sans, ui-sans-serif, system-ui, sans-serif',
+                      letterSpacing: '-0.025em',
+                      color: selectedPeriod === option.value ? designColors.primaryForeground : designColors.cardForeground,
+                      backgroundColor: selectedPeriod === option.value ? designColors.primary : 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      borderRadius: index === 0 ? '1.4rem 1.4rem 0 0' : 
+                               index === periodOptions.length - 1 ? '0 0 1.4rem 1.4rem' : '0'
                     }}
                     onMouseEnter={(e) => {
                       if (selectedPeriod !== option.value) {
-                        e.currentTarget.style.backgroundColor = 'var(--muted)';
+                        e.currentTarget.style.backgroundColor = designColors.muted;
                       }
                     }}
                     onMouseLeave={(e) => {
@@ -308,46 +331,57 @@ export default function TranscriptionDashboard() {
         </div>
 
         {/* Cards de Métricas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '1.5rem',
+        }}>
           {/* Total Sessões */}
-          <div 
-            className="p-6 transition-all duration-200"
-            style={{
-              backgroundColor: 'var(--card)',
-              border: 'var(--border-width-thin) solid var(--border)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: 'var(--shadow-sm)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium" style={{ 
-                color: 'var(--muted-foreground)',
-                fontFamily: 'var(--font-sans)',
-                letterSpacing: 'var(--tracking-normal)'
+          <div style={{
+            backgroundColor: designColors.card,
+            color: designColors.cardForeground,
+            border: `1px solid ${designColors.border}`,
+            borderRadius: '1.4rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
+            padding: '1.5rem',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.3)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.2)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}>
+            <div style={{ marginBottom: '0.75rem' }}>
+              <span style={{
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                color: designColors.mutedForeground,
+                letterSpacing: '-0.025em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
               }}>
-                📊 Total Sessões
+                <BarChart3 size={16} />
+                Total Sessões
               </span>
             </div>
-            <div className="space-y-1">
-              <div className="text-2xl font-bold" style={{ 
-                color: 'var(--foreground)',
-                fontFamily: 'var(--font-sans)',
-                letterSpacing: 'var(--tracking-normal)'
+            <div>
+              <div style={{
+                fontSize: '2rem',
+                fontWeight: '700',
+                color: designColors.foreground,
+                letterSpacing: '-0.025em',
+                marginBottom: '0.25rem'
               }}>
                 {currentMetrics.totalSessions}
               </div>
-              <div className="text-xs" style={{ 
-                color: 'var(--muted-foreground)',
-                fontFamily: 'var(--font-sans)',
-                letterSpacing: 'var(--tracking-normal)'
+              <div style={{
+                fontSize: '0.75rem',
+                color: designColors.mutedForeground,
+                letterSpacing: '-0.025em'
               }}>
                 +3 vs anterior
               </div>
@@ -355,44 +389,51 @@ export default function TranscriptionDashboard() {
           </div>
 
           {/* Tempo Transcrição */}
-          <div 
-            className="p-6 transition-all duration-200"
-            style={{
-              backgroundColor: 'var(--card)',
-              border: 'var(--border-width-thin) solid var(--border)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: 'var(--shadow-sm)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium" style={{ 
-                color: 'var(--muted-foreground)',
-                fontFamily: 'var(--font-sans)',
-                letterSpacing: 'var(--tracking-normal)'
+          <div style={{
+            backgroundColor: designColors.card,
+            color: designColors.cardForeground,
+            border: `1px solid ${designColors.border}`,
+            borderRadius: '1.4rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
+            padding: '1.5rem',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.3)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.2)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}>
+            <div style={{ marginBottom: '0.75rem' }}>
+              <span style={{
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                color: designColors.mutedForeground,
+                letterSpacing: '-0.025em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
               }}>
-                ⏱️ Tempo Transcrição
+                <Clock size={16} />
+                Tempo Transcrição
               </span>
             </div>
-            <div className="space-y-1">
-              <div className="text-2xl font-bold" style={{ 
-                color: 'var(--foreground)',
-                fontFamily: 'var(--font-sans)',
-                letterSpacing: 'var(--tracking-normal)'
+            <div>
+              <div style={{
+                fontSize: '2rem',
+                fontWeight: '700',
+                color: designColors.foreground,
+                letterSpacing: '-0.025em',
+                marginBottom: '0.25rem'
               }}>
                 {currentMetrics.transcriptionTime}
               </div>
-              <div className="text-xs" style={{ 
-                color: 'var(--muted-foreground)',
-                fontFamily: 'var(--font-sans)',
-                letterSpacing: 'var(--tracking-normal)'
+              <div style={{
+                fontSize: '0.75rem',
+                color: designColors.mutedForeground,
+                letterSpacing: '-0.025em'
               }}>
                 +23min vs ant.
               </div>
@@ -400,44 +441,51 @@ export default function TranscriptionDashboard() {
           </div>
 
           {/* Análises Efetuadas */}
-          <div 
-            className="p-6 transition-all duration-200"
-            style={{
-              backgroundColor: 'var(--card)',
-              border: 'var(--border-width-thin) solid var(--border)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: 'var(--shadow-sm)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium" style={{ 
-                color: 'var(--muted-foreground)',
-                fontFamily: 'var(--font-sans)',
-                letterSpacing: 'var(--tracking-normal)'
+          <div style={{
+            backgroundColor: designColors.card,
+            color: designColors.cardForeground,
+            border: `1px solid ${designColors.border}`,
+            borderRadius: '1.4rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
+            padding: '1.5rem',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.3)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.2)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}>
+            <div style={{ marginBottom: '0.75rem' }}>
+              <span style={{
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                color: designColors.mutedForeground,
+                letterSpacing: '-0.025em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
               }}>
-                🤖 Análises Efetuadas
+                <Bot size={16} />
+                Análises Efetuadas
               </span>
             </div>
-            <div className="space-y-1">
-              <div className="text-2xl font-bold" style={{ 
-                color: 'var(--foreground)',
-                fontFamily: 'var(--font-sans)',
-                letterSpacing: 'var(--tracking-normal)'
+            <div>
+              <div style={{
+                fontSize: '2rem',
+                fontWeight: '700',
+                color: designColors.foreground,
+                letterSpacing: '-0.025em',
+                marginBottom: '0.25rem'
               }}>
                 {currentMetrics.analysesCompleted}
               </div>
-              <div className="text-xs" style={{ 
-                color: 'var(--muted-foreground)',
-                fontFamily: 'var(--font-sans)',
-                letterSpacing: 'var(--tracking-normal)'
+              <div style={{
+                fontSize: '0.75rem',
+                color: designColors.mutedForeground,
+                letterSpacing: '-0.025em'
               }}>
                 +5 vs anterior
               </div>
@@ -445,44 +493,51 @@ export default function TranscriptionDashboard() {
           </div>
 
           {/* Créditos Gastos */}
-          <div 
-            className="p-6 transition-all duration-200"
-            style={{
-              backgroundColor: 'var(--card)',
-              border: 'var(--border-width-thin) solid var(--border)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: 'var(--shadow-sm)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium" style={{ 
-                color: 'var(--muted-foreground)',
-                fontFamily: 'var(--font-sans)',
-                letterSpacing: 'var(--tracking-normal)'
+          <div style={{
+            backgroundColor: designColors.card,
+            color: designColors.cardForeground,
+            border: `1px solid ${designColors.border}`,
+            borderRadius: '1.4rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
+            padding: '1.5rem',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.3)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.2)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}>
+            <div style={{ marginBottom: '0.75rem' }}>
+              <span style={{
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                color: designColors.mutedForeground,
+                letterSpacing: '-0.025em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
               }}>
-                💳 Créditos Gastos
+                <CreditCard size={16} />
+                Créditos Gastos
               </span>
             </div>
-            <div className="space-y-1">
-              <div className="text-2xl font-bold" style={{ 
-                color: 'var(--foreground)',
-                fontFamily: 'var(--font-sans)',
-                letterSpacing: 'var(--tracking-normal)'
+            <div>
+              <div style={{
+                fontSize: '2rem',
+                fontWeight: '700',
+                color: designColors.foreground,
+                letterSpacing: '-0.025em',
+                marginBottom: '0.25rem'
               }}>
                 {currentMetrics.creditsSpent}
               </div>
-              <div className="text-xs" style={{ 
-                color: 'var(--muted-foreground)',
-                fontFamily: 'var(--font-sans)',
-                letterSpacing: 'var(--tracking-normal)'
+              <div style={{
+                fontSize: '0.75rem',
+                color: designColors.mutedForeground,
+                letterSpacing: '-0.025em'
               }}>
                 +120 vs ant.
               </div>
@@ -492,71 +547,95 @@ export default function TranscriptionDashboard() {
       </div>
 
       {/* Área Principal */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '2rem',
+        marginBottom: '2rem'
+      }}>
         {/* Inicialização de Sessão */}
-        <div 
-          className="p-6 space-y-4"
-          style={{
-            backgroundColor: 'var(--card)',
-            border: 'var(--border-width-thin) solid var(--border)',
-            borderRadius: 'var(--radius-lg)',
-            boxShadow: 'var(--shadow-sm)'
-          }}
-        >
-          <h3 className="text-lg font-semibold" style={{ 
-            color: 'var(--foreground)',
-            fontFamily: 'var(--font-sans)',
-            letterSpacing: 'var(--tracking-normal)'
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <h3 style={{
+            fontSize: '1.25rem',
+            fontWeight: '600',
+            color: designColors.foreground,
+            letterSpacing: '-0.025em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
           }}>
-            ⚡ Inicialização de Sessão
+            <Zap size={20} style={{ color: designColors.primary }} />
+            Inicialização de Sessão
           </h3>
 
           {/* Botão Principal */}
-          <div 
-            className="p-6 space-y-4"
-            style={{
-              backgroundColor: 'var(--card)',
-              border: 'var(--border-width-medium) solid var(--primary)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: 'var(--shadow-md)'
-            }}
-          >
-            <div className="text-center space-y-3">
-              <h4 className="text-xl font-bold" style={{ 
-                color: 'var(--foreground)',
-                fontFamily: 'var(--font-sans)',
-                letterSpacing: 'var(--tracking-normal)'
+          <div style={{
+            backgroundColor: designColors.card,
+            color: designColors.cardForeground,
+            border: `2px solid ${designColors.primary}`,
+            borderRadius: '1.4rem',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+            padding: '2rem'
+          }}>
+            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <h4 style={{
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                color: designColors.foreground,
+                letterSpacing: '-0.025em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
               }}>
-                🚀 INICIAR NOVA SESSÃO
+                <Rocket size={24} style={{ color: designColors.primary }} />
+                INICIAR NOVA SESSÃO
               </h4>
-              <div style={{ 
-                borderTop: 'var(--border-width-thin) solid var(--border)' 
-              }}></div>
+              <div style={{ borderTop: `1px solid ${designColors.border}` }}></div>
               <button
                 onClick={handleStartSession}
-                className="w-full py-4 px-6 font-semibold text-lg transition-all duration-200 flex items-center justify-center space-x-3"
                 style={{
-                  backgroundColor: 'var(--primary)',
-                  color: 'var(--primary-foreground)',
-                  border: 'var(--border-width-none)',
-                  borderRadius: 'var(--radius-md)',
-                  fontFamily: 'var(--font-sans)',
-                  letterSpacing: 'var(--tracking-normal)'
+                  width: '100%',
+                  backgroundColor: designColors.primary,
+                  color: designColors.primaryForeground,
+                  fontWeight: '600',
+                  fontSize: '1.125rem',
+                  padding: '1rem 1.5rem',
+                  borderRadius: '1.3rem',
+                  transition: 'all 0.2s ease',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.75rem'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.filter = 'brightness(110%)';
+                  e.currentTarget.style.backgroundColor = '#7c4ce6';
+                  e.currentTarget.style.transform = 'scale(1.02)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.filter = 'brightness(100%)';
+                  e.currentTarget.style.backgroundColor = designColors.primary;
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = 'scale(0.98)';
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.02)';
                 }}
               >
                 <Play size={24} />
-                <span>🎯 COMEÇAR TRANSCRIÇÃO</span>
+                <Target size={20} />
+                <span>COMEÇAR TRANSCRIÇÃO</span>
               </button>
-              <div className="flex items-center justify-center space-x-3 text-sm" style={{ 
-                color: 'var(--muted-foreground)',
-                fontFamily: 'var(--font-sans)',
-                letterSpacing: 'var(--tracking-normal)'
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                gap: '0.75rem', 
+                fontSize: '0.875rem', 
+                color: designColors.mutedForeground,
+                letterSpacing: '-0.025em'
               }}>
                 <Mic size={16} />
                 <span>Microfone</span>
@@ -568,54 +647,58 @@ export default function TranscriptionDashboard() {
           </div>
 
           {/* Configurações Rápidas */}
-          <div 
-            className="p-4 space-y-4"
-            style={{
-              backgroundColor: 'var(--muted)',
-              border: 'var(--border-width-thin) solid var(--border)',
-              borderRadius: 'var(--radius-lg)'
-            }}
-          >
-            <h5 className="font-medium" style={{ 
-              color: 'var(--foreground)',
-              fontFamily: 'var(--font-sans)',
-              letterSpacing: 'var(--tracking-normal)'
+          <div style={{
+            backgroundColor: designColors.muted,
+            borderRadius: '1.4rem',
+            padding: '1.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem'
+          }}>
+            <h5 style={{
+              fontWeight: '600',
+              color: designColors.foreground,
+              letterSpacing: '-0.025em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
             }}>
-              ⚙️ Configurações Rápidas
+              <Settings size={16} />
+              Configurações Rápidas
             </h5>
-            <div style={{ 
-              borderTop: 'var(--border-width-thin) solid var(--border)' 
-            }}></div>
+            <div style={{ borderTop: `1px solid ${designColors.border}` }}></div>
             
-            <div className="space-y-3">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {/* Idioma */}
-              <div className="relative">
-                <label className="block text-sm font-medium mb-1" style={{ 
-                  color: 'var(--foreground)',
-                  fontFamily: 'var(--font-sans)',
-                  letterSpacing: 'var(--tracking-normal)'
+              <div style={{ position: 'relative' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: designColors.foreground,
+                  letterSpacing: '-0.025em',
+                  marginBottom: '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
                 }}>
-                  🌐 Idioma:
+                  <Globe size={14} />
+                  Idioma:
                 </label>
                 <button
                   onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-                  className="w-full flex items-center justify-between px-3 py-2 transition-all duration-200"
                   style={{
-                    backgroundColor: 'var(--input)',
-                    border: 'var(--border-width-thin) solid var(--border)',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--foreground)',
-                    fontFamily: 'var(--font-sans)',
-                    letterSpacing: 'var(--tracking-normal)'
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.outline = 'var(--border-width-medium) solid var(--ring)';
-                    e.currentTarget.style.outlineOffset = '2px';
-                    e.currentTarget.style.borderColor = 'var(--ring)';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.outline = 'none';
-                    e.currentTarget.style.borderColor = 'var(--border)';
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.75rem 1rem',
+                    backgroundColor: designColors.input,
+                    color: designColors.foreground,
+                    border: `1px solid ${designColors.border}`,
+                    borderRadius: '1.3rem',
+                    transition: 'all 0.2s ease',
+                    cursor: 'pointer'
                   }}
                 >
                   <span>{languages.find(l => l.value === selectedLanguage)?.label}</span>
@@ -623,34 +706,43 @@ export default function TranscriptionDashboard() {
                 </button>
 
                 {showLanguageDropdown && (
-                  <div 
-                    className="absolute top-full left-0 right-0 mt-1 z-40"
-                    style={{
-                      backgroundColor: 'var(--popover)',
-                      border: 'var(--border-width-thin) solid var(--border)',
-                      borderRadius: 'var(--radius-md)',
-                      boxShadow: 'var(--shadow-lg)'
-                    }}
-                  >
-                    {languages.map((lang) => (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    marginTop: '0.25rem',
+                    zIndex: 40,
+                    backgroundColor: designColors.card,
+                    color: designColors.cardForeground,
+                    border: `1px solid ${designColors.border}`,
+                    borderRadius: '1.4rem',
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)'
+                  }}>
+                    {languages.map((lang, index) => (
                       <button
                         key={lang.value}
                         onClick={() => {
                           setSelectedLanguage(lang.value);
                           setShowLanguageDropdown(false);
                         }}
-                        className="w-full text-left px-3 py-2 transition-colors"
                         style={{
-                          color: selectedLanguage === lang.value ? 'var(--primary-foreground)' : 'var(--popover-foreground)',
-                          backgroundColor: selectedLanguage === lang.value ? 'var(--primary)' : 'transparent',
-                          fontFamily: 'var(--font-sans)',
-                          letterSpacing: 'var(--tracking-normal)',
-                          borderRadius: lang === languages[0] ? 'var(--radius-md) var(--radius-md) 0 0' : 
-                                       lang === languages[languages.length - 1] ? '0 0 var(--radius-md) var(--radius-md)' : '0'
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '0.75rem 1rem',
+                          transition: 'colors 0.2s',
+                          fontFamily: 'Plus Jakarta Sans, ui-sans-serif, system-ui, sans-serif',
+                          letterSpacing: '-0.025em',
+                          color: selectedLanguage === lang.value ? designColors.primaryForeground : designColors.cardForeground,
+                          backgroundColor: selectedLanguage === lang.value ? designColors.primary : 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          borderRadius: index === 0 ? '1.4rem 1.4rem 0 0' : 
+                                       index === languages.length - 1 ? '0 0 1.4rem 1.4rem' : '0'
                         }}
                         onMouseEnter={(e) => {
                           if (selectedLanguage !== lang.value) {
-                            e.currentTarget.style.backgroundColor = 'var(--muted)';
+                            e.currentTarget.style.backgroundColor = designColors.muted;
                           }
                         }}
                         onMouseLeave={(e) => {
@@ -667,33 +759,35 @@ export default function TranscriptionDashboard() {
               </div>
 
               {/* Tipo de Sessão */}
-              <div className="relative">
-                <label className="block text-sm font-medium mb-1" style={{ 
-                  color: 'var(--foreground)',
-                  fontFamily: 'var(--font-sans)',
-                  letterSpacing: 'var(--tracking-normal)'
+              <div style={{ position: 'relative' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: designColors.foreground,
+                  letterSpacing: '-0.025em',
+                  marginBottom: '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
                 }}>
-                  📝 Tipo:
+                  <FileText size={14} />
+                  Tipo:
                 </label>
                 <button
                   onClick={() => setShowSessionTypeDropdown(!showSessionTypeDropdown)}
-                  className="w-full flex items-center justify-between px-3 py-2 transition-all duration-200"
                   style={{
-                    backgroundColor: 'var(--input)',
-                    border: 'var(--border-width-thin) solid var(--border)',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--foreground)',
-                    fontFamily: 'var(--font-sans)',
-                    letterSpacing: 'var(--tracking-normal)'
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.outline = 'var(--border-width-medium) solid var(--ring)';
-                    e.currentTarget.style.outlineOffset = '2px';
-                    e.currentTarget.style.borderColor = 'var(--ring)';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.outline = 'none';
-                    e.currentTarget.style.borderColor = 'var(--border)';
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.75rem 1rem',
+                    backgroundColor: designColors.input,
+                    color: designColors.foreground,
+                    border: `1px solid ${designColors.border}`,
+                    borderRadius: '1.3rem',
+                    transition: 'all 0.2s ease',
+                    cursor: 'pointer'
                   }}
                 >
                   <span>{sessionTypes.find(t => t.value === selectedSessionType)?.label}</span>
@@ -701,34 +795,43 @@ export default function TranscriptionDashboard() {
                 </button>
 
                 {showSessionTypeDropdown && (
-                  <div 
-                    className="absolute top-full left-0 right-0 mt-1 z-40"
-                    style={{
-                      backgroundColor: 'var(--popover)',
-                      border: 'var(--border-width-thin) solid var(--border)',
-                      borderRadius: 'var(--radius-md)',
-                      boxShadow: 'var(--shadow-lg)'
-                    }}
-                  >
-                    {sessionTypes.map((type) => (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    marginTop: '0.25rem',
+                    zIndex: 40,
+                    backgroundColor: designColors.card,
+                    color: designColors.cardForeground,
+                    border: `1px solid ${designColors.border}`,
+                    borderRadius: '1.4rem',
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)'
+                  }}>
+                    {sessionTypes.map((type, index) => (
                       <button
                         key={type.value}
                         onClick={() => {
                           setSelectedSessionType(type.value);
                           setShowSessionTypeDropdown(false);
                         }}
-                        className="w-full text-left px-3 py-2 transition-colors"
                         style={{
-                          color: selectedSessionType === type.value ? 'var(--primary-foreground)' : 'var(--popover-foreground)',
-                          backgroundColor: selectedSessionType === type.value ? 'var(--primary)' : 'transparent',
-                          fontFamily: 'var(--font-sans)',
-                          letterSpacing: 'var(--tracking-normal)',
-                          borderRadius: type === sessionTypes[0] ? 'var(--radius-md) var(--radius-md) 0 0' : 
-                                       type === sessionTypes[sessionTypes.length - 1] ? '0 0 var(--radius-md) var(--radius-md)' : '0'
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '0.75rem 1rem',
+                          transition: 'colors 0.2s',
+                          fontFamily: 'Plus Jakarta Sans, ui-sans-serif, system-ui, sans-serif',
+                          letterSpacing: '-0.025em',
+                          color: selectedSessionType === type.value ? designColors.primaryForeground : designColors.cardForeground,
+                          backgroundColor: selectedSessionType === type.value ? designColors.primary : 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          borderRadius: index === 0 ? '1.4rem 1.4rem 0 0' : 
+                                       index === sessionTypes.length - 1 ? '0 0 1.4rem 1.4rem' : '0'
                         }}
                         onMouseEnter={(e) => {
                           if (selectedSessionType !== type.value) {
-                            e.currentTarget.style.backgroundColor = 'var(--muted)';
+                            e.currentTarget.style.backgroundColor = designColors.muted;
                           }
                         }}
                         onMouseLeave={(e) => {
@@ -748,133 +851,192 @@ export default function TranscriptionDashboard() {
         </div>
 
         {/* Histórico de Sessões */}
-        <div 
-          className="p-6"
-          style={{
-            backgroundColor: 'var(--card)',
-            border: 'var(--border-width-thin) solid var(--border)',
-            borderRadius: 'var(--radius-lg)',
-            boxShadow: 'var(--shadow-sm)'
-          }}
-        >
-          <h3 className="text-lg font-semibold mb-4" style={{ 
-            color: 'var(--foreground)',
-            fontFamily: 'var(--font-sans)',
-            letterSpacing: 'var(--tracking-normal)'
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <h3 style={{
+            fontSize: '1.25rem',
+            fontWeight: '600',
+            color: designColors.foreground,
+            letterSpacing: '-0.025em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
           }}>
-            📜 Histórico de Sessões
+            <ScrollText size={20} style={{ color: designColors.primary }} />
+            Histórico de Sessões
           </h3>
 
           {/* Lista com Scroll */}
-          <div 
-            className="space-y-3 overflow-y-auto pr-2 custom-scrollbar"
-            style={{ height: '400px' }}
-          >
+          <div style={{
+            height: '24rem',
+            overflowY: 'auto',
+            paddingRight: '0.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem'
+          }}>
             {mockSessions.map((session) => (
               <div
                 key={session.id}
-                className="p-4 transition-all duration-200 group"
                 style={{
-                  backgroundColor: 'var(--card)',
-                  border: 'var(--border-width-thin) solid var(--border)',
-                  borderRadius: 'var(--radius-md)',
-                  marginBottom: '0.75rem'
+                  backgroundColor: designColors.card,
+                  color: designColors.cardForeground,
+                  border: `1px solid ${designColors.border}`,
+                  borderRadius: '1.4rem',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
+                  padding: '1rem',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--primary)';
-                  e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.3)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.borderColor = designColors.primary + '80';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--border)';
-                  e.currentTarget.style.boxShadow = 'none';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.2)';
                   e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.borderColor = designColors.border;
                 }}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                       <span>{getStatusIcon(session.status)}</span>
-                      <h4 className="font-medium" style={{ 
-                        color: 'var(--foreground)',
-                        fontFamily: 'var(--font-sans)',
-                        letterSpacing: 'var(--tracking-normal)'
+                      <h4 style={{
+                        fontWeight: '600',
+                        color: designColors.foreground,
+                        letterSpacing: '-0.025em',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
                       }}>
                         {session.title}
                       </h4>
                     </div>
                     
-                    <div className="grid grid-cols-3 gap-2 text-sm mb-2" style={{ 
-                      color: 'var(--muted-foreground)',
-                      fontFamily: 'var(--font-sans)',
-                      letterSpacing: 'var(--tracking-normal)'
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(3, 1fr)',
+                      gap: '0.5rem',
+                      fontSize: '0.875rem',
+                      color: designColors.mutedForeground,
+                      letterSpacing: '-0.025em',
+                      marginBottom: '0.5rem'
                     }}>
-                      <span>⏱️ {session.duration}</span>
-                      <span>💬 {session.words} palavras</span>
-                      <span>🤖 {session.analyses} análises</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <Clock3 size={12} />
+                        {session.duration}
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <FileText size={12} />
+                        {session.words} palavras
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <Bot size={12} />
+                        {session.analyses} análises
+                      </span>
                     </div>
                     
-                    <div className="flex items-center space-x-4 text-xs" style={{ 
-                      color: 'var(--muted-foreground)',
-                      fontFamily: 'var(--font-sans)',
-                      letterSpacing: 'var(--tracking-normal)'
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem',
+                      fontSize: '0.75rem',
+                      color: designColors.mutedForeground,
+                      letterSpacing: '-0.025em',
+                      marginBottom: '0.5rem'
                     }}>
-                      <span>💳 {session.credits} créditos</span>
-                      <span>🕐 {session.timeAgo}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <CreditCard size={10} />
+                        {session.credits} créditos
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <Clock3 size={10} />
+                        {session.timeAgo}
+                      </span>
                     </div>
                     
-                    <div className="mt-2 text-xs" style={{ 
-                      color: 'var(--muted-foreground)',
-                      fontFamily: 'var(--font-sans)',
-                      letterSpacing: 'var(--tracking-normal)'
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: designColors.mutedForeground,
+                      letterSpacing: '-0.025em',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
                     }}>
-                      📊 Confiança: {session.confidence}% | 🎙️ Mic + 🖥️ Tela
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <TrendingUp size={10} />
+                        Confiança: {session.confidence}%
+                      </span>
+                      <span>|</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <Mic size={10} />
+                        Mic
+                      </span>
+                      <span>+</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <MonitorSpeaker size={10} />
+                        Tela
+                      </span>
                     </div>
                   </div>
 
                   {/* Botões de Ação */}
-                  <div className="flex space-x-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                  <div style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    opacity: 0.6,
+                    transition: 'opacity 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = '1';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.opacity = '0.6';
+                  }}>
                     <button
-                      className="p-1.5 transition-all duration-200"
                       style={{
-                        border: 'var(--border-width-thin) solid var(--border)',
-                        borderRadius: 'var(--radius-sm)',
-                        color: 'var(--muted-foreground)',
-                        backgroundColor: 'transparent'
+                        padding: '0.5rem',
+                        border: `1px solid ${designColors.border}`,
+                        borderRadius: '1.2rem',
+                        color: designColors.mutedForeground,
+                        backgroundColor: 'transparent',
+                        transition: 'colors 0.2s',
+                        cursor: 'pointer'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.color = 'var(--primary)';
-                        e.currentTarget.style.borderColor = 'var(--primary)';
+                        e.currentTarget.style.color = designColors.primary;
+                        e.currentTarget.style.borderColor = designColors.primary;
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.color = 'var(--muted-foreground)';
-                        e.currentTarget.style.borderColor = 'var(--border)';
+                        e.currentTarget.style.color = designColors.mutedForeground;
+                        e.currentTarget.style.borderColor = designColors.border;
                       }}
                       title="Visualizar sessão"
                     >
-                      <Eye size={14} />
+                      <Eye size={16} />
                     </button>
                     <button
-                      className="p-1.5 transition-all duration-200"
                       style={{
-                        border: 'var(--border-width-thin) solid var(--border)',
-                        borderRadius: 'var(--radius-sm)',
-                        color: 'var(--muted-foreground)',
-                        backgroundColor: 'transparent'
+                        padding: '0.5rem',
+                        border: `1px solid ${designColors.border}`,
+                        borderRadius: '1.2rem',
+                        color: designColors.mutedForeground,
+                        backgroundColor: 'transparent',
+                        transition: 'colors 0.2s',
+                        cursor: 'pointer'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.color = 'var(--destructive)';
-                        e.currentTarget.style.borderColor = 'var(--destructive)';
-                        e.currentTarget.style.backgroundColor = 'rgba(248, 113, 113, 0.1)';
+                        e.currentTarget.style.color = designColors.destructive;
+                        e.currentTarget.style.borderColor = designColors.destructive;
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.color = 'var(--muted-foreground)';
-                        e.currentTarget.style.borderColor = 'var(--border)';
-                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = designColors.mutedForeground;
+                        e.currentTarget.style.borderColor = designColors.border;
                       }}
                       title="Deletar sessão"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
@@ -885,44 +1047,56 @@ export default function TranscriptionDashboard() {
       </div>
 
       {/* Gráfico de Atividade */}
-      <div 
-        className="p-6"
-        style={{
-          backgroundColor: 'var(--card)',
-          border: 'var(--border-width-thin) solid var(--border)',
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: 'var(--shadow-sm)'
-        }}
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold" style={{ 
-            color: 'var(--foreground)',
-            fontFamily: 'var(--font-sans)',
-            letterSpacing: 'var(--tracking-normal)'
+      <div style={{
+        backgroundColor: designColors.card,
+        color: designColors.cardForeground,
+        border: `1px solid ${designColors.border}`,
+        borderRadius: '1.4rem',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
+        padding: '1.5rem'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '1.5rem'
+        }}>
+          <h3 style={{
+            fontSize: '1.25rem',
+            fontWeight: '600',
+            color: designColors.foreground,
+            letterSpacing: '-0.025em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
           }}>
-            📊 Atividade dos Últimos 7 Dias
+            <BarChart3 size={20} style={{ color: designColors.primary }} />
+            Atividade dos Últimos 7 Dias
           </h3>
-          <div className="flex space-x-2">
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
             {['7 dias', '30 dias', '3 meses'].map((period) => (
               <button
                 key={period}
-                className="px-3 py-1 text-sm transition-all duration-200"
                 style={{
-                  backgroundColor: period === '7 dias' ? 'var(--primary)' : 'var(--muted)',
-                  color: period === '7 dias' ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
-                  border: 'var(--border-width-thin) solid var(--border)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontFamily: 'var(--font-sans)',
-                  letterSpacing: 'var(--tracking-normal)'
+                  padding: '0.5rem 1rem',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  borderRadius: '1.2rem',
+                  transition: 'colors 0.2s',
+                  letterSpacing: '-0.025em',
+                  backgroundColor: period === '7 dias' ? designColors.primary : designColors.muted,
+                  color: period === '7 dias' ? designColors.primaryForeground : designColors.mutedForeground,
+                  border: 'none',
+                  cursor: 'pointer'
                 }}
                 onMouseEnter={(e) => {
                   if (period !== '7 dias') {
-                    e.currentTarget.style.backgroundColor = 'var(--secondary)';
+                    e.currentTarget.style.backgroundColor = designColors.secondary;
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (period !== '7 dias') {
-                    e.currentTarget.style.backgroundColor = 'var(--muted)';
+                    e.currentTarget.style.backgroundColor = designColors.muted;
                   }
                 }}
               >
@@ -933,20 +1107,18 @@ export default function TranscriptionDashboard() {
         </div>
 
         {/* Gráfico Simples com ASCII Art */}
-        <div className="space-y-4">
-          <div style={{ 
-            borderTop: 'var(--border-width-thin) solid var(--border)' 
-          }}></div>
-          <div 
-            className="p-4 text-sm overflow-x-auto"
-            style={{
-              backgroundColor: 'var(--muted)',
-              color: 'var(--foreground)',
-              borderRadius: 'var(--radius-md)',
-              fontFamily: 'var(--font-mono)'
-            }}
-          >
-            <div className="space-y-1">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ borderTop: `1px solid ${designColors.border}` }}></div>
+          <div style={{
+            backgroundColor: designColors.muted,
+            borderRadius: '1.4rem',
+            padding: '1rem',
+            fontSize: '0.875rem',
+            overflowX: 'auto',
+            fontFamily: 'IBM Plex Mono, ui-monospace, SFMono-Regular, monospace',
+            color: designColors.foreground
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
               <div>     ▲</div>
               <div>   6 │     ██                    ██</div>
               <div>     │    ████                  ████</div>
@@ -966,24 +1138,6 @@ export default function TranscriptionDashboard() {
           </div>
         </div>
       </div>
-
-      {/* Estilos para scrollbar customizada */}
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: var(--muted);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: var(--primary);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(140, 92, 255, 0.8);
-        }
-      `}</style>
     </div>
   );
 }
