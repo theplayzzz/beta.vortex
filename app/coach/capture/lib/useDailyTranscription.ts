@@ -14,6 +14,12 @@ interface TranscriptionBlock {
   text: string; // O texto consolidado do bloco
 }
 
+// Interface para callback de mirror events
+export interface MirrorCallbacks {
+  onTrackAvailable?: () => void;
+  onTrackUnavailable?: () => void;
+}
+
 // Interface compatível com Deepgram (mantendo mesma estrutura) + Enhanced Dual Stream
 export interface TranscriptionState {
   transcript: string;
@@ -105,7 +111,7 @@ const checkMediaDevicesSupport = () => {
   return support;
 };
 
-export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
+export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirrorCallbacks?: MirrorCallbacks }) => {
   // Hook para acessar dados do usuário Clerk
   const { user, isLoaded: isUserLoaded } = useUser();
 
@@ -1209,7 +1215,167 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     }
   }, [updateAvailableDevices]);
 
+  // Função para acessar o screen video track (ISOLADA - não afeta transcrição)
+  const getScreenVideoTrack = useCallback(() => {
+    if (!callObjectRef.current) {
+      console.warn('🚫 Mirror: CallObject não disponível');
+      return null;
+    }
+    
+    try {
+      const participants = callObjectRef.current.participants();
+      const localParticipant = participants?.local;
+      
+      // ✅ VALIDAÇÃO: Verificar se screen share está ativo
+      if (!localParticipant?.tracks?.screenVideo) {
+        console.warn('🚫 Mirror: Screen video track não encontrado');
+        return null;
+      }
+      
+      const screenVideoTrack = localParticipant.tracks.screenVideo;
+      
+      // ✅ SEGURANÇA: Verificar se o track está disponível e ativo
+      // Aceitar estados "sendable" ou "playable" - ambos indicam que o track está funcional
+      if (!screenVideoTrack.track || (screenVideoTrack.state !== 'sendable' && screenVideoTrack.state !== 'playable')) {
+        console.warn('🚫 Mirror: Screen video track não está ativo:', screenVideoTrack.state);
+        return null;
+      }
+      
+      console.log('✅ Mirror: Screen video track encontrado:', {
+        kind: screenVideoTrack.track.kind,
+        enabled: screenVideoTrack.track.enabled,
+        readyState: screenVideoTrack.track.readyState,
+        state: screenVideoTrack.state
+      });
+      
+      // ✅ GARANTIA: Retorna APENAS o track de vídeo da tela compartilhada
+      return screenVideoTrack.track;
+      
+    } catch (error) {
+      console.error('❌ Mirror: Erro ao acessar screen video track:', error);
+      return null;
+    }
+  }, []);
 
+  // Função para criar elemento de vídeo mirror com dimensões responsivas
+  const createScreenMirror = useCallback((videoTrack: MediaStreamTrack) => {
+    // Detectar tamanho da tela para responsividade
+    const screenWidth = window.innerWidth;
+    let mirrorWidth, mirrorHeight;
+    
+    if (screenWidth > 1200) {
+      mirrorWidth = 400;
+      mirrorHeight = 225;
+    } else if (screenWidth > 768) {
+      mirrorWidth = 320;
+      mirrorHeight = 180;
+    } else {
+      mirrorWidth = 280;
+      mirrorHeight = 158;
+    }
+    
+    // Criar elemento de vídeo
+    const videoElement = document.createElement('video');
+    videoElement.id = 'screen-mirror-video';
+    videoElement.srcObject = new MediaStream([videoTrack]);
+    videoElement.autoplay = true;
+    videoElement.muted = true;
+    videoElement.playsInline = true;
+    
+    // Aplicar estilos responsivos
+    videoElement.style.cssText = `
+      width: 100%;
+      height: auto;
+      max-width: ${mirrorWidth}px;
+      max-height: ${mirrorHeight}px;
+      border-radius: 8px;
+      background-color: var(--eerie-black, #171818);
+      object-fit: contain;
+      transition: all 0.3s ease;
+    `;
+    
+    console.log('✅ Mirror: Elemento de vídeo criado:', { width: mirrorWidth, height: mirrorHeight });
+    return videoElement;
+  }, []);
+
+  // Função para gerenciar mirror (isolada das outras funcionalidades)
+  const manageScreenMirror = useCallback(() => {
+    const videoTrack = getScreenVideoTrack();
+    
+    if (videoTrack && state.isScreenAudioCaptured) {
+      console.log('🎥 Mirror: Criando mirror com track disponível');
+      const mirrorElement = createScreenMirror(videoTrack);
+      return mirrorElement;
+    } else {
+      console.log('🚫 Mirror: Condições não atendidas para criar mirror');
+      return null;
+    }
+  }, [getScreenVideoTrack, createScreenMirror, state.isScreenAudioCaptured]);
+
+  // ⚠️ CRÍTICO: Listener isolado para mirror (não interfere com transcrição)
+  useEffect(() => {
+    if (!callObjectRef.current) return;
+    
+    const handleTrackStarted = (event: any) => {
+      // ✅ FILTRO ESPECÍFICO: Apenas screenVideo tracks locais
+      if (event.track?.kind === 'video' && 
+          event.participant?.local) {
+        console.log('🖥️ Mirror: Screen video track iniciado:', event);
+        
+        // Notificar componente que track está disponível (via callback personalizado)
+        if (config?.mirrorCallbacks?.onTrackAvailable) {
+          setTimeout(() => {
+            config.mirrorCallbacks?.onTrackAvailable?.();
+          }, 500); // Pequeno delay para garantir que o track esteja realmente pronto
+        }
+      }
+    };
+    
+    const handleTrackStopped = (event: any) => {
+      // ✅ FILTRO ESPECÍFICO: Apenas screenVideo tracks locais
+      if (event.track?.kind === 'video' && 
+          event.participant?.local) {
+        console.log('🖥️ Mirror: Screen video track parou:', event);
+        
+        // Notificar componente que track não está mais disponível
+        if (config?.mirrorCallbacks?.onTrackUnavailable) {
+          config.mirrorCallbacks.onTrackUnavailable();
+        }
+      }
+    };
+    
+    // ✅ NAMESPACE ISOLADO: Usar namespace específico para evitar conflitos
+    const mirrorEventHandlers = {
+      'track-started': handleTrackStarted,
+      'track-stopped': handleTrackStopped
+    };
+    
+    // Adicionar listeners
+    Object.entries(mirrorEventHandlers).forEach(([event, handler]) => {
+      callObjectRef.current?.on(event as any, handler);
+    });
+    
+    return () => {
+      // Cleanup isolado
+      if (callObjectRef.current) {
+        Object.entries(mirrorEventHandlers).forEach(([event, handler]) => {
+          callObjectRef.current?.off(event as any, handler);
+        });
+      }
+    };
+  }, [config?.mirrorCallbacks]); // Adicionar dependência dos callbacks
+
+  // ✅ FALLBACK: Verificação periódica para garantir sincronização
+  useEffect(() => {
+    if (!state.isScreenAudioCaptured) return;
+    
+    const checkInterval = setInterval(() => {
+      const videoTrack = getScreenVideoTrack();
+      console.log('🔄 Mirror: Verificação periódica - track disponível:', !!videoTrack);
+    }, 5000); // Verificar a cada 5 segundos
+    
+    return () => clearInterval(checkInterval);
+  }, [state.isScreenAudioCaptured, getScreenVideoTrack]);
 
   // Retorno compatível com useDeepgramTranscription + DUAL STREAM enhancements
   return {
@@ -1228,6 +1394,10 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     isMicrophoneEnabled: state.isMicrophoneEnabled,
     isScreenAudioEnabled: state.isScreenAudioEnabled,
     toggleMicrophone,
-    toggleScreenAudio
+    toggleScreenAudio,
+    // NOVAS funções para mirror
+    getScreenVideoTrack,
+    createScreenMirror,
+    manageScreenMirror
   };
 }; 

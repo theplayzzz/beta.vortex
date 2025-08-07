@@ -105,11 +105,32 @@ const DailyTranscriptionDisplay: React.FC = () => {
     isMicrophoneEnabled,
     isScreenAudioEnabled,
     toggleMicrophone,
-    toggleScreenAudio
+    toggleScreenAudio,
+    // NOVAS funções para mirror
+    getScreenVideoTrack,
+    createScreenMirror,
+    manageScreenMirror
   } = useDailyTranscription({
     language: 'pt',
     enableScreenAudio: true,
-    enableInterimResults: true
+    enableInterimResults: true,
+    mirrorCallbacks: {
+      onTrackAvailable: () => {
+        console.log('🎉 Mirror: Track disponível via evento - tentando criar mirror...');
+        const videoTrack = getScreenVideoTrack();
+        if (videoTrack) {
+          const stream = new MediaStream([videoTrack]);
+          setMirrorVideoStream(stream);
+          setMirrorState('active');
+          console.log('✅ Mirror: Stream criado e definido via evento');
+        }
+      },
+      onTrackUnavailable: () => {
+        console.log('📴 Mirror: Track não disponível via evento - removendo mirror...');
+        setMirrorVideoStream(null);
+        setMirrorState('waiting');
+      }
+    }
   });
 
   // Refs e estados para controle do scroll automático (mantidos idênticos)
@@ -118,6 +139,14 @@ const DailyTranscriptionDisplay: React.FC = () => {
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const [newFieldText, setNewFieldText] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // Mirror controls ref
+  const controlsContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Mirror states
+  const [mirrorState, setMirrorState] = useState<'hidden' | 'waiting' | 'active' | 'error'>('hidden');
+  const [mirrorVideoStream, setMirrorVideoStream] = useState<MediaStream | null>(null);
+  const mirrorVideoRef = useRef<HTMLVideoElement>(null);
   
   // Estados para histórico de análises (mantido idêntico)
   interface AnalysisHistory {
@@ -250,6 +279,68 @@ const DailyTranscriptionDisplay: React.FC = () => {
       clearTimeout(scrollTimer);
     };
   }, [handleScroll, isAtBottom]);
+
+  // Mirror state control based on session status
+  useEffect(() => {
+    if (isListening && isScreenAudioCaptured) {
+      setMirrorState('waiting');
+    } else if (isListening && !isScreenAudioCaptured) {
+      setMirrorState('waiting');
+    } else if (!isListening) {
+      setMirrorState('hidden');
+      setMirrorVideoStream(null);
+    }
+  }, [isListening, isScreenAudioCaptured]);
+
+  // ETAPA 5: useEffect para gerenciar mirror baseado na sequência do Daily.co (fallback)
+  useEffect(() => {
+    console.log('🔄 Mirror: Verificando condições:', {
+      isListening,
+      isScreenAudioCaptured,
+      mirrorState
+    });
+
+    if (isListening && isScreenAudioCaptured && mirrorState === 'waiting' && !mirrorVideoStream) {
+      // Fallback: Tentar criar mirror se eventos não funcionaram
+      const timeoutId = setTimeout(() => {
+        const videoTrack = getScreenVideoTrack();
+        
+        if (videoTrack) {
+          const stream = new MediaStream([videoTrack]);
+          setMirrorVideoStream(stream);
+          setMirrorState('active');
+          console.log('✅ Mirror: Stream criado via fallback');
+        } else {
+          console.log('⏳ Mirror: Track ainda não disponível, mantendo waiting');
+        }
+      }, 1000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isListening, isScreenAudioCaptured, mirrorState, mirrorVideoStream, getScreenVideoTrack]);
+
+  // Event-driven mirror management (substituiu o retry system)
+  useEffect(() => {
+    console.log('📡 Mirror: Sistema de eventos ativo - aguardando eventos de track...');
+  }, []); // Apenas log informativo - os eventos são gerenciados pelos callbacks
+
+  // Aplicar stream ao elemento de vídeo quando disponível
+  useEffect(() => {
+    if (mirrorVideoRef.current && mirrorVideoStream) {
+      mirrorVideoRef.current.srcObject = mirrorVideoStream;
+      console.log('🎥 Mirror: Stream aplicado ao elemento de vídeo');
+    }
+  }, [mirrorVideoStream]);
+
+  // Cleanup do stream quando componente é desmontado ou stream é removido
+  useEffect(() => {
+    return () => {
+      if (mirrorVideoStream) {
+        mirrorVideoStream.getTracks().forEach(track => track.stop());
+        console.log('🧹 Mirror: Cleanup do stream ao desmontar componente');
+      }
+    };
+  }, [mirrorVideoStream]);
 
   // Função para ativar scroll automático
   const enableAutoScroll = useCallback(() => {
@@ -473,6 +564,113 @@ const DailyTranscriptionDisplay: React.FC = () => {
     }
   };
 
+  // Mirror container render function
+  const renderMirrorContainer = () => {
+    const containerStyle = {
+      marginBottom: '12px',
+      borderRadius: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '100%',
+      height: '158px', // 16:9 aspect ratio for realistic mirror size
+      transition: 'all 0.3s ease'
+    };
+
+    switch (mirrorState) {
+      case 'hidden':
+        return (
+          <div 
+            id="screen-mirror-container"
+            style={{
+              ...containerStyle,
+              border: '2px dashed rgba(107, 233, 76, 0.3)',
+              backgroundColor: 'rgba(23, 24, 24, 0.5)',
+            }}
+          >
+            <div style={{ color: 'var(--periwinkle)', fontSize: '13px', textAlign: 'center', opacity: 0.7 }}>
+              🖥️ Mirror da tela compartilhada aparecerá aqui
+              <br />
+              <span style={{ fontSize: '11px' }}>Clique em &ldquo;🎙️ INICIAR&rdquo; para ativar</span>
+            </div>
+          </div>
+        );
+        
+      case 'waiting':
+        return (
+          <div 
+            id="screen-mirror-container"
+            style={{
+              ...containerStyle,
+              border: '2px solid rgba(107, 233, 76, 0.6)',
+              backgroundColor: 'rgba(107, 233, 76, 0.1)',
+            }}
+          >
+            <div style={{ color: 'var(--sgbus-green)', fontSize: '13px', textAlign: 'center' }}>
+              ⏳ Aguardando compartilhamento de tela...
+              <br />
+              <span style={{ fontSize: '11px', opacity: 0.8 }}>
+                Selecione a tela para compartilhar na janela do navegador
+              </span>
+            </div>
+          </div>
+        );
+        
+      case 'active':
+        return (
+          <div 
+            id="screen-mirror-container"
+            style={{
+              ...containerStyle,
+              border: '2px solid var(--sgbus-green)',
+              backgroundColor: 'var(--eerie-black)',
+              minHeight: 'auto',
+              padding: '8px'
+            }}
+          >
+            {mirrorVideoStream && (
+              <video
+                ref={mirrorVideoRef}
+                autoPlay
+                muted
+                playsInline
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  maxWidth: window.innerWidth > 1200 ? '400px' : window.innerWidth > 768 ? '320px' : '280px',
+                  maxHeight: window.innerWidth > 1200 ? '225px' : window.innerWidth > 768 ? '180px' : '158px',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--eerie-black, #171818)',
+                  objectFit: 'contain',
+                  transition: 'all 0.3s ease'
+                }}
+              />
+            )}
+          </div>
+        );
+        
+      case 'error':
+        return (
+          <div 
+            id="screen-mirror-container"
+            style={{
+              ...containerStyle,
+              border: '2px solid rgba(239, 68, 68, 0.6)',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            }}
+          >
+            <div style={{ color: 'rgb(239, 68, 68)', fontSize: '13px', textAlign: 'center' }}>
+              ❌ Erro no compartilhamento de tela
+              <br />
+              <span style={{ fontSize: '11px', opacity: 0.8 }}>
+                Tente novamente ou verifique as permissões
+              </span>
+            </div>
+          </div>
+        );
+    }
+  };
+
 
   return (
     <div className="min-h-screen p-6">
@@ -482,17 +680,18 @@ const DailyTranscriptionDisplay: React.FC = () => {
           {/* COLUNA ESQUERDA - Controles e Transcrição */}
           <div className="flex flex-col space-y-6">
             
-            {/* PARTE SUPERIOR - Controles Reorganizados - TAMANHO FIXO */}
+            {/* PARTE SUPERIOR - Controles Reorganizados - RESPONSIVO */}
             <div 
-              className="p-4 rounded-xl overflow-hidden"
+              ref={controlsContainerRef}
+              className="p-4 rounded-xl"
               style={{ 
                 backgroundColor: 'var(--eerie-black)', 
-                border: '1px solid rgba(249, 251, 252, 0.1)',
-                height: '140px',
-                minHeight: '140px',
-                maxHeight: '140px'
+                border: '1px solid rgba(249, 251, 252, 0.1)'
               }}
             >
+              {/* Mirror Container */}
+              {renderMirrorContainer()}
+              
               {/* Status de Conexão */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
@@ -573,34 +772,6 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     <MonitorSpeaker size={14} />
                     <span>TELA</span>
                   </button>
-                </div>
-
-                {/* Terceira linha - Níveis de áudio compactos */}
-                <div className="flex justify-center space-x-4">
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs" style={{ color: 'var(--periwinkle)' }}>MIC</span>
-                    <div className="w-16 h-1 rounded-full" style={{ backgroundColor: 'rgba(249, 251, 252, 0.1)' }}>
-                      <div
-                        className="h-full rounded-full transition-all duration-200"
-                        style={{ 
-                          width: `${Math.min(audioLevel, 100)}%`,
-                          backgroundColor: 'var(--periwinkle)'
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs" style={{ color: 'var(--sgbus-green)' }}>TELA</span>
-                    <div className="w-16 h-1 rounded-full" style={{ backgroundColor: 'rgba(249, 251, 252, 0.1)' }}>
-                      <div
-                        className="h-full rounded-full transition-all duration-200"
-                        style={{ 
-                          width: `${isScreenAudioCaptured ? Math.min(audioLevel, 100) : 0}%`,
-                          backgroundColor: 'var(--sgbus-green)'
-                        }}
-                      />
-                    </div>
-                  </div>
                 </div>
               </div>
 
