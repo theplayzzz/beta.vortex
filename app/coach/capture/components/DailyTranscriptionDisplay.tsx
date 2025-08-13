@@ -199,7 +199,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
       const aspectRatio = videoWidth / videoHeight;
       const calculatedHeight = maxContainerWidth / aspectRatio;
       
-      console.log(`📐 Mirror: Calculando dimensões - Vídeo: ${videoWidth}x${videoHeight}, Aspect: ${aspectRatio.toFixed(2)}, Container: ${maxContainerWidth}x${calculatedHeight.toFixed(0)}`);
+      // Log removido para evitar spam no console
       
       return {
         width: `${maxContainerWidth}px`,
@@ -513,7 +513,12 @@ const DailyTranscriptionDisplay: React.FC = () => {
     if (typeof window === 'undefined') return; // Não executar no SSR
     
     const handleResize = () => {
-      if (mirrorVideoStream && mirrorState === 'active' && mirrorVideoRef.current && videoDimensions) {
+      // Early return: não redimensionar quando modo fluido está ativo
+      if (mirrorState === 'active') {
+        return;
+      }
+      
+      if (mirrorVideoStream && mirrorVideoRef.current && videoDimensions) {
         console.log('📱 Mirror: Redimensionando para nova tela');
         
         // Aplicar novas dimensões usando função helper com dimensões reais do vídeo
@@ -535,7 +540,12 @@ const DailyTranscriptionDisplay: React.FC = () => {
 
   // Atualizar dimensões do vídeo quando as dimensões da tela compartilhada mudarem
   useEffect(() => {
-    if (mirrorVideoRef.current && videoDimensions && mirrorState === 'active') {
+    // Early return: não redimensionar quando modo fluido está ativo
+    if (mirrorState === 'active') {
+      return;
+    }
+    
+    if (mirrorVideoRef.current && videoDimensions) {
       console.log('🔧 Mirror: Atualizando dimensões do vídeo baseado na tela compartilhada');
       
       const video = mirrorVideoRef.current;
@@ -810,11 +820,11 @@ const DailyTranscriptionDisplay: React.FC = () => {
 
   // Mirror container render function
   const renderMirrorContainer = () => {
-    // Calcular dimensões do container baseado no vídeo (se disponível)
-    const dimensions = getResponsiveMirrorDimensions(
+    // Calcular dimensões do container apenas para estados não-active (placeholders)
+    const dimensions = mirrorState !== 'active' ? getResponsiveMirrorDimensions(
       videoDimensions?.width, 
       videoDimensions?.height
-    );
+    ) : null;
     
     const containerStyle = {
       marginBottom: '12px',
@@ -823,8 +833,8 @@ const DailyTranscriptionDisplay: React.FC = () => {
       alignItems: 'center',
       justifyContent: 'center',
       width: '100%',
-      minHeight: mirrorState === 'active' ? dimensions.height : '158px',
-      height: mirrorState === 'active' ? 'auto' : '158px',
+      minHeight: mirrorState === 'active' ? 'auto' : '158px',
+      height: mirrorState === 'active' ? 'auto' : '258px',
       transition: 'all 0.3s ease'
     };
 
@@ -876,29 +886,22 @@ const DailyTranscriptionDisplay: React.FC = () => {
               border: '2px solid var(--sgbus-green)',
               backgroundColor: 'var(--eerie-black)',
               minHeight: 'auto',
-              padding: '8px'
+              padding: '2px',
+              overflow: 'hidden'
             }}
           >
-            {mirrorVideoStream && (() => {
-              const videoDims = getResponsiveMirrorDimensions(
-                videoDimensions?.width,
-                videoDimensions?.height
-              );
-              
-              return (
+            {mirrorVideoStream && (
                 <video
                   ref={mirrorVideoRef}
                   autoPlay
                   muted
                   playsInline
                   style={{
-                    width: videoDims.width,
-                    height: videoDims.height,
-                    maxWidth: videoDims.maxWidth,
-                    maxHeight: videoDims.maxHeight,
+                    width: '100%',
+                    height: 'auto',
+                    maxWidth: '100%',
                     borderRadius: '8px',
                     backgroundColor: 'var(--eerie-black, #171818)',
-                    objectFit: 'contain',
                     transition: 'all 0.3s ease',
                     display: 'block'
                   }}
@@ -909,8 +912,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     console.error('❌ Mirror: Erro no elemento de vídeo:', e);
                   }}
                 />
-              );
-            })()}
+            )}
           </div>
         );
         
