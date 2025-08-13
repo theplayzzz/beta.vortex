@@ -846,8 +846,14 @@ const DailyTranscriptionDisplay: React.FC = () => {
 
   // Mirror container render function
   const renderMirrorContainer = () => {
+    // Calcular dimensões do container apenas para estados não-active (placeholders)
+    const dimensions = mirrorState !== 'active' ? getResponsiveMirrorDimensions(
+      videoDimensions?.width, 
+      videoDimensions?.height
+    ) : null;
     
     const containerStyle = {
+      marginBottom: '10px',
       borderRadius: '8px',
       display: 'flex',
       alignItems: 'center',
@@ -977,25 +983,23 @@ const DailyTranscriptionDisplay: React.FC = () => {
               }}
             >
 
-              {/* Layout: Video ao lado dos controles */}
-              <div className="flex gap-3 items-start h-full">
-                {/* Mirror Container - Video */}
-                <div className="flex-1 min-w-0">
-                  {renderMirrorContainer()}
-                </div>
+              {/* Mirror Container */}
+              {renderMirrorContainer()}
+              
 
-                {/* Controles Verticais */}
-                <div className="flex flex-col gap-2 min-w-[120px] sm:min-w-[140px] flex-shrink-0 h-full">
+              {/* Layout responsivo - linha única em desktop, dupla em mobile */}
+              <div className="space-y-2 sm:space-y-0">
+                {/* Primeira linha - Controles principais */}
+                <div className="flex items-center gap-2 flex-nowrap">
                   {/* Botão Primário - CONECTAR */}
                   <button
                     onClick={isListening ? stopListening : startListening}
                     disabled={false}
-                    className="flex-none w-full h-[34px] px-2 sm:px-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 sm:gap-2 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50"
+                    className="flex-none min-w-[6rem] sm:min-w-[8.5rem] h-[34px] px-2 sm:px-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 sm:gap-2 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50"
                     style={{
                       backgroundColor: isListening ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 233, 76, 0.2)',
                       color: isListening ? '#ef4444' : 'var(--sgbus-green)',
-                      border: isListening ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(107, 233, 76, 0.3)',
-                      width: '140px' // Largura fixa para não mudar de tamanho
+                      border: isListening ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(107, 233, 76, 0.3)'
                     }}
                     onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
                     onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
@@ -1007,7 +1011,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   {/* Toggle MIC */}
                   <button
                     onClick={toggleMicrophone}
-                    className="flex-none w-full h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
+                    className="flex-none min-w-[4rem] sm:min-w-[5rem] h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
                     style={{
                       backgroundColor: isMicrophoneEnabled ? 'var(--sgbus-green)' : 'rgba(239, 68, 68, 0.2)',
                       color: isMicrophoneEnabled ? 'var(--night)' : '#ef4444',
@@ -1023,7 +1027,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   {/* Toggle TELA (áudio) */}
                   <button
                     onClick={toggleScreenAudio}
-                    className="flex-none w-full h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
+                    className="flex-none min-w-[4rem] sm:min-w-[5rem] h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
                     style={{
                       backgroundColor: isScreenAudioEnabled ? 'var(--sgbus-green)' : 'rgba(239, 68, 68, 0.2)',
                       color: isScreenAudioEnabled ? 'var(--night)' : '#ef4444',
@@ -1052,17 +1056,14 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     <ScreenShare size={16} />
                   </button>
 
-                  {/* Espaçador para empurrar botões para baixo */}
-                  <div className="flex-1"></div>
-
-                  {/* Linha dos botões secundários - ANÁLISE e LIXEIRA */}
-                  <div className="flex items-center gap-1 w-full">
+                  {/* Botões direita em desktop */}
+                  <div className="hidden sm:flex items-center gap-1 ml-auto">
                     {/* Botão Secundário - Analisar */}
                     <button
                       onClick={handleAnalyze}
                       disabled={isAnalyzing || (blocks.length === 0 && !interimTranscript.trim())}
                       aria-label="Analisar transcrição (Tecla: Espaço)"
-                      className="flex-1 h-[34px] px-2 rounded-lg transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
+                      className="flex-none min-w-[5rem] h-[34px] px-2 rounded-lg transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
                       style={{
                         backgroundColor: isAnalyzing ? 'rgba(107, 233, 76, 0.2)' : 'rgba(107, 233, 76, 0.1)',
                         color: 'var(--sgbus-green)',
@@ -1092,6 +1093,44 @@ const DailyTranscriptionDisplay: React.FC = () => {
                       <Trash2 size={16} />
                     </button>
                   </div>
+                </div>
+
+                {/* Segunda linha - Botões de ação em mobile */}
+                <div className="flex sm:hidden items-center justify-end gap-1">
+                  {/* Botão Secundário - Analisar */}
+                  <button
+                    onClick={handleAnalyze}
+                    disabled={isAnalyzing || (blocks.length === 0 && !interimTranscript.trim())}
+                    aria-label="Analisar transcrição"
+                    className="flex-none min-w-[5rem] h-[34px] px-2 rounded-lg transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
+                    style={{
+                      backgroundColor: isAnalyzing ? 'rgba(107, 233, 76, 0.2)' : 'rgba(107, 233, 76, 0.1)',
+                      color: 'var(--sgbus-green)',
+                      border: '1px solid rgba(107, 233, 76, 0.3)'
+                    }}
+                    onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
+                    onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                  >
+                    <Brain size={16} />
+                    <span>ANÁLISE</span>
+                  </button>
+
+                  {/* Botão Secundário - Lixeira */}
+                  <button
+                    onClick={clearTranscriptionHistory}
+                    disabled={blocks.length === 0}
+                    aria-label="Limpar histórico de transcrição"
+                    className="flex-none w-[34px] h-[34px] rounded-lg transition-all duration-200 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      border: '1px solid var(--periwinkle)',
+                      color: 'var(--periwinkle)',
+                      backgroundColor: 'transparent'
+                    }}
+                    onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
+                    onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               </div>
 
