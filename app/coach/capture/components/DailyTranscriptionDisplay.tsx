@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useDailyTranscription } from '../lib/useDailyTranscription';
-import { Play, Square, Mic, MicOff, ScreenShare, Trash2 } from 'lucide-react';
+import { Play, Square, Mic, MicOff, ScreenShare, Trash2, Brain, HelpCircle } from 'lucide-react';
 import TutorialModal from './TutorialModal';
 import { useFirstVisit } from '../lib/useFirstVisit';
 
@@ -79,7 +79,6 @@ const DailyTranscriptionDisplay: React.FC = () => {
     transcript,
     interimTranscript,
     isListening,
-    isConnected,
     error,
     confidence,
     audioLevel,
@@ -141,7 +140,6 @@ const DailyTranscriptionDisplay: React.FC = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
   const [isUserScrolling, setIsUserScrolling] = useState(false);
-  const [newFieldText, setNewFieldText] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   
   // Mirror controls ref
@@ -778,7 +776,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
       console.log('Contexto para análise:', contextoCompleto);
       
       if (!contextoCompleto) {
-        setNewFieldText('⚠️ Nenhum contexto disponível para análise');
+        console.log('⚠️ Nenhum contexto disponível para análise');
         return;
       }
       
@@ -788,7 +786,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
       
       // Criar entrada de loading no histórico
       loadingId = createLoadingEntry(contextoCompleto);
-      setNewFieldText('🌐 Enviando contexto para análise de IA...');
+      console.log('🌐 Enviando contexto para análise de IA...');
       
       // Enviar para webhook
       const resposta = await sendToWebhook(contextoCompleto);
@@ -798,7 +796,6 @@ const DailyTranscriptionDisplay: React.FC = () => {
         updateLoadingEntry(loadingId, resposta);
       }
       
-      setNewFieldText('');
       console.log('✅ Análise concluída, transcrição Daily.co continua ativa');
       
     } catch (error) {
@@ -808,7 +805,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
       if (loadingId) {
         updateLoadingEntry(loadingId, errorMessage);
       } else {
-        setNewFieldText(errorMessage);
+        console.error(errorMessage);
       }
     } finally {
       setIsAnalyzing(false);
@@ -826,7 +823,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
     ) : null;
     
     const containerStyle = {
-      marginBottom: '12px',
+      marginBottom: '10px',
       borderRadius: '8px',
       display: 'flex',
       alignItems: 'center',
@@ -955,113 +952,154 @@ const DailyTranscriptionDisplay: React.FC = () => {
                 border: '1px solid rgba(249, 251, 252, 0.1)'
               }}
             >
+
               {/* Mirror Container */}
               {renderMirrorContainer()}
               
-              {/* Status de Conexão */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <div
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{ backgroundColor: isConnected ? 'var(--sgbus-green)' : '#ef4444' }}
-                  />
-                  <span className="text-xs font-medium" style={{ color: 'var(--seasalt)' }}>
-                    {isConnected ? 'CONECTADO' : 'DESCONECTADO'}
-                  </span>
+
+              {/* Layout responsivo - linha única em desktop, dupla em mobile */}
+              <div className="space-y-2 sm:space-y-0">
+                {/* Primeira linha - Controles principais */}
+                <div className="flex items-center gap-2 flex-nowrap">
+                  {/* Botão Primário - CONECTAR */}
+                  <button
+                    onClick={isListening ? stopListening : startListening}
+                    disabled={false}
+                    className="flex-none min-w-[6rem] sm:min-w-[8.5rem] h-[34px] px-2 sm:px-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 sm:gap-2 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50"
+                    style={{
+                      backgroundColor: isListening ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 233, 76, 0.2)',
+                      color: isListening ? '#ef4444' : 'var(--sgbus-green)',
+                      border: isListening ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(107, 233, 76, 0.3)'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
+                    onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                  >
+                    {isListening ? <Square size={20} /> : <Play size={20} />}
+                    <span>{isListening ? 'DESCONECTAR' : 'CONECTAR'}</span>
+                  </button>
+
+                  {/* Toggle MIC */}
+                  <button
+                    onClick={toggleMicrophone}
+                    className="flex-none min-w-[4rem] sm:min-w-[5rem] h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
+                    style={{
+                      backgroundColor: isMicrophoneEnabled ? 'var(--sgbus-green)' : 'rgba(239, 68, 68, 0.2)',
+                      color: isMicrophoneEnabled ? 'var(--night)' : '#ef4444',
+                      border: isMicrophoneEnabled ? 'none' : '1px solid rgba(239, 68, 68, 0.3)'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
+                    onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                  >
+                    {isMicrophoneEnabled ? <Mic size={16} /> : <MicOff size={16} />}
+                    <span>MIC</span>
+                  </button>
+
+                  {/* Toggle TELA (áudio) */}
+                  <button
+                    onClick={toggleScreenAudio}
+                    className="flex-none min-w-[4rem] sm:min-w-[5rem] h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
+                    style={{
+                      backgroundColor: isScreenAudioEnabled ? 'var(--sgbus-green)' : 'rgba(239, 68, 68, 0.2)',
+                      color: isScreenAudioEnabled ? 'var(--night)' : '#ef4444',
+                      border: isScreenAudioEnabled ? 'none' : '1px solid rgba(239, 68, 68, 0.3)'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
+                    onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                  >
+                    {isScreenAudioEnabled ? <Mic size={16} /> : <MicOff size={16} />}
+                    <span>TELA</span>
+                  </button>
+
+                  {/* Botão Secundário - Compartilhar Tela */}
+                  <button
+                    onClick={manageScreenMirror}
+                    aria-label="Compartilhar tela"
+                    className="flex-none w-[34px] h-[34px] rounded-lg transition-all duration-200 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
+                    style={{
+                      border: '1px solid var(--periwinkle)',
+                      color: 'var(--periwinkle)',
+                      backgroundColor: 'transparent'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
+                    onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                  >
+                    <ScreenShare size={16} />
+                  </button>
+
+                  {/* Botões direita em desktop */}
+                  <div className="hidden sm:flex items-center gap-1 ml-auto">
+                    {/* Botão Secundário - Analisar */}
+                    <button
+                      onClick={handleAnalyze}
+                      disabled={isAnalyzing || (blocks.length === 0 && !interimTranscript.trim())}
+                      aria-label="Analisar transcrição"
+                      className="flex-none w-[34px] h-[34px] rounded-lg transition-all duration-200 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        backgroundColor: isAnalyzing ? 'rgba(107, 233, 76, 0.2)' : 'rgba(107, 233, 76, 0.1)',
+                        color: 'var(--sgbus-green)',
+                        border: '1px solid rgba(107, 233, 76, 0.3)'
+                      }}
+                      onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
+                      onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                    >
+                      <Brain size={16} />
+                    </button>
+
+                    {/* Botão Secundário - Lixeira */}
+                    <button
+                      onClick={clearTranscriptionHistory}
+                      disabled={blocks.length === 0}
+                      aria-label="Limpar histórico de transcrição"
+                      className="flex-none w-[34px] h-[34px] rounded-lg transition-all duration-200 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        border: '1px solid var(--periwinkle)',
+                        color: 'var(--periwinkle)',
+                        backgroundColor: 'transparent'
+                      }}
+                      onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
+                      onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
-                
-                <button 
-                  className="px-2 py-1 rounded text-xs transition-all duration-200" 
-                  style={{ backgroundColor: 'rgba(207, 198, 254, 0.2)', color: 'var(--periwinkle)' }}
-                  onClick={() => setIsTutorialOpen(true)}
-                >
-                  TUTORIAL
-                </button>
-              </div>
 
-              {/* Layout em linha única */}
-              <div className="flex items-center gap-2 flex-nowrap overflow-x-auto">
-                {/* Botão Primário - CONECTAR */}
-                <button
-                  onClick={isListening ? stopListening : startListening}
-                  disabled={false}
-                  className="flex-none min-w-[10rem] h-10 px-4 rounded-lg text-sm font-medium transition-all duration-200 inline-flex items-center justify-center gap-2 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50"
-                  style={{
-                    backgroundColor: isListening ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 233, 76, 0.2)',
-                    color: isListening ? '#ef4444' : 'var(--sgbus-green)',
-                    border: isListening ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(107, 233, 76, 0.3)'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
-                  onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
-                >
-                  {isListening ? <Square size={20} /> : <Play size={20} />}
-                  <span>{isListening ? 'DESCONECTAR' : 'CONECTAR'}</span>
-                </button>
+                {/* Segunda linha - Botões de ação em mobile */}
+                <div className="flex sm:hidden items-center justify-end gap-1">
+                  {/* Botão Secundário - Analisar */}
+                  <button
+                    onClick={handleAnalyze}
+                    disabled={isAnalyzing || (blocks.length === 0 && !interimTranscript.trim())}
+                    aria-label="Analisar transcrição"
+                    className="flex-none w-[34px] h-[34px] rounded-lg transition-all duration-200 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      backgroundColor: isAnalyzing ? 'rgba(107, 233, 76, 0.2)' : 'rgba(107, 233, 76, 0.1)',
+                      color: 'var(--sgbus-green)',
+                      border: '1px solid rgba(107, 233, 76, 0.3)'
+                    }}
+                    onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
+                    onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                  >
+                    <Brain size={16} />
+                  </button>
 
-                {/* Toggle MIC */}
-                <button
-                  onClick={toggleMicrophone}
-                  className="flex-none min-w-[6rem] h-10 px-3 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
-                  style={{
-                    backgroundColor: isMicrophoneEnabled ? 'var(--sgbus-green)' : 'rgba(239, 68, 68, 0.2)',
-                    color: isMicrophoneEnabled ? 'var(--night)' : '#ef4444',
-                    border: isMicrophoneEnabled ? 'none' : '1px solid rgba(239, 68, 68, 0.3)'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
-                  onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
-                >
-                  {isMicrophoneEnabled ? <Mic size={16} /> : <MicOff size={16} />}
-                  <span>MIC</span>
-                </button>
-
-                {/* Toggle TELA (áudio) */}
-                <button
-                  onClick={toggleScreenAudio}
-                  className="flex-none min-w-[6rem] h-10 px-3 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
-                  style={{
-                    backgroundColor: isScreenAudioEnabled ? 'var(--sgbus-green)' : 'rgba(239, 68, 68, 0.2)',
-                    color: isScreenAudioEnabled ? 'var(--night)' : '#ef4444',
-                    border: isScreenAudioEnabled ? 'none' : '1px solid rgba(239, 68, 68, 0.3)'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
-                  onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
-                >
-                  {isScreenAudioEnabled ? <Mic size={16} /> : <MicOff size={16} />}
-                  <span>TELA</span>
-                </button>
-
-                {/* Botão Secundário - Compartilhar Tela */}
-                <button
-                  onClick={manageScreenMirror}
-                  aria-label="Compartilhar tela"
-                  className="flex-none w-10 h-10 rounded-lg transition-all duration-200 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
-                  style={{
-                    border: '1px solid var(--periwinkle)',
-                    color: 'var(--periwinkle)',
-                    backgroundColor: 'transparent'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
-                  onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
-                >
-                  <ScreenShare size={16} />
-                </button>
-
-                {/* Botão Secundário - Lixeira */}
-                <button
-                  onClick={clearTranscriptionHistory}
-                  disabled={blocks.length === 0}
-                  aria-label="Limpar histórico de transcrição"
-                  className="flex-none w-10 h-10 rounded-lg transition-all duration-200 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{
-                    border: '1px solid var(--periwinkle)',
-                    color: 'var(--periwinkle)',
-                    backgroundColor: 'transparent'
-                  }}
-                  onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
-                  onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
-                >
-                  <Trash2 size={16} />
-                </button>
+                  {/* Botão Secundário - Lixeira */}
+                  <button
+                    onClick={clearTranscriptionHistory}
+                    disabled={blocks.length === 0}
+                    aria-label="Limpar histórico de transcrição"
+                    className="flex-none w-[34px] h-[34px] rounded-lg transition-all duration-200 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      border: '1px solid var(--periwinkle)',
+                      color: 'var(--periwinkle)',
+                      backgroundColor: 'transparent'
+                    }}
+                    onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
+                    onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
 
             </div>
@@ -1114,13 +1152,28 @@ const DailyTranscriptionDisplay: React.FC = () => {
                       </button>
                     )}
                     
+                    {/* Botão Tutorial */}
+                    <button
+                      onClick={() => setIsTutorialOpen(true)}
+                      aria-label="Abrir tutorial"
+                      className="w-[18px] h-[18px] rounded-full transition-all duration-200 inline-flex items-center justify-center hover:scale-110 focus-visible:outline-2 focus-visible:outline-[color:var(--periwinkle)] focus-visible:outline-offset-2"
+                      style={{
+                        backgroundColor: 'rgba(207, 198, 254, 0.1)',
+                        color: 'var(--periwinkle)',
+                        border: '1px solid rgba(207, 198, 254, 0.3)'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(207, 198, 254, 0.2)'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(207, 198, 254, 0.1)'}
+                    >
+                      <HelpCircle size={16} />
+                    </button>
                   </div>
                 </div>
 
                 {/* Conteúdo da transcrição */}
                 <div 
                   ref={scrollContainerRef}
-                  className="flex-1 p-2 overflow-y-auto"
+                  className="flex-1 pt-1 px-2 pb-2 overflow-y-auto"
                   style={{ 
                     scrollBehavior: 'smooth',
                     scrollbarWidth: 'thin'
@@ -1219,7 +1272,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   )}
 
                   {!transcript && !interimTranscript && !isListening && (
-                    <div className="text-center py-12">
+                    <div className="text-center pt-4 pb-8">
                       <p className="text-lg mb-2" style={{ color: 'var(--periwinkle)' }}>
                         🎙️ Pressione &quot;CONECTAR&quot; para começar a transcrição
                       </p>
@@ -1230,7 +1283,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   )}
 
                   {isListening && !transcript && !interimTranscript && (
-                    <div className="text-center py-12">
+                    <div className="text-center pt-4 pb-8">
                       <p className="text-lg mb-2" style={{ color: 'var(--sgbus-green)' }}>
                         🎧 Escutando...
                       </p>
@@ -1244,59 +1297,11 @@ const DailyTranscriptionDisplay: React.FC = () => {
             </div>
           </div>
 
-          {/* COLUNA DIREITA - Análise de IA e Histórico (mantida idêntica) */}
-          <div className="flex flex-col space-y-6">
+          {/* COLUNA DIREITA - Histórico de Análises */}
+          <div className="flex flex-col">
             
-            {/* ANÁLISE DE IA - TAMANHO FIXO */}
-            <div 
-              className="p-4 rounded-xl overflow-hidden"
-              style={{ 
-                backgroundColor: 'var(--eerie-black)', 
-                border: '1px solid rgba(249, 251, 252, 0.1)',
-                height: '140px',
-                minHeight: '140px',
-                maxHeight: '140px'
-              }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium" style={{ color: 'var(--seasalt)' }}>
-                  ANÁLISE DE IA
-                </h3>
-                <button
-                  onClick={handleAnalyze}
-                  disabled={isAnalyzing || (blocks.length === 0 && !interimTranscript.trim())}
-                  className="px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 disabled:opacity-50"
-                  style={{
-                    backgroundColor: 'rgba(107, 233, 76, 0.2)',
-                    color: 'var(--sgbus-green)',
-                    border: '1px solid rgba(107, 233, 76, 0.3)'
-                  }}
-                >
-                  {isAnalyzing ? 'ANALISANDO...' : '🧠 ANALISAR'}
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-hidden">
-                {newFieldText && (
-                  <div className="p-3 rounded-lg h-full overflow-y-auto" style={{ backgroundColor: 'rgba(249, 251, 252, 0.05)' }}>
-                    <p className="text-sm leading-relaxed" style={{ color: 'var(--seasalt)' }}>
-                      {newFieldText}
-                    </p>
-                  </div>
-                )}
-
-                {!newFieldText && (
-                  <div className="text-center py-8">
-                    <p className="text-sm opacity-70" style={{ color: 'var(--seasalt)' }}>
-                      Clique em &quot;ANALISAR&quot; para enviar o contexto da transcrição para IA
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
             {/* HISTÓRICO DE ANÁLISES - EXPANSÍVEL */}
-            <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex-1 flex flex-col min-h-0 h-full">
               <div 
                 className="flex-1 flex flex-col rounded-xl overflow-hidden"
                 style={{ 
@@ -1306,7 +1311,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
               >
                 <div className="flex items-center justify-between p-4 border-b border-opacity-10" style={{ borderColor: 'var(--seasalt)' }}>
                   <h3 className="text-sm font-medium" style={{ color: 'var(--seasalt)' }}>
-                    HISTÓRICO DE ANÁLISES
+                    ANÁLISES DE IA
                   </h3>
                   <span className="text-xs" style={{ color: 'var(--periwinkle)' }}>
                     {analysisHistory.length} análises
@@ -1315,9 +1320,9 @@ const DailyTranscriptionDisplay: React.FC = () => {
 
                 <div className="flex-1 p-2 overflow-y-auto space-y-4">
                   {analysisHistory.length === 0 && (
-                    <div className="text-center py-12">
+                    <div className="text-center pt-4 pb-8">
                       <p className="text-sm opacity-70" style={{ color: 'var(--seasalt)' }}>
-                        Nenhuma análise realizada ainda
+                        Use o botão 🧠 no menu de controles acima para analisar a transcrição
                       </p>
                     </div>
                   )}
