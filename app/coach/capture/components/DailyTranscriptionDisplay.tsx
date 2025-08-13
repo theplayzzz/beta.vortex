@@ -968,7 +968,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
   return (
     <div className="min-h-screen pt-[18px] px-6 pb-6">
       <div className="max-w-7xl mx-auto h-[calc(100vh-3rem)]">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_0.9fr] gap-3 h-full">
+        <div className="grid grid-cols-1 sm:grid-cols-[1.25fr_0.9fr] gap-3 h-full">
           
           {/* COLUNA ESQUERDA - Controles e Transcrição */}
           <div className="flex flex-col space-y-3">
