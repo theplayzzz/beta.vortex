@@ -294,6 +294,10 @@ const DailyTranscriptionDisplay: React.FC = () => {
       .analysis-content li {
         margin-bottom: 0.25rem;
       }
+      
+      .analysis-content div[style*="padding:10px"] {
+        padding: 8px !important;
+      }
     `;
 
     if (!document.getElementById('analysis-styles')) {
@@ -591,11 +595,17 @@ const DailyTranscriptionDisplay: React.FC = () => {
     }
   }, [mirrorState, mirrorVideoStream, validateMirrorIntegration]);
 
+
   // Função para ativar scroll automático
   const enableAutoScroll = useCallback(() => {
     setIsAutoScrollEnabled(true);
     setTimeout(scrollToBottom, 50);
   }, [scrollToBottom]);
+
+  // Função para verificar se análise está disponível (mesmas condições do botão)
+  const canAnalyze = useCallback(() => {
+    return !isAnalyzing && (blocks.length > 0 || interimTranscript.trim().length > 0);
+  }, [isAnalyzing, blocks.length, interimTranscript]);
 
   // Função para envio ao webhook de análise (FASE 1: Adaptada do GoogleCloudTranscriptionDisplay)
   const sendToWebhook = async (contexto: string) => {
@@ -758,7 +768,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
   };
 
   // FASE 2: Função handleAnalyze com nova lógica de consolidação de contexto
-  const handleAnalyze = async () => {
+  const handleAnalyze = useCallback(async () => {
     if (isAnalyzing) return;
     
     setIsAnalyzing(true);
@@ -810,9 +820,29 @@ const DailyTranscriptionDisplay: React.FC = () => {
     } finally {
       setIsAnalyzing(false);
     }
-  };
+  }, [blocks, interimTranscript, isAnalyzing, createLoadingEntry, sendToWebhook, updateLoadingEntry]);
 
+  // Event listener para tecla espaço
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (event.code === 'Space') {
+        const activeElement = document.activeElement;
+        const isInputField = activeElement && (
+          activeElement.tagName === 'INPUT' ||
+          activeElement.tagName === 'TEXTAREA' ||
+          activeElement.getAttribute('contenteditable') === 'true'
+        );
 
+        if (!isInputField && canAnalyze()) {
+          event.preventDefault();
+          handleAnalyze();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, [canAnalyze, handleAnalyze]);
 
   // Mirror container render function
   const renderMirrorContainer = () => {
@@ -936,12 +966,12 @@ const DailyTranscriptionDisplay: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen pt-[18px] px-6 pb-6">
       <div className="max-w-7xl mx-auto h-[calc(100vh-3rem)]">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_0.9fr] gap-6 h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_0.9fr] gap-3 h-full">
           
           {/* COLUNA ESQUERDA - Controles e Transcrição */}
-          <div className="flex flex-col space-y-6">
+          <div className="flex flex-col space-y-3">
             
             {/* PARTE SUPERIOR - Controles Reorganizados - RESPONSIVO */}
             <div 
@@ -1032,8 +1062,8 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     <button
                       onClick={handleAnalyze}
                       disabled={isAnalyzing || (blocks.length === 0 && !interimTranscript.trim())}
-                      aria-label="Analisar transcrição"
-                      className="flex-none w-[34px] h-[34px] rounded-lg transition-all duration-200 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-label="Analisar transcrição (Tecla: Espaço)"
+                      className="flex-none min-w-[5rem] h-[34px] px-2 rounded-lg transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
                       style={{
                         backgroundColor: isAnalyzing ? 'rgba(107, 233, 76, 0.2)' : 'rgba(107, 233, 76, 0.1)',
                         color: 'var(--sgbus-green)',
@@ -1043,6 +1073,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                       onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
                     >
                       <Brain size={16} />
+                      <span>ANÁLISE</span>
                     </button>
 
                     {/* Botão Secundário - Lixeira */}
@@ -1071,7 +1102,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     onClick={handleAnalyze}
                     disabled={isAnalyzing || (blocks.length === 0 && !interimTranscript.trim())}
                     aria-label="Analisar transcrição"
-                    className="flex-none w-[34px] h-[34px] rounded-lg transition-all duration-200 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-none min-w-[5rem] h-[34px] px-2 rounded-lg transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
                     style={{
                       backgroundColor: isAnalyzing ? 'rgba(107, 233, 76, 0.2)' : 'rgba(107, 233, 76, 0.1)',
                       color: 'var(--sgbus-green)',
@@ -1081,6 +1112,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
                   >
                     <Brain size={16} />
+                    <span>ANÁLISE</span>
                   </button>
 
                   {/* Botão Secundário - Lixeira */}
@@ -1113,72 +1145,31 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   border: '1px solid rgba(249, 251, 252, 0.1)'
                 }}
               >
-                {/* Header da transcrição */}
-                <div className="flex items-center justify-between px-4 py-[6px] border-b border-opacity-10" style={{ borderColor: 'var(--seasalt)' }}>
-                  <div className="flex items-center space-x-3">
-                    <h3 className="text-[0.656rem] font-medium" style={{ color: 'var(--seasalt)' }}>
-                      TRANSCRIÇÃO DUAL STREAM
-                    </h3>
-                    {diarizationEnabled && (
-                      <div className="flex items-center space-x-1">
-                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--sgbus-green)' }}></div>
-                        <span className="text-[0.563rem]" style={{ color: 'var(--sgbus-green)' }}>DIARIZAÇÃO</span>
-                      </div>
-                    )}
-                    {trackInfo.audioTrackActive && (
-                      <div className="flex items-center space-x-1">
-                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--periwinkle)' }}></div>
-                        <span className="text-[0.563rem]" style={{ color: 'var(--periwinkle)' }}>MIC</span>
-                      </div>
-                    )}
-                    {trackInfo.screenAudioTrackActive && (
-                      <div className="flex items-center space-x-1">
-                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--sgbus-green)' }}></div>
-                        <span className="text-[0.563rem]" style={{ color: 'var(--sgbus-green)' }}>TELA</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {!isAutoScrollEnabled && (
-                      <button
-                        onClick={enableAutoScroll}
-                        className="px-2 py-1 rounded text-xs transition-all duration-200"
-                        style={{ 
-                          backgroundColor: 'rgba(207, 198, 254, 0.2)',
-                          color: 'var(--periwinkle)'
-                        }}
-                      >
-                        ⬇️ SCROLL
-                      </button>
-                    )}
-                    
-                    {/* Botão Tutorial */}
-                    <button
-                      onClick={() => setIsTutorialOpen(true)}
-                      aria-label="Abrir tutorial"
-                      className="w-[18px] h-[18px] rounded-full transition-all duration-200 inline-flex items-center justify-center hover:scale-110 focus-visible:outline-2 focus-visible:outline-[color:var(--periwinkle)] focus-visible:outline-offset-2"
-                      style={{
-                        backgroundColor: 'rgba(207, 198, 254, 0.1)',
-                        color: 'var(--periwinkle)',
-                        border: '1px solid rgba(207, 198, 254, 0.3)'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(207, 198, 254, 0.2)'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(207, 198, 254, 0.1)'}
-                    >
-                      <HelpCircle size={16} />
-                    </button>
-                  </div>
-                </div>
-
                 {/* Conteúdo da transcrição */}
                 <div 
                   ref={scrollContainerRef}
-                  className="flex-1 pt-1 px-2 pb-2 overflow-y-auto"
+                  className="flex-1 pt-2 px-2 pb-2 overflow-y-auto relative"
                   style={{ 
                     scrollBehavior: 'smooth',
                     scrollbarWidth: 'thin'
                   }}
                 >
+                  {/* Floating scroll button */}
+                  {!isAutoScrollEnabled && (
+                    <div className="absolute top-2 right-2 z-10">
+                      <button
+                        onClick={enableAutoScroll}
+                        className="px-2 py-1 rounded text-xs transition-all duration-200 shadow-lg"
+                        style={{ 
+                          backgroundColor: 'rgba(207, 198, 254, 0.9)',
+                          color: 'var(--periwinkle)',
+                          border: '1px solid rgba(207, 198, 254, 0.3)'
+                        }}
+                      >
+                        ⬇️ SCROLL
+                      </button>
+                    </div>
+                  )}
                   {error && (
                     <div 
                       className="mb-4 p-3 rounded-lg"
@@ -1197,12 +1188,12 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   {blocks.map((block, index) => (
                     <div 
                       key={`block-${block.id}`}
-                      className="mb-3" 
+                      className="mb-2" 
                       style={{ 
                         backgroundColor: block.color === 'green' ? 'rgba(107, 233, 76, 0.1)' : 
                                         block.color === 'blue' ? 'rgba(207, 198, 254, 0.1)' : 
                                         'rgba(249, 251, 252, 0.05)',
-                        padding: '12px',
+                        padding: '8px',
                         borderRadius: '8px',
                         borderLeft: `3px solid ${
                           block.color === 'green' ? 'var(--sgbus-green)' : 
@@ -1309,13 +1300,31 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   border: '1px solid rgba(249, 251, 252, 0.1)'
                 }}
               >
-                <div className="flex items-center justify-between p-4 border-b border-opacity-10" style={{ borderColor: 'var(--seasalt)' }}>
+                <div className="flex items-center justify-between px-4 py-3 border-b border-opacity-10" style={{ borderColor: 'var(--seasalt)' }}>
                   <h3 className="text-sm font-medium" style={{ color: 'var(--seasalt)' }}>
                     ANÁLISES DE IA
                   </h3>
-                  <span className="text-xs" style={{ color: 'var(--periwinkle)' }}>
-                    {analysisHistory.length} análises
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs" style={{ color: 'var(--periwinkle)' }}>
+                      {analysisHistory.length} análises
+                    </span>
+                    
+                    {/* Botão Tutorial */}
+                    <button
+                      onClick={() => setIsTutorialOpen(true)}
+                      aria-label="Abrir tutorial"
+                      className="w-[18px] h-[18px] rounded-full transition-all duration-200 inline-flex items-center justify-center hover:scale-110 focus-visible:outline-2 focus-visible:outline-[color:var(--periwinkle)] focus-visible:outline-offset-2"
+                      style={{
+                        backgroundColor: 'rgba(207, 198, 254, 0.1)',
+                        color: 'var(--periwinkle)',
+                        border: '1px solid rgba(207, 198, 254, 0.3)'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(207, 198, 254, 0.2)'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(207, 198, 254, 0.1)'}
+                    >
+                      <HelpCircle size={16} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex-1 p-2 overflow-y-auto space-y-4">
@@ -1330,7 +1339,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   {analysisHistory.map((analysis) => (
                     <div
                       key={analysis.id}
-                      className="p-3 rounded-lg border"
+                      className="p-2 rounded-lg border"
                       style={{ 
                         backgroundColor: 'rgba(249, 251, 252, 0.05)',
                         borderColor: 'rgba(249, 251, 252, 0.1)'
