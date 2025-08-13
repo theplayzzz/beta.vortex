@@ -1,5 +1,4 @@
 ---
-description: Use esta regra sempre que a tarefa envolver decisões sobre cores, estilos visuais, temas, criação ou alteração de componentes de interface, ou qualquer ajuste visual. Aplique para todos os componentes UI, forms, layouts e elementos interativos usando Tailwind CSS e tecnologias do projeto.
 alwaysApply: false
 ---
 # Regras de Design Moderno - Sistema Tailwind CSS v3

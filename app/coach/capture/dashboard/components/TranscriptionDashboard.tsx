@@ -672,13 +672,12 @@ export default function TranscriptionDashboard() {
               {/* Idioma */}
               <div style={{ position: 'relative' }}>
                 <label style={{
-                  display: 'block',
+                  display: 'flex',
                   fontSize: '0.875rem',
                   fontWeight: '500',
                   color: designColors.foreground,
                   letterSpacing: '-0.025em',
                   marginBottom: '0.5rem',
-                  display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem'
                 }}>
@@ -761,13 +760,12 @@ export default function TranscriptionDashboard() {
               {/* Tipo de Sessão */}
               <div style={{ position: 'relative' }}>
                 <label style={{
-                  display: 'block',
+                  display: 'flex',
                   fontSize: '0.875rem',
                   fontWeight: '500',
                   color: designColors.foreground,
                   letterSpacing: '-0.025em',
                   marginBottom: '0.5rem',
-                  display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem'
                 }}>

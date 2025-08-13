@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useDailyTranscription } from '../lib/useDailyTranscription';
-import { Mic, MicOff, MonitorSpeaker } from 'lucide-react';
+import { Play, Square, Mic, MicOff, ScreenShare, Trash2 } from 'lucide-react';
 import TutorialModal from './TutorialModal';
 import { useFirstVisit } from '../lib/useFirstVisit';
 
@@ -95,7 +95,6 @@ const DailyTranscriptionDisplay: React.FC = () => {
     speakerStats, // NOVO: Estatísticas de speakers
     startListening,
     stopListening,
-    clearTranscript,
     forceFinalize,
     pauseListening,
     resumeListening,
@@ -980,66 +979,89 @@ const DailyTranscriptionDisplay: React.FC = () => {
                 </button>
               </div>
 
-              {/* Layout Reorganizado */}
-              <div className="space-y-3">
-                {/* Primeira linha - Controles principais */}
-                <div className="flex space-x-2">
-                  <button
-                    onClick={isListening ? stopListening : startListening}
-                    disabled={false}
-                    className="flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50"
-                    style={{
-                      backgroundColor: isListening ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 233, 76, 0.2)',
-                      color: isListening ? '#ef4444' : 'var(--sgbus-green)',
-                      border: isListening ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(107, 233, 76, 0.3)'
-                    }}
-                  >
-                    {isListening ? '⏹️ PARAR' : '🎙️ INICIAR'}
-                  </button>
-                  
-                  <button
-                    onClick={clearTranscriptionHistory}
-                    disabled={blocks.length === 0}
-                    className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{
-                      backgroundColor: 'rgba(207, 198, 254, 0.2)',
-                      color: 'var(--periwinkle)',
-                      border: '1px solid rgba(207, 198, 254, 0.3)'
-                    }}
-                    title="Limpar histórico de transcrição"
-                  >
-                    🗑️
-                  </button>
-                </div>
-                
-                {/* Segunda linha - Controles de áudio */}
-                <div className="flex w-full gap-2">
-                  {/* Botão do Microfone */}
-                  <button 
-                    onClick={toggleMicrophone}
-                    className="flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 flex items-center justify-center gap-1"
-                    style={isMicrophoneEnabled ? 
-                      { backgroundColor: 'rgba(74, 222, 128, 0.2)', color: 'rgb(34, 197, 94)', border: '1px solid rgba(74, 222, 128, 0.3)' } :
-                      { backgroundColor: 'rgba(239, 68, 68, 0.2)', color: 'rgb(239, 68, 68)', border: '1px solid rgba(239, 68, 68, 0.3)' }
-                    }
-                  >
-                    {isMicrophoneEnabled ? <Mic size={14} /> : <MicOff size={14} />}
-                    <span>{isMicrophoneEnabled ? 'MIC' : 'MIC'}</span>
-                  </button>
+              {/* Layout em linha única */}
+              <div className="flex items-center gap-2 flex-nowrap overflow-x-auto">
+                {/* Botão Primário - CONECTAR */}
+                <button
+                  onClick={isListening ? stopListening : startListening}
+                  disabled={false}
+                  className="flex-none min-w-[10rem] h-10 px-4 rounded-lg text-sm font-medium transition-all duration-200 inline-flex items-center justify-center gap-2 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50"
+                  style={{
+                    backgroundColor: isListening ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 233, 76, 0.2)',
+                    color: isListening ? '#ef4444' : 'var(--sgbus-green)',
+                    border: isListening ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(107, 233, 76, 0.3)'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
+                  onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                >
+                  {isListening ? <Square size={20} /> : <Play size={20} />}
+                  <span>{isListening ? 'DESCONECTAR' : 'CONECTAR'}</span>
+                </button>
 
-                  {/* Botão de Áudio da Tela */}
-                  <button 
-                    onClick={toggleScreenAudio}
-                    className="flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 flex items-center justify-center gap-1"
-                    style={isScreenAudioEnabled ? 
-                      { backgroundColor: 'rgba(74, 222, 128, 0.2)', color: 'rgb(34, 197, 94)', border: '1px solid rgba(74, 222, 128, 0.3)' } :
-                      { backgroundColor: 'rgba(239, 68, 68, 0.2)', color: 'rgb(239, 68, 68)', border: '1px solid rgba(239, 68, 68, 0.3)' }
-                    }
-                  >
-                    <MonitorSpeaker size={14} />
-                    <span>TELA</span>
-                  </button>
-                </div>
+                {/* Toggle MIC */}
+                <button
+                  onClick={toggleMicrophone}
+                  className="flex-none min-w-[6rem] h-10 px-3 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
+                  style={{
+                    backgroundColor: isMicrophoneEnabled ? 'var(--sgbus-green)' : 'rgba(239, 68, 68, 0.2)',
+                    color: isMicrophoneEnabled ? 'var(--night)' : '#ef4444',
+                    border: isMicrophoneEnabled ? 'none' : '1px solid rgba(239, 68, 68, 0.3)'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
+                  onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                >
+                  {isMicrophoneEnabled ? <Mic size={16} /> : <MicOff size={16} />}
+                  <span>MIC</span>
+                </button>
+
+                {/* Toggle TELA (áudio) */}
+                <button
+                  onClick={toggleScreenAudio}
+                  className="flex-none min-w-[6rem] h-10 px-3 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
+                  style={{
+                    backgroundColor: isScreenAudioEnabled ? 'var(--sgbus-green)' : 'rgba(239, 68, 68, 0.2)',
+                    color: isScreenAudioEnabled ? 'var(--night)' : '#ef4444',
+                    border: isScreenAudioEnabled ? 'none' : '1px solid rgba(239, 68, 68, 0.3)'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
+                  onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                >
+                  {isScreenAudioEnabled ? <Mic size={16} /> : <MicOff size={16} />}
+                  <span>TELA</span>
+                </button>
+
+                {/* Botão Secundário - Compartilhar Tela */}
+                <button
+                  onClick={manageScreenMirror}
+                  aria-label="Compartilhar tela"
+                  className="flex-none w-10 h-10 rounded-lg transition-all duration-200 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
+                  style={{
+                    border: '1px solid var(--periwinkle)',
+                    color: 'var(--periwinkle)',
+                    backgroundColor: 'transparent'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
+                  onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                >
+                  <ScreenShare size={16} />
+                </button>
+
+                {/* Botão Secundário - Lixeira */}
+                <button
+                  onClick={clearTranscriptionHistory}
+                  disabled={blocks.length === 0}
+                  aria-label="Limpar histórico de transcrição"
+                  className="flex-none w-10 h-10 rounded-lg transition-all duration-200 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    border: '1px solid var(--periwinkle)',
+                    color: 'var(--periwinkle)',
+                    backgroundColor: 'transparent'
+                  }}
+                  onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
+                  onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
 
             </div>
@@ -1199,7 +1221,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   {!transcript && !interimTranscript && !isListening && (
                     <div className="text-center py-12">
                       <p className="text-lg mb-2" style={{ color: 'var(--periwinkle)' }}>
-                        🎙️ Pressione &quot;INICIAR&quot; para começar a transcrição
+                        🎙️ Pressione &quot;CONECTAR&quot; para começar a transcrição
                       </p>
                       <p className="text-sm opacity-70" style={{ color: 'var(--seasalt)' }}>
                         Sistema capturará áudio do microfone e da tela
