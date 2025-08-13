@@ -950,7 +950,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
             {/* PARTE SUPERIOR - Controles Reorganizados - RESPONSIVO */}
             <div 
               ref={controlsContainerRef}
-              className="p-4 rounded-xl"
+              className="p-2 rounded-xl"
               style={{ 
                 backgroundColor: 'var(--eerie-black)', 
                 border: '1px solid rgba(249, 251, 252, 0.1)'
@@ -1054,27 +1054,27 @@ const DailyTranscriptionDisplay: React.FC = () => {
                 }}
               >
                 {/* Header da transcrição */}
-                <div className="flex items-center justify-between p-4 border-b border-opacity-10" style={{ borderColor: 'var(--seasalt)' }}>
+                <div className="flex items-center justify-between px-4 py-[6px] border-b border-opacity-10" style={{ borderColor: 'var(--seasalt)' }}>
                   <div className="flex items-center space-x-3">
-                    <h3 className="text-sm font-medium" style={{ color: 'var(--seasalt)' }}>
+                    <h3 className="text-[0.656rem] font-medium" style={{ color: 'var(--seasalt)' }}>
                       TRANSCRIÇÃO DUAL STREAM
                     </h3>
                     {diarizationEnabled && (
                       <div className="flex items-center space-x-1">
                         <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--sgbus-green)' }}></div>
-                        <span className="text-xs" style={{ color: 'var(--sgbus-green)' }}>DIARIZAÇÃO</span>
+                        <span className="text-[0.563rem]" style={{ color: 'var(--sgbus-green)' }}>DIARIZAÇÃO</span>
                       </div>
                     )}
                     {trackInfo.audioTrackActive && (
                       <div className="flex items-center space-x-1">
                         <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--periwinkle)' }}></div>
-                        <span className="text-xs" style={{ color: 'var(--periwinkle)' }}>MIC</span>
+                        <span className="text-[0.563rem]" style={{ color: 'var(--periwinkle)' }}>MIC</span>
                       </div>
                     )}
                     {trackInfo.screenAudioTrackActive && (
                       <div className="flex items-center space-x-1">
                         <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--sgbus-green)' }}></div>
-                        <span className="text-xs" style={{ color: 'var(--sgbus-green)' }}>TELA</span>
+                        <span className="text-[0.563rem]" style={{ color: 'var(--sgbus-green)' }}>TELA</span>
                       </div>
                     )}
                   </div>
@@ -1098,7 +1098,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                 {/* Conteúdo da transcrição */}
                 <div 
                   ref={scrollContainerRef}
-                  className="flex-1 p-4 overflow-y-auto"
+                  className="flex-1 p-2 overflow-y-auto"
                   style={{ 
                     scrollBehavior: 'smooth',
                     scrollbarWidth: 'thin'
@@ -1291,7 +1291,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="flex-1 p-4 overflow-y-auto space-y-4">
+                <div className="flex-1 p-2 overflow-y-auto space-y-4">
                   {analysisHistory.length === 0 && (
                     <div className="text-center py-12">
                       <p className="text-sm opacity-70" style={{ color: 'var(--seasalt)' }}>
