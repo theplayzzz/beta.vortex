@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function DailyCoCapturePage() {
   return (
-    <main className="min-h-screen" style={{ backgroundColor: 'var(--raisin-black)' }}>
+    <main className="h-full min-h-0" style={{ backgroundColor: 'var(--raisin-black)' }}>
       <DailyTranscriptionDisplay />
     </main>
   );

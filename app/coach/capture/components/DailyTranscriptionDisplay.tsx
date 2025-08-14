@@ -138,6 +138,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
 
   // Refs e estados para controle do scroll automático (mantidos idênticos)
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const analysisScrollRef = useRef<HTMLDivElement>(null);
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -343,10 +344,18 @@ const DailyTranscriptionDisplay: React.FC = () => {
     if (!container) return;
 
     let scrollTimer: NodeJS.Timeout;
+    let scrollbarFadeTimer: NodeJS.Timeout;
 
     const handleScrollStart = () => {
       setIsUserScrolling(true);
       clearTimeout(scrollTimer);
+      
+      // Mostrar scrollbar enquanto rola
+      container.classList.add('scrolling');
+      clearTimeout(scrollbarFadeTimer);
+      scrollbarFadeTimer = setTimeout(() => {
+        container.classList.remove('scrolling');
+      }, 600);
       
       scrollTimer = setTimeout(() => {
         setIsUserScrolling(false);
@@ -363,8 +372,30 @@ const DailyTranscriptionDisplay: React.FC = () => {
       container.removeEventListener('scroll', handleScrollStart);
       container.removeEventListener('scroll', handleScroll);
       clearTimeout(scrollTimer);
+      clearTimeout(scrollbarFadeTimer);
     };
   }, [handleScroll, isAtBottom]);
+
+  // Scrollbar sutil para o painel de análises (direita)
+  useEffect(() => {
+    const container = analysisScrollRef.current;
+    if (!container) return;
+
+    let scrollbarFadeTimer: NodeJS.Timeout;
+    const handleAnyScroll = () => {
+      container.classList.add('scrolling');
+      clearTimeout(scrollbarFadeTimer);
+      scrollbarFadeTimer = setTimeout(() => {
+        container.classList.remove('scrolling');
+      }, 600);
+    };
+
+    container.addEventListener('scroll', handleAnyScroll);
+    return () => {
+      container.removeEventListener('scroll', handleAnyScroll);
+      clearTimeout(scrollbarFadeTimer);
+    };
+  }, []);
 
   // Mirror state control based on session status
   useEffect(() => {
@@ -960,12 +991,12 @@ const DailyTranscriptionDisplay: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen pt-[18px] px-6 pb-6">
-      <div className="max-w-7xl mx-auto h-[calc(100vh-3rem)]">
+    <div className="h-full min-h-0 pt-[18px] px-6 pb-6">
+      <div className="max-w-7xl mx-auto h-full">
         <div className="grid grid-cols-1 sm:grid-cols-[1.25fr_0.9fr] gap-3 h-full">
           
           {/* COLUNA ESQUERDA - Controles e Transcrição */}
-          <div className="flex flex-col space-y-3">
+          <div className="flex flex-col space-y-3 h-full min-h-0">
             
             {/* PARTE SUPERIOR - Controles Reorganizados - RESPONSIVO */}
             <div 
@@ -1099,8 +1130,8 @@ const DailyTranscriptionDisplay: React.FC = () => {
 
             {/* ÁREA DE TRANSCRIÇÃO - EXPANSÍVEL */}
             <div className="flex-1 flex flex-col min-h-0">
-              <div 
-                className="flex-1 flex flex-col rounded-xl overflow-hidden"
+            <div 
+                className="flex-1 flex flex-col rounded-xl overflow-hidden min-h-0"
                 style={{ 
                   backgroundColor: 'var(--eerie-black)', 
                   border: '1px solid rgba(249, 251, 252, 0.1)'
@@ -1109,10 +1140,9 @@ const DailyTranscriptionDisplay: React.FC = () => {
                 {/* Conteúdo da transcrição */}
                 <div 
                   ref={scrollContainerRef}
-                  className="flex-1 pt-2 px-2 pb-2 overflow-y-auto relative"
+                  className="flex-1 pt-2 px-2 pb-2 overflow-y-auto relative thin-scrollbar"
                   style={{ 
-                    scrollBehavior: 'smooth',
-                    scrollbarWidth: 'thin'
+                    scrollBehavior: 'smooth'
                   }}
                 >
                   {/* Floating scroll button */}
@@ -1250,12 +1280,12 @@ const DailyTranscriptionDisplay: React.FC = () => {
           </div>
 
           {/* COLUNA DIREITA - Histórico de Análises */}
-          <div className="flex flex-col">
+          <div className="flex flex-col h-full min-h-0">
             
             {/* HISTÓRICO DE ANÁLISES - EXPANSÍVEL */}
             <div className="flex-1 flex flex-col min-h-0 h-full">
               <div 
-                className="flex-1 flex flex-col rounded-xl overflow-hidden"
+                className="flex-1 flex flex-col rounded-xl overflow-hidden min-h-0"
                 style={{ 
                   backgroundColor: 'var(--eerie-black)', 
                   border: '1px solid rgba(249, 251, 252, 0.1)'
@@ -1288,7 +1318,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex-1 p-2 overflow-y-auto space-y-4">
+                <div ref={analysisScrollRef} className="flex-1 p-2 overflow-y-auto space-y-4 thin-scrollbar">
                   {analysisHistory.length === 0 && (
                     <div className="text-center pt-4 pb-8">
                       <p className="text-sm opacity-70" style={{ color: 'var(--seasalt)' }}>
