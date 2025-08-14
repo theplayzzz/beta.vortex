@@ -23,8 +23,6 @@ export function TranscriptionTest() {
     startListening,
     stopListening,
     clearTranscript,
-    forceSourceDetection, // NOVO: Forçar fonte específica
-    toggleForcedSource // NOVO: Alternar fonte forçada
   } = useDailyTranscription({ language: 'pt-BR' });
 
   const [eventLog, setEventLog] = useState<string[]>([]);
@@ -171,38 +169,6 @@ export function TranscriptionTest() {
           Limpar
         </button>
         
-        {/* NOVOS: Botões de Debug para Fonte */}
-        <button
-          onClick={toggleForcedSource}
-          className="px-3 py-2 bg-purple-500 text-white rounded text-sm"
-          title="Alternar fonte forçada: Auto → Tela → Microfone → Auto"
-        >
-          🎯 Toggle
-        </button>
-        
-        <button
-          onClick={() => forceSourceDetection('screen')}
-          className="px-3 py-2 bg-green-500 text-white rounded text-sm"
-          title="Forçar tudo como áudio da tela"
-        >
-          🖥️ Tela
-        </button>
-        
-        <button
-          onClick={() => forceSourceDetection('microphone')}
-          className="px-3 py-2 bg-blue-500 text-white rounded text-sm"
-          title="Forçar tudo como microfone"
-        >
-          🎤 Mic
-        </button>
-        
-        <button
-          onClick={() => forceSourceDetection(null)}
-          className="px-3 py-2 bg-orange-500 text-white rounded text-sm"
-          title="Voltar para detecção automática"
-        >
-          🔄 Auto
-        </button>
       </div>
 
       {/* Status */}

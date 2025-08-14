@@ -365,3 +365,53 @@ button[style*="zIndex: 10000"]:hover {
 
 /* Import dos estilos específicos para propostas */
 @import '../styles/proposal-content.css';
+
+/* Scrollbar sutil e fino, invisível até hover/focus/active */
+.thin-scrollbar {
+  /* Firefox */
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+}
+
+.thin-scrollbar:hover,
+.thin-scrollbar:focus,
+.thin-scrollbar:active,
+.thin-scrollbar.scrolling {
+  scrollbar-width: thin;
+  /* thumb color + track color */
+  scrollbar-color: rgba(207, 198, 254, 0.5) transparent;
+}
+
+/* WebKit (Chrome, Edge, Safari) */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+
+.thin-scrollbar:hover::-webkit-scrollbar,
+.thin-scrollbar:focus::-webkit-scrollbar,
+.thin-scrollbar:active::-webkit-scrollbar,
+.thin-scrollbar.scrolling::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 6px;
+}
+
+.thin-scrollbar:hover::-webkit-scrollbar-thumb,
+.thin-scrollbar:focus::-webkit-scrollbar-thumb,
+.thin-scrollbar:active::-webkit-scrollbar-thumb,
+.thin-scrollbar.scrolling::-webkit-scrollbar-thumb {
+  background: rgba(207, 198, 254, 0.45); /* periwinkle sutil */
+}
+
+.thin-scrollbar:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(207, 198, 254, 0.65);
+}

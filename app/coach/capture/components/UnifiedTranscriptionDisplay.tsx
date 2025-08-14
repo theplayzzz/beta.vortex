@@ -35,9 +35,9 @@ export function UnifiedTranscriptionDisplay({
   }, [transcript])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Status do Sistema */}
-      <div className="bg-gray-900 rounded-lg p-4">
+      <div className="bg-gray-900 rounded-lg p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-white flex items-center">
             <div className="w-5 h-5 rounded-full mr-2 flex items-center justify-center bg-blue-500">
@@ -128,7 +128,7 @@ export function UnifiedTranscriptionDisplay({
       </div>
 
       {/* Área de Transcrição */}
-      <div className="space-y-4">
+      <div className="space-y-5">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-white">Transcrição Combinada</h3>
           <div className="text-sm text-gray-400">
@@ -178,7 +178,7 @@ export function UnifiedTranscriptionDisplay({
       </div>
 
       {/* Informações técnicas */}
-      <div className="bg-gray-800 rounded-lg p-4">
+      <div className="bg-gray-800 rounded-lg p-5">
         <h4 className="text-sm font-semibold text-gray-300 mb-2">Como Funciona:</h4>
         <div className="space-y-1 text-xs text-gray-400">
           <p>• <strong className="text-blue-300">Microfone:</strong> Captura sua voz via getUserMedia()</p>
