@@ -138,7 +138,6 @@ const DailyTranscriptionDisplay: React.FC = () => {
 
   // Refs e estados para controle do scroll automático (mantidos idênticos)
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const analysisScrollRef = useRef<HTMLDivElement>(null);
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -344,18 +343,10 @@ const DailyTranscriptionDisplay: React.FC = () => {
     if (!container) return;
 
     let scrollTimer: NodeJS.Timeout;
-    let scrollbarFadeTimer: NodeJS.Timeout;
 
     const handleScrollStart = () => {
       setIsUserScrolling(true);
       clearTimeout(scrollTimer);
-      
-      // Mostrar scrollbar enquanto rola
-      container.classList.add('scrolling');
-      clearTimeout(scrollbarFadeTimer);
-      scrollbarFadeTimer = setTimeout(() => {
-        container.classList.remove('scrolling');
-      }, 600);
       
       scrollTimer = setTimeout(() => {
         setIsUserScrolling(false);
@@ -372,30 +363,8 @@ const DailyTranscriptionDisplay: React.FC = () => {
       container.removeEventListener('scroll', handleScrollStart);
       container.removeEventListener('scroll', handleScroll);
       clearTimeout(scrollTimer);
-      clearTimeout(scrollbarFadeTimer);
     };
   }, [handleScroll, isAtBottom]);
-
-  // Scrollbar sutil para o painel de análises (direita)
-  useEffect(() => {
-    const container = analysisScrollRef.current;
-    if (!container) return;
-
-    let scrollbarFadeTimer: NodeJS.Timeout;
-    const handleAnyScroll = () => {
-      container.classList.add('scrolling');
-      clearTimeout(scrollbarFadeTimer);
-      scrollbarFadeTimer = setTimeout(() => {
-        container.classList.remove('scrolling');
-      }, 600);
-    };
-
-    container.addEventListener('scroll', handleAnyScroll);
-    return () => {
-      container.removeEventListener('scroll', handleAnyScroll);
-      clearTimeout(scrollbarFadeTimer);
-    };
-  }, []);
 
   // Mirror state control based on session status
   useEffect(() => {
@@ -877,8 +846,14 @@ const DailyTranscriptionDisplay: React.FC = () => {
 
   // Mirror container render function
   const renderMirrorContainer = () => {
+    // Calcular dimensões do container apenas para estados não-active (placeholders)
+    const dimensions = mirrorState !== 'active' ? getResponsiveMirrorDimensions(
+      videoDimensions?.width, 
+      videoDimensions?.height
+    ) : null;
     
     const containerStyle = {
+      marginBottom: '10px',
       borderRadius: '8px',
       display: 'flex',
       alignItems: 'center',
@@ -991,12 +966,12 @@ const DailyTranscriptionDisplay: React.FC = () => {
 
 
   return (
-    <div className="h-full min-h-0 pt-[18px] px-6 pb-6">
-      <div className="max-w-7xl mx-auto h-full">
+    <div className="min-h-screen pt-[18px] px-6 pb-6">
+      <div className="max-w-7xl mx-auto h-[calc(100vh-3rem)]">
         <div className="grid grid-cols-1 sm:grid-cols-[1.25fr_0.9fr] gap-3 h-full">
           
           {/* COLUNA ESQUERDA - Controles e Transcrição */}
-          <div className="flex flex-col space-y-3 h-full min-h-0">
+          <div className="flex flex-col space-y-3">
             
             {/* PARTE SUPERIOR - Controles Reorganizados - RESPONSIVO */}
             <div 
@@ -1008,25 +983,23 @@ const DailyTranscriptionDisplay: React.FC = () => {
               }}
             >
 
-              {/* Layout: Video ao lado dos controles */}
-              <div className="flex gap-3 items-start h-full">
-                {/* Mirror Container - Video */}
-                <div className="flex-1 min-w-0">
-                  {renderMirrorContainer()}
-                </div>
+              {/* Mirror Container */}
+              {renderMirrorContainer()}
+              
 
-                {/* Controles Verticais */}
-                <div className="flex flex-col gap-2 min-w-[120px] sm:min-w-[140px] flex-shrink-0 h-full">
+              {/* Layout responsivo - linha única em desktop, dupla em mobile */}
+              <div className="space-y-2 sm:space-y-0">
+                {/* Primeira linha - Controles principais */}
+                <div className="flex items-center gap-2 flex-nowrap">
                   {/* Botão Primário - CONECTAR */}
                   <button
                     onClick={isListening ? stopListening : startListening}
                     disabled={false}
-                    className="flex-none w-full h-[34px] px-2 sm:px-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 sm:gap-2 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50"
+                    className="flex-none min-w-[6rem] sm:min-w-[8.5rem] h-[34px] px-2 sm:px-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 sm:gap-2 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50"
                     style={{
                       backgroundColor: isListening ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 233, 76, 0.2)',
                       color: isListening ? '#ef4444' : 'var(--sgbus-green)',
-                      border: isListening ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(107, 233, 76, 0.3)',
-                      width: '140px' // Largura fixa para não mudar de tamanho
+                      border: isListening ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(107, 233, 76, 0.3)'
                     }}
                     onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
                     onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
@@ -1038,7 +1011,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   {/* Toggle MIC */}
                   <button
                     onClick={toggleMicrophone}
-                    className="flex-none w-full h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
+                    className="flex-none min-w-[4rem] sm:min-w-[5rem] h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
                     style={{
                       backgroundColor: isMicrophoneEnabled ? 'var(--sgbus-green)' : 'rgba(239, 68, 68, 0.2)',
                       color: isMicrophoneEnabled ? 'var(--night)' : '#ef4444',
@@ -1054,7 +1027,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   {/* Toggle TELA (áudio) */}
                   <button
                     onClick={toggleScreenAudio}
-                    className="flex-none w-full h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
+                    className="flex-none min-w-[4rem] sm:min-w-[5rem] h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
                     style={{
                       backgroundColor: isScreenAudioEnabled ? 'var(--sgbus-green)' : 'rgba(239, 68, 68, 0.2)',
                       color: isScreenAudioEnabled ? 'var(--night)' : '#ef4444',
@@ -1083,17 +1056,14 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     <ScreenShare size={16} />
                   </button>
 
-                  {/* Espaçador para empurrar botões para baixo */}
-                  <div className="flex-1"></div>
-
-                  {/* Linha dos botões secundários - ANÁLISE e LIXEIRA */}
-                  <div className="flex items-center gap-1 w-full">
+                  {/* Botões direita em desktop */}
+                  <div className="hidden sm:flex items-center gap-1 ml-auto">
                     {/* Botão Secundário - Analisar */}
                     <button
                       onClick={handleAnalyze}
                       disabled={isAnalyzing || (blocks.length === 0 && !interimTranscript.trim())}
                       aria-label="Analisar transcrição (Tecla: Espaço)"
-                      className="flex-1 h-[34px] px-2 rounded-lg transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
+                      className="flex-none min-w-[5rem] h-[34px] px-2 rounded-lg transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
                       style={{
                         backgroundColor: isAnalyzing ? 'rgba(107, 233, 76, 0.2)' : 'rgba(107, 233, 76, 0.1)',
                         color: 'var(--sgbus-green)',
@@ -1124,14 +1094,52 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     </button>
                   </div>
                 </div>
+
+                {/* Segunda linha - Botões de ação em mobile */}
+                <div className="flex sm:hidden items-center justify-end gap-1">
+                  {/* Botão Secundário - Analisar */}
+                  <button
+                    onClick={handleAnalyze}
+                    disabled={isAnalyzing || (blocks.length === 0 && !interimTranscript.trim())}
+                    aria-label="Analisar transcrição"
+                    className="flex-none min-w-[5rem] h-[34px] px-2 rounded-lg transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
+                    style={{
+                      backgroundColor: isAnalyzing ? 'rgba(107, 233, 76, 0.2)' : 'rgba(107, 233, 76, 0.1)',
+                      color: 'var(--sgbus-green)',
+                      border: '1px solid rgba(107, 233, 76, 0.3)'
+                    }}
+                    onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
+                    onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                  >
+                    <Brain size={16} />
+                    <span>ANÁLISE</span>
+                  </button>
+
+                  {/* Botão Secundário - Lixeira */}
+                  <button
+                    onClick={clearTranscriptionHistory}
+                    disabled={blocks.length === 0}
+                    aria-label="Limpar histórico de transcrição"
+                    className="flex-none w-[34px] h-[34px] rounded-lg transition-all duration-200 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      border: '1px solid var(--periwinkle)',
+                      color: 'var(--periwinkle)',
+                      backgroundColor: 'transparent'
+                    }}
+                    onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
+                    onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
 
             </div>
 
             {/* ÁREA DE TRANSCRIÇÃO - EXPANSÍVEL */}
             <div className="flex-1 flex flex-col min-h-0">
-            <div 
-                className="flex-1 flex flex-col rounded-xl overflow-hidden min-h-0"
+              <div 
+                className="flex-1 flex flex-col rounded-xl overflow-hidden"
                 style={{ 
                   backgroundColor: 'var(--eerie-black)', 
                   border: '1px solid rgba(249, 251, 252, 0.1)'
@@ -1140,9 +1148,10 @@ const DailyTranscriptionDisplay: React.FC = () => {
                 {/* Conteúdo da transcrição */}
                 <div 
                   ref={scrollContainerRef}
-                  className="flex-1 pt-2 px-2 pb-2 overflow-y-auto relative thin-scrollbar"
+                  className="flex-1 pt-2 px-2 pb-2 overflow-y-auto relative"
                   style={{ 
-                    scrollBehavior: 'smooth'
+                    scrollBehavior: 'smooth',
+                    scrollbarWidth: 'thin'
                   }}
                 >
                   {/* Floating scroll button */}
@@ -1280,12 +1289,12 @@ const DailyTranscriptionDisplay: React.FC = () => {
           </div>
 
           {/* COLUNA DIREITA - Histórico de Análises */}
-          <div className="flex flex-col h-full min-h-0">
+          <div className="flex flex-col">
             
             {/* HISTÓRICO DE ANÁLISES - EXPANSÍVEL */}
             <div className="flex-1 flex flex-col min-h-0 h-full">
               <div 
-                className="flex-1 flex flex-col rounded-xl overflow-hidden min-h-0"
+                className="flex-1 flex flex-col rounded-xl overflow-hidden"
                 style={{ 
                   backgroundColor: 'var(--eerie-black)', 
                   border: '1px solid rgba(249, 251, 252, 0.1)'
@@ -1318,7 +1327,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   </div>
                 </div>
 
-                <div ref={analysisScrollRef} className="flex-1 p-2 overflow-y-auto space-y-4 thin-scrollbar">
+                <div className="flex-1 p-2 overflow-y-auto space-y-4">
                   {analysisHistory.length === 0 && (
                     <div className="text-center pt-4 pb-8">
                       <p className="text-sm opacity-70" style={{ color: 'var(--seasalt)' }}>

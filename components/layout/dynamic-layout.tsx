@@ -18,10 +18,10 @@ export default function DynamicLayout({ children }: DynamicLayoutProps) {
   if (!isLoaded) {
     return (
       <SidebarProvider>
-        <div className="flex h-screen overflow-hidden bg-background">
+        <div className="flex h-dvh overflow-hidden bg-background">
           <TopHeader />
-          <main className="flex-1 flex flex-col" style={{ paddingTop: "70px" }}>
-            <div className="flex-1 overflow-auto">
+          <main className="flex-1 flex flex-col min-h-0" style={{ paddingTop: "70px" }}>
+            <div className="flex-1 overflow-auto min-h-0">
               {children}
             </div>
           </main>
@@ -34,12 +34,12 @@ export default function DynamicLayout({ children }: DynamicLayoutProps) {
   if (isSignedIn) {
     return (
       <SidebarProvider>
-        <div className="flex h-screen overflow-hidden bg-background">
+        <div className="flex h-dvh overflow-hidden bg-background">
           <TopHeader />
           <Overlay />
           <Sidebar />
-          <main className="flex-1 flex flex-col" style={{ paddingTop: "70px" }}>
-            <div className="flex-1 overflow-auto">
+          <main className="flex-1 flex flex-col min-h-0" style={{ paddingTop: "70px" }}>
+            <div className="flex-1 overflow-auto min-h-0">
               {children}
             </div>
           </main>

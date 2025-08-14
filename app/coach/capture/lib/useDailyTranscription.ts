@@ -14,6 +14,12 @@ interface TranscriptionBlock {
   text: string; // O texto consolidado do bloco
 }
 
+// Interface para callback de mirror events
+export interface MirrorCallbacks {
+  onTrackAvailable?: () => void;
+  onTrackUnavailable?: () => void;
+}
+
 // Interface compatível com Deepgram (mantendo mesma estrutura) + Enhanced Dual Stream
 export interface TranscriptionState {
   transcript: string;
@@ -105,7 +111,7 @@ const checkMediaDevicesSupport = () => {
   return support;
 };
 
-export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
+export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirrorCallbacks?: MirrorCallbacks }) => {
   // Hook para acessar dados do usuário Clerk
   const { user, isLoaded: isUserLoaded } = useUser();
 
@@ -166,8 +172,6 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
   const startTimeRef = useRef<Date | null>(null);
   const audioLevelIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  // NOVO: Ref para forçar fonte específica (debug/teste)
-  const forcedSourceRef = useRef<'screen' | 'microphone' | null>(null);
   
   // Sistema de deduplicação específico para nosso contexto (1 usuário, 2 canais)
   const processedMessagesRef = useRef<Map<string, number>>(new Map());
@@ -180,55 +184,59 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     trackType: 'audio' | 'screenAudio';
     confidence: number;
   } => {
-    console.log('🔬 Analisando dados para detecção de fonte:', {
-      hasTrackType: !!data.track_type,
-      hasSpeakerId: !!(data.speaker_id || data.speaker),
-      hasParticipantId: !!data.participant_id,
-      screenCaptureActive: state.isScreenAudioCaptured,
-      availableDataFields: Object.keys(data),
-      forcedSource: forcedSourceRef.current
+    // CORREÇÃO: Tentar ambos os formatos de campo (trackType e track_type)
+    const trackTypeValue = data.trackType || data.track_type;
+    const speakerIdValue = data.speaker || data.speaker_id;
+    
+    console.log('🔬 Análise otimizada (FASE 1 - CORRIGIDA):', {
+      trackType: trackTypeValue,
+      speakerId: speakerIdValue,
+      availableFields: Object.keys(data),
+      rawTrackType: data.trackType,
+      rawTrack_type: data.track_type
     });
 
-    // 0. PRIMEIRO: Verificar se há fonte forçada (debug/teste)
-    if (forcedSourceRef.current) {
-      console.log('🎯 Usando fonte forçada:', forcedSourceRef.current);
-      return {
-        audioSource: forcedSourceRef.current,
-        trackType: forcedSourceRef.current === 'screen' ? 'screenAudio' : 'audio',
-        confidence: 1.0
+    // 🥇 CAMADA 1: trackType (PRIORIDADE MÁXIMA - CORRIGIDA)
+    if (trackTypeValue) {
+      const sourceMap = {
+        'screen-audio': { audioSource: 'screen' as const, trackType: 'screenAudio' as const },
+        'cam-audio': { audioSource: 'microphone' as const, trackType: 'audio' as const },
+        'screenAudio': { audioSource: 'screen' as const, trackType: 'screenAudio' as const },
+        'audio': { audioSource: 'microphone' as const, trackType: 'audio' as const }
       };
+      
+      const mapping = sourceMap[trackTypeValue as keyof typeof sourceMap];
+      if (mapping) {
+        console.log('✅ Fonte detectada via trackType (CORRIGIDA):', {
+          campo: trackTypeValue,
+          resultado: mapping,
+          confianca: '95%'
+        });
+        return { ...mapping, confidence: 0.95 };
+      }
+      
+      // Fallback para valores desconhecidos mas que contenham informação útil
+      console.log('⚠️ trackType desconhecido:', trackTypeValue);
     }
 
-    // 1. PRIMEIRO: Verificar se há informações diretas de track no evento
-    if (data.track_type) {
-      const trackType = data.track_type as 'audio' | 'screenAudio';
-      console.log('✅ Fonte detectada via track_type:', trackType);
-      return {
-        audioSource: trackType === 'screenAudio' ? 'screen' : 'microphone',
-        trackType,
-        confidence: 0.95
-      };
-    }
-
-    // 2. SEGUNDO: Usar diarização (speaker ID) se disponível
-    if (data.speaker_id || data.speaker) {
-      const speakerId = data.speaker_id || data.speaker;
-      console.log('🎭 Tentando detectar fonte via speaker ID:', speakerId);
+    // 🥈 CAMADA 2: speaker_id (OFICIAL - BACKUP)
+    if (speakerIdValue) {
+      console.log('🎭 Detectando fonte via speaker ID (BACKUP):', speakerIdValue);
       
       // Estratégia: speaker IDs diferentes = fontes diferentes
       // Speaker 0 ou primeiro = microfone, Speaker 1+ = tela
-      const isFirstSpeaker = speakerId === '0' || speakerId === 0 || speakerId === 'speaker_0';
+      const isFirstSpeaker = speakerIdValue === '0' || speakerIdValue === 0 || speakerIdValue === 'speaker_0';
       
       if (state.isScreenAudioCaptured && !isFirstSpeaker) {
         return {
           audioSource: 'screen',
           trackType: 'screenAudio',
-          confidence: 0.8
+          confidence: 0.85
         };
       }
     }
 
-    // 3. TERCEIRO: Análise de tracks se disponível
+    // 🥉 CAMADA 3: tracks analysis (TÉCNICO - BACKUP)
     const localParticipant = participants?.local;
     if (localParticipant?.tracks) {
       const audioTrack = localParticipant.tracks.audio;
@@ -254,14 +262,14 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
         return {
           audioSource: 'screen',
           trackType: 'screenAudio',
-          confidence: 0.9
+          confidence: 0.80
         };
       }
     }
 
-    // 4. QUARTO: Fallback inteligente para dual stream
+    // 🏅 CAMADA 4: content heuristics (Último RECURSO)
     if (state.isScreenAudioCaptured) {
-      console.log('🔄 Usando fallback para dual stream');
+      console.log('🔄 Usando heurísticas de conteúdo (Último recurso)');
       
       // Estratégia baseada em características do texto ou timestamp
       const textLength = data.text?.length || 0;
@@ -540,10 +548,20 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     const trackType = sourceAnalysis.trackType;
     const detectionConfidence = sourceAnalysis.confidence;
     
-    const color: 'green' | 'blue' | 'gray' = 
-      audioSource === 'screen' ? 'green' : 
-      audioSource === 'microphone' ? 'blue' : 'gray';
+    // FASE 2: Estratégia baseada nos logs (Mapeamento Otimizado)
+    const getBlockColor = (audioSource: string, trackType: string) => {
+      if (trackType === "screen-audio") return 'green';  // 🟢 Tela
+      if (trackType === "cam-audio") return 'blue';      // 🔵 Microfone
+      if (trackType === "screenAudio") return 'green';   // 🟢 Tela (formato alternativo)
+      if (trackType === "audio") return 'blue';          // 🔵 Microfone (formato alternativo)
+      if (audioSource === 'screen') return 'green';      // 🟢 Fallback tela
+      if (audioSource === 'microphone') return 'blue';   // 🔵 Fallback mic
+      return 'gray';                                      // ⚫ Desconhecido
+    };
     
+    const color = getBlockColor(audioSource, trackType) as 'green' | 'blue' | 'gray';
+    
+
     console.log('📊 Enhanced Debug Daily.co:', {
       data,
       sourceAnalysis,
@@ -580,52 +598,81 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
       };
       
       if (data.is_final) {
-        // FASE 4: Lógica de Separação - Criando Novos Blocos
+        // FASE 2: Lógica Otimizada de Separação de Blocos
         const lastBlock = prev.blocks[prev.blocks.length - 1];
         let updatedBlocks;
         
-        // Verificações para criação de novo bloco
-        const shouldCreateNewBlock = !lastBlock || 
-                                   lastBlock.source !== audioSource || 
-                                   lastBlock.text.length > 500;
+        // FASE 2: Funções auxiliares para separação inteligente
+        const createNewBlock = (segment: any, blockId: string): TranscriptionBlock => ({
+          id: blockId,
+          text: segment.text,
+          source: segment.audioSource,
+          color: segment.color,
+          startTime: segment.timestamp
+        });
         
-        if (shouldCreateNewBlock) {
+        const shouldCreateNewBlock = (lastBlock: any, newSegment: any) => {
+          if (!lastBlock) return true;
+          
+          // ✅ PRINCIPAL: Nova fonte = novo bloco (OBRIGATÓRIO)
+          if (lastBlock.source !== newSegment.audioSource) {
+            console.log('🔄 CRITÉRIO ATINGIDO: Mudança de fonte:', lastBlock.source, '→', newSegment.audioSource);
+            return true;
+          }
+          
+          // ✅ SECUNDÁRIO: Limite de caracteres = novo bloco (EVITAR BLOCOS GIGANTES)
+          if (lastBlock.text.length > 500) {
+            console.log('📏 CRITÉRIO ATINGIDO: Limite de 500 caracteres:', lastBlock.text.length);
+            return true;
+          }
+          
+          // ❌ REMOVIDO: Pausa longa (estava criando blocos demais)
+          // ❌ REMOVIDO: Novo speaker (muito sensível para mesmo usuário)
+          
+          console.log('✅ CONSOLIDANDO no bloco existente (mesma fonte):', lastBlock.source);
+          return false;
+        };
+        
+        // Aplicar lógica de separação otimizada
+        const shouldCreate = shouldCreateNewBlock(lastBlock, {
+          audioSource,
+          speakerId: newSegment.speakerId,
+          timestamp: newSegment.timestamp
+        });
+        
+        if (shouldCreate) {
           // CONDIÇÃO ATINGIDA: Criar um NOVO bloco
-          const newBlock: TranscriptionBlock = {
-            id: `block-${Date.now()}`,
-            source: audioSource,
-            color: color,
-            startTime: new Date(),
-            text: data.text
-          };
+          const newBlock = createNewBlock({
+            audioSource,
+            color,
+            text: data.text,
+            timestamp: new Date()
+          }, `block-${Date.now()}`);
           updatedBlocks = [...prev.blocks, newBlock];
           
-          // Logs específicos da Fase 4
+          // FASE 2: Logs simplificados
           if (!lastBlock) {
-            console.log('🆕 Criado primeiro bloco:', newBlock);
-          } else if (lastBlock.source !== audioSource) {
-            console.log('🔄 Novo bloco criado - mudança de fonte:', {
-              anterior: lastBlock.source,
-              nova: audioSource,
-              novoBloco: newBlock
-            });
-          } else if (lastBlock.text.length > 500) {
-            console.log('📏 Novo bloco criado - limite de 500 caracteres atingido:', {
-              tamanhoAnterior: lastBlock.text.length,
-              novoBloco: newBlock
+            console.log('🆕 Primeiro bloco criado:', newBlock.id);
+          } else {
+            console.log('🆕 Novo bloco criado (FASE 2):', {
+              id: newBlock.id,
+              fonte: newBlock.source,
+              cor: newBlock.color,
+              motivo: lastBlock.source !== audioSource ? 'mudança de fonte' : 'limite de caracteres'
             });
           }
         } else {
-          // CONDIÇÃO NÃO ATINGIDA: Anexar ao bloco existente
+          // FASE 2: Consolidação inteligente no bloco existente
           const updatedBlock = {
             ...lastBlock,
             text: lastBlock.text + (lastBlock.text ? ' ' : '') + data.text
           };
           updatedBlocks = [...prev.blocks.slice(0, -1), updatedBlock];
-          console.log('📝 Texto anexado ao bloco existente:', {
-            tamanhoAtual: updatedBlock.text.length,
+          console.log('📝 Bloco consolidado (FASE 2):', {
             fonte: updatedBlock.source,
-            bloco: updatedBlock
+            tamanho: updatedBlock.text.length,
+            cor: updatedBlock.color,
+            palavras: updatedBlock.text.split(' ').length
           });
         }
         
@@ -1042,23 +1089,6 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     }));
   }, []);
 
-  // NOVO: Funções para forçar fonte específica (debug/teste)
-  const forceSourceDetection = useCallback((source: 'screen' | 'microphone' | null) => {
-    forcedSourceRef.current = source;
-    console.log(source ? `🎯 Forçando detecção para: ${source}` : '🔄 Voltando para detecção automática');
-  }, []);
-
-  const toggleForcedSource = useCallback(() => {
-    const currentForced = forcedSourceRef.current;
-    if (!currentForced) {
-      forcedSourceRef.current = 'screen';
-    } else if (currentForced === 'screen') {
-      forcedSourceRef.current = 'microphone';
-    } else {
-      forcedSourceRef.current = null; // Voltar para automático
-    }
-    console.log(`🔄 Alternando fonte forçada para: ${forcedSourceRef.current || 'automático'}`);
-  }, []);
 
   // NOVO: Função de limpeza de histórico (preserva texto intermediário)
   const clearTranscriptionHistory = useCallback(() => {
@@ -1185,7 +1215,167 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     }
   }, [updateAvailableDevices]);
 
+  // Função para acessar o screen video track (ISOLADA - não afeta transcrição)
+  const getScreenVideoTrack = useCallback(() => {
+    if (!callObjectRef.current) {
+      console.warn('🚫 Mirror: CallObject não disponível');
+      return null;
+    }
+    
+    try {
+      const participants = callObjectRef.current.participants();
+      const localParticipant = participants?.local;
+      
+      // ✅ VALIDAÇÃO: Verificar se screen share está ativo
+      if (!localParticipant?.tracks?.screenVideo) {
+        console.warn('🚫 Mirror: Screen video track não encontrado');
+        return null;
+      }
+      
+      const screenVideoTrack = localParticipant.tracks.screenVideo;
+      
+      // ✅ SEGURANÇA: Verificar se o track está disponível e ativo
+      // Aceitar estados "sendable" ou "playable" - ambos indicam que o track está funcional
+      if (!screenVideoTrack.track || (screenVideoTrack.state !== 'sendable' && screenVideoTrack.state !== 'playable')) {
+        console.warn('🚫 Mirror: Screen video track não está ativo:', screenVideoTrack.state);
+        return null;
+      }
+      
+      console.log('✅ Mirror: Screen video track encontrado:', {
+        kind: screenVideoTrack.track.kind,
+        enabled: screenVideoTrack.track.enabled,
+        readyState: screenVideoTrack.track.readyState,
+        state: screenVideoTrack.state
+      });
+      
+      // ✅ GARANTIA: Retorna APENAS o track de vídeo da tela compartilhada
+      return screenVideoTrack.track;
+      
+    } catch (error) {
+      console.error('❌ Mirror: Erro ao acessar screen video track:', error);
+      return null;
+    }
+  }, []);
 
+  // Função para criar elemento de vídeo mirror com dimensões responsivas
+  const createScreenMirror = useCallback((videoTrack: MediaStreamTrack) => {
+    // Detectar tamanho da tela para responsividade
+    const screenWidth = window.innerWidth;
+    let mirrorWidth, mirrorHeight;
+    
+    if (screenWidth > 1200) {
+      mirrorWidth = 400;
+      mirrorHeight = 225;
+    } else if (screenWidth > 768) {
+      mirrorWidth = 320;
+      mirrorHeight = 180;
+    } else {
+      mirrorWidth = 280;
+      mirrorHeight = 158;
+    }
+    
+    // Criar elemento de vídeo
+    const videoElement = document.createElement('video');
+    videoElement.id = 'screen-mirror-video';
+    videoElement.srcObject = new MediaStream([videoTrack]);
+    videoElement.autoplay = true;
+    videoElement.muted = true;
+    videoElement.playsInline = true;
+    
+    // Aplicar estilos responsivos
+    videoElement.style.cssText = `
+      width: 100%;
+      height: auto;
+      max-width: ${mirrorWidth}px;
+      max-height: ${mirrorHeight}px;
+      border-radius: 8px;
+      background-color: var(--eerie-black, #171818);
+      object-fit: contain;
+      transition: all 0.3s ease;
+    `;
+    
+    console.log('✅ Mirror: Elemento de vídeo criado:', { width: mirrorWidth, height: mirrorHeight });
+    return videoElement;
+  }, []);
+
+  // Função para gerenciar mirror (isolada das outras funcionalidades)
+  const manageScreenMirror = useCallback(() => {
+    const videoTrack = getScreenVideoTrack();
+    
+    if (videoTrack && state.isScreenAudioCaptured) {
+      console.log('🎥 Mirror: Criando mirror com track disponível');
+      const mirrorElement = createScreenMirror(videoTrack);
+      return mirrorElement;
+    } else {
+      console.log('🚫 Mirror: Condições não atendidas para criar mirror');
+      return null;
+    }
+  }, [getScreenVideoTrack, createScreenMirror, state.isScreenAudioCaptured]);
+
+  // ⚠️ CRÍTICO: Listener isolado para mirror (não interfere com transcrição)
+  useEffect(() => {
+    if (!callObjectRef.current) return;
+    
+    const handleTrackStarted = (event: any) => {
+      // ✅ FILTRO ESPECÍFICO: Apenas screenVideo tracks locais
+      if (event.track?.kind === 'video' && 
+          event.participant?.local) {
+        console.log('🖥️ Mirror: Screen video track iniciado:', event);
+        
+        // Notificar componente que track está disponível (via callback personalizado)
+        if (config?.mirrorCallbacks?.onTrackAvailable) {
+          setTimeout(() => {
+            config.mirrorCallbacks?.onTrackAvailable?.();
+          }, 500); // Pequeno delay para garantir que o track esteja realmente pronto
+        }
+      }
+    };
+    
+    const handleTrackStopped = (event: any) => {
+      // ✅ FILTRO ESPECÍFICO: Apenas screenVideo tracks locais
+      if (event.track?.kind === 'video' && 
+          event.participant?.local) {
+        console.log('🖥️ Mirror: Screen video track parou:', event);
+        
+        // Notificar componente que track não está mais disponível
+        if (config?.mirrorCallbacks?.onTrackUnavailable) {
+          config.mirrorCallbacks.onTrackUnavailable();
+        }
+      }
+    };
+    
+    // ✅ NAMESPACE ISOLADO: Usar namespace específico para evitar conflitos
+    const mirrorEventHandlers = {
+      'track-started': handleTrackStarted,
+      'track-stopped': handleTrackStopped
+    };
+    
+    // Adicionar listeners
+    Object.entries(mirrorEventHandlers).forEach(([event, handler]) => {
+      callObjectRef.current?.on(event as any, handler);
+    });
+    
+    return () => {
+      // Cleanup isolado
+      if (callObjectRef.current) {
+        Object.entries(mirrorEventHandlers).forEach(([event, handler]) => {
+          callObjectRef.current?.off(event as any, handler);
+        });
+      }
+    };
+  }, [config?.mirrorCallbacks]); // Adicionar dependência dos callbacks
+
+  // ✅ FALLBACK: Verificação periódica para garantir sincronização
+  useEffect(() => {
+    if (!state.isScreenAudioCaptured) return;
+    
+    const checkInterval = setInterval(() => {
+      const videoTrack = getScreenVideoTrack();
+      console.log('🔄 Mirror: Verificação periódica - track disponível:', !!videoTrack);
+    }, 5000); // Verificar a cada 5 segundos
+    
+    return () => clearInterval(checkInterval);
+  }, [state.isScreenAudioCaptured, getScreenVideoTrack]);
 
   // Retorno compatível com useDeepgramTranscription + DUAL STREAM enhancements
   return {
@@ -1198,15 +1388,16 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig) => {
     clearTranscript,
     // Funções adicionais específicas Daily
     updateAvailableDevices,
-    // NOVAS: Funções de debug para fonte
-    forceSourceDetection,
-    toggleForcedSource,
     // NOVO: Função de limpeza de histórico
     clearTranscriptionHistory,
     // FASE 2: Novos estados e funções de controle
     isMicrophoneEnabled: state.isMicrophoneEnabled,
     isScreenAudioEnabled: state.isScreenAudioEnabled,
     toggleMicrophone,
-    toggleScreenAudio
+    toggleScreenAudio,
+    // NOVAS funções para mirror
+    getScreenVideoTrack,
+    createScreenMirror,
+    manageScreenMirror
   };
 }; 

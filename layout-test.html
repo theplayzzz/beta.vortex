@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .container {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 16px;
+            background: #171818;
+            border-radius: 12px;
+        }
+        .video-area {
+            flex: 1;
+            min-width: 0;
+            background: #222;
+            border: 2px dashed #6be94c;
+            border-radius: 8px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #cfc6fe;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 140px;
+            flex-shrink: 0;
+        }
+        .btn {
+            width: 100%;
+            height: 34px;
+            border-radius: 8px;
+            border: 1px solid #6be94c;
+            background: rgba(107, 233, 76, 0.2);
+            color: #6be94c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="video-area">
+            📹 VÍDEO
+        </div>
+        <div class="controls">
+            <button class="btn">🎙️ CONECTAR</button>
+            <button class="btn">🎤 MIC</button>
+            <button class="btn">🖥️ TELA</button>
+            <button class="btn">📺 SHARE</button>
+            <button class="btn">🧠 ANÁLISE</button>
+            <button class="btn">🗑️ TRASH</button>
+        </div>
+    </div>
+</body>
+</html>

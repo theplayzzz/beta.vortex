@@ -1,6 +1,5 @@
 ---
-description: Use esta regra sempre que a tarefa envolver decisões sobre cores, estilos visuais, temas, criação ou alteração de componentes de interface, ou qualquer ajuste em CSS/SCSS. Não é necessário consultar esta regra para tarefas exclusivamente de lógica, backend, manipulação de dados ou funcionalidades sem impacto visual.
-globs: 
+description: Use esta regra sempre que a tarefa envolver decisões sobre cores, estilos visuais, temas, criação ou alteração de componentes de interface, ou qualquer ajuste visual. Aplique para todos os componentes UI, forms, layouts e elementos interativos usando Tailwind CSS e tecnologias do projeto.
 alwaysApply: false
 ---
 # Regras de Design e Cores - Dashboard App
@@ -90,6 +89,47 @@ alwaysApply: false
 }
 ```
 
+## Biblioteca de Ícones
+
+### Bibliotecas Principais Obrigatórias
+✅ **SEMPRE** usar ícones das duas bibliotecas principais:
+1. **Lucide React** - Biblioteca primária para ícones gerais
+2. **Heroicons** - Biblioteca secundária para ícones complementares
+
+### Regras de Seleção de Ícones
+1. **Prioridade**: Lucide React primeiro, Heroicons como alternativa
+2. **Consistência**: Manter o mesmo estilo de ícone em contextos similares
+3. **Tamanho Padrão**: 20px (w-5 h-5) para ícones em botões e navegação
+4. **Tamanho Secundário**: 16px (w-4 h-4) para ícones em inputs e elementos menores
+5. **Cor dos Ícones**: Seguir paleta de cores definida (`--seasalt`, `--periwinkle`, `--sgbus-green`)
+
+### Implementação
+```jsx
+// Lucide React (Preferencial)
+import { Settings, User, Bell } from 'lucide-react'
+
+// Heroicons (Alternativa)
+import { CogIcon, UserIcon, BellIcon } from '@heroicons/react/24/outline'
+```
+
+### Estados dos Ícones
+- **Padrão**: `--seasalt` (#f9fbfc)
+- **Hover**: `--sgbus-green` (#6be94c)  
+- **Ativo/Selecionado**: `--sgbus-green` (#6be94c)
+- **Desabilitado**: `opacity: 0.5`
+
+### Proibições de Ícones
+❌ **NUNCA** usar ícones padrões do navegador ou sistema
+❌ **NUNCA** misturar estilos de ícones diferentes no mesmo contexto
+❌ **NUNCA** usar ícones sem considerar a semântica e acessibilidade
+❌ **NUNCA** usar ícones coloridos fora da paleta definida
+
+### Diretrizes de Uso
+✅ Sempre usar ícones com `aria-label` quando necessário
+✅ Manter proporção consistente em elementos similares
+✅ Priorizar ícones reconhecíveis e intuitivos
+✅ Usar outline/stroke style para manter leveza visual
+
 ## Regras de Transições
 - **Padrão**: `transition: all 0.2s ease`
 - **Suave**: `transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)`
@@ -106,6 +146,7 @@ alwaysApply: false
 ❌ **NUNCA** comprometer o contraste - sempre testar legibilidade
 ❌ **NUNCA** misturar múltiplas cores de destaque no mesmo elemento
 ❌ **NUNCA** usar animações sem considerar `prefers-reduced-motion`
+❌ **NUNCA** usar ícones padrões do sistema/navegador - sempre usar Lucide React ou Heroicons
 
 ## Diretrizes Obrigatórias
 ✅ Sempre usar tema dark como padrão
@@ -113,3 +154,4 @@ alwaysApply: false
 ✅ Priorizar legibilidade e contraste adequado
 ✅ Usar `--sgbus-green` apenas para elementos importantes
 ✅ Aplicar bordas sutis com transparência para separação visual
+✅ Usar exclusivamente Lucide React ou Heroicons para todos os ícones da aplicação

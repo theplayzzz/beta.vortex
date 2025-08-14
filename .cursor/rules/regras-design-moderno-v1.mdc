@@ -1,0 +1,520 @@
+---
+alwaysApply: false
+---
+# Regras de Design Moderno - Sistema Tailwind CSS v3
+
+## Sistema de Cores Principal (Tema Escuro)
+
+### Variáveis CSS Principais
+```css
+:root {
+  --background: #1a1b1e;
+  --foreground: #f0f0f0;
+  --card: #222327;
+  --card-foreground: #f0f0f0;
+  --popover: #222327;
+  --popover-foreground: #f0f0f0;
+  --primary: #8c5cff;
+  --primary-foreground: #dadada;
+  --secondary: #262626;
+  --secondary-foreground: #dadada;
+  --muted: #2a2c33;
+  --muted-foreground: #a0a0a0;
+  --accent: #1a1b1e;
+  --accent-foreground: #dadada;
+  --destructive: #f87171;
+  --destructive-foreground: #ffffff;
+  --border: #33353a;
+  --input: #33353a;
+  --ring: #8c5cff;
+}
+```
+
+### Variáveis Sidebar Específicas
+```css
+:root {
+  --sidebar: #161618;
+  --sidebar-foreground: #f0f0f0;
+  --sidebar-primary: #8c5cff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2a2c33;
+  --sidebar-accent-foreground: #8c5cff;
+  --sidebar-border: #33353a;
+  --sidebar-ring: #8c5cff;
+}
+```
+
+### Variáveis de Charts
+```css
+:root {
+  --chart-1: #4ade80;
+  --chart-2: #8c5cff;
+  --chart-3: #fca5a5;
+  --chart-4: #5993f4;
+  --chart-5: #a0a0a0;
+}
+```
+
+## Sistema de Tipografia
+
+### Fontes Principais
+```css
+:root {
+  --font-sans: Plus Jakarta Sans, sans-serif;
+  --font-serif: Lora, serif;
+  --font-mono: IBM Plex Mono, monospace;
+}
+```
+
+### Letter Spacing
+```css
+:root {
+  --tracking-normal: -0.025em;
+}
+
+body {
+  letter-spacing: var(--tracking-normal);
+}
+
+@theme inline {
+  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-normal: var(--tracking-normal);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+}
+```
+
+### Hierarquia Tipográfica
+1. **Texto Principal**: `var(--foreground)` (#f0f0f0) com `var(--font-sans)`
+2. **Texto Secundário**: `var(--muted-foreground)` (#a0a0a0)
+3. **Texto de Destaque**: `var(--primary)` (#8c5cff)
+4. **Texto sobre Cards**: `var(--card-foreground)` (#f0f0f0)
+
+## Sistema de Border Radius com Tailwind
+
+### Classes Tailwind para Radius
+- **Pequenos elementos**: `rounded-xl` (~1.2rem) - botões pequenos, badges
+- **Elementos médios**: `rounded-2xl` (~1.3rem) - inputs, form fields
+- **Cards e containers**: `rounded-[1.4rem]` (valor customizado) - cards principais
+- **Elementos grandes**: `rounded-[1.8rem]` (valor customizado) - modais, seções
+
+### Aplicação por Componente
+- **Botões**: `rounded-2xl`
+- **Cards**: `rounded-[1.4rem]`
+- **Inputs**: `rounded-2xl`
+- **Avatars**: `rounded-full`
+- **Badges**: `rounded-xl`
+- **Modais**: `rounded-[1.8rem]`
+
+## Sistema de Sombras com Tailwind
+
+### Classes Tailwind para Sombras
+- **Elementos flutuantes**: `shadow-sm` - tooltips, badges
+- **Cards simples**: `shadow-md` - cards padrão, panels
+- **Cards elevados**: `shadow-lg` - cards com hover, elevated sections
+- **Modais e dropdowns**: `shadow-xl` - dropdowns, popovers
+- **Elementos de destaque**: `shadow-2xl` - modais, overlays importantes
+- **Elementos críticos**: `shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]` (custom)
+
+### Aplicação por Componente
+- **Cards padrão**: `shadow-md`
+- **Cards hover**: `hover:shadow-lg transition-shadow`
+- **Dropdowns**: `shadow-xl`
+- **Modais**: `shadow-2xl`
+- **Buttons elevated**: `shadow-sm hover:shadow-md`
+- **Sidebar**: `shadow-2xl` (quando aberta como drawer)
+
+## Sistema de Bordas com Tailwind
+
+### Classes Tailwind para Border Width
+- **Sem borda**: `border-0` - botões primários, elementos limpos
+- **Borda fina**: `border` (1px) - cards, inputs, divisores
+- **Borda média**: `border-2` - estados de foco, destaque
+- **Borda grossa**: `border-[3px]` - foco crítico
+- **Borda pesada**: `border-4` - alertas, elementos críticos
+
+### Classes para Cores de Bordas
+- **Padrão**: `border-border` - uso geral
+- **Primário**: `border-primary` - elementos de destaque
+- **Foco/Ativo**: `border-ring` - estados focados
+- **Erro**: `border-destructive` - inputs com erro
+- **Sucesso**: `border-green-400` - validação positiva
+- **Sidebar**: `border-sidebar-border` - separadores sidebar
+- **Transparente**: `border-border/30` - divisores sutis
+
+### Aplicação por Componente
+- **Cards**: `border border-border`
+- **Inputs padrão**: `border border-border`
+- **Inputs focus**: `focus:border-2 focus:border-ring`
+- **Botões secundários**: `border border-primary`
+- **Divisores**: `border-t border-border`
+- **Estados de erro**: `border-2 border-destructive`
+- **Sidebar separadores**: `border-r border-sidebar-border`
+
+## Sistema de Spacing com Tailwind
+
+### Classes de Spacing Padrão do Projeto
+Use o sistema de spacing padrão do Tailwind, priorizando:
+- **Micro espaçamentos**: `p-1`, `m-1`, `gap-1` (0.25rem)
+- **Pequenos**: `p-2`, `m-2`, `gap-2` (0.5rem)
+- **Médios**: `p-4`, `m-4`, `gap-4` (1rem)
+- **Grandes**: `p-6`, `m-6`, `gap-6` (1.5rem)
+- **Extra grandes**: `p-8`, `m-8`, `gap-8` (2rem)
+
+### Aplicação por Context
+- **Padding Cards**: `p-6` ou `p-8`
+- **Padding Botões**: `px-6 py-3` ou `px-4 py-2`
+- **Margins entre elementos**: `mb-4`, `mt-6`
+- **Gap em Flexbox/Grid**: `gap-4`, `gap-6`
+- **Spacing sidebar**: `p-4` para itens, `py-2` para links
+
+## Componentes com Tailwind CSS
+
+### Cards
+**Classes base**: `bg-card text-card-foreground border border-border rounded-[1.4rem] shadow-md p-6`
+
+**Variações**:
+- **Card simples**: `bg-card border border-border rounded-[1.4rem] p-6`
+- **Card elevado**: `bg-card border-2 border-border rounded-[1.4rem] shadow-lg p-6`
+- **Card hover**: `hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200`
+- **Card com destaque**: `border-2 border-primary/20 bg-card/80`
+
+### Botões
+**Base comum**: `font-sans tracking-tight rounded-2xl px-6 py-3 font-medium transition-colors`
+
+**Variações**:
+- **Primário**: `bg-primary text-primary-foreground hover:bg-primary/90`
+- **Secundário**: `bg-secondary text-secondary-foreground border border-primary hover:bg-secondary/80`
+- **Destructivo**: `bg-destructive text-destructive-foreground hover:bg-destructive/90`
+- **Ghost**: `hover:bg-accent hover:text-accent-foreground`
+- **Outline**: `border border-primary text-primary hover:bg-primary hover:text-primary-foreground`
+
+### Inputs e Forms
+**Input base**: `bg-input text-foreground border border-border rounded-2xl px-4 py-3 font-sans`
+
+**Estados**:
+- **Focus**: `focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring`
+- **Erro**: `border-2 border-destructive focus:ring-destructive`
+- **Disabled**: `opacity-50 cursor-not-allowed bg-muted`
+- **Success**: `border-green-400 focus:ring-green-400`
+
+### Modais e Popovers
+**Modal**: `bg-popover text-popover-foreground border border-border rounded-[1.8rem] shadow-2xl p-8`
+
+**Popover**: `bg-popover text-popover-foreground border border-border rounded-[1.4rem] shadow-xl p-4`
+
+**Overlay**: `fixed inset-0 bg-black/60 z-[1050]`
+
+### Sidebar com Tailwind
+**Container**: `bg-sidebar text-sidebar-foreground border-r border-sidebar-border w-80 h-full`
+
+**Variações**:
+- **Drawer mode**: `fixed left-0 top-0 z-[1100] shadow-2xl`
+- **Header**: `flex items-center justify-between p-4 border-b border-sidebar-border`
+- **Navigation area**: `p-4 space-y-2`
+
+**Items de navegação**:
+- **Item padrão**: `rounded-xl px-4 py-3 transition-colors hover:bg-sidebar-accent/50`
+- **Item ativo**: `bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-ring rounded-xl px-4 py-3`
+- **Item primário/admin**: `bg-sidebar-primary text-sidebar-primary-foreground rounded-xl px-4 py-3 font-medium`
+
+### Separadores e Divisores
+- **Divisor padrão**: `border-t border-border w-full`
+- **Divisor grosso**: `border-t-2 border-border w-full`
+- **Divisor sutil**: `border-t border-border/30 w-full`
+- **Divisor vertical**: `border-l border-border h-full`
+- **Espaçador**: `h-px bg-border/20 w-full`
+
+## Estados Interativos com Tailwind
+
+### Estados de Hover
+- **Botões**: `hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all duration-200`
+- **Cards**: `hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200`
+- **Links**: `text-primary hover:underline hover:text-primary/80`
+- **Cards com hover**: `hover:border-2 hover:border-primary/50`
+- **Ícones**: `hover:text-primary transition-colors duration-200`
+
+### Estados de Foco
+- **Focus ring**: `focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`
+- **Focus border**: `focus:border-2 focus:border-ring`
+- **Focus visible**: `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`
+- **Custom focus shadow**: `focus:shadow-[0_0_0_3px_rgba(140,92,255,0.3)]`
+
+### Estados Ativos
+- **Botões ativos**: `active:scale-95 active:bg-primary/80`
+- **Elementos selecionados**: `bg-accent text-accent-foreground`
+- **Borda ativa**: `border-[3px] border-primary`
+- **Tab ativo**: `bg-primary/10 text-primary border-b-2 border-primary`
+
+### Estados de Erro
+- **Input erro**: `border-2 border-destructive focus:ring-destructive`
+- **Card erro**: `border-2 border-destructive bg-destructive/5`
+- **Texto erro**: `text-destructive text-sm`
+- **Background erro**: `bg-destructive/10 border border-destructive/20`
+
+## Biblioteca de Ícones com Tailwind
+
+### Bibliotecas Obrigatórias
+✅ **SEMPRE** usar apenas estas bibliotecas:
+1. **Lucide React** - Biblioteca primária (já instalada no projeto)
+2. **Heroicons** - Biblioteca secundária (se necessário)
+
+### Classes para Cores dos Ícones
+- **Padrão**: `text-foreground`
+- **Secundário**: `text-muted-foreground`
+- **Primário/Destaque**: `text-primary`
+- **Sidebar**: `text-sidebar-foreground`
+- **Sidebar ativo**: `text-sidebar-accent-foreground`
+- **Erro**: `text-destructive`
+- **Sucesso**: `text-green-400`
+
+### Tamanhos com Classes Tailwind
+- **Pequeno**: `w-4 h-4` (16px) - inputs, badges
+- **Padrão**: `w-5 h-5` (20px) - botões, navegação
+- **Médio**: `w-6 h-6` (24px) - títulos, destaque
+- **Grande**: `w-8 h-8` (32px) - avatars, headers
+
+### Estados dos Ícones
+- **Padrão**: `text-foreground`
+- **Hover**: `hover:text-primary transition-colors duration-200`
+- **Ativo**: `text-primary`
+- **Desabilitado**: `opacity-50 cursor-not-allowed`
+
+## Sistema de Charts com Tailwind
+
+### Cores para Gráficos (Classes Tailwind)
+- **Chart 1**: `text-green-400` ou `bg-green-400` - Verde success
+- **Chart 2**: `text-primary` ou `bg-primary` - Roxo principal
+- **Chart 3**: `text-rose-300` ou `bg-rose-300` - Rosa claro
+- **Chart 4**: `text-blue-400` ou `bg-blue-400` - Azul
+- **Chart 5**: `text-muted-foreground` ou `bg-muted-foreground` - Cinza
+
+### Aplicação em Gráficos
+Use as cores definidas nas variáveis CSS junto com classes Tailwind para criar gráficos consistentes com o design system.
+
+## Transições com Tailwind
+
+### Classes de Transição Padrão
+- **Transição básica**: `transition-all duration-200 ease-in-out`
+- **Transição suave**: `transition-all duration-300 ease-out`
+- **Transição com bounce**: `transition-transform duration-200 ease-out`
+- **Transição de cores**: `transition-colors duration-200`
+- **Transição de sombras**: `transition-shadow duration-200`
+
+### Aplicações Específicas
+- **Hover cards**: `transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5`
+- **Botões**: `transition-colors duration-200 hover:bg-primary/90`
+- **Modais**: `transition-opacity duration-300 ease-out`
+
+## Tema Inline System
+
+### Mapeamento de Cores
+```css
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+```
+
+## Regras de Acessibilidade
+
+### Contraste
+- **Texto principal**: Contraste adequado com `var(--foreground)` (#f0f0f0)
+- **Texto secundário**: Contraste mínimo 4.5:1 com `var(--muted-foreground)` (#a0a0a0)
+- **Estados de foco**: Sempre visíveis com `var(--ring)` (#8c5cff)
+- **Elementos interativos**: Contraste mínimo 3:1
+- **Bordas**: Contraste mínimo 3:1 com o fundo
+
+### Estados de Foco
+```css
+.focus-visible {
+  outline: var(--border-width-medium) solid var(--ring);
+  outline-offset: 2px;
+}
+```
+
+## Implementação de Tema
+
+### Aplicação Automática do Tema Escuro
+```css
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  letter-spacing: var(--tracking-normal);
+}
+```
+
+## Proibições Absolutas
+
+❌ **NUNCA** usar cores hardcoded - sempre usar classes Tailwind ou variáveis CSS
+❌ **NUNCA** usar cores fora do sistema definido no projeto
+❌ **NUNCA** usar border-radius fixo - sempre usar classes `rounded-*` ou variáveis personalizadas
+❌ **NUNCA** usar border-width fixo - sempre usar classes `border-*` do Tailwind
+❌ **NUNCA** usar sombras hardcoded - sempre usar classes `shadow-*` do Tailwind
+❌ **NUNCA** usar fontes diferentes das configuradas (`font-sans`, `font-serif`, `font-mono`)
+❌ **NUNCA** ignorar o `tracking-tight` padrão do projeto
+❌ **NUNCA** usar spacing fixo - sempre usar sistema de spacing do Tailwind
+❌ **NUNCA** usar ícones padrões do sistema - sempre Lucide React ou Heroicons
+❌ **NUNCA** usar CSS inline quando existir classe Tailwind equivalente
+❌ **NUNCA** criar componentes sem considerar os estados interativos (hover, focus, active)
+
+## Diretrizes Obrigatórias
+
+✅ **SEMPRE** usar tema escuro como padrão
+✅ **SEMPRE** usar classes Tailwind para cores (`bg-primary`, `text-foreground`, etc.)
+✅ **SEMPRE** aplicar classes `rounded-*` adequadas para cada elemento
+✅ **SEMPRE** usar classes `border` e `border-*` do Tailwind
+✅ **SEMPRE** usar classes `shadow-*` para elevação
+✅ **SEMPRE** aplicar `font-sans` e `tracking-tight` como padrão
+✅ **SEMPRE** usar classes de transição: `transition-*` `duration-*` `ease-*`
+✅ **SEMPRE** implementar `prefers-reduced-motion` quando necessário
+✅ **SEMPRE** usar componentes Lucide React ou Heroicons
+✅ **SEMPRE** testar contraste e acessibilidade com ARIA quando necessário
+✅ **SEMPRE** usar sistema de spacing Tailwind (`p-*`, `m-*`, `gap-*`)
+✅ **SEMPRE** priorizar classes `text-primary` e `bg-primary` para destaque
+✅ **SEMPRE** manter consistência usando as mesmas classes base em contextos similares
+✅ **SEMPRE** implementar estados focus com `focus:ring-*` e `focus:border-*`
+
+## Paleta de Cores Resumo
+
+### Cores Principais do Sistema
+- **Background**: `#1a1b1e` - Fundo principal da aplicação
+- **Card**: `#222327` - Cards, containers, elementos elevados
+- **Primary**: `#8c5cff` - Cor primária, botões principais, elementos de destaque
+- **Foreground**: `#f0f0f0` - Texto principal, ícones
+- **Muted Foreground**: `#a0a0a0` - Texto secundário, elementos menos importantes
+- **Border**: `#33353a` - Bordas, separadores
+- **Destructive**: `#f87171` - Estados de erro, ações destrutivas
+
+### Sistema de Bordas Resumo
+- **Nenhuma**: `0px` - Botões primários, elementos sem divisão
+- **Fina**: `1px` - Cards, inputs, divisores padrão
+- **Média**: `2px` - Estados de foco, elementos de destaque
+- **Grossa**: `3px` - Estados de foco críticos
+- **Pesada**: `4px` - Elementos de alta prioridade, alertas
+
+## Integração com Tecnologias do Projeto
+
+### Next.js 15+ com App Router
+- **Componentes**: Use React Server Components quando possível
+- **Metadata**: Implemente metadata dinâmica para SEO
+- **Loading States**: Use `loading.tsx` e Suspense boundaries
+- **Error Boundaries**: Implemente `error.tsx` com design system
+
+### Framer Motion
+- **Animações**: Use as classes de transição Tailwind combinadas com Framer Motion
+- **AnimatePresence**: Para modais, drawers e elementos condicionais
+- **Variants**: Defina variants para estados consistentes
+- **Performance**: Use `will-change-transform` quando necessário
+
+### Radix UI + Tailwind
+- **Componentes base**: Use primitivos Radix UI como base
+- **Styling**: Aplique classes Tailwind sobre componentes Radix
+- **Acessibilidade**: Mantenha atributos ARIA dos componentes Radix
+- **Estados**: Use states Radix (`data-state`) para styling condicional
+
+### TypeScript
+- **Tipos para Props**: Defina interfaces claras para props de componentes
+- **Theme Types**: Use tipos para garantir uso correto das cores
+- **Component Props**: Extend HTMLAttributes quando necessário
+- **Ref Forwarding**: Use forwardRef para componentes reutilizáveis
+
+### TanStack Query
+- **Loading States**: Use `isLoading` para mostrar skeletons ou spinners
+- **Error States**: Implemente UI de erro usando classes destructive
+- **Optimistic Updates**: Mantenha feedback visual durante mutations
+
+## Exemplo de Componente Completo
+
+```tsx
+import { forwardRef } from 'react'
+import { motion } from 'framer-motion'
+import { Loader2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
+
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'destructive' | 'ghost'
+  size?: 'sm' | 'default' | 'lg'
+  isLoading?: boolean
+  children: React.ReactNode
+}
+
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant = 'primary', size = 'default', isLoading, children, ...props }, ref) => {
+    const baseClasses = 'font-sans tracking-tight font-medium rounded-2xl transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed'
+    
+    const variants = {
+      primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
+      secondary: 'bg-secondary text-secondary-foreground border border-primary hover:bg-secondary/80',
+      destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+      ghost: 'hover:bg-accent hover:text-accent-foreground'
+    }
+    
+    const sizes = {
+      sm: 'px-4 py-2 text-sm',
+      default: 'px-6 py-3',
+      lg: 'px-8 py-4 text-lg'
+    }
+
+    return (
+      <motion.button
+        ref={ref}
+        className={cn(baseClasses, variants[variant], sizes[size], className)}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        transition={{ type: "tween", duration: 0.2 }}
+        disabled={isLoading}
+        {...props}
+      >
+        {isLoading ? (
+          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+        ) : null}
+        {children}
+      </motion.button>
+    )
+  }
+)
+
+Button.displayName = "Button"
+
+export { Button }
+```
+
+Esta estrutura garante um sistema de design moderno, consistente e acessível usando exclusivamente o tema escuro com Tailwind CSS e todas as tecnologias do projeto (Next.js 15+, Framer Motion, Radix UI, TypeScript, TanStack Query).
