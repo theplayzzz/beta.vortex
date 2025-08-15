@@ -138,7 +138,11 @@ export default function HomePage() {
             <div className="text-seasalt/70 text-sm mt-1">Cadastrar cliente</div>
           </button>
           
-          <button className="p-4 bg-sgbus-green/10 hover:bg-sgbus-green/20 rounded-lg border border-sgbus-green/20 transition-colors group">
+          <button 
+            disabled 
+            aria-disabled="true"
+            className="p-4 bg-sgbus-green/10 rounded-lg border border-sgbus-green/20 transition-colors group opacity-50 cursor-not-allowed"
+          >
             <div className="text-sgbus-green text-2xl mb-2">💬</div>
             <div className="text-seasalt font-medium">Chat IA</div>
             <div className="text-seasalt/70 text-sm mt-1">Conversar com assistente</div>
