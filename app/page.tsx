@@ -90,9 +90,12 @@ export default function HomePage() {
             <div className="text-sm text-seasalt/70">Tarefas pendentes</div>
           </div>
           <div className="mt-4 pt-4 border-t border-accent/20">
-            <Link href="/tarefas" className="text-periwinkle text-sm hover:underline">
+            <span
+              aria-disabled="true"
+              className="text-periwinkle text-sm opacity-50 cursor-not-allowed"
+            >
               Ver lista →
-            </Link>
+            </span>
           </div>
         </div>
 
