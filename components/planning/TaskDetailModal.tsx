@@ -183,10 +183,6 @@ export function TaskDetailModal({ task, isOpen, onClose }: TaskDetailModalProps)
           >
             Fechar
           </button>
-          
-          <button className="px-6 py-2 bg-sgbus-green text-night rounded-lg hover:bg-sgbus-green/90 transition-colors font-medium">
-            Editar Tarefa
-          </button>
         </div>
       </div>
     </div>
