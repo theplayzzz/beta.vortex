@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useDailyTranscription } from '../lib/useDailyTranscription';
-import { Play, Square, Mic, MicOff, ScreenShare, Trash2, Brain, HelpCircle } from 'lucide-react';
+import { Play, Square, Mic, MicOff, ScreenShare, Trash2, Brain, HelpCircle, Zap } from 'lucide-react';
 import TutorialModal from './TutorialModal';
 import { useFirstVisit } from '../lib/useFirstVisit';
 
@@ -163,6 +163,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
   
   const [analysisHistory, setAnalysisHistory] = useState<AnalysisHistory[]>([]);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isQuickAnalysis, setIsQuickAnalysis] = useState(false);
   
   // Hook para detectar primeira visita
   const { isFirstVisit, isLoading, markAsVisited } = useFirstVisit('daily-co-tutorial');
@@ -1095,14 +1096,16 @@ const DailyTranscriptionDisplay: React.FC = () => {
                       aria-label="Analisar transcrição (Tecla: Espaço)"
                       className="flex-1 h-[34px] px-2 rounded-lg transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
                       style={{
-                        backgroundColor: isAnalyzing ? 'rgba(107, 233, 76, 0.2)' : 'rgba(107, 233, 76, 0.1)',
-                        color: 'var(--sgbus-green)',
-                        border: '1px solid rgba(107, 233, 76, 0.3)'
+                        backgroundColor: isQuickAnalysis 
+                          ? (isAnalyzing ? 'rgba(255, 193, 7, 0.3)' : 'rgba(255, 193, 7, 0.2)')
+                          : (isAnalyzing ? 'rgba(107, 233, 76, 0.2)' : 'rgba(107, 233, 76, 0.1)'),
+                        color: isQuickAnalysis ? '#ffc107' : 'var(--sgbus-green)',
+                        border: isQuickAnalysis ? '1px solid rgba(255, 193, 7, 0.5)' : '1px solid rgba(107, 233, 76, 0.3)'
                       }}
                       onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
                       onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
                     >
-                      <Brain size={16} />
+                      {isQuickAnalysis ? <Zap size={16} /> : <Brain size={16} />}
                       <span>ANÁLISE</span>
                     </button>
 
@@ -1122,6 +1125,42 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     >
                       <Trash2 size={16} />
                     </button>
+                  </div>
+
+                  {/* Checkbox "Análise Rápida" */}
+                  <div className="flex items-center gap-2 mt-0">
+                    <label 
+                      className="flex items-center gap-2 cursor-pointer text-xs"
+                      style={{ color: 'var(--seasalt)' }}
+                    >
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          checked={isQuickAnalysis}
+                          onChange={(e) => setIsQuickAnalysis(e.target.checked)}
+                          className="w-3 h-3 rounded appearance-none cursor-pointer transition-all duration-200 ease focus:outline-none"
+                          style={{
+                            backgroundColor: isQuickAnalysis ? 'var(--sgbus-green)' : 'var(--night)',
+                            border: isQuickAnalysis ? '1px solid var(--sgbus-green)' : '1px solid rgba(249, 251, 252, 0.2)',
+                            outline: 'none',
+                            boxShadow: 'none'
+                          }}
+                        />
+                        {isQuickAnalysis && (
+                          <div 
+                            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                            style={{ 
+                              fontSize: '8px',
+                              color: 'var(--night)',
+                              fontWeight: 'bold'
+                            }}
+                          >
+                            ✓
+                          </div>
+                        )}
+                      </div>
+                      análise rápida
+                    </label>
                   </div>
                 </div>
               </div>
