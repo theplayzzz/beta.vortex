@@ -1378,7 +1378,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   </div>
                 </div>
 
-                <div ref={analysisScrollRef} className="flex-1 p-2 overflow-y-auto space-y-4 thin-scrollbar">
+                <div ref={analysisScrollRef} className="flex-1 p-2 overflow-y-auto space-y-4 persistent-scrollbar">
                   {analysisHistory.length === 0 && (
                     <div className="text-center pt-4 pb-8">
                       <p className="text-sm opacity-70" style={{ color: 'var(--seasalt)' }}>

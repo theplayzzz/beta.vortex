@@ -415,3 +415,29 @@ button[style*="zIndex: 10000"]:hover {
 .thin-scrollbar:hover::-webkit-scrollbar-thumb:hover {
   background: rgba(207, 198, 254, 0.65);
 }
+
+/* Scrollbar persistente - sempre visível */
+.persistent-scrollbar {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(207, 198, 254, 0.45) transparent;
+}
+
+/* WebKit (Chrome, Edge, Safari) */
+.persistent-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.persistent-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.persistent-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(207, 198, 254, 0.45); /* periwinkle sutil */
+  border-radius: 6px;
+}
+
+.persistent-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(207, 198, 254, 0.65);
+}
