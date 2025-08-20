@@ -639,8 +639,8 @@ const DailyTranscriptionDisplay: React.FC = () => {
     return !isAnalyzing && (blocks.length > 0 || interimTranscript.trim().length > 0);
   }, [isAnalyzing, blocks.length, interimTranscript]);
 
-  // Função para envio ao webhook de análise (FASE 1: Adaptada do GoogleCloudTranscriptionDisplay)
-  const sendToWebhook = async (contexto: string) => {
+  // Função para envio ao webhook de análise (aceita objeto payload)
+  const sendToWebhook = async (payload: any) => {
     try {
       const webhookUrl = process.env.NEXT_PUBLIC_ANALYSIS_WEBHOOK_URL;
       if (!webhookUrl) {
@@ -648,19 +648,15 @@ const DailyTranscriptionDisplay: React.FC = () => {
         throw new Error('Webhook URL not configured');
       }
 
-      console.log('📡 Enviando contexto para webhook...');
-      console.log('🔍 Source identificado como: daily-co-transcription');
+      console.log('📡 Enviando payload para webhook...');
+      console.log('🔍 Payload:', payload);
       
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          contexto: contexto,
-          timestamp: new Date().toISOString(),
-          source: 'daily-co-transcription' // ✅ FASE 1: Campo source atualizado conforme solicitado
-        })
+        body: JSON.stringify(payload)
       });
       
       if (!response.ok) {
@@ -799,7 +795,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
     );
   };
 
-  // FASE 2: Função handleAnalyze com nova lógica de consolidação de contexto
+  // Função handleAnalyze com payload estruturado incluindo trans.usuario, trans.cliente e analiseRapida
   const handleAnalyze = useCallback(async () => {
     if (isAnalyzing) return;
     
@@ -807,31 +803,56 @@ const DailyTranscriptionDisplay: React.FC = () => {
     let loadingId: string | null = null;
     
     try {
-      // FASE 2: Coleta do Contexto Completo (crítica conforme planejamento)
+      // Coleta do Contexto Completo
       const finalBlocksText = blocks.map(block => block.text).join(' \n');
       const currentInterimText = interimTranscript; // Captura o texto intermediário atual
 
       // Junta os dois, garantindo um espaço se ambos existirem.
       const contextoCompleto = `${finalBlocksText} ${currentInterimText}`.trim();
       
-      // FASE 2: Log de teste conforme solicitado no critério de teste
-      console.log('Contexto para análise:', contextoCompleto);
-      
       if (!contextoCompleto) {
         console.log('⚠️ Nenhum contexto disponível para análise');
         return;
       }
       
-      console.log('📋 Contexto coletado:', contextoCompleto.length, 'caracteres');
-      console.log('🔍 Blocos finalizados:', blocks.length);
-      console.log('🔍 Texto interim atual:', currentInterimText ? currentInterimText.length + ' chars' : 'vazio');
+      // Separar blocos por fonte para trans.usuario e trans.cliente
+      const transUsuario = blocks.filter(b => b.source === 'microphone').map(b => b.text);
+      const transCliente = blocks.filter(b => b.source === 'screen').map(b => b.text);
+      
+      // Construir payload estruturado
+      const payload = {
+        contexto: contextoCompleto,
+        timestamp: new Date().toISOString(),
+        source: 'daily-co-transcription',
+        trans: {
+          usuario: transUsuario,
+          cliente: transCliente
+        },
+        blocos: blocks.map(b => ({
+          id: b.id,
+          source: b.source === 'microphone' ? 'usuario' : b.source === 'screen' ? 'cliente' : b.source,
+          color: b.color,
+          startTime: b.startTime instanceof Date ? b.startTime.toISOString() : b.startTime,
+          text: b.text
+        })),
+        interim: currentInterimText,
+        analiseRapida: isQuickAnalysis
+      };
+      
+      console.log('📋 Payload construído:', {
+        contextoLength: contextoCompleto.length,
+        blocosTotal: blocks.length,
+        transUsuarioCount: transUsuario.length,
+        transClienteCount: transCliente.length,
+        analiseRapida: isQuickAnalysis
+      });
       
       // Criar entrada de loading no histórico
       loadingId = createLoadingEntry(contextoCompleto);
-      console.log('🌐 Enviando contexto para análise de IA...');
+      console.log('🌐 Enviando payload estruturado para análise de IA...');
       
       // Enviar para webhook
-      const resposta = await sendToWebhook(contextoCompleto);
+      const resposta = await sendToWebhook(payload);
       
       // Atualizar entrada no histórico com resultado
       if (loadingId) {
@@ -852,7 +873,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [blocks, interimTranscript, isAnalyzing, createLoadingEntry, sendToWebhook, updateLoadingEntry]);
+  }, [blocks, interimTranscript, isAnalyzing, isQuickAnalysis, createLoadingEntry, sendToWebhook, updateLoadingEntry]);
 
   // Event listener para tecla espaço
   useEffect(() => {
