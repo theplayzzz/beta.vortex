@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { 
   Mic, 
   MonitorSpeaker, 
@@ -95,19 +95,32 @@ const sessionTypes = [
   { value: 'recorded', label: 'Reunião Gravada' }
 ];
 
-const languages = [
-  { value: 'pt', label: 'Português' },
-  { value: 'en', label: 'Inglês' },
-  { value: 'es', label: 'Espanhol' }
-];
-
 export default function PreSessionDashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState('thisWeek');
-  const [selectedLanguage, setSelectedLanguage] = useState('pt');
   const [selectedSessionType, setSelectedSessionType] = useState('live');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [showSessionTypeDropdown, setShowSessionTypeDropdown] = useState(false);
+
+  // Refs para detectar cliques fora dos dropdowns
+  const periodDropdownRef = useRef<HTMLDivElement>(null);
+  const sessionTypeDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Efeito para fechar dropdowns quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (periodDropdownRef.current && !periodDropdownRef.current.contains(event.target as Node)) {
+        setShowPeriodDropdown(false);
+      }
+      if (sessionTypeDropdownRef.current && !sessionTypeDropdownRef.current.contains(event.target as Node)) {
+        setShowSessionTypeDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const currentMetrics = mockMetrics[selectedPeriod as keyof typeof mockMetrics];
   const selectedPeriodLabel = periodOptions.find(p => p.value === selectedPeriod)?.label;
@@ -127,24 +140,16 @@ export default function PreSessionDashboard() {
 
   return (
     <div className="mx-auto px-6 py-8 min-h-screen bg-night text-seasalt max-w-[1280px]">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-seasalt mb-2 flex items-center gap-3">
-          <Target size={32} className="text-sgbus-green" />
-          Configuração da Sessão
-        </h1>
-      </div>
-
       {/* Métricas Rápidas */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-seasalt flex items-center gap-2">
-            <BarChart3 size={20} className="text-sgbus-green" />
-            Resumo das Atividades
-          </h2>
+          <h1 className="text-4xl font-bold text-seasalt flex items-center gap-3">
+            <Target size={32} className="text-sgbus-green" />
+            Spalla AI
+          </h1>
           
           {/* Seletor de Período */}
-          <div className="relative">
+          <div className="relative" ref={periodDropdownRef}>
             <button
               onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
               className="flex items-center gap-2 px-4 py-2 bg-eerie-black text-seasalt border border-seasalt/10 rounded-lg hover:border-sgbus-green/50 transition-all duration-200"
@@ -253,16 +258,18 @@ export default function PreSessionDashboard() {
       </div>
 
       {/* Área Principal */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
         {/* Configuração da Nova Sessão */}
-        <div className="space-y-6">
-          <h3 className="text-xl font-semibold text-seasalt flex items-center gap-2">
+        <div className="flex flex-col h-full">
+          <h3 className="text-xl font-semibold text-seasalt flex items-center gap-2 mb-3">
             <Zap size={20} className="text-sgbus-green" />
             Nova Sessão
           </h3>
 
-          {/* Card Principal de Inicialização */}
-          <div className="bg-eerie-black border-2 border-sgbus-green rounded-lg p-8">
+          {/* Container principal */}
+          <div className="bg-eerie-black border border-seasalt/10 rounded-lg p-2 flex-1 flex flex-col space-y-3">
+            {/* Card Principal de Inicialização */}
+            <div className="bg-night border-2 border-sgbus-green rounded-lg p-6 flex-shrink-0">
             <div className="text-center space-y-6">
               <h4 className="text-2xl font-bold text-seasalt flex items-center justify-center gap-3">
                 <Rocket size={24} className="text-sgbus-green" />
@@ -288,10 +295,10 @@ export default function PreSessionDashboard() {
                 <span>Áudio da Tela</span>
               </div>
             </div>
-          </div>
+            </div>
 
-          {/* Configurações Rápidas */}
-          <div className="bg-eerie-black/50 rounded-lg p-6 space-y-4">
+            {/* Configurações Rápidas */}
+            <div className="bg-night/50 rounded-lg p-4 space-y-4 flex-1">
             <h5 className="font-semibold text-seasalt flex items-center gap-2">
               <Settings size={16} />
               Configurações Rápidas
@@ -301,46 +308,18 @@ export default function PreSessionDashboard() {
             
             <div className="space-y-4">
               {/* Idioma */}
-              <div className="relative">
+              <div>
                 <label className="flex text-sm font-medium text-seasalt mb-2 items-center gap-2">
                   <Globe size={14} />
                   Idioma:
                 </label>
-                <button
-                  onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-night text-seasalt border border-seasalt/20 rounded-lg hover:border-sgbus-green/50 transition-all duration-200"
-                >
-                  <span>{languages.find(l => l.value === selectedLanguage)?.label}</span>
-                  <ChevronDown size={16} />
-                </button>
-
-                {showLanguageDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-1 z-40 bg-eerie-black border border-seasalt/10 rounded-lg shadow-xl">
-                    {languages.map((lang, index) => (
-                      <button
-                        key={lang.value}
-                        onClick={() => {
-                          setSelectedLanguage(lang.value);
-                          setShowLanguageDropdown(false);
-                        }}
-                        className={`w-full text-left px-4 py-3 transition-colors ${
-                          selectedLanguage === lang.value 
-                            ? 'bg-sgbus-green text-night' 
-                            : 'text-seasalt hover:bg-seasalt/10'
-                        } ${
-                          index === 0 ? 'rounded-t-lg' : 
-                          index === languages.length - 1 ? 'rounded-b-lg' : ''
-                        }`}
-                      >
-                        {lang.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <div className="w-full flex items-center px-4 py-3 bg-night text-seasalt border border-seasalt/20 rounded-lg">
+                  <span>Português</span>
+                </div>
               </div>
 
               {/* Tipo de Sessão */}
-              <div className="relative">
+              <div className="relative" ref={sessionTypeDropdownRef}>
                 <label className="flex text-sm font-medium text-seasalt mb-2 items-center gap-2">
                   <FileText size={14} />
                   Tipo de Sessão:
@@ -379,20 +358,23 @@ export default function PreSessionDashboard() {
               </div>
             </div>
           </div>
+          </div>
         </div>
 
         {/* Sessões Recentes */}
-        <div className="space-y-6">
-          <h3 className="text-xl font-semibold text-seasalt flex items-center gap-2">
+        <div className="flex flex-col h-full">
+          <h3 className="text-xl font-semibold text-seasalt flex items-center gap-2 mb-3">
             <ScrollText size={20} className="text-sgbus-green" />
             Sessões Recentes
           </h3>
 
-          <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+          {/* Container com scroll visível */}
+          <div className="bg-eerie-black border border-seasalt/10 rounded-lg p-2 flex-1">
+            <div className="space-y-3 h-full overflow-y-auto thin-scrollbar">
             {mockSessions.map((session) => (
               <div
                 key={session.id}
-                className="bg-eerie-black border border-seasalt/10 rounded-lg p-4 hover:border-sgbus-green/30 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+                className="bg-night border border-seasalt/10 rounded-lg p-4 hover:border-sgbus-green/30 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
@@ -447,6 +429,7 @@ export default function PreSessionDashboard() {
                 </div>
               </div>
             ))}
+            </div>
           </div>
         </div>
       </div>
