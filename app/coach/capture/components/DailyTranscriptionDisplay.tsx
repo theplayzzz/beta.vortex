@@ -106,8 +106,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
     toggleScreenAudio,
     // NOVAS funções para mirror
     getScreenVideoTrack,
-    createScreenMirror,
-    manageScreenMirror
+    createScreenMirror
   } = useDailyTranscription({
     language: 'pt',
     enableScreenAudio: true,
@@ -1067,21 +1066,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     <span>TELA</span>
                   </button>
 
-                  {/* Botão Secundário - Compartilhar Tela */}
-                  <button
-                    onClick={manageScreenMirror}
-                    aria-label="Compartilhar tela"
-                    className="flex-none w-[34px] h-[34px] rounded-lg transition-all duration-200 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
-                    style={{
-                      border: '1px solid var(--periwinkle)',
-                      color: 'var(--periwinkle)',
-                      backgroundColor: 'transparent'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
-                    onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
-                  >
-                    <ScreenShare size={16} />
-                  </button>
+
 
                   {/* Espaçador para empurrar botões para baixo */}
                   <div className="flex-1"></div>

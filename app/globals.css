@@ -366,11 +366,11 @@ button[style*="zIndex: 10000"]:hover {
 /* Import dos estilos específicos para propostas */
 @import '../styles/proposal-content.css';
 
-/* Scrollbar sutil e fino, invisível até hover/focus/active */
+/* Scrollbar sutil e fino, sempre visível quando há overflow */
 .thin-scrollbar {
   /* Firefox */
-  scrollbar-width: none;
-  scrollbar-color: transparent transparent;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(207, 198, 254, 0.3) transparent;
 }
 
 .thin-scrollbar:hover,
@@ -384,14 +384,6 @@ button[style*="zIndex: 10000"]:hover {
 
 /* WebKit (Chrome, Edge, Safari) */
 .thin-scrollbar::-webkit-scrollbar {
-  width: 0px;
-  height: 0px;
-}
-
-.thin-scrollbar:hover::-webkit-scrollbar,
-.thin-scrollbar:focus::-webkit-scrollbar,
-.thin-scrollbar:active::-webkit-scrollbar,
-.thin-scrollbar.scrolling::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
@@ -401,7 +393,7 @@ button[style*="zIndex: 10000"]:hover {
 }
 
 .thin-scrollbar::-webkit-scrollbar-thumb {
-  background: transparent;
+  background: rgba(207, 198, 254, 0.3); /* sempre visível com opacidade baixa */
   border-radius: 6px;
 }
 
