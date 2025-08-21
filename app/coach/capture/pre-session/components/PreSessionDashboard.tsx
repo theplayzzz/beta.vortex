@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
+import SalesAgentConfigModal, { SalesAgentConfigData } from './SalesAgentConfigModal';
 import { 
   Mic, 
   MonitorSpeaker, 
@@ -100,6 +101,7 @@ export default function PreSessionDashboard() {
   const [selectedSessionType, setSelectedSessionType] = useState('live');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const [showSessionTypeDropdown, setShowSessionTypeDropdown] = useState(false);
+  const [showSalesAgentModal, setShowSalesAgentModal] = useState(false);
 
   // Refs para detectar cliques fora dos dropdowns
   const periodDropdownRef = useRef<HTMLDivElement>(null);
@@ -135,6 +137,15 @@ export default function PreSessionDashboard() {
   };
 
   const handleStartSession = () => {
+    setShowSalesAgentModal(true);
+  };
+
+  const handleSalesAgentSubmit = (data: SalesAgentConfigData) => {
+    // Store the configuration data (you can expand this to use a proper state management solution)
+    console.log('Sales Agent Configuration:', data);
+    // Store in localStorage for the transcription page to access
+    localStorage.setItem('salesAgentConfig', JSON.stringify(data));
+    // Navigate to the transcription page with the configuration
     window.location.href = '/coach/capture/daily-co';
   };
 
@@ -473,6 +484,13 @@ export default function PreSessionDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Sales Agent Configuration Modal */}
+      <SalesAgentConfigModal
+        isOpen={showSalesAgentModal}
+        onClose={() => setShowSalesAgentModal(false)}
+        onSubmit={handleSalesAgentSubmit}
+      />
     </div>
   );
 }
