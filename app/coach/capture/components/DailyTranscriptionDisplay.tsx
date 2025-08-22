@@ -1092,7 +1092,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
                     title={!isConnected ? 'Conecte-se à sala Daily.co para habilitar o microfone' : undefined}
                   >
-                    {isMicrophoneEnabled ? <Mic size={16} /> : <MicOff size={16} />}
+                    {isConnected && isMicrophoneEnabled ? <Mic size={16} /> : <MicOff size={16} />}
                     <span>MIC</span>
                   </button>
 
