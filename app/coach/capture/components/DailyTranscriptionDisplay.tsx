@@ -79,6 +79,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
     transcript,
     interimTranscript,
     isListening,
+    isProcessing,
     error,
     confidence,
     audioLevel,
@@ -1042,19 +1043,36 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   {/* Botão Primário - CONECTAR */}
                   <button
                     onClick={isListening ? stopListening : startListening}
-                    disabled={false}
+                    disabled={isProcessing}
                     className="flex-none w-full h-[34px] px-2 sm:px-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 sm:gap-2 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50"
                     style={{
-                      backgroundColor: isListening ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 233, 76, 0.2)',
-                      color: isListening ? '#ef4444' : 'var(--sgbus-green)',
-                      border: isListening ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(107, 233, 76, 0.3)',
+                      backgroundColor: isProcessing ? 'rgba(255, 193, 7, 0.2)' : 
+                                      isListening ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 233, 76, 0.2)',
+                      color: isProcessing ? '#ffc107' : 
+                             isListening ? '#ef4444' : 'var(--sgbus-green)',
+                      border: isProcessing ? '1px solid rgba(255, 193, 7, 0.3)' : 
+                              isListening ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(107, 233, 76, 0.3)',
                       width: '140px' // Largura fixa para não mudar de tamanho
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
+                    onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
                     onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
                   >
-                    {isListening ? <Square size={20} /> : <Play size={20} />}
-                    <span>{isListening ? 'DESCONECTAR' : 'CONECTAR'}</span>
+                    {isProcessing ? (
+                      <>
+                        <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full"></div>
+                        <span>CONECTANDO...</span>
+                      </>
+                    ) : isListening ? (
+                      <>
+                        <Square size={20} />
+                        <span>DESCONECTAR</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play size={20} />
+                        <span>CONECTAR</span>
+                      </>
+                    )}
                   </button>
 
                   {/* Toggle MIC */}

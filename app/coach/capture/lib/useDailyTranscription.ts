@@ -409,7 +409,8 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
     console.log('✅ Transcrição Daily.co iniciada:', event);
     setState(prev => ({ 
       ...prev, 
-      isProcessing: true,
+      isListening: true,
+      isProcessing: false, // CORREÇÃO: resetar isProcessing quando transcrição realmente inicia
       lastActivity: new Date()
     }));
   }, []);
@@ -835,10 +836,21 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
   const startListening = useCallback(async () => {
     try {
       setState(prev => ({ ...prev, error: null, isProcessing: true }));
+      
+      // Timeout de segurança para garantir que isProcessing não fique travado
+      const timeoutId = setTimeout(() => {
+        console.warn('⚠️ Timeout na conexão Daily.co - resetando isProcessing');
+        setState(prev => ({ 
+          ...prev, 
+          isProcessing: false, 
+          error: 'Timeout na conexão - tente novamente' 
+        }));
+      }, 30000); // 30 segundos timeout
 
       // Verificar se usuário está carregado e logado
       if (!isUserLoaded || !user) {
         console.log('⏳ Aguardando dados do usuário...');
+        clearTimeout(timeoutId);
         setState(prev => ({ ...prev, error: 'Aguardando autenticação do usuário', isProcessing: false }));
         return;
       }
@@ -846,6 +858,7 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
       // Verificar permissões de microfone
       const hasPermissions = await requestPermissions();
       if (!hasPermissions) {
+        clearTimeout(timeoutId);
         setState(prev => ({ ...prev, isProcessing: false }));
         return;
       }
@@ -889,6 +902,7 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
 
         } catch (error) {
           console.error('❌ Erro ao preparar sala:', error);
+          clearTimeout(timeoutId);
           setState(prev => ({ ...prev, error: 'Erro ao preparar sala de conferência', isProcessing: false }));
           return;
         }
@@ -958,7 +972,23 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
         }
       };
       
-      await callObject.startTranscription(transcriptionConfig);
+      try {
+        await callObject.startTranscription(transcriptionConfig);
+        console.log('✅ Transcrição Daily.co iniciada com configuração válida');
+      } catch (transcriptionError) {
+        console.warn('⚠️ Erro ao iniciar transcrição, tentando configuração simplificada...', transcriptionError);
+        // Fallback para configuração mais simples
+        try {
+          await callObject.startTranscription({
+            language: 'pt-BR',
+            model: 'nova-2-general'
+          });
+          console.log('✅ Transcrição Daily.co iniciada com configuração simplificada');
+        } catch (fallbackError) {
+          console.error('❌ Erro ao iniciar transcrição mesmo com configuração simplificada:', fallbackError);
+          throw new Error('Falha ao iniciar transcrição Daily.co');
+        }
+      }
 
       // 3. Configurar compartilhamento de tela se solicitado
       if (config?.enableScreenAudio) {
@@ -981,6 +1011,10 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
       }
 
       startTimeRef.current = new Date();
+      
+      // Limpar timeout de segurança - conexão bem-sucedida
+      clearTimeout(timeoutId);
+      
       setState(prev => ({
         ...prev,
         isListening: true,
@@ -998,6 +1032,10 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
 
     } catch (error) {
       console.error('❌ Erro ao iniciar Daily.co:', error);
+      
+      // Limpar timeout de segurança - erro capturado
+      clearTimeout(timeoutId);
+      
       setState(prev => ({
         ...prev,
         error: error instanceof Error ? error.message : 'Erro ao iniciar transcrição',
