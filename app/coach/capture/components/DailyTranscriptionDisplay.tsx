@@ -79,6 +79,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
     transcript,
     interimTranscript,
     isListening,
+    isConnected,
     isProcessing,
     error,
     confidence,
@@ -105,6 +106,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
     isScreenAudioEnabled,
     toggleMicrophone,
     toggleScreenAudio,
+    toggleScreenShare, // NOVA: Controle dedicado de compartilhamento
     // NOVAS funções para mirror
     getScreenVideoTrack,
     createScreenMirror,
@@ -1078,14 +1080,17 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   {/* Toggle MIC */}
                   <button
                     onClick={toggleMicrophone}
-                    className="flex-none w-full h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
+                    disabled={!isConnected}
+                    className="flex-none w-full h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
-                      backgroundColor: isMicrophoneEnabled ? 'var(--sgbus-green)' : 'rgba(239, 68, 68, 0.2)',
-                      color: isMicrophoneEnabled ? 'var(--night)' : '#ef4444',
-                      border: isMicrophoneEnabled ? 'none' : '1px solid rgba(239, 68, 68, 0.3)'
+                      backgroundColor: !isConnected ? 'rgba(207, 198, 254, 0.1)' : isMicrophoneEnabled ? 'var(--sgbus-green)' : 'rgba(239, 68, 68, 0.2)',
+                      color: !isConnected ? 'var(--periwinkle)' : isMicrophoneEnabled ? 'var(--night)' : '#ef4444',
+                      border: !isConnected ? '1px solid rgba(207, 198, 254, 0.2)' : isMicrophoneEnabled ? 'none' : '1px solid rgba(239, 68, 68, 0.3)',
+                      opacity: !isConnected ? 0.5 : 1
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
+                    onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
                     onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                    title={!isConnected ? 'Conecte-se à sala Daily.co para habilitar o microfone' : undefined}
                   >
                     {isMicrophoneEnabled ? <Mic size={16} /> : <MicOff size={16} />}
                     <span>MIC</span>
@@ -1094,17 +1099,42 @@ const DailyTranscriptionDisplay: React.FC = () => {
                   {/* Toggle TELA (áudio) */}
                   <button
                     onClick={toggleScreenAudio}
-                    className="flex-none w-full h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2"
+                    disabled={!isScreenAudioCaptured}
+                    className="flex-none w-full h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
-                      backgroundColor: isScreenAudioEnabled ? 'var(--sgbus-green)' : 'rgba(239, 68, 68, 0.2)',
-                      color: isScreenAudioEnabled ? 'var(--night)' : '#ef4444',
-                      border: isScreenAudioEnabled ? 'none' : '1px solid rgba(239, 68, 68, 0.3)'
+                      backgroundColor: !isScreenAudioCaptured ? 'rgba(207, 198, 254, 0.1)' :
+                                      isScreenAudioEnabled ? 'var(--sgbus-green)' : 'rgba(239, 68, 68, 0.2)',
+                      color: !isScreenAudioCaptured ? 'var(--periwinkle)' :
+                             isScreenAudioEnabled ? 'var(--night)' : '#ef4444',
+                      border: !isScreenAudioCaptured ? '1px solid rgba(207, 198, 254, 0.2)' :
+                              isScreenAudioEnabled ? 'none' : '1px solid rgba(239, 68, 68, 0.3)',
+                      opacity: !isScreenAudioCaptured ? 0.5 : 1
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.filter = 'brightness(110%)'}
+                    onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
                     onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                    title={!isScreenAudioCaptured ? 'Inicie o compartilhamento de tela primeiro' : 
+                           isScreenAudioEnabled ? 'Desabilitar áudio da tela' : 'Habilitar áudio da tela'}
                   >
-                    {isScreenAudioEnabled ? <Mic size={16} /> : <MicOff size={16} />}
+                    {isScreenAudioCaptured && isScreenAudioEnabled ? <Mic size={16} /> : <MicOff size={16} />}
                     <span>TELA</span>
+                  </button>
+
+                  {/* NOVO: Botão Compartilhar Tela */}
+                  <button
+                    onClick={toggleScreenShare}
+                    disabled={!isListening}
+                    className="flex-none w-full h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      backgroundColor: isScreenAudioCaptured ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 233, 76, 0.2)',
+                      color: isScreenAudioCaptured ? '#ef4444' : 'var(--sgbus-green)',
+                      border: isScreenAudioCaptured ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(107, 233, 76, 0.3)'
+                    }}
+                    onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
+                    onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                    title={isScreenAudioCaptured ? 'Parar compartilhamento de tela' : 'Iniciar compartilhamento de tela'}
+                  >
+                    <ScreenShare size={16} />
+                    <span>{isScreenAudioCaptured ? 'PARAR' : 'COMPART.'}</span>
                   </button>
 
                   {/* Espaçador para empurrar botões para baixo */}

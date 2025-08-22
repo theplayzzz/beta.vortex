@@ -993,12 +993,12 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
       // 3. Configurar compartilhamento de tela se solicitado
       if (config?.enableScreenAudio) {
         try {
-          console.log('🖥️ Iniciando compartilhamento de tela...');
+          console.log('🖥️ Solicitando compartilhamento de tela...');
           callObject.startScreenShare({
             audio: true // Capturar áudio da tela
           });
-          setState(prev => ({ ...prev, isScreenAudioCaptured: true }));
-          console.log('✅ Compartilhamento de tela ativo');
+          // CORREÇÃO: Estado só será atualizado quando evento 'track-started' confirmar
+          console.log('🔄 Aguardando seleção do usuário para compartilhamento...');
         } catch (screenError) {
           console.warn('⚠️ Compartilhamento de tela não disponível:', screenError);
         }
@@ -1150,6 +1150,12 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
 
   // Função para o áudio da tela
   const toggleScreenAudio = useCallback(() => {
+    // CORREÇÃO: Esta função agora apenas controla o áudio quando a tela já está sendo compartilhada
+    if (!state.isScreenAudioCaptured) {
+      console.log('ℹ️ Nenhuma tela está sendo compartilhada. Use o botão COMPARTILHAR primeiro.');
+      return;
+    }
+
     const nextState = !state.isScreenAudioEnabled;
     
     if (callObjectRef.current) {
@@ -1159,51 +1165,38 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
         const screenAudioTrack = localParticipant?.tracks?.screenAudio;
         
         if (nextState) {
-          // Ligar áudio da tela
-          if (!state.isScreenAudioCaptured) {
-            // Se screen share não existe, iniciar com áudio
-            console.log('🖥️ Iniciando compartilhamento de tela com áudio...');
-            callObjectRef.current.startScreenShare({ audio: true });
-            setState(prev => ({ 
-              ...prev, 
-              isScreenAudioEnabled: true,
-              isScreenAudioCaptured: true 
-            }));
-          } else if (screenAudioTrack?.track) {
-            // Se screen share existe mas áudio está mutado, desmute
-            console.log('🖥️ Habilitando áudio da tela existente...');
+          // Ligar áudio da tela existente
+          if (screenAudioTrack?.track) {
+            console.log('🔊 Habilitando áudio da tela...');
             screenAudioTrack.track.enabled = true;
             setState(prev => ({ ...prev, isScreenAudioEnabled: true }));
           } else {
             // Reiniciar screen share com áudio
-            console.log('🖥️ Reiniciando screen share com áudio...');
+            console.log('🔊 Reiniciando compartilhamento com áudio...');
             callObjectRef.current.stopScreenShare();
             setTimeout(() => {
               callObjectRef.current?.startScreenShare({ audio: true });
             }, 100);
-            setState(prev => ({ 
-              ...prev, 
-              isScreenAudioEnabled: true,
-              isScreenAudioCaptured: true 
-            }));
+            // CORREÇÃO: Estado será atualizado pelos eventos track-started/stopped
+            console.log('🔄 Aguardando confirmação do restart...');
           }
         } else {
           // Desligar apenas o áudio da tela
           if (screenAudioTrack?.track) {
-            console.log('🖥️ Desabilitando áudio da tela (mantendo vídeo)...');
+            console.log('🔇 Desabilitando áudio da tela (mantendo vídeo)...');
             screenAudioTrack.track.enabled = false;
             setState(prev => ({ ...prev, isScreenAudioEnabled: false }));
           } else {
-            console.log('🖥️ Reiniciando screen share sem áudio...');
-            // Se não conseguir controlar o track diretamente, reiniciar sem áudio
+            console.log('🔇 Reiniciando compartilhamento sem áudio...');
             callObjectRef.current.stopScreenShare();
             setTimeout(() => {
               callObjectRef.current?.startScreenShare({ audio: false });
             }, 100);
+            // CORREÇÃO: Estado será atualizado pelos eventos track-started/stopped
             setState(prev => ({ 
               ...prev, 
-              isScreenAudioEnabled: false,
-              isScreenAudioCaptured: true // Mantém screen share ativo
+              isScreenAudioEnabled: false
+              // isScreenAudioCaptured será gerenciado pelos eventos
             }));
           }
         }
@@ -1215,8 +1208,42 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
       setState(prev => ({ ...prev, isScreenAudioEnabled: nextState }));
     }
     
-    console.log(`🖥️ Áudio da tela foi ${nextState ? 'LIGADO' : 'DESLIGADO'}`);
+    console.log(`🔊 Áudio da tela foi ${nextState ? 'LIGADO' : 'DESLIGADO'}`);
   }, [state.isScreenAudioEnabled, state.isScreenAudioCaptured]);
+
+  // NOVA: Função dedicada para controlar compartilhamento de tela
+  const toggleScreenShare = useCallback(() => {
+    if (!callObjectRef.current) {
+      console.log('⚠️ Não conectado à sala Daily.co');
+      return;
+    }
+
+    const isCurrentlySharing = state.isScreenAudioCaptured;
+    
+    if (isCurrentlySharing) {
+      // Parar compartilhamento - pode ser imediato pois sempre funciona
+      console.log('🛑 Parando compartilhamento de tela...');
+      try {
+        callObjectRef.current.stopScreenShare();
+        // Estado será atualizado pelo evento 'track-stopped'
+        console.log('🔄 Aguardando confirmação de parada...');
+      } catch (error) {
+        console.error('❌ Erro ao parar compartilhamento:', error);
+      }
+    } else {
+      // Iniciar compartilhamento - NÃO mudar estado aqui, aguardar evento 'track-started'
+      console.log('🖥️ Solicitando compartilhamento de tela...');
+      try {
+        callObjectRef.current.startScreenShare({ 
+          audio: true // Iniciar com áudio habilitado por padrão
+        });
+        console.log('🔄 Aguardando seleção do usuário...');
+        // IMPORTANTE: Estado só será atualizado quando o evento 'track-started' confirmar
+      } catch (error) {
+        console.error('❌ Erro ao solicitar compartilhamento:', error);
+      }
+    }
+  }, [state.isScreenAudioCaptured]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1360,6 +1387,14 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
           event.participant?.local) {
         console.log('🖥️ Mirror: Screen video track iniciado:', event);
         
+        // ✅ ATUALIZAR ESTADO: Compartilhamento realmente confirmado
+        setState(prev => ({ 
+          ...prev, 
+          isScreenAudioCaptured: true,
+          isScreenAudioEnabled: true 
+        }));
+        console.log('✅ Compartilhamento de tela confirmado!');
+        
         // Notificar componente que track está disponível (via callback personalizado)
         if (config?.mirrorCallbacks?.onTrackAvailable) {
           setTimeout(() => {
@@ -1374,6 +1409,14 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
       if (event.track?.kind === 'video' && 
           event.participant?.local) {
         console.log('🖥️ Mirror: Screen video track parou:', event);
+        
+        // ✅ ATUALIZAR ESTADO: Compartilhamento realmente parado
+        setState(prev => ({ 
+          ...prev, 
+          isScreenAudioCaptured: false,
+          isScreenAudioEnabled: false 
+        }));
+        console.log('✅ Compartilhamento de tela parado!');
         
         // Notificar componente que track não está mais disponível
         if (config?.mirrorCallbacks?.onTrackUnavailable) {
@@ -1433,6 +1476,7 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
     isScreenAudioEnabled: state.isScreenAudioEnabled,
     toggleMicrophone,
     toggleScreenAudio,
+    toggleScreenShare, // NOVA: Controle dedicado de compartilhamento
     // NOVAS funções para mirror
     getScreenVideoTrack,
     createScreenMirror,
