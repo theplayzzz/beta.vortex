@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useDailyTranscription } from '../lib/useDailyTranscription';
-import { Play, Square, Mic, MicOff, ScreenShare, Trash2, Brain, HelpCircle, Zap } from 'lucide-react';
+import { Play, Square, Mic, MicOff, ScreenShare, Trash2, Brain, HelpCircle, Zap, AlertTriangle } from 'lucide-react';
 import TutorialModal from './TutorialModal';
 import { useFirstVisit } from '../lib/useFirstVisit';
 
@@ -73,6 +73,46 @@ const CompactAudioLevelBar: React.FC<AudioLevelBarProps> = ({ level, label, colo
   );
 };
 
+// Componente para Tooltip de Alerta de Áudio
+const AudioWarningTooltip: React.FC<{ show: boolean }> = ({ show }) => {
+  if (!show) return null;
+  
+  return (
+    <div
+      className="absolute z-50 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 rounded-lg text-xs font-medium animate-in fade-in-0 zoom-in-95 duration-200"
+      style={{
+        backgroundColor: '#fbbf24',
+        color: '#1f2937',
+        border: '1px solid #f59e0b',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        minWidth: '280px',
+        maxWidth: '320px'
+      }}
+    >
+      <div className="flex items-start gap-2">
+        <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+        <div className="text-left">
+          <div className="font-semibold mb-1">Nenhum som está saindo do compartilhamento</div>
+          <div className="text-xs opacity-90">
+            Pare de compartilhar e compartilhe novamente com o áudio habilitado
+          </div>
+        </div>
+      </div>
+      {/* Seta apontando para baixo */}
+      <div
+        className="absolute top-full left-1/2 transform -translate-x-1/2"
+        style={{
+          width: 0,
+          height: 0,
+          borderLeft: '6px solid transparent',
+          borderRight: '6px solid transparent',
+          borderTop: '6px solid #fbbf24'
+        }}
+      />
+    </div>
+  );
+};
+
 const DailyTranscriptionDisplay: React.FC = () => {
   // Hook Daily.co (compatível com interface Deepgram)
   const {
@@ -104,6 +144,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
     // FASE 3: Novos estados e funções de controle
     isMicrophoneEnabled,
     isScreenAudioEnabled,
+    hasScreenAudio,
     toggleMicrophone,
     toggleScreenAudio,
     toggleScreenShare, // NOVA: Controle dedicado de compartilhamento
@@ -1096,28 +1137,45 @@ const DailyTranscriptionDisplay: React.FC = () => {
                     <span>MIC</span>
                   </button>
 
-                  {/* Toggle TELA (áudio) */}
-                  <button
-                    onClick={toggleScreenAudio}
-                    disabled={!isScreenAudioCaptured}
-                    className="flex-none w-full h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{
-                      backgroundColor: !isScreenAudioCaptured ? 'rgba(207, 198, 254, 0.1)' :
-                                      isScreenAudioEnabled ? 'var(--sgbus-green)' : 'rgba(239, 68, 68, 0.2)',
-                      color: !isScreenAudioCaptured ? 'var(--periwinkle)' :
-                             isScreenAudioEnabled ? 'var(--night)' : '#ef4444',
-                      border: !isScreenAudioCaptured ? '1px solid rgba(207, 198, 254, 0.2)' :
-                              isScreenAudioEnabled ? 'none' : '1px solid rgba(239, 68, 68, 0.3)',
-                      opacity: !isScreenAudioCaptured ? 0.5 : 1
-                    }}
-                    onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
-                    onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
-                    title={!isScreenAudioCaptured ? 'Inicie o compartilhamento de tela primeiro' : 
-                           isScreenAudioEnabled ? 'Desabilitar áudio da tela' : 'Habilitar áudio da tela'}
-                  >
-                    {isScreenAudioCaptured && isScreenAudioEnabled ? <Mic size={16} /> : <MicOff size={16} />}
-                    <span>TELA</span>
-                  </button>
+                  {/* Toggle TELA (áudio) com alerta quando sem áudio */}
+                  <div className="relative">
+                    <button
+                      onClick={toggleScreenAudio}
+                      disabled={!isScreenAudioCaptured}
+                      className="flex-none w-full h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        backgroundColor: !isScreenAudioCaptured ? 'rgba(207, 198, 254, 0.1)' :
+                                        // Se tela compartilhada mas sem áudio, mostrar amarelo de alerta
+                                        (isScreenAudioCaptured && !hasScreenAudio) ? 'rgba(251, 191, 36, 0.2)' :
+                                        isScreenAudioEnabled ? 'var(--sgbus-green)' : 'rgba(239, 68, 68, 0.2)',
+                        color: !isScreenAudioCaptured ? 'var(--periwinkle)' :
+                               (isScreenAudioCaptured && !hasScreenAudio) ? '#fbbf24' :
+                               isScreenAudioEnabled ? 'var(--night)' : '#ef4444',
+                        border: !isScreenAudioCaptured ? '1px solid rgba(207, 198, 254, 0.2)' :
+                                (isScreenAudioCaptured && !hasScreenAudio) ? '1px solid rgba(251, 191, 36, 0.3)' :
+                                isScreenAudioEnabled ? 'none' : '1px solid rgba(239, 68, 68, 0.3)',
+                        opacity: !isScreenAudioCaptured ? 0.5 : 1
+                      }}
+                      onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
+                      onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                      title={!isScreenAudioCaptured ? 'Inicie o compartilhamento de tela primeiro' : 
+                             (isScreenAudioCaptured && !hasScreenAudio) ? 'Tela compartilhada sem áudio - clique no tooltip para instruções' :
+                             isScreenAudioEnabled ? 'Desabilitar áudio da tela' : 'Habilitar áudio da tela'}
+                    >
+                      {/* Ícone com alerta quando sem áudio */}
+                      <div className="flex items-center gap-1">
+                        {isScreenAudioCaptured && isScreenAudioEnabled ? <Mic size={16} /> : <MicOff size={16} />}
+                        {/* Mostrar triângulo de alerta quando tela compartilhada mas sem áudio */}
+                        {isScreenAudioCaptured && !hasScreenAudio && (
+                          <AlertTriangle size={12} className="text-yellow-500" />
+                        )}
+                      </div>
+                      <span>TELA</span>
+                    </button>
+                    
+                    {/* Tooltip de aviso quando tela compartilhada sem áudio */}
+                    <AudioWarningTooltip show={isScreenAudioCaptured && !hasScreenAudio} />
+                  </div>
 
                   {/* NOVO: Botão Compartilhar Tela */}
                   <button

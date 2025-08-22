@@ -73,6 +73,7 @@ export interface TranscriptionState {
   // NOVOS CAMPOS para Controles Independentes (Fase 2)
   isMicrophoneEnabled: boolean;
   isScreenAudioEnabled: boolean;
+  hasScreenAudio: boolean; // Se tela foi compartilhada COM áudio
 }
 
 // Interface para configuração Daily
@@ -163,7 +164,8 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
     },
     // NOVOS CAMPOS INICIALIZADOS (Fase 2)
     isMicrophoneEnabled: false, // Microfone inicia desligado
-    isScreenAudioEnabled: true   // Áudio da tela inicia ligado
+    isScreenAudioEnabled: true,  // Áudio da tela inicia ligado
+    hasScreenAudio: false       // Se tela foi compartilhada COM áudio
   });
 
   // Refs para Daily.co
@@ -1223,9 +1225,16 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
     if (isCurrentlySharing) {
       // Parar compartilhamento - pode ser imediato pois sempre funciona
       console.log('🛑 Parando compartilhamento de tela...');
+      
+      // ✅ LIMPAR ESTADO DE ALERTA IMEDIATAMENTE quando usuário para compartilhamento
+      setState(prev => ({ 
+        ...prev, 
+        hasScreenAudio: false // Remove alerta imediatamente
+      }));
+      
       try {
         callObjectRef.current.stopScreenShare();
-        // Estado será atualizado pelo evento 'track-stopped'
+        // Estado completo será atualizado pelo evento 'track-stopped'
         console.log('🔄 Aguardando confirmação de parada...');
       } catch (error) {
         console.error('❌ Erro ao parar compartilhamento:', error);
@@ -1387,13 +1396,40 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
           event.participant?.local) {
         console.log('🖥️ Mirror: Screen video track iniciado:', event);
         
-        // ✅ ATUALIZAR ESTADO: Compartilhamento realmente confirmado
+        // ✅ ATUALIZAR ESTADO IMEDIATAMENTE: Compartilhamento confirmado (para mirror funcionar)
         setState(prev => ({ 
           ...prev, 
           isScreenAudioCaptured: true,
-          isScreenAudioEnabled: true 
+          isScreenAudioEnabled: true  // Inicialmente true, será corrigido pela detecção
         }));
         console.log('✅ Compartilhamento de tela confirmado!');
+        
+        // ✅ DETECTAR PRESENÇA DE ÁUDIO DA TELA (com delay para dar tempo dos tracks carregarem)
+        setTimeout(() => {
+          if (callObjectRef.current) {
+            const participants = callObjectRef.current.participants();
+            const localParticipant = participants?.local;
+            const screenAudioTrack = localParticipant?.tracks?.screenAudio;
+            
+            const hasAudio = !!screenAudioTrack?.track;
+            console.log('🔍 Detecção de áudio da tela:', { 
+              hasAudio, 
+              screenAudioTrack: !!screenAudioTrack,
+              trackEnabled: screenAudioTrack?.track?.enabled 
+            });
+            
+            if (!hasAudio) {
+              console.warn('⚠️ AVISO: Tela compartilhada SEM áudio!');
+            }
+            
+            // ✅ CORRIGIR ESTADO com detecção real de áudio
+            setState(prev => ({ 
+              ...prev, 
+              isScreenAudioEnabled: hasAudio,
+              hasScreenAudio: hasAudio
+            }));
+          }
+        }, 1000); // Delay para garantir que todos os tracks estejam disponíveis
         
         // Notificar componente que track está disponível (via callback personalizado)
         if (config?.mirrorCallbacks?.onTrackAvailable) {
@@ -1414,7 +1450,8 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
         setState(prev => ({ 
           ...prev, 
           isScreenAudioCaptured: false,
-          isScreenAudioEnabled: false 
+          isScreenAudioEnabled: false,
+          hasScreenAudio: false
         }));
         console.log('✅ Compartilhamento de tela parado!');
         
@@ -1474,6 +1511,7 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
     // FASE 2: Novos estados e funções de controle
     isMicrophoneEnabled: state.isMicrophoneEnabled,
     isScreenAudioEnabled: state.isScreenAudioEnabled,
+    hasScreenAudio: state.hasScreenAudio,
     toggleMicrophone,
     toggleScreenAudio,
     toggleScreenShare, // NOVA: Controle dedicado de compartilhamento
