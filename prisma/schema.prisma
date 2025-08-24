@@ -299,6 +299,7 @@ model User {
   StrategicPlanning                          StrategicPlanning[]
   TaskAttachment                             TaskAttachment[]
   TaskComment                                TaskComment[]
+  TranscriptionSession                       TranscriptionSession[]
   
   // 🆕 RELACIONAMENTOS PARA AUDIT TRAIL (Plan-018)
   ModeratedUsers                             UserModerationLog[] @relation("UserModerationLog_userId")
@@ -332,6 +333,34 @@ model UserModerationLog {
   @@index([moderatorId])               // Para ações de um moderador  
   @@index([action])                    // Para filtrar por tipo de ação
   @@index([createdAt])                 // Para ordenação temporal
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model TranscriptionSession {
+  id              String    @id @default(cuid())
+  sessionName     String
+  companyName     String
+  industry        String
+  customIndustry  String?
+  revenue         String?
+  agentType       AgentType // Tipo de agente: GENERALISTA ou ESPECIALISTA
+  spinQuestions   Json?     // Armazenar situation, problem, implication, solutionNeed
+  connectTime     DateTime? // Timestamp quando usuário conecta para transcrição
+  totalDuration   Int?      // Duração total da sessão em segundos
+  analysisCount   Int       @default(0) // Número de análises solicitadas
+  analyses        Json?     // Histórico de todas as análises feitas na sessão
+  userId          String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relacionamentos
+  User            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, createdAt(sort: Desc)]) // Para listar sessões do usuário ordenadas por data
+  @@index([sessionName])                   // Para busca por nome da sessão
+  @@index([agentType])                     // Para filtros por tipo de agente
+  @@index([userId, agentType])             // Para filtros combinados usuário + tipo agente
 }
 
 enum CreditTransactionType {
@@ -419,4 +448,9 @@ enum ModerationAction {
   UNSUSPEND_TO_APPROVED
   UNSUSPEND_TO_PENDING
   RESET_TO_PENDING
+}
+
+enum AgentType {
+  GENERALISTA
+  ESPECIALISTA
 }
