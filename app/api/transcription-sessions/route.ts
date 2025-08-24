@@ -9,6 +9,7 @@ const CreateTranscriptionSessionSchema = z.object({
   industry: z.string().min(1, 'Indústria é obrigatória'),
   customIndustry: z.string().optional(),
   revenue: z.string().min(1, 'Faturamento é obrigatório'),
+  agentType: z.enum(['GENERALISTA', 'ESPECIALISTA']).default('ESPECIALISTA'),
   spinQuestions: z.object({
     situation: z.string().min(1, 'Situação é obrigatória').max(500, 'Máximo de 500 caracteres'),
     problem: z.string().min(1, 'Problema é obrigatório').max(500, 'Máximo de 500 caracteres'),
@@ -35,6 +36,7 @@ export async function POST(request: NextRequest) {
         industry: validatedData.industry,
         customIndustry: validatedData.customIndustry,
         revenue: validatedData.revenue,
+        agentType: validatedData.agentType,
         spinQuestions: validatedData.spinQuestions,
         analysisCount: 0,
         analyses: [],

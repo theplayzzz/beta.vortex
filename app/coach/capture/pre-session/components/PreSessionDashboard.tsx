@@ -102,6 +102,7 @@ export default function PreSessionDashboard() {
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const [showSessionTypeDropdown, setShowSessionTypeDropdown] = useState(false);
   const [showSalesAgentModal, setShowSalesAgentModal] = useState(false);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
 
   // Refs para detectar cliques fora dos dropdowns
   const periodDropdownRef = useRef<HTMLDivElement>(null);
@@ -140,13 +141,50 @@ export default function PreSessionDashboard() {
     setShowSalesAgentModal(true);
   };
 
-  const handleSalesAgentSubmit = (data: SalesAgentConfigData) => {
-    // Store the configuration data (you can expand this to use a proper state management solution)
-    console.log('Sales Agent Configuration:', data);
-    // Store in localStorage for the transcription page to access
-    localStorage.setItem('salesAgentConfig', JSON.stringify(data));
-    // Navigate to the transcription page with the configuration
-    window.location.href = '/coach/capture/daily-co';
+  const handleSalesAgentSubmit = async (data: SalesAgentConfigData) => {
+    setIsCreatingSession(true);
+    
+    try {
+      const sessionData = {
+        sessionName: `Sessão ${data.companyName} - ${new Date().toLocaleDateString()}`,
+        companyName: data.companyName,
+        industry: data.industry,
+        customIndustry: data.customIndustry,
+        revenue: data.revenue,
+        agentType: data.agentType,
+        spinQuestions: {
+          situation: data.situation,
+          problem: data.problem,
+          implication: data.implication,
+          solutionNeed: data.solutionNeed
+        }
+      };
+
+      const response = await fetch('/api/transcription-sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sessionData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao criar sessão');
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.sessionId) {
+        window.location.href = `/coach/capture/daily-co?sessionId=${result.sessionId}`;
+      } else {
+        throw new Error('Erro ao obter ID da sessão');
+      }
+    } catch (error) {
+      console.error('Erro ao salvar configuração:', error);
+      alert(`Erro ao iniciar sessão: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      setIsCreatingSession(false);
+    }
   };
 
   return (
@@ -490,6 +528,7 @@ export default function PreSessionDashboard() {
         isOpen={showSalesAgentModal}
         onClose={() => setShowSalesAgentModal(false)}
         onSubmit={handleSalesAgentSubmit}
+        isLoading={isCreatingSession}
       />
     </div>
   );

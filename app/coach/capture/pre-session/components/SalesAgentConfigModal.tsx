@@ -7,6 +7,7 @@ interface SalesAgentConfigModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: SalesAgentConfigData) => void;
+  isLoading?: boolean;
 }
 
 export interface SalesAgentConfigData {
@@ -14,6 +15,7 @@ export interface SalesAgentConfigData {
   industry: string;
   customIndustry?: string;
   revenue: string;
+  agentType: 'GENERALISTA' | 'ESPECIALISTA';
   situation: string;
   problem: string;
   implication: string;
@@ -45,13 +47,14 @@ const revenueRanges = [
   'Mais de R$ 1.000.000/mês'
 ];
 
-export default function SalesAgentConfigModal({ isOpen, onClose, onSubmit }: SalesAgentConfigModalProps) {
+export default function SalesAgentConfigModal({ isOpen, onClose, onSubmit, isLoading = false }: SalesAgentConfigModalProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<SalesAgentConfigData>({
     companyName: '',
     industry: '',
     customIndustry: '',
     revenue: '',
+    agentType: 'ESPECIALISTA',
     situation: '',
     problem: '',
     implication: '',
@@ -461,10 +464,24 @@ export default function SalesAgentConfigModal({ isOpen, onClose, onSubmit }: Sal
             <button
               type="button"
               onClick={handleNext}
-              className="flex items-center gap-2 px-6 py-2 bg-sgbus-green hover:bg-sgbus-green/90 text-night font-semibold rounded-lg transition-all hover:scale-105"
+              disabled={isLoading}
+              className={`flex items-center gap-2 px-6 py-2 font-semibold rounded-lg transition-all ${
+                isLoading 
+                  ? 'bg-gray-500 text-gray-300 cursor-not-allowed' 
+                  : 'bg-sgbus-green hover:bg-sgbus-green/90 text-night hover:scale-105'
+              }`}
             >
-              Iniciar Sessão
-              <Target size={16} />
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-gray-600" />
+                  Criando Sessão...
+                </>
+              ) : (
+                <>
+                  Iniciar Sessão
+                  <Target size={16} />
+                </>
+              )}
             </button>
           )}
         </div>
