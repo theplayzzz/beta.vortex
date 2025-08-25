@@ -125,6 +125,7 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
 
   // Estado para tracking da sessão
   const [connectStartTime, setConnectStartTime] = useState<Date | null>(null);
+  const [currentSessionDuration, setCurrentSessionDuration] = useState<number>(0);
   const lastUpdateRef = useRef<number>(0);
 
   // Função para atualizar dados da sessão (fire-and-forget com retry e throttling)
@@ -1052,22 +1053,37 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [canAnalyze, handleAnalyze]);
 
-  // Tracking de conexão da sessão
+  // Tracking de conexão da sessão com duração cumulativa
   useEffect(() => {
     if (!sessionId) return;
 
     if (isConnected && !connectStartTime) {
-      // Primeira conexão - registrar connectTime
+      // Nova conexão - registrar início
       const startTime = new Date();
       setConnectStartTime(startTime);
-      updateSessionData({ connectTime: startTime.toISOString() });
+      
+      // Se é a primeira conexão da sessão, registrar connectTime
+      if (!sessionData?.connectTime) {
+        updateSessionData({ connectTime: startTime.toISOString() });
+      }
     } else if (!isConnected && connectStartTime) {
-      // Desconectou - calcular duração total
-      const duration = Math.floor((new Date().getTime() - connectStartTime.getTime()) / 1000);
-      updateSessionData({ totalDuration: duration });
+      // Desconectou - somar duração à duração total existente
+      const sessionDuration = Math.floor((new Date().getTime() - connectStartTime.getTime()) / 1000);
+      const currentTotalDuration = sessionData?.totalDuration || 0;
+      const newTotalDuration = currentTotalDuration + sessionDuration;
+      
+      updateSessionData({ totalDuration: newTotalDuration });
+      
+      // Atualizar estado local para próximas reconexões
+      setSessionData((prev: any) => prev ? {
+        ...prev,
+        totalDuration: newTotalDuration
+      } : prev);
+      
+      // Reset para próxima conexão
       setConnectStartTime(null);
     }
-  }, [isConnected, sessionId, connectStartTime, updateSessionData]);
+  }, [isConnected, sessionId, connectStartTime, sessionData, updateSessionData]);
 
   // Hook para expor função de incremento de análise para uso externo
   useEffect(() => {
@@ -1082,6 +1098,62 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
       }
     };
   }, [incrementAnalysisCount, sessionId]);
+
+  // Handler para salvar duração ao fechar/atualizar página
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const handleBeforeUnload = () => {
+      // Se estiver conectado quando a página fechar, salvar duração acumulada
+      if (connectStartTime) {
+        const sessionDuration = Math.floor((new Date().getTime() - connectStartTime.getTime()) / 1000);
+        const currentTotalDuration = sessionData?.totalDuration || 0;
+        const finalTotalDuration = currentTotalDuration + sessionDuration;
+        
+        // Navigator.sendBeacon para garantir que a requisição seja enviada mesmo ao fechar
+        const updateData = { totalDuration: finalTotalDuration };
+        
+        try {
+          navigator.sendBeacon(
+            `/api/transcription-sessions/${sessionId}`, 
+            new Blob([JSON.stringify(updateData)], { type: 'application/json' })
+          );
+        } catch (error) {
+          // Fallback com fetch síncrono como último recurso
+          fetch(`/api/transcription-sessions/${sessionId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updateData),
+            keepalive: true
+          }).catch(() => {
+            // Falha silenciosa - não podemos fazer mais nada
+            console.warn('Failed to save session duration on page unload');
+          });
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [sessionId, connectStartTime, sessionData]);
+
+  // Timer para atualizar duração atual em tempo real
+  useEffect(() => {
+    if (!connectStartTime) {
+      setCurrentSessionDuration(0);
+      return;
+    }
+
+    const timer = setInterval(() => {
+      const elapsed = Math.floor((new Date().getTime() - connectStartTime.getTime()) / 1000);
+      setCurrentSessionDuration(elapsed);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [connectStartTime]);
 
   // Mirror container render function
   const renderMirrorContainer = () => {
@@ -1239,6 +1311,11 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                   {sessionData?.analysisCount > 0 && (
                     <span className="px-1.5 py-0.5 rounded bg-periwinkle bg-opacity-20 text-xs">
                       {sessionData.analysisCount} análises
+                    </span>
+                  )}
+                  {(sessionData?.totalDuration > 0 || currentSessionDuration > 0) && (
+                    <span className="px-1.5 py-0.5 rounded bg-sgbus-green bg-opacity-20 text-xs">
+                      {Math.floor(((sessionData?.totalDuration || 0) + currentSessionDuration) / 60)}m {((sessionData?.totalDuration || 0) + currentSessionDuration) % 60}s
                     </span>
                   )}
                 </div>
