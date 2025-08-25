@@ -113,7 +113,105 @@ const AudioWarningTooltip: React.FC<{ show: boolean }> = ({ show }) => {
   );
 };
 
-const DailyTranscriptionDisplay: React.FC = () => {
+interface DailyTranscriptionDisplayProps {
+  sessionId?: string;
+}
+
+const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ sessionId }) => {
+  // Estado para dados da sessão
+  const [sessionData, setSessionData] = useState<any>(null);
+  const [sessionLoading, setSessionLoading] = useState(false);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+
+  // Estado para tracking da sessão
+  const [connectStartTime, setConnectStartTime] = useState<Date | null>(null);
+  const lastUpdateRef = useRef<number>(0);
+
+  // Função para atualizar dados da sessão (fire-and-forget com retry e throttling)
+  const updateSessionData = useCallback((updates: any, retryCount = 0) => {
+    if (!sessionId) return;
+    
+    // Throttling simples: evitar muitas chamadas simultâneas
+    const now = Date.now();
+    if (now - lastUpdateRef.current < 500) { // Máximo 2 chamadas por segundo
+      return;
+    }
+    lastUpdateRef.current = now;
+    
+    // Fire-and-forget: não bloqueia a UI
+    fetch(`/api/transcription-sessions/${sessionId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updates)
+    }).catch(error => {
+      // Retry silencioso apenas uma vez para maior confiabilidade
+      if (retryCount === 0) {
+        setTimeout(() => updateSessionData(updates, 1), 1000);
+        console.warn('Session tracking failed, retrying silently...');
+      } else {
+        console.warn('Session tracking update failed after retry (non-critical):', error);
+      }
+    });
+  }, [sessionId]);
+
+  // Função para incrementar contagem de análises (não-bloqueante)
+  const incrementAnalysisCount = useCallback((analysisData?: any) => {
+    if (!sessionId || !sessionData) return;
+    
+    const newCount = (sessionData.analysisCount || 0) + 1;
+    const analyses = [...(sessionData.analyses || [])];
+    
+    if (analysisData) {
+      analyses.push({
+        timestamp: new Date().toISOString(),
+        ...analysisData
+      });
+    }
+
+    // Atualizar estado local imediatamente (otimistic update)
+    setSessionData((prev: any) => prev ? {
+      ...prev,
+      analysisCount: newCount,
+      analyses
+    } : prev);
+
+    // Fire-and-forget para o servidor
+    updateSessionData({
+      analysisCount: newCount,
+      ...(analysisData && { analyses })
+    });
+  }, [sessionId, sessionData, updateSessionData]);
+
+  // Buscar dados da sessão quando sessionId estiver presente
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const fetchSessionData = async () => {
+      setSessionLoading(true);
+      setSessionError(null);
+      
+      try {
+        const response = await fetch(`/api/transcription-sessions/${sessionId}`);
+        
+        if (!response.ok) {
+          throw new Error('Sessão não encontrada');
+        }
+        
+        const result = await response.json();
+        setSessionData(result.session);
+      } catch (error) {
+        console.error('Erro ao buscar dados da sessão:', error);
+        setSessionError(error instanceof Error ? error.message : 'Erro desconhecido');
+      } finally {
+        setSessionLoading(false);
+      }
+    };
+
+    fetchSessionData();
+  }, [sessionId]);
+
   // Hook Daily.co (compatível com interface Deepgram)
   const {
     transcript,
@@ -843,6 +941,7 @@ const DailyTranscriptionDisplay: React.FC = () => {
   const handleAnalyze = useCallback(async () => {
     if (isAnalyzing) return;
     
+    const analysisStartTime = performance.now(); // Performance tracking
     setIsAnalyzing(true);
     let loadingId: string | null = null;
     
@@ -903,7 +1002,19 @@ const DailyTranscriptionDisplay: React.FC = () => {
         updateLoadingEntry(loadingId, resposta);
       }
       
-      console.log('✅ Análise concluída, transcrição Daily.co continua ativa');
+      // Tracking da análise na sessão (não-bloqueante)
+      if (sessionId) {
+        incrementAnalysisCount({
+          type: isQuickAnalysis ? 'quick' : 'detailed',
+          content: resposta,
+          contextLength: contextoCompleto.length,
+          creditsUsed: 1 // Pode ser calculado dinamicamente
+        });
+      }
+      
+      const analysisEndTime = performance.now();
+      const analysisDuration = analysisEndTime - analysisStartTime;
+      console.log(`✅ Análise concluída em ${analysisDuration.toFixed(2)}ms, transcrição Daily.co continua ativa`);
       
     } catch (error) {
       console.error('❌ Erro na análise:', error);
@@ -940,6 +1051,37 @@ const DailyTranscriptionDisplay: React.FC = () => {
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [canAnalyze, handleAnalyze]);
+
+  // Tracking de conexão da sessão
+  useEffect(() => {
+    if (!sessionId) return;
+
+    if (isConnected && !connectStartTime) {
+      // Primeira conexão - registrar connectTime
+      const startTime = new Date();
+      setConnectStartTime(startTime);
+      updateSessionData({ connectTime: startTime.toISOString() });
+    } else if (!isConnected && connectStartTime) {
+      // Desconectou - calcular duração total
+      const duration = Math.floor((new Date().getTime() - connectStartTime.getTime()) / 1000);
+      updateSessionData({ totalDuration: duration });
+      setConnectStartTime(null);
+    }
+  }, [isConnected, sessionId, connectStartTime, updateSessionData]);
+
+  // Hook para expor função de incremento de análise para uso externo
+  useEffect(() => {
+    if (sessionId) {
+      // Expor função globalmente para ser usada em análises
+      (window as any).trackSessionAnalysis = incrementAnalysisCount;
+    }
+    
+    return () => {
+      if ((window as any).trackSessionAnalysis) {
+        delete (window as any).trackSessionAnalysis;
+      }
+    };
+  }, [incrementAnalysisCount, sessionId]);
 
   // Mirror container render function
   const renderMirrorContainer = () => {
@@ -1059,6 +1201,52 @@ const DailyTranscriptionDisplay: React.FC = () => {
   return (
     <div className="h-full min-h-0 pt-[18px] px-6 pb-6">
       <div className="max-w-7xl mx-auto h-full">
+        {/* Informações da Sessão */}
+        {sessionId && (
+          <div 
+            className="mb-3 p-3 rounded-lg border"
+            style={{ 
+              backgroundColor: 'var(--night)', 
+              borderColor: 'rgba(249, 251, 252, 0.1)'
+            }}
+          >
+            {sessionLoading ? (
+              <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--periwinkle)' }}>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-periwinkle border-t-transparent" />
+                Carregando informações da sessão...
+              </div>
+            ) : sessionError ? (
+              <div className="text-sm" style={{ color: 'var(--red-400)' }}>
+                ⚠️ Erro: {sessionError}
+              </div>
+            ) : sessionData ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <div className="text-sm font-semibold" style={{ color: 'var(--seasalt)' }}>
+                      {sessionData.sessionName}
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--periwinkle)' }}>
+                      {sessionData.companyName} • {sessionData.industry} • {sessionData.revenue}
+                    </div>
+                  </div>
+                  <div className="px-2 py-1 rounded text-xs font-medium bg-sgbus-green text-night">
+                    {sessionData.agentType}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--periwinkle)' }}>
+                  <span>Sessão: {sessionId.slice(0, 8)}...</span>
+                  {sessionData?.analysisCount > 0 && (
+                    <span className="px-1.5 py-0.5 rounded bg-periwinkle bg-opacity-20 text-xs">
+                      {sessionData.analysisCount} análises
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 sm:grid-cols-[1.25fr_0.9fr] gap-3 h-full">
           
           {/* COLUNA ESQUERDA - Controles e Transcrição */}
