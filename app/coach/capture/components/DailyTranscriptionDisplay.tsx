@@ -255,6 +255,7 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     language: 'pt',
     enableScreenAudio: true,
     enableInterimResults: true,
+    sessionId: sessionId, // 🆕 PLAN-007: Passar sessionId para tracking via webhooks
     mirrorCallbacks: {
       onTrackAvailable: () => {
         console.log('🎉 Mirror: Track disponível via evento - tentando criar mirror...');

@@ -83,6 +83,7 @@ interface DailyTranscriptionConfig {
   profanityFilter?: boolean;
   enableScreenAudio?: boolean;
   enableInterimResults?: boolean;
+  sessionId?: string; // 🆕 PLAN-007: ID da sessão para tracking via webhooks
 }
 
 // Interface para eventos de transcrição Daily
@@ -727,6 +728,31 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
       }));
     });
 
+    // 🆕 PLAN-007: Handler para detecção de eject (sessão duplicada)
+    callObject.on('ejected', (event) => {
+      console.error('🚫 EJECT DETECTADO: Usuário removido da sala (possível sessão duplicada)');
+      console.error('Detalhes do eject:', event);
+      
+      setState(prev => ({
+        ...prev,
+        error: 'Sessão duplicada detectada: Feche outras abas desta sessão e tente novamente',
+        isListening: false,
+        isConnected: false,
+        connectionQuality: 'disconnected',
+        isProcessing: false
+      }));
+      
+      // Limpar call object
+      if (callObjectRef.current) {
+        try {
+          callObjectRef.current.destroy();
+          callObjectRef.current = null;
+        } catch (error) {
+          console.warn('⚠️ Erro ao limpar call object após eject:', error);
+        }
+      }
+    });
+
     // Evento de erro com tratamento específico para transport
     callObject.on('error', (event) => {
       console.error('❌ Erro Daily.co:', event);
@@ -940,11 +966,21 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
         // Setup event handlers
         setupDailyEventHandlers(callObject);
 
+        // 🆕 PLAN-007: Preparar userData com sessionId para webhook tracking
+        const userData: any = {};
+        
+        if (config?.sessionId) {
+          // Formato esperado pelo webhook: "session_${sessionId}"
+          userData.user_id = `session_${config.sessionId}`;
+          console.log(`🔗 Configurando userData para tracking: ${userData.user_id}`);
+        }
+
         // Entrar na sala
         await callObject.join({
           url: roomData.room.url,
           token: tokenData.token,
-          userName: tokenData.userName
+          userName: tokenData.userName,
+          userData // 🆕 PLAN-007: Inclui sessionId nos dados do usuário
         });
 
         console.log(`✅ Conectado à sala ${roomData.room.name}`);
