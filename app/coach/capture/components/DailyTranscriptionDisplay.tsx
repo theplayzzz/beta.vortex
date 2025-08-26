@@ -249,8 +249,7 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     toggleScreenShare, // NOVA: Controle dedicado de compartilhamento
     // NOVAS funções para mirror
     getScreenVideoTrack,
-    createScreenMirror,
-    manageScreenMirror
+    createScreenMirror
   } = useDailyTranscription({
     language: 'pt',
     enableScreenAudio: true,
@@ -1557,23 +1556,7 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                     <AudioWarningTooltip show={isScreenAudioCaptured && !hasScreenAudio} />
                   </div>
 
-                  {/* NOVO: Botão Compartilhar Tela */}
-                  <button
-                    onClick={toggleScreenShare}
-                    disabled={!isListening}
-                    className="flex-none w-full h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{
-                      backgroundColor: isScreenAudioCaptured ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 233, 76, 0.2)',
-                      color: isScreenAudioCaptured ? '#ef4444' : 'var(--sgbus-green)',
-                      border: isScreenAudioCaptured ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(107, 233, 76, 0.3)'
-                    }}
-                    onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
-                    onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
-                    title={isScreenAudioCaptured ? 'Parar compartilhamento de tela' : 'Iniciar compartilhamento de tela'}
-                  >
-                    <ScreenShare size={16} />
-                    <span>{isScreenAudioCaptured ? 'PARAR' : 'COMPART.'}</span>
-                  </button>
+
 
                   {/* Espaçador para empurrar botões para baixo */}
                   <div className="flex-1"></div>
