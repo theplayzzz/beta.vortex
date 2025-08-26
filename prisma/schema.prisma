@@ -360,12 +360,14 @@ model TranscriptionSession {
   userId                String
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime? // Soft delete timestamp
   
   // Relacionamentos
   User                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([deletedAt])
   @@index([userId])
-  @@index([userId, createdAt(sort: Desc)]) // Para listar sessões do usuário ordenadas por data
+  @@index([userId, deletedAt, createdAt(sort: Desc)]) // Para listar sessões do usuário ordenadas por data
   @@index([sessionName])                   // Para busca por nome da sessão
   @@index([agentType])                     // Para filtros por tipo de agente
   @@index([userId, agentType])             // Para filtros combinados usuário + tipo agente
