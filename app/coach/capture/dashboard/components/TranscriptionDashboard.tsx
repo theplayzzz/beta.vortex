@@ -193,7 +193,7 @@ export default function TranscriptionDashboard() {
   };
 
   const handleStartSession = () => {
-    window.location.href = '/coach/capture/daily-co';
+    window.location.href = '/coach/capture/pre-session';
   };
 
   return (

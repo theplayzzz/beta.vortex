@@ -5,7 +5,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Core Development
-- `npm run dev` - Start development server on port 3003
 - `npm run dev:https` - Start HTTPS development server using `server-https.js`
 - `npm run build` - Build application (includes Prisma generation and AI Guards compilation)
 - `npm run lint` - Run ESLint for code quality
@@ -17,13 +16,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npx prisma db push` - Push schema changes to database
 - `npx prisma studio` - Open Prisma Studio for database inspection
 - `npm run apply-rls-policies` - Apply Row Level Security policies
-
-### Speech/Transcription Services
-- `npm run speech-server` - Basic speech server
-- `npm run speech-server-https` - HTTPS speech server
-- `npm run speech-deepgram` - Deepgram-based transcription server
-- `npm run speech-server-ultra-fast` - Ultra-fast speech processing mode
-- `npm run speech-server-balanced` - Balanced speed/accuracy mode
 
 ### Production & Monitoring
 - `npm run sync-invited-users` - Sync invited users (requires manual confirmation)

@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Configuração simplificada da sala Daily (transcrição será iniciada separadamente)
+    // Configuração da sala Daily com prevenção de sessões duplicadas
     const roomConfig = {
       name: roomName,
       privacy: body.privacy || 'private',
@@ -99,6 +99,8 @@ export async function POST(request: NextRequest) {
         start_audio_off: false,
         start_video_off: true, // Foco no áudio para transcrição
         max_participants: 10,
+        // 🆕 PREVENÇÃO DE SESSÕES DUPLICADAS (Plan-007)
+        enforce_unique_user_ids: true, // Impede múltiplas conexões com mesmo user_id
         // Tempo de expiração (4 horas)
         exp: Math.floor(Date.now() / 1000) + (4 * 60 * 60)
       }

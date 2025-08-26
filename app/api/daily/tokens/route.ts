@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 interface CreateTokenRequest {
   roomName: string;
   userName?: string;
+  sessionId: string; // 🆕 CRÍTICO: sessionId para prevenção de duplicação
   enableTranscription?: boolean;
   permissions?: {
     canAdmin?: boolean;
@@ -26,6 +27,13 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    if (!body.sessionId) {
+      return NextResponse.json(
+        { error: 'SessionId é obrigatório para prevenção de duplicação' },
+        { status: 400 }
+      );
+    }
+    
     const dailyApiKey = process.env.DAILY_API_KEY;
     
     if (!dailyApiKey) {
@@ -40,6 +48,7 @@ export async function POST(request: NextRequest) {
       properties: {
         room_name: body.roomName,
         user_name: body.userName || `user-${Date.now()}`,
+        user_id: `session_${body.sessionId}`, // 🆕 CRÍTICO: Define user_id para prevenção de duplicação
         // Configurações básicas
         is_owner: false,
         start_audio_off: false,
@@ -86,6 +95,8 @@ export async function POST(request: NextRequest) {
     console.log('✅ Token Daily.co criado para sala:', {
       roomName: body.roomName,
       userName: body.userName || `user-${Date.now()}`,
+      sessionId: body.sessionId,
+      userId: `session_${body.sessionId}`,
       tokenPrefix: tokenData.token.substring(0, 10) + '...',
       transcriptionEnabled: body.enableTranscription !== false
     });

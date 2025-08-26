@@ -6,10 +6,16 @@ export const metadata: Metadata = {
   description: 'Sistema de transcrição em tempo real usando Daily.co com backend Deepgram integrado',
 };
 
-export default function DailyCoCapturePage() {
+interface DailyCoCapturingPageProps {
+  searchParams: Promise<{ sessionId?: string }>;
+}
+
+export default async function DailyCoCapturePage({ searchParams }: DailyCoCapturingPageProps) {
+  const { sessionId } = await searchParams;
+
   return (
     <main className="h-full min-h-0" style={{ backgroundColor: 'var(--raisin-black)' }}>
-      <DailyTranscriptionDisplay />
+      <DailyTranscriptionDisplay sessionId={sessionId} />
     </main>
   );
 } 
