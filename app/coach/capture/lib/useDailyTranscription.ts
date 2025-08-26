@@ -73,6 +73,7 @@ export interface TranscriptionState {
   // NOVOS CAMPOS para Controles Independentes (Fase 2)
   isMicrophoneEnabled: boolean;
   isScreenAudioEnabled: boolean;
+  hasScreenAudio: boolean; // Se tela foi compartilhada COM áudio
 }
 
 // Interface para configuração Daily
@@ -82,6 +83,7 @@ interface DailyTranscriptionConfig {
   profanityFilter?: boolean;
   enableScreenAudio?: boolean;
   enableInterimResults?: boolean;
+  sessionId?: string; // 🆕 PLAN-007: ID da sessão para tracking via webhooks
 }
 
 // Interface para eventos de transcrição Daily
@@ -163,7 +165,8 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
     },
     // NOVOS CAMPOS INICIALIZADOS (Fase 2)
     isMicrophoneEnabled: false, // Microfone inicia desligado
-    isScreenAudioEnabled: true   // Áudio da tela inicia ligado
+    isScreenAudioEnabled: true,  // Áudio da tela inicia ligado
+    hasScreenAudio: false       // Se tela foi compartilhada COM áudio
   });
 
   // Refs para Daily.co
@@ -409,7 +412,8 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
     console.log('✅ Transcrição Daily.co iniciada:', event);
     setState(prev => ({ 
       ...prev, 
-      isProcessing: true,
+      isListening: true,
+      isProcessing: false, // CORREÇÃO: resetar isProcessing quando transcrição realmente inicia
       lastActivity: new Date()
     }));
   }, []);
@@ -724,9 +728,79 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
       }));
     });
 
-    // Evento de erro com tratamento específico para transport
+    // 🆕 PLAN-007: Handler para detecção de eject (sessão duplicada)
+    // TODO: Verificar evento correto do Daily.co para detecção de remoção da sala
+    // callObject.on('ejected', (event) => {
+    //   console.error('🚫 EJECT DETECTADO: Usuário removido da sala (sessão duplicada)');
+    //   console.error('Detalhes do eject:', event);
+    //   
+    //   setState(prev => ({
+    //     ...prev,
+    //     error: 'Esta sessão foi encerrada porque você abriu a mesma sessão em outra aba ou janela. Para sua segurança, apenas uma conexão por sessão é permitida. Feche as outras abas desta sessão antes de tentar novamente.',
+    //     isListening: false,
+    //     isConnected: false,
+    //     connectionQuality: 'disconnected',
+    //     isProcessing: false
+    //   }));
+    //   
+    //   // Limpar call object
+    //   if (callObjectRef.current) {
+    //     try {
+    //       callObjectRef.current.destroy();
+    //       callObjectRef.current = null;
+    //     } catch (error) {
+    //       console.warn('⚠️ Erro ao limpar call object após eject:', error);
+    //     }
+    //   }
+    //   
+    //   // 🆕 RECOVERY MECHANISM: Tentar reconectar após 10 segundos se user fechar outras abas
+    //   console.log('⏰ Recovery mechanism ativado: Tentando reconectar em 10 segundos...');
+    //   setTimeout(() => {
+    //     console.log('🔄 Tentando recovery automático da sessão...');
+    //     setState(prev => ({
+    //       ...prev,
+    //       error: 'Tentando reconectar... (Se ainda há erro, feche as outras abas desta sessão)',
+    //       connectionQuality: 'poor'
+    //     }));
+    //     
+    //     // Tentar reconnect apenas se ainda temos uma config válida
+    //     if (config?.sessionId && state.isListening) {
+    //       console.log('🔄 Executando recovery da sessão após ejeção...');
+    //       // Não usar startListening diretamente pois pode criar loop
+    //       // Em vez disso, apenas mostrar que está tentando
+    //       setTimeout(() => {
+    //         setState(prev => {
+    //           if (prev.isConnected) {
+    //             return prev; // Já reconectou com sucesso
+    //           }
+    //           return {
+    //             ...prev,
+    //             error: 'Reconexão falhou. Sessão pode estar aberta em outra aba. Feche todas as abas desta sessão e tente novamente.',
+    //             connectionQuality: 'disconnected'
+    //           };
+    //         });
+    //       }, 5000);
+    //     }
+    //   }, 10000); // 10 segundos delay
+    // });
+
+    // Evento de erro com tratamento específico para transport e duplicação
     callObject.on('error', (event) => {
       console.error('❌ Erro Daily.co:', event);
+      
+      // Tratamento específico para erro de duplicação (complementar ao handler 'ejected')
+      if (event.errorMsg?.includes('Duplicate user_id') || event.errorMsg?.includes('duplicate')) {
+        console.error('🚫 ERRO DE DUPLICAÇÃO detectado via error handler');
+        setState(prev => ({
+          ...prev,
+          error: 'Esta sessão foi encerrada porque você abriu a mesma sessão em outra aba ou janela. Para sua segurança, apenas uma conexão por sessão é permitida. Feche as outras abas desta sessão antes de tentar novamente.',
+          isListening: false,
+          isConnected: false,
+          connectionQuality: 'disconnected',
+          isProcessing: false
+        }));
+        return; // Não tentar reconectar para erros de duplicação
+      }
       
       // Tratamento específico para erro de transport disconnected
       if (event.errorMsg?.includes('transport') || event.errorMsg?.includes('disconnected')) {
@@ -833,12 +907,23 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
 
   // Função para iniciar transcrição (compatível com Deepgram)
   const startListening = useCallback(async () => {
+    // Timeout de segurança para garantir que isProcessing não fique travado
+    const timeoutId = setTimeout(() => {
+      console.warn('⚠️ Timeout na conexão Daily.co - resetando isProcessing');
+      setState(prev => ({ 
+        ...prev, 
+        isProcessing: false, 
+        error: 'Timeout na conexão - tente novamente' 
+      }));
+    }, 30000); // 30 segundos timeout
+    
     try {
       setState(prev => ({ ...prev, error: null, isProcessing: true }));
 
       // Verificar se usuário está carregado e logado
       if (!isUserLoaded || !user) {
         console.log('⏳ Aguardando dados do usuário...');
+        clearTimeout(timeoutId);
         setState(prev => ({ ...prev, error: 'Aguardando autenticação do usuário', isProcessing: false }));
         return;
       }
@@ -846,6 +931,7 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
       // Verificar permissões de microfone
       const hasPermissions = await requestPermissions();
       if (!hasPermissions) {
+        clearTimeout(timeoutId);
         setState(prev => ({ ...prev, isProcessing: false }));
         return;
       }
@@ -889,8 +975,14 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
 
         } catch (error) {
           console.error('❌ Erro ao preparar sala:', error);
+          clearTimeout(timeoutId);
           setState(prev => ({ ...prev, error: 'Erro ao preparar sala de conferência', isProcessing: false }));
           return;
+        }
+
+        // Validar sessionId obrigatório para prevenção de duplicação
+        if (!config?.sessionId) {
+          throw new Error('SessionId é obrigatório para prevenção de sessões duplicadas');
         }
 
         // Criar token de acesso
@@ -900,6 +992,7 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
           body: JSON.stringify({
             roomName: roomData.room.name,
             userName: `${user.firstName || 'Usuario'}-${user.id.slice(-6)}`,
+            sessionId: config.sessionId, // 🆕 CRÍTICO: sessionId para prevenção de duplicação
             enableTranscription: true,
             permissions: {
               canScreenshare: config?.enableScreenAudio !== false
@@ -958,17 +1051,33 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
         }
       };
       
-      await callObject.startTranscription(transcriptionConfig);
+      try {
+        await callObject.startTranscription(transcriptionConfig);
+        console.log('✅ Transcrição Daily.co iniciada com configuração válida');
+      } catch (transcriptionError) {
+        console.warn('⚠️ Erro ao iniciar transcrição, tentando configuração simplificada...', transcriptionError);
+        // Fallback para configuração mais simples
+        try {
+          await callObject.startTranscription({
+            language: 'pt-BR',
+            model: 'nova-2-general'
+          });
+          console.log('✅ Transcrição Daily.co iniciada com configuração simplificada');
+        } catch (fallbackError) {
+          console.error('❌ Erro ao iniciar transcrição mesmo com configuração simplificada:', fallbackError);
+          throw new Error('Falha ao iniciar transcrição Daily.co');
+        }
+      }
 
       // 3. Configurar compartilhamento de tela se solicitado
       if (config?.enableScreenAudio) {
         try {
-          console.log('🖥️ Iniciando compartilhamento de tela...');
+          console.log('🖥️ Solicitando compartilhamento de tela...');
           callObject.startScreenShare({
             audio: true // Capturar áudio da tela
           });
-          setState(prev => ({ ...prev, isScreenAudioCaptured: true }));
-          console.log('✅ Compartilhamento de tela ativo');
+          // CORREÇÃO: Estado só será atualizado quando evento 'track-started' confirmar
+          console.log('🔄 Aguardando seleção do usuário para compartilhamento...');
         } catch (screenError) {
           console.warn('⚠️ Compartilhamento de tela não disponível:', screenError);
         }
@@ -981,6 +1090,10 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
       }
 
       startTimeRef.current = new Date();
+      
+      // Limpar timeout de segurança - conexão bem-sucedida
+      clearTimeout(timeoutId);
+      
       setState(prev => ({
         ...prev,
         isListening: true,
@@ -998,6 +1111,10 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
 
     } catch (error) {
       console.error('❌ Erro ao iniciar Daily.co:', error);
+      
+      // Limpar timeout de segurança - erro capturado
+      clearTimeout(timeoutId);
+      
       setState(prev => ({
         ...prev,
         error: error instanceof Error ? error.message : 'Erro ao iniciar transcrição',
@@ -1112,6 +1229,12 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
 
   // Função para o áudio da tela
   const toggleScreenAudio = useCallback(() => {
+    // CORREÇÃO: Esta função agora apenas controla o áudio quando a tela já está sendo compartilhada
+    if (!state.isScreenAudioCaptured) {
+      console.log('ℹ️ Nenhuma tela está sendo compartilhada. Use o botão COMPARTILHAR primeiro.');
+      return;
+    }
+
     const nextState = !state.isScreenAudioEnabled;
     
     if (callObjectRef.current) {
@@ -1121,51 +1244,38 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
         const screenAudioTrack = localParticipant?.tracks?.screenAudio;
         
         if (nextState) {
-          // Ligar áudio da tela
-          if (!state.isScreenAudioCaptured) {
-            // Se screen share não existe, iniciar com áudio
-            console.log('🖥️ Iniciando compartilhamento de tela com áudio...');
-            callObjectRef.current.startScreenShare({ audio: true });
-            setState(prev => ({ 
-              ...prev, 
-              isScreenAudioEnabled: true,
-              isScreenAudioCaptured: true 
-            }));
-          } else if (screenAudioTrack?.track) {
-            // Se screen share existe mas áudio está mutado, desmute
-            console.log('🖥️ Habilitando áudio da tela existente...');
+          // Ligar áudio da tela existente
+          if (screenAudioTrack?.track) {
+            console.log('🔊 Habilitando áudio da tela...');
             screenAudioTrack.track.enabled = true;
             setState(prev => ({ ...prev, isScreenAudioEnabled: true }));
           } else {
             // Reiniciar screen share com áudio
-            console.log('🖥️ Reiniciando screen share com áudio...');
+            console.log('🔊 Reiniciando compartilhamento com áudio...');
             callObjectRef.current.stopScreenShare();
             setTimeout(() => {
               callObjectRef.current?.startScreenShare({ audio: true });
             }, 100);
-            setState(prev => ({ 
-              ...prev, 
-              isScreenAudioEnabled: true,
-              isScreenAudioCaptured: true 
-            }));
+            // CORREÇÃO: Estado será atualizado pelos eventos track-started/stopped
+            console.log('🔄 Aguardando confirmação do restart...');
           }
         } else {
           // Desligar apenas o áudio da tela
           if (screenAudioTrack?.track) {
-            console.log('🖥️ Desabilitando áudio da tela (mantendo vídeo)...');
+            console.log('🔇 Desabilitando áudio da tela (mantendo vídeo)...');
             screenAudioTrack.track.enabled = false;
             setState(prev => ({ ...prev, isScreenAudioEnabled: false }));
           } else {
-            console.log('🖥️ Reiniciando screen share sem áudio...');
-            // Se não conseguir controlar o track diretamente, reiniciar sem áudio
+            console.log('🔇 Reiniciando compartilhamento sem áudio...');
             callObjectRef.current.stopScreenShare();
             setTimeout(() => {
               callObjectRef.current?.startScreenShare({ audio: false });
             }, 100);
+            // CORREÇÃO: Estado será atualizado pelos eventos track-started/stopped
             setState(prev => ({ 
               ...prev, 
-              isScreenAudioEnabled: false,
-              isScreenAudioCaptured: true // Mantém screen share ativo
+              isScreenAudioEnabled: false
+              // isScreenAudioCaptured será gerenciado pelos eventos
             }));
           }
         }
@@ -1177,8 +1287,49 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
       setState(prev => ({ ...prev, isScreenAudioEnabled: nextState }));
     }
     
-    console.log(`🖥️ Áudio da tela foi ${nextState ? 'LIGADO' : 'DESLIGADO'}`);
+    console.log(`🔊 Áudio da tela foi ${nextState ? 'LIGADO' : 'DESLIGADO'}`);
   }, [state.isScreenAudioEnabled, state.isScreenAudioCaptured]);
+
+  // NOVA: Função dedicada para controlar compartilhamento de tela
+  const toggleScreenShare = useCallback(() => {
+    if (!callObjectRef.current) {
+      console.log('⚠️ Não conectado à sala Daily.co');
+      return;
+    }
+
+    const isCurrentlySharing = state.isScreenAudioCaptured;
+    
+    if (isCurrentlySharing) {
+      // Parar compartilhamento - pode ser imediato pois sempre funciona
+      console.log('🛑 Parando compartilhamento de tela...');
+      
+      // ✅ LIMPAR ESTADO DE ALERTA IMEDIATAMENTE quando usuário para compartilhamento
+      setState(prev => ({ 
+        ...prev, 
+        hasScreenAudio: false // Remove alerta imediatamente
+      }));
+      
+      try {
+        callObjectRef.current.stopScreenShare();
+        // Estado completo será atualizado pelo evento 'track-stopped'
+        console.log('🔄 Aguardando confirmação de parada...');
+      } catch (error) {
+        console.error('❌ Erro ao parar compartilhamento:', error);
+      }
+    } else {
+      // Iniciar compartilhamento - NÃO mudar estado aqui, aguardar evento 'track-started'
+      console.log('🖥️ Solicitando compartilhamento de tela...');
+      try {
+        callObjectRef.current.startScreenShare({ 
+          audio: true // Iniciar com áudio habilitado por padrão
+        });
+        console.log('🔄 Aguardando seleção do usuário...');
+        // IMPORTANTE: Estado só será atualizado quando o evento 'track-started' confirmar
+      } catch (error) {
+        console.error('❌ Erro ao solicitar compartilhamento:', error);
+      }
+    }
+  }, [state.isScreenAudioCaptured]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1322,6 +1473,41 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
           event.participant?.local) {
         console.log('🖥️ Mirror: Screen video track iniciado:', event);
         
+        // ✅ ATUALIZAR ESTADO IMEDIATAMENTE: Compartilhamento confirmado (para mirror funcionar)
+        setState(prev => ({ 
+          ...prev, 
+          isScreenAudioCaptured: true,
+          isScreenAudioEnabled: true  // Inicialmente true, será corrigido pela detecção
+        }));
+        console.log('✅ Compartilhamento de tela confirmado!');
+        
+        // ✅ DETECTAR PRESENÇA DE ÁUDIO DA TELA (com delay para dar tempo dos tracks carregarem)
+        setTimeout(() => {
+          if (callObjectRef.current) {
+            const participants = callObjectRef.current.participants();
+            const localParticipant = participants?.local;
+            const screenAudioTrack = localParticipant?.tracks?.screenAudio;
+            
+            const hasAudio = !!screenAudioTrack?.track;
+            console.log('🔍 Detecção de áudio da tela:', { 
+              hasAudio, 
+              screenAudioTrack: !!screenAudioTrack,
+              trackEnabled: screenAudioTrack?.track?.enabled 
+            });
+            
+            if (!hasAudio) {
+              console.warn('⚠️ AVISO: Tela compartilhada SEM áudio!');
+            }
+            
+            // ✅ CORRIGIR ESTADO com detecção real de áudio
+            setState(prev => ({ 
+              ...prev, 
+              isScreenAudioEnabled: hasAudio,
+              hasScreenAudio: hasAudio
+            }));
+          }
+        }, 1000); // Delay para garantir que todos os tracks estejam disponíveis
+        
         // Notificar componente que track está disponível (via callback personalizado)
         if (config?.mirrorCallbacks?.onTrackAvailable) {
           setTimeout(() => {
@@ -1336,6 +1522,15 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
       if (event.track?.kind === 'video' && 
           event.participant?.local) {
         console.log('🖥️ Mirror: Screen video track parou:', event);
+        
+        // ✅ ATUALIZAR ESTADO: Compartilhamento realmente parado
+        setState(prev => ({ 
+          ...prev, 
+          isScreenAudioCaptured: false,
+          isScreenAudioEnabled: false,
+          hasScreenAudio: false
+        }));
+        console.log('✅ Compartilhamento de tela parado!');
         
         // Notificar componente que track não está mais disponível
         if (config?.mirrorCallbacks?.onTrackUnavailable) {
@@ -1393,8 +1588,10 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
     // FASE 2: Novos estados e funções de controle
     isMicrophoneEnabled: state.isMicrophoneEnabled,
     isScreenAudioEnabled: state.isScreenAudioEnabled,
+    hasScreenAudio: state.hasScreenAudio,
     toggleMicrophone,
     toggleScreenAudio,
+    toggleScreenShare, // NOVA: Controle dedicado de compartilhamento
     // NOVAS funções para mirror
     getScreenVideoTrack,
     createScreenMirror,
