@@ -20,7 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Production & Monitoring
 - `npm run sync-invited-users` - Sync invited users (requires manual confirmation)
 - `npm run health-check` - Run system health verification
-- `npm run production-monitoring` - Start production monitoring
+- `npm run production-monitoring` - Start production monitoring;
 
 ## Architecture Overview
 
