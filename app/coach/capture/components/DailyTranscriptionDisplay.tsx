@@ -1556,7 +1556,28 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                     <AudioWarningTooltip show={isScreenAudioCaptured && !hasScreenAudio} />
                   </div>
 
-
+                  {/* Botão Compartilhar Tela */}
+                  <button
+                    onClick={toggleScreenShare}
+                    disabled={!isConnected}
+                    className="flex-none w-full h-[34px] px-1 sm:px-2 rounded-lg text-xs font-medium transition-all duration-200 inline-flex items-center justify-center gap-1 focus-visible:outline-2 focus-visible:outline-[color:var(--sgbus-green)] focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      backgroundColor: !isConnected ? 'rgba(207, 198, 254, 0.1)' : 
+                                      isScreenAudioCaptured ? 'rgba(239, 68, 68, 0.2)' : 'rgba(107, 233, 76, 0.2)',
+                      color: !isConnected ? 'var(--periwinkle)' : 
+                             isScreenAudioCaptured ? '#ef4444' : 'var(--sgbus-green)',
+                      border: !isConnected ? '1px solid rgba(207, 198, 254, 0.2)' : 
+                              isScreenAudioCaptured ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(107, 233, 76, 0.3)',
+                      opacity: !isConnected ? 0.5 : 1
+                    }}
+                    onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.filter = 'brightness(110%)')}
+                    onMouseLeave={(e) => e.currentTarget.style.filter = 'brightness(100%)'}
+                    title={!isConnected ? 'Conecte-se à sala Daily.co para compartilhar tela' : 
+                           isScreenAudioCaptured ? 'Parar compartilhamento de tela' : 'Iniciar compartilhamento de tela'}
+                  >
+                    <ScreenShare size={16} />
+                    <span>SHARE</span>
+                  </button>
 
                   {/* Espaçador para empurrar botões para baixo */}
                   <div className="flex-1"></div>
