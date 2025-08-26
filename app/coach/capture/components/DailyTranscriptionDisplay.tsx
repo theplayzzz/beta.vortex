@@ -1369,7 +1369,9 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                     {isProcessing ? (
                       <>
                         <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full"></div>
-                        <span>CONECTANDO...</span>
+                        <span>
+                          {error?.includes('Tentando reconectar') ? 'RECOVERY...' : 'CONECTANDO...'}
+                        </span>
                       </>
                     ) : isListening ? (
                       <>
@@ -1579,15 +1581,55 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                   )}
                   {error && (
                     <div 
-                      className="mb-4 p-3 rounded-lg"
+                      className="mb-4 p-4 rounded-lg"
                       style={{ 
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        border: '1px solid rgba(239, 68, 68, 0.3)'
+                        backgroundColor: error.includes('Esta sessão foi encerrada') ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        border: error.includes('Esta sessão foi encerrada') ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)'
                       }}
                     >
-                      <p className="text-sm" style={{ color: '#ef4444' }}>
-                        ❌ Erro: {error}
-                      </p>
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium mb-2" 
+                             style={{ color: error.includes('Esta sessão foi encerrada') ? '#d97706' : '#ef4444' }}>
+                            {error.includes('Esta sessão foi encerrada') ? '🚫 Sessão Duplicada Detectada' : '❌ Erro'}
+                          </p>
+                          <p className="text-sm leading-relaxed" 
+                             style={{ color: error.includes('Esta sessão foi encerrada') ? '#92400e' : '#dc2626' }}>
+                            {error}
+                          </p>
+                          
+                          {/* 🆕 FASE 3: Ações específicas para erro de duplicação */}
+                          {error.includes('Esta sessão foi encerrada') && (
+                            <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                              <button
+                                onClick={() => window.location.reload()}
+                                className="px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
+                                style={{ 
+                                  backgroundColor: '#d97706',
+                                  color: 'white'
+                                }}
+                              >
+                                🔄 Tentar Novamente
+                              </button>
+                              <button
+                                onClick={() => {
+                                  // Copiar instruções para clipboard
+                                  navigator.clipboard.writeText('1. Feche todas as outras abas desta sessão\n2. Recarregue esta página\n3. Tente conectar novamente');
+                                  alert('Instruções copiadas para área de transferência!');
+                                }}
+                                className="px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
+                                style={{ 
+                                  backgroundColor: 'transparent',
+                                  color: '#d97706',
+                                  border: '1px solid #d97706'
+                                }}
+                              >
+                                📋 Copiar Instruções
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )}
 

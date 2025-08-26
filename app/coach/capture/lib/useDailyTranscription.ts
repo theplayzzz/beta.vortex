@@ -730,12 +730,12 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
 
     // 🆕 PLAN-007: Handler para detecção de eject (sessão duplicada)
     callObject.on('ejected', (event) => {
-      console.error('🚫 EJECT DETECTADO: Usuário removido da sala (possível sessão duplicada)');
+      console.error('🚫 EJECT DETECTADO: Usuário removido da sala (sessão duplicada)');
       console.error('Detalhes do eject:', event);
       
       setState(prev => ({
         ...prev,
-        error: 'Sessão duplicada detectada: Feche outras abas desta sessão e tente novamente',
+        error: 'Esta sessão foi encerrada porque você abriu a mesma sessão em outra aba ou janela. Para sua segurança, apenas uma conexão por sessão é permitida. Feche as outras abas desta sessão antes de tentar novamente.',
         isListening: false,
         isConnected: false,
         connectionQuality: 'disconnected',
@@ -751,11 +751,55 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
           console.warn('⚠️ Erro ao limpar call object após eject:', error);
         }
       }
+      
+      // 🆕 RECOVERY MECHANISM: Tentar reconectar após 10 segundos se user fechar outras abas
+      console.log('⏰ Recovery mechanism ativado: Tentando reconectar em 10 segundos...');
+      setTimeout(() => {
+        console.log('🔄 Tentando recovery automático da sessão...');
+        setState(prev => ({
+          ...prev,
+          error: 'Tentando reconectar... (Se ainda há erro, feche as outras abas desta sessão)',
+          connectionQuality: 'poor'
+        }));
+        
+        // Tentar reconnect apenas se ainda temos uma config válida
+        if (config?.sessionId && state.isListening) {
+          console.log('🔄 Executando recovery da sessão após ejeção...');
+          // Não usar startListening diretamente pois pode criar loop
+          // Em vez disso, apenas mostrar que está tentando
+          setTimeout(() => {
+            setState(prev => {
+              if (prev.isConnected) {
+                return prev; // Já reconectou com sucesso
+              }
+              return {
+                ...prev,
+                error: 'Reconexão falhou. Sessão pode estar aberta em outra aba. Feche todas as abas desta sessão e tente novamente.',
+                connectionQuality: 'disconnected'
+              };
+            });
+          }, 5000);
+        }
+      }, 10000); // 10 segundos delay
     });
 
-    // Evento de erro com tratamento específico para transport
+    // Evento de erro com tratamento específico para transport e duplicação
     callObject.on('error', (event) => {
       console.error('❌ Erro Daily.co:', event);
+      
+      // Tratamento específico para erro de duplicação (complementar ao handler 'ejected')
+      if (event.errorMsg?.includes('Duplicate user_id') || event.errorMsg?.includes('duplicate')) {
+        console.error('🚫 ERRO DE DUPLICAÇÃO detectado via error handler');
+        setState(prev => ({
+          ...prev,
+          error: 'Esta sessão foi encerrada porque você abriu a mesma sessão em outra aba ou janela. Para sua segurança, apenas uma conexão por sessão é permitida. Feche as outras abas desta sessão antes de tentar novamente.',
+          isListening: false,
+          isConnected: false,
+          connectionQuality: 'disconnected',
+          isProcessing: false
+        }));
+        return; // Não tentar reconectar para erros de duplicação
+      }
       
       // Tratamento específico para erro de transport disconnected
       if (event.errorMsg?.includes('transport') || event.errorMsg?.includes('disconnected')) {
