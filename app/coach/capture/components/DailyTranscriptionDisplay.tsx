@@ -202,6 +202,17 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
         
         const result = await response.json();
         setSessionData(result.session);
+        
+        // Código de debug temporário para verificação da estrutura
+        console.log('📊 SessionData structure:', {
+          companyName: result.session?.companyName,
+          industry: result.session?.industry,
+          customIndustry: result.session?.customIndustry,
+          revenue: result.session?.revenue,
+          agentType: result.session?.agentType,
+          spinQuestions: result.session?.spinQuestions,
+          hasAllData: !!(result.session?.companyName && result.session?.industry && result.session?.spinQuestions)
+        });
       } catch (error) {
         console.error('Erro ao buscar dados da sessão:', error);
         setSessionError(error instanceof Error ? error.message : 'Erro desconhecido');
