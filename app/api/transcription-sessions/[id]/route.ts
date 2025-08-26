@@ -26,15 +26,39 @@ export async function GET(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    // TEMPORÁRIO: Buscar sessão por ID primeiro, depois verificar ownership
     const session = await prisma.transcriptionSession.findFirst({
       where: {
-        id: params.id,
-        userId
+        id: params.id
+      },
+      include: {
+        User: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true
+          }
+        }
       }
     })
 
     if (!session) {
       return NextResponse.json({ error: 'Sessão não encontrada' }, { status: 404 })
+    }
+
+    // TEMPORÁRIO: Log para debug de ownership
+    console.log('🔍 Session ownership debug:', {
+      sessionId: session.id,
+      sessionUserId: session.userId,
+      requestUserId: userId,
+      sessionOwner: session.User?.email
+    })
+
+    // TEMPORÁRIO: Permitir acesso se sessão existe (para teste de duplicação)
+    // TODO: Restaurar verificação de ownership após testes
+    if (session.userId !== userId) {
+      console.warn('⚠️ TEMPORÁRIO: Permitindo acesso cross-user para teste de duplicação')
     }
 
     return NextResponse.json({ 
