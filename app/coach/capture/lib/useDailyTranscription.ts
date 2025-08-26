@@ -862,18 +862,18 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
 
   // Função para iniciar transcrição (compatível com Deepgram)
   const startListening = useCallback(async () => {
+    // Timeout de segurança para garantir que isProcessing não fique travado
+    const timeoutId = setTimeout(() => {
+      console.warn('⚠️ Timeout na conexão Daily.co - resetando isProcessing');
+      setState(prev => ({ 
+        ...prev, 
+        isProcessing: false, 
+        error: 'Timeout na conexão - tente novamente' 
+      }));
+    }, 30000); // 30 segundos timeout
+    
     try {
       setState(prev => ({ ...prev, error: null, isProcessing: true }));
-      
-      // Timeout de segurança para garantir que isProcessing não fique travado
-      const timeoutId = setTimeout(() => {
-        console.warn('⚠️ Timeout na conexão Daily.co - resetando isProcessing');
-        setState(prev => ({ 
-          ...prev, 
-          isProcessing: false, 
-          error: 'Timeout na conexão - tente novamente' 
-        }));
-      }, 30000); // 30 segundos timeout
 
       // Verificar se usuário está carregado e logado
       if (!isUserLoaded || !user) {
@@ -935,6 +935,11 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
           return;
         }
 
+        // Validar sessionId obrigatório para prevenção de duplicação
+        if (!config?.sessionId) {
+          throw new Error('SessionId é obrigatório para prevenção de sessões duplicadas');
+        }
+
         // Criar token de acesso
         const tokenResponse = await fetch('/api/daily/tokens', {
           method: 'POST',
@@ -942,6 +947,7 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
           body: JSON.stringify({
             roomName: roomData.room.name,
             userName: `${user.firstName || 'Usuario'}-${user.id.slice(-6)}`,
+            sessionId: config.sessionId, // 🆕 CRÍTICO: sessionId para prevenção de duplicação
             enableTranscription: true,
             permissions: {
               canScreenshare: config?.enableScreenAudio !== false
@@ -966,21 +972,11 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
         // Setup event handlers
         setupDailyEventHandlers(callObject);
 
-        // 🆕 PLAN-007: Preparar userData com sessionId para webhook tracking
-        const userData: any = {};
-        
-        if (config?.sessionId) {
-          // Formato esperado pelo webhook: "session_${sessionId}"
-          userData.user_id = `session_${config.sessionId}`;
-          console.log(`🔗 Configurando userData para tracking: ${userData.user_id}`);
-        }
-
         // Entrar na sala
         await callObject.join({
           url: roomData.room.url,
           token: tokenData.token,
-          userName: tokenData.userName,
-          userData // 🆕 PLAN-007: Inclui sessionId nos dados do usuário
+          userName: tokenData.userName
         });
 
         console.log(`✅ Conectado à sala ${roomData.room.name}`);
