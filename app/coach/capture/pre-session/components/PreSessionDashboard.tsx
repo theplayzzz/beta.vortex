@@ -144,6 +144,9 @@ export default function PreSessionDashboard() {
   const handleSalesAgentSubmit = async (data: SalesAgentConfigData) => {
     setIsCreatingSession(true);
     
+    // Adicionar pequeno delay para garantir que a animação seja visível
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     try {
       const sessionData = {
         sessionName: `Sessão ${data.companyName} - ${new Date().toLocaleDateString()}`,
@@ -176,12 +179,23 @@ export default function PreSessionDashboard() {
       const result = await response.json();
       
       if (result.success && result.sessionId) {
-        window.location.href = `/coach/capture/daily-co?sessionId=${result.sessionId}`;
+        // Adicionar pequeno delay adicional para transição suave
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Fazer fade out antes de redirecionar
+        document.body.style.transition = 'opacity 0.3s ease-out';
+        document.body.style.opacity = '0';
+        
+        setTimeout(() => {
+          window.location.href = `/coach/capture/daily-co?sessionId=${result.sessionId}`;
+        }, 300);
       } else {
         throw new Error('Erro ao obter ID da sessão');
       }
     } catch (error) {
       console.error('Erro ao salvar configuração:', error);
+      // Restaurar opacidade em caso de erro
+      document.body.style.opacity = '1';
       alert(`Erro ao iniciar sessão: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
       setIsCreatingSession(false);
     }

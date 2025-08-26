@@ -202,17 +202,6 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
         
         const result = await response.json();
         setSessionData(result.session);
-        
-        // Código de debug temporário para verificação da estrutura
-        console.log('📊 SessionData structure:', {
-          companyName: result.session?.companyName,
-          industry: result.session?.industry,
-          customIndustry: result.session?.customIndustry,
-          revenue: result.session?.revenue,
-          agentType: result.session?.agentType,
-          spinQuestions: result.session?.spinQuestions,
-          hasAllData: !!(result.session?.companyName && result.session?.industry && result.session?.spinQuestions)
-        });
       } catch (error) {
         console.error('Erro ao buscar dados da sessão:', error);
         setSessionError(error instanceof Error ? error.message : 'Erro desconhecido');
@@ -950,6 +939,111 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     );
   };
 
+  /**
+   * Constrói seção do formulário pre-session para incluir no payload de análise
+   * @param sessionData - Dados da sessão carregados do banco (já em memória)
+   * @param sessionId - ID da sessão atual
+   * @returns Objeto estruturado com dados da empresa e perguntas SPIN
+   * 
+   * IMPORTANTE: Esta função é fail-safe e sempre retorna uma estrutura válida,
+   * mesmo com dados ausentes ou corrompidos, garantindo que o webhook nunca falhe.
+   */
+  const buildFormularioPresessao = (sessionData: any, sessionId: string) => {
+    try {
+      // Proteção contra sessionData null/undefined
+      if (!sessionData) {
+        console.warn('⚠️ SessionData não disponível, usando valores padrão para formulário');
+        return {
+          empresa: {
+            nome: '',
+            industria: '',
+            industria_customizada: '',
+            faturamento: '',
+            tipo_agente: 'ESPECIALISTA'
+          },
+          perguntas_spin: {
+            situacao: '',
+            problema: '',
+            implicacao: '',
+            solucao_necessaria: ''
+          },
+          metadados: {
+            sessao_id: sessionId || '',
+            dados_carregados: false,
+            timestamp_formulario: ''
+          }
+        };
+      }
+
+      // Proteção contra spinQuestions null/undefined ou formato incorreto
+      let spinQuestions: any = {};
+      if (sessionData.spinQuestions) {
+        // Se spinQuestions for string JSON, fazer parse
+        if (typeof sessionData.spinQuestions === 'string') {
+          try {
+            spinQuestions = JSON.parse(sessionData.spinQuestions);
+          } catch {
+            console.warn('⚠️ spinQuestions em formato inválido, usando valores vazios');
+            spinQuestions = {};
+          }
+        } else {
+          spinQuestions = sessionData.spinQuestions;
+        }
+      }
+      
+      // Função helper para garantir string segura
+      const safeString = (value: any): string => {
+        if (value === null || value === undefined) return '';
+        return String(value).trim();
+      };
+      
+      return {
+        empresa: {
+          nome: safeString(sessionData.companyName),
+          industria: safeString(sessionData.industry),
+          industria_customizada: safeString(sessionData.customIndustry),
+          faturamento: safeString(sessionData.revenue),
+          tipo_agente: sessionData.agentType || 'ESPECIALISTA'
+        },
+        perguntas_spin: {
+          situacao: safeString(spinQuestions.situation),
+          problema: safeString(spinQuestions.problem),
+          implicacao: safeString(spinQuestions.implication),
+          solucao_necessaria: safeString(spinQuestions.solutionNeed)
+        },
+        metadados: {
+          sessao_id: sessionId || '',
+          dados_carregados: true,
+          timestamp_formulario: safeString(sessionData.createdAt)
+        }
+      };
+    } catch (error) {
+      // Fallback completo em caso de erro inesperado
+      console.error('❌ Erro ao construir formulario_presessao:', error);
+      return {
+        empresa: {
+          nome: '',
+          industria: '',
+          industria_customizada: '',
+          faturamento: '',
+          tipo_agente: 'ESPECIALISTA'
+        },
+        perguntas_spin: {
+          situacao: '',
+          problema: '',
+          implicacao: '',
+          solucao_necessaria: ''
+        },
+        metadados: {
+          sessao_id: sessionId || '',
+          dados_carregados: false,
+          timestamp_formulario: '',
+          erro: true
+        }
+      };
+    }
+  };
+
   // Função handleAnalyze com payload estruturado incluindo trans.usuario, trans.cliente e analiseRapida
   const handleAnalyze = useCallback(async () => {
     if (isAnalyzing) return;
@@ -975,7 +1069,8 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
       const transUsuario = blocks.filter(b => b.source === 'microphone').map(b => b.text);
       const transCliente = blocks.filter(b => b.source === 'screen').map(b => b.text);
       
-      // Construir payload estruturado
+      // Construir payload estruturado incluindo dados do formulário pre-session
+      // IMPORTANTE: sessionData já está carregado em memória, não faz nova query ao BD
       const payload = {
         contexto: contextoCompleto,
         timestamp: new Date().toISOString(),
@@ -992,7 +1087,11 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
           text: b.text
         })),
         interim: currentInterimText,
-        analiseRapida: isQuickAnalysis
+        analiseRapida: isQuickAnalysis,
+        // NOVO: Dados do formulário de configuração da sessão
+        // Inclui informações da empresa e perguntas SPIN coletadas na pre-session
+        // Usa valores padrão vazios se dados não estiverem disponíveis (fail-safe)
+        formulario_presessao: buildFormularioPresessao(sessionData, sessionId || '')
       };
       
       console.log('📋 Payload construído:', {
@@ -1000,7 +1099,9 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
         blocosTotal: blocks.length,
         transUsuarioCount: transUsuario.length,
         transClienteCount: transCliente.length,
-        analiseRapida: isQuickAnalysis
+        analiseRapida: isQuickAnalysis,
+        formularioIncluido: !!payload.formulario_presessao,
+        empresaNome: payload.formulario_presessao?.empresa?.nome || 'VAZIO'
       });
       
       // Criar entrada de loading no histórico

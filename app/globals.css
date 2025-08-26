@@ -30,6 +30,15 @@ body {
   background-color: var(--night);
 }
 
+/* Animation delays for loading indicators */
+.delay-75 {
+  animation-delay: 75ms;
+}
+
+.delay-150 {
+  animation-delay: 150ms;
+}
+
 /* Garantir que dropdowns funcionem corretamente */
 .dropdown-container {
   position: relative;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Building2, DollarSign, AlertTriangle, Target, CheckCircle, Lightbulb, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface SalesAgentConfigModalProps {
@@ -49,6 +49,7 @@ const revenueRanges = [
 
 export default function SalesAgentConfigModal({ isOpen, onClose, onSubmit, isLoading = false }: SalesAgentConfigModalProps) {
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<SalesAgentConfigData>({
     companyName: '',
     industry: '',
@@ -62,6 +63,21 @@ export default function SalesAgentConfigModal({ isOpen, onClose, onSubmit, isLoa
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // Reset isSubmitting quando isLoading mudar para false (requisição completou)
+  useEffect(() => {
+    if (!isLoading) {
+      setIsSubmitting(false);
+    }
+  }, [isLoading]);
+  
+  // Reset state quando modal fechar
+  useEffect(() => {
+    if (!isOpen) {
+      setIsSubmitting(false);
+      setCurrentStep(1);
+    }
+  }, [isOpen]);
   
   const totalSteps = 5;
   
@@ -142,13 +158,19 @@ export default function SalesAgentConfigModal({ isOpen, onClose, onSubmit, isLoa
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (validateCurrentStep()) {
       if (currentStep < totalSteps) {
         setCurrentStep(currentStep + 1);
       } else {
+        // Ativar loading imediatamente ao clicar em submit
+        setIsSubmitting(true);
+        
+        // Pequeno delay para garantir que a animação seja visível
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Chamar onSubmit (não fechar o modal aqui, deixar o parent controlar)
         onSubmit(formData);
-        onClose();
       }
     }
   };
@@ -424,6 +446,27 @@ export default function SalesAgentConfigModal({ isOpen, onClose, onSubmit, isLoa
           {renderStepContent()}
         </div>
 
+        {/* Loading Overlay */}
+        {(isSubmitting || isLoading) && (
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-xl">
+            <div className="bg-eerie-black border border-sgbus-green/50 rounded-lg p-8 flex flex-col items-center gap-4 shadow-2xl">
+              <div className="relative">
+                <div className="w-20 h-20 border-4 border-seasalt/20 rounded-full"></div>
+                <div className="absolute top-0 left-0 w-20 h-20 border-4 border-sgbus-green rounded-full animate-spin border-t-transparent"></div>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-semibold text-seasalt mb-2">Preparando sua sessão...</p>
+                <p className="text-sm text-periwinkle">Configurando transcrição com IA</p>
+              </div>
+              <div className="flex gap-1">
+                <div className="w-2 h-2 bg-sgbus-green rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-sgbus-green rounded-full animate-pulse delay-75"></div>
+                <div className="w-2 h-2 bg-sgbus-green rounded-full animate-pulse delay-150"></div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="flex items-center justify-between p-6 border-t border-seasalt/10">
           <button
@@ -464,14 +507,14 @@ export default function SalesAgentConfigModal({ isOpen, onClose, onSubmit, isLoa
             <button
               type="button"
               onClick={handleNext}
-              disabled={isLoading}
+              disabled={isSubmitting || isLoading}
               className={`flex items-center gap-2 px-6 py-2 font-semibold rounded-lg transition-all ${
-                isLoading 
+                (isSubmitting || isLoading)
                   ? 'bg-gray-500 text-gray-300 cursor-not-allowed' 
                   : 'bg-sgbus-green hover:bg-sgbus-green/90 text-night hover:scale-105'
               }`}
             >
-              {isLoading ? (
+              {(isSubmitting || isLoading) ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-gray-600" />
                   Criando Sessão...
