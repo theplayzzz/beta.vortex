@@ -17,7 +17,7 @@ const UpdateTranscriptionSessionSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const userId = await getUserIdFromClerk()
@@ -26,10 +26,13 @@ export async function GET(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    // Await params to get the actual values
+    const { id } = await params
+
     // TEMPORÁRIO: Buscar sessão por ID primeiro, depois verificar ownership
     const session = await prisma.transcriptionSession.findFirst({
       where: {
-        id: params.id
+        id: id
       },
       include: {
         User: {
@@ -76,7 +79,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const userId = await getUserIdFromClerk()
@@ -85,12 +88,15 @@ export async function PATCH(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    // Await params to get the actual values
+    const { id } = await params
+
     const body = await request.json()
     const validatedData = UpdateTranscriptionSessionSchema.parse(body)
 
     const existingSession = await prisma.transcriptionSession.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId
       }
     })
@@ -119,7 +125,7 @@ export async function PATCH(
 
     const updatedSession = await prisma.transcriptionSession.update({
       where: {
-        id: params.id
+        id: id
       },
       data: updateData
     })

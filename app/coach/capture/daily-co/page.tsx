@@ -7,11 +7,11 @@ export const metadata: Metadata = {
 };
 
 interface DailyCoCapturingPageProps {
-  searchParams: { sessionId?: string };
+  searchParams: Promise<{ sessionId?: string }>;
 }
 
-export default function DailyCoCapturePage({ searchParams }: DailyCoCapturingPageProps) {
-  const sessionId = searchParams.sessionId;
+export default async function DailyCoCapturePage({ searchParams }: DailyCoCapturingPageProps) {
+  const { sessionId } = await searchParams;
 
   return (
     <main className="h-full min-h-0" style={{ backgroundColor: 'var(--raisin-black)' }}>
