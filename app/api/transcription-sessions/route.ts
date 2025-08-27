@@ -55,7 +55,6 @@ function calculateMetrics(sessions: any[]) {
   const totalSessions = sessions.length
   const totalDurationSeconds = sessions.reduce((acc, s) => acc + (s.totalDuration || 0), 0)
   const totalAnalyses = sessions.reduce((acc, s) => acc + (s.analysisCount || 0), 0)
-  const totalCredits = totalAnalyses * 15 // 15 credits per analysis as per plan
   
   // Format total duration
   const totalHours = Math.floor(totalDurationSeconds / 3600)
@@ -67,8 +66,7 @@ function calculateMetrics(sessions: any[]) {
   return {
     totalSessions,
     transcriptionTime,
-    analysesCompleted: totalAnalyses,
-    creditsSpent: totalCredits
+    analysesCompleted: totalAnalyses
   }
 }
 
