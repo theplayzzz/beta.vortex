@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useDailyTranscription } from '../lib/useDailyTranscription';
-import { Play, Square, Mic, MicOff, ScreenShare, Trash2, Brain, HelpCircle, Zap, AlertTriangle } from 'lucide-react';
+import { Play, Square, Mic, MicOff, ScreenShare, Trash2, Brain, HelpCircle, Zap, AlertTriangle, Clock, ChevronDown, Monitor, User, Settings } from 'lucide-react';
 import TutorialModal from './TutorialModal';
 import { useFirstVisit } from '../lib/useFirstVisit';
 
@@ -1293,9 +1293,11 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
             }}
           >
             <div style={{ color: 'var(--periwinkle)', fontSize: '13px', textAlign: 'center', opacity: 0.7 }}>
-              🖥️ Mirror da tela compartilhada aparecerá aqui
-              <br />
-              <span style={{ fontSize: '11px' }}>Clique em &ldquo;🎙️ INICIAR&rdquo; para ativar</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '4px' }}>
+                <ScreenShare size={16} />
+                Mirror da tela compartilhada aparecerá aqui
+              </div>
+              <span style={{ fontSize: '11px', color: 'var(--sgbus-green)' }}>CONECTADO</span>
             </div>
           </div>
         );
@@ -1311,8 +1313,10 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
             }}
           >
             <div style={{ color: 'var(--sgbus-green)', fontSize: '13px', textAlign: 'center' }}>
-              ⏳ Aguardando compartilhamento de tela...
-              <br />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '4px' }}>
+                <Clock size={16} />
+                Aguardando compartilhamento de tela...
+              </div>
               <span style={{ fontSize: '11px', opacity: 0.8 }}>
                 Selecione a tela para compartilhar na janela do navegador
               </span>
@@ -1370,8 +1374,10 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
             }}
           >
             <div style={{ color: 'rgb(239, 68, 68)', fontSize: '13px', textAlign: 'center' }}>
-              ❌ Erro no compartilhamento de tela
-              <br />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '4px' }}>
+                <AlertTriangle size={16} />
+                Erro no compartilhamento de tela
+              </div>
               <span style={{ fontSize: '11px', opacity: 0.8 }}>
                 Tente novamente ou verifique as permissões
               </span>
@@ -1401,7 +1407,10 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
               </div>
             ) : sessionError ? (
               <div className="text-sm" style={{ color: 'var(--red-400)' }}>
-                ⚠️ Erro: {sessionError}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <AlertTriangle size={14} />
+                  Erro: {sessionError}
+                </div>
               </div>
             ) : sessionData ? (
               <div className="flex items-center justify-between">
@@ -1686,7 +1695,8 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                           border: '1px solid rgba(207, 198, 254, 0.3)'
                         }}
                       >
-                        ⬇️ SCROLL
+                        <ChevronDown size={16} className="inline" />
+                        SCROLL
                       </button>
                     </div>
                   )}
@@ -1778,8 +1788,15 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                                    block.color === 'blue' ? 'var(--periwinkle)' : 
                                    'var(--seasalt)'
                           }}>
-                            {block.source === 'screen' ? '🖥️ TELA' : 
-                             block.source === 'microphone' ? '🎤 MICROFONE' : '👤 REMOTO'}
+                            <span className="flex items-center gap-1">
+                              {block.source === 'screen' ? (
+                                <><Monitor size={12} /> TELA</>
+                              ) : block.source === 'microphone' ? (
+                                <><Mic size={12} /> MICROFONE</>
+                              ) : (
+                                <><User size={12} /> REMOTO</>
+                              )}
+                            </span>
                           </span>
                         </div>
                         <span className="text-xs opacity-70" style={{ color: 'var(--seasalt)' }}>
@@ -1825,7 +1842,10 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                   {!transcript && !interimTranscript && !isListening && (
                     <div className="text-center pt-4 pb-8">
                       <p className="text-lg mb-2" style={{ color: 'var(--periwinkle)' }}>
-                        🎙️ Pressione &quot;CONECTAR&quot; para começar a transcrição
+                        <span className="flex items-center justify-center gap-2">
+                          <Mic size={18} />
+                          Pressione &quot;CONECTAR&quot; para começar a transcrição
+                        </span>
                       </p>
                       <p className="text-sm opacity-70" style={{ color: 'var(--seasalt)' }}>
                         Sistema capturará áudio do microfone e da tela
@@ -1891,7 +1911,9 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                   {analysisHistory.length === 0 && (
                     <div className="text-center pt-4 pb-8">
                       <p className="text-sm opacity-70" style={{ color: 'var(--seasalt)' }}>
-                        Use o botão 🧠 no menu de controles acima para analisar a transcrição
+                        Use o <strong>botão ANALISAR</strong> a esquerda para processar a transcrição:<br />
+                        • <strong style={{ color: 'var(--sgbus-green)' }}>Verde</strong>: análise ampla e detalhada do contexto<br />
+                        • <strong style={{ color: 'rgba(255, 193, 7, 1)' }}>Amarelo</strong>: análise rápida e concisa (com caixa marcada)
                       </p>
                     </div>
                   )}
