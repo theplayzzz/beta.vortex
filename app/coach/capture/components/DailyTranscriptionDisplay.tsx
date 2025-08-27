@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useDailyTranscription } from '../lib/useDailyTranscription';
 import { Play, Square, Mic, MicOff, ScreenShare, Trash2, Brain, HelpCircle, Zap, AlertTriangle, Clock, ChevronDown, Monitor, User, Settings } from 'lucide-react';
 import TutorialModal from './TutorialModal';
+import TutorialTooltip from './TutorialTooltip';
 import { useFirstVisit } from '../lib/useFirstVisit';
 
 interface AudioLevelBarProps {
@@ -306,6 +307,7 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
   
   const [analysisHistory, setAnalysisHistory] = useState<AnalysisHistory[]>([]);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
   const [isQuickAnalysis, setIsQuickAnalysis] = useState(false);
   
   // Hook para detectar primeira visita
@@ -396,6 +398,35 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
       setIsTutorialOpen(true);
     }
   }, [isFirstVisit, isLoading]);
+
+  // Mostrar tooltip nas primeiras 3 vezes que a página é carregada/atualizada
+  useEffect(() => {
+    const checkTooltipShow = () => {
+      const TOOLTIP_KEY = 'daily-co-tooltip-count';
+      const MAX_SHOWS = 3;
+      
+      try {
+        const currentCount = parseInt(localStorage.getItem(TOOLTIP_KEY) || '0');
+        
+        if (currentCount < MAX_SHOWS && !isTutorialOpen) {
+          // Mostrar tooltip após 2 segundos do carregamento da página
+          const timer = setTimeout(() => {
+            setIsTooltipVisible(true);
+            // Incrementar contador
+            localStorage.setItem(TOOLTIP_KEY, (currentCount + 1).toString());
+            // Auto-hide após 5 segundos
+            setTimeout(() => setIsTooltipVisible(false), 5000);
+          }, 2000);
+          
+          return () => clearTimeout(timer);
+        }
+      } catch (error) {
+        console.warn('Erro ao acessar localStorage para tooltip:', error);
+      }
+    };
+
+    checkTooltipShow();
+  }, [isTutorialOpen]);
 
   // Simulação de stats para Daily.co (compatibilidade com interface Deepgram)
   const stats = {
@@ -1889,21 +1920,29 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                       {analysisHistory.length} análises
                     </span>
                     
-                    {/* Botão Tutorial */}
-                    <button
-                      onClick={() => setIsTutorialOpen(true)}
-                      aria-label="Abrir tutorial"
-                      className="w-[18px] h-[18px] rounded-full transition-all duration-200 inline-flex items-center justify-center hover:scale-110 focus-visible:outline-2 focus-visible:outline-[color:var(--periwinkle)] focus-visible:outline-offset-2"
-                      style={{
-                        backgroundColor: 'rgba(207, 198, 254, 0.1)',
-                        color: 'var(--periwinkle)',
-                        border: '1px solid rgba(207, 198, 254, 0.3)'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(207, 198, 254, 0.2)'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(207, 198, 254, 0.1)'}
-                    >
-                      <HelpCircle size={16} />
-                    </button>
+                    {/* Botão Tutorial com Tooltip */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setIsTutorialOpen(true)}
+                        aria-label="Abrir tutorial"
+                        className="w-[18px] h-[18px] rounded-full transition-all duration-200 inline-flex items-center justify-center hover:scale-110 focus-visible:outline-2 focus-visible:outline-[color:var(--periwinkle)] focus-visible:outline-offset-2"
+                        style={{
+                          backgroundColor: 'rgba(207, 198, 254, 0.1)',
+                          color: 'var(--periwinkle)',
+                          border: '1px solid rgba(207, 198, 254, 0.3)'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(207, 198, 254, 0.2)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(207, 198, 254, 0.1)'}
+                      >
+                        <HelpCircle size={16} />
+                      </button>
+                      
+                      {/* Tooltip Tutorial */}
+                      <TutorialTooltip 
+                        isVisible={isTooltipVisible}
+                        onClose={() => setIsTooltipVisible(false)}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -1977,6 +2016,12 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
           if (isFirstVisit) {
             markAsVisited();
           }
+          // Mostrar tooltip após fechar o modal
+          setTimeout(() => {
+            setIsTooltipVisible(true);
+            // Auto-hide após 5 segundos
+            setTimeout(() => setIsTooltipVisible(false), 5000);
+          }, 500);
         }}
       />
 
