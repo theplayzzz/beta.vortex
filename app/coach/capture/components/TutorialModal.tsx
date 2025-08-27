@@ -45,7 +45,7 @@ export default function TutorialModal({ isOpen, onClose }: TutorialModalProps) {
               <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(107, 233, 76, 0.2)' }}>
                 <Play size={16} style={{ color: 'var(--sgbus-green)' }} />
               </div>
-              <h4 className="font-semibold" style={{ color: 'var(--sgbus-green)' }}>1. Clique "CONECTAR"</h4>
+              <h4 className="font-semibold" style={{ color: 'var(--sgbus-green)' }}>1. Clique &quot;CONECTAR&quot;</h4>
             </div>
             <ul className="text-sm space-y-1" style={{ color: 'var(--seasalt)' }}>
               <li>• Sistema abre automaticamente o popup de compartilhamento</li>
@@ -60,7 +60,7 @@ export default function TutorialModal({ isOpen, onClose }: TutorialModalProps) {
               <h4 className="font-semibold" style={{ color: 'var(--periwinkle)' }}>2. Selecione Tela/Janela</h4>
             </div>
             <div className="text-sm space-y-2" style={{ color: 'var(--seasalt)' }}>
-              <p><strong style={{ color: 'var(--sgbus-green)' }}>CRÍTICO:</strong> Marque <strong>"Compartilhar áudio da aba"</strong></p>
+              <p><strong style={{ color: 'var(--sgbus-green)' }}>CRÍTICO:</strong> Marque <strong>&quot;Compartilhar áudio da aba&quot;</strong></p>
               <p>• <strong>Tela Inteira:</strong> captura tudo na tela</p>
               <p>• <strong>Janela Específica:</strong> captura apenas uma aplicação</p>
               <p>• <strong>Aba do Navegador:</strong> melhor qualidade de áudio</p>
@@ -86,7 +86,7 @@ export default function TutorialModal({ isOpen, onClose }: TutorialModalProps) {
           <div className="p-4 rounded-lg" style={{ backgroundColor: 'rgba(107, 233, 76, 0.1)', border: '1px solid rgba(107, 233, 76, 0.2)' }}>
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--sgbus-green)' }}></div>
-              <h4 className="font-semibold" style={{ color: 'var(--sgbus-green)' }}>Status "CONECTADO"</h4>
+              <h4 className="font-semibold" style={{ color: 'var(--sgbus-green)' }}>Status &quot;CONECTADO&quot;</h4>
             </div>
             <p className="text-sm" style={{ color: 'var(--seasalt)' }}>
               Quando aparecer em verde, a transcrição iniciará automaticamente (até 3 segundos)
@@ -224,7 +224,7 @@ export default function TutorialModal({ isOpen, onClose }: TutorialModalProps) {
               <p>• <strong>Exclui apenas</strong> o histórico de transcrição</p>
               <p>• <strong>Mantém:</strong> dados do cliente e configurações</p>
               <p>• Útil para focar em novos tópicos sem contexto anterior</p>
-              <p>• Evita análises "poluídas" por conversas antigas</p>
+              <p>• Evita análises &quot;poluídas&quot; por conversas antigas</p>
             </div>
           </div>
 
