@@ -1422,59 +1422,7 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
   return (
     <div className="h-full min-h-0 pt-[18px] px-6 pb-6">
       <div className="max-w-7xl mx-auto h-full">
-        {/* Informações da Sessão */}
-        {sessionId && (
-          <div 
-            className="mb-3 p-3 rounded-lg border"
-            style={{ 
-              backgroundColor: 'var(--night)', 
-              borderColor: 'rgba(249, 251, 252, 0.1)'
-            }}
-          >
-            {sessionLoading ? (
-              <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--periwinkle)' }}>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-periwinkle border-t-transparent" />
-                Carregando informações da sessão...
-              </div>
-            ) : sessionError ? (
-              <div className="text-sm" style={{ color: 'var(--red-400)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <AlertTriangle size={14} />
-                  Erro: {sessionError}
-                </div>
-              </div>
-            ) : sessionData ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div>
-                    <div className="text-sm font-semibold" style={{ color: 'var(--seasalt)' }}>
-                      {sessionData.sessionName}
-                    </div>
-                    <div className="text-xs" style={{ color: 'var(--periwinkle)' }}>
-                      {sessionData.companyName} • {sessionData.industry} • {sessionData.revenue}
-                    </div>
-                  </div>
-                  <div className="px-2 py-1 rounded text-xs font-medium bg-sgbus-green text-night">
-                    {sessionData.agentType}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--periwinkle)' }}>
-                  <span>Sessão: {sessionId.slice(0, 8)}...</span>
-                  {sessionData?.analysisCount > 0 && (
-                    <span className="px-1.5 py-0.5 rounded bg-periwinkle bg-opacity-20 text-xs">
-                      {sessionData.analysisCount} análises
-                    </span>
-                  )}
-                  {(sessionData?.totalDuration > 0 || currentSessionDuration > 0) && (
-                    <span className="px-1.5 py-0.5 rounded bg-sgbus-green bg-opacity-20 text-xs">
-                      {Math.floor(((sessionData?.totalDuration || 0) + currentSessionDuration) / 60)}m {((sessionData?.totalDuration || 0) + currentSessionDuration) % 60}s
-                    </span>
-                  )}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        )}
+        {/* Informações da Sessão - Removida do topo */}
         
         <div className="grid grid-cols-1 sm:grid-cols-[1.25fr_0.9fr] gap-3 h-full">
           
@@ -1900,7 +1848,48 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
           </div>
 
           {/* COLUNA DIREITA - Histórico de Análises */}
-          <div className="flex flex-col h-full min-h-0">
+          <div className="flex flex-col h-full min-h-0 relative">
+            
+            {/* Informações da Sessão - Reposicionada */}
+            {sessionId && (
+              <div 
+                className="mb-3 p-3 rounded-lg border"
+                style={{ 
+                  backgroundColor: 'var(--night)', 
+                  borderColor: 'rgba(249, 251, 252, 0.1)'
+                }}
+              >
+                {sessionLoading ? (
+                  <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--periwinkle)' }}>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-periwinkle border-t-transparent" />
+                    Carregando informações da sessão...
+                  </div>
+                ) : sessionError ? (
+                  <div className="text-sm" style={{ color: 'var(--red-400)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <AlertTriangle size={14} />
+                      Erro: {sessionError}
+                    </div>
+                  </div>
+                ) : sessionData ? (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold" style={{ color: 'var(--seasalt)' }}>
+                        {sessionData.sessionName}
+                      </div>
+                      <div className="text-xs" style={{ color: 'var(--periwinkle)' }}>
+                        {sessionData.companyName} • {sessionData.industry} • {sessionData.revenue}
+                      </div>
+                    </div>
+                    {(sessionData?.totalDuration > 0 || currentSessionDuration > 0) && (
+                      <span className="px-1.5 py-0.5 rounded bg-sgbus-green bg-opacity-20 text-xs" style={{ color: 'var(--sgbus-green)' }}>
+                        {Math.floor(((sessionData?.totalDuration || 0) + currentSessionDuration) / 60)}m {((sessionData?.totalDuration || 0) + currentSessionDuration) % 60}s
+                      </span>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            )}
             
             {/* HISTÓRICO DE ANÁLISES - EXPANSÍVEL */}
             <div className="flex-1 flex flex-col min-h-0 h-full">
