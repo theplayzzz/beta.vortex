@@ -2,8 +2,9 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useDailyTranscription } from '../lib/useDailyTranscription';
-import { Play, Square, Mic, MicOff, ScreenShare, Trash2, Brain, HelpCircle, Zap, AlertTriangle } from 'lucide-react';
+import { Play, Square, Mic, MicOff, ScreenShare, Trash2, Brain, HelpCircle, Zap, AlertTriangle, Clock, ChevronDown, Monitor, User, Settings } from 'lucide-react';
 import TutorialModal from './TutorialModal';
+import TutorialTooltip from './TutorialTooltip';
 import { useFirstVisit } from '../lib/useFirstVisit';
 
 interface AudioLevelBarProps {
@@ -306,6 +307,7 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
   
   const [analysisHistory, setAnalysisHistory] = useState<AnalysisHistory[]>([]);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
   const [isQuickAnalysis, setIsQuickAnalysis] = useState(false);
   
   // Hook para detectar primeira visita
@@ -396,6 +398,35 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
       setIsTutorialOpen(true);
     }
   }, [isFirstVisit, isLoading]);
+
+  // Mostrar tooltip nas primeiras 3 vezes que a página é carregada/atualizada
+  useEffect(() => {
+    const checkTooltipShow = () => {
+      const TOOLTIP_KEY = 'daily-co-tooltip-count';
+      const MAX_SHOWS = 3;
+      
+      try {
+        const currentCount = parseInt(localStorage.getItem(TOOLTIP_KEY) || '0');
+        
+        if (currentCount < MAX_SHOWS && !isTutorialOpen) {
+          // Mostrar tooltip após 2 segundos do carregamento da página
+          const timer = setTimeout(() => {
+            setIsTooltipVisible(true);
+            // Incrementar contador
+            localStorage.setItem(TOOLTIP_KEY, (currentCount + 1).toString());
+            // Auto-hide após 5 segundos
+            setTimeout(() => setIsTooltipVisible(false), 5000);
+          }, 2000);
+          
+          return () => clearTimeout(timer);
+        }
+      } catch (error) {
+        console.warn('Erro ao acessar localStorage para tooltip:', error);
+      }
+    };
+
+    checkTooltipShow();
+  }, [isTutorialOpen]);
 
   // Simulação de stats para Daily.co (compatibilidade com interface Deepgram)
   const stats = {
@@ -1293,9 +1324,11 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
             }}
           >
             <div style={{ color: 'var(--periwinkle)', fontSize: '13px', textAlign: 'center', opacity: 0.7 }}>
-              🖥️ Mirror da tela compartilhada aparecerá aqui
-              <br />
-              <span style={{ fontSize: '11px' }}>Clique em &ldquo;🎙️ INICIAR&rdquo; para ativar</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '4px' }}>
+                <ScreenShare size={16} />
+                Mirror da tela compartilhada aparecerá aqui
+              </div>
+              <span style={{ fontSize: '11px', color: 'var(--sgbus-green)' }}>CONECTADO</span>
             </div>
           </div>
         );
@@ -1311,8 +1344,10 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
             }}
           >
             <div style={{ color: 'var(--sgbus-green)', fontSize: '13px', textAlign: 'center' }}>
-              ⏳ Aguardando compartilhamento de tela...
-              <br />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '4px' }}>
+                <Clock size={16} />
+                Aguardando compartilhamento de tela...
+              </div>
               <span style={{ fontSize: '11px', opacity: 0.8 }}>
                 Selecione a tela para compartilhar na janela do navegador
               </span>
@@ -1370,8 +1405,10 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
             }}
           >
             <div style={{ color: 'rgb(239, 68, 68)', fontSize: '13px', textAlign: 'center' }}>
-              ❌ Erro no compartilhamento de tela
-              <br />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '4px' }}>
+                <AlertTriangle size={16} />
+                Erro no compartilhamento de tela
+              </div>
               <span style={{ fontSize: '11px', opacity: 0.8 }}>
                 Tente novamente ou verifique as permissões
               </span>
@@ -1385,56 +1422,7 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
   return (
     <div className="h-full min-h-0 pt-[18px] px-6 pb-6">
       <div className="max-w-7xl mx-auto h-full">
-        {/* Informações da Sessão */}
-        {sessionId && (
-          <div 
-            className="mb-3 p-3 rounded-lg border"
-            style={{ 
-              backgroundColor: 'var(--night)', 
-              borderColor: 'rgba(249, 251, 252, 0.1)'
-            }}
-          >
-            {sessionLoading ? (
-              <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--periwinkle)' }}>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-periwinkle border-t-transparent" />
-                Carregando informações da sessão...
-              </div>
-            ) : sessionError ? (
-              <div className="text-sm" style={{ color: 'var(--red-400)' }}>
-                ⚠️ Erro: {sessionError}
-              </div>
-            ) : sessionData ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div>
-                    <div className="text-sm font-semibold" style={{ color: 'var(--seasalt)' }}>
-                      {sessionData.sessionName}
-                    </div>
-                    <div className="text-xs" style={{ color: 'var(--periwinkle)' }}>
-                      {sessionData.companyName} • {sessionData.industry} • {sessionData.revenue}
-                    </div>
-                  </div>
-                  <div className="px-2 py-1 rounded text-xs font-medium bg-sgbus-green text-night">
-                    {sessionData.agentType}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--periwinkle)' }}>
-                  <span>Sessão: {sessionId.slice(0, 8)}...</span>
-                  {sessionData?.analysisCount > 0 && (
-                    <span className="px-1.5 py-0.5 rounded bg-periwinkle bg-opacity-20 text-xs">
-                      {sessionData.analysisCount} análises
-                    </span>
-                  )}
-                  {(sessionData?.totalDuration > 0 || currentSessionDuration > 0) && (
-                    <span className="px-1.5 py-0.5 rounded bg-sgbus-green bg-opacity-20 text-xs">
-                      {Math.floor(((sessionData?.totalDuration || 0) + currentSessionDuration) / 60)}m {((sessionData?.totalDuration || 0) + currentSessionDuration) % 60}s
-                    </span>
-                  )}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        )}
+        {/* Informações da Sessão - Removida do topo */}
         
         <div className="grid grid-cols-1 sm:grid-cols-[1.25fr_0.9fr] gap-3 h-full">
           
@@ -1686,7 +1674,8 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                           border: '1px solid rgba(207, 198, 254, 0.3)'
                         }}
                       >
-                        ⬇️ SCROLL
+                        <ChevronDown size={16} className="inline" />
+                        SCROLL
                       </button>
                     </div>
                   )}
@@ -1778,8 +1767,15 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                                    block.color === 'blue' ? 'var(--periwinkle)' : 
                                    'var(--seasalt)'
                           }}>
-                            {block.source === 'screen' ? '🖥️ TELA' : 
-                             block.source === 'microphone' ? '🎤 MICROFONE' : '👤 REMOTO'}
+                            <span className="flex items-center gap-1">
+                              {block.source === 'screen' ? (
+                                <><Monitor size={12} /> TELA</>
+                              ) : block.source === 'microphone' ? (
+                                <><Mic size={12} /> MICROFONE</>
+                              ) : (
+                                <><User size={12} /> REMOTO</>
+                              )}
+                            </span>
                           </span>
                         </div>
                         <span className="text-xs opacity-70" style={{ color: 'var(--seasalt)' }}>
@@ -1825,7 +1821,10 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                   {!transcript && !interimTranscript && !isListening && (
                     <div className="text-center pt-4 pb-8">
                       <p className="text-lg mb-2" style={{ color: 'var(--periwinkle)' }}>
-                        🎙️ Pressione &quot;CONECTAR&quot; para começar a transcrição
+                        <span className="flex items-center justify-center gap-2">
+                          <Mic size={18} />
+                          Pressione &quot;CONECTAR&quot; para começar a transcrição
+                        </span>
                       </p>
                       <p className="text-sm opacity-70" style={{ color: 'var(--seasalt)' }}>
                         Sistema capturará áudio do microfone e da tela
@@ -1849,7 +1848,48 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
           </div>
 
           {/* COLUNA DIREITA - Histórico de Análises */}
-          <div className="flex flex-col h-full min-h-0">
+          <div className="flex flex-col h-full min-h-0 relative">
+            
+            {/* Informações da Sessão - Reposicionada */}
+            {sessionId && (
+              <div 
+                className="mb-3 p-3 rounded-lg border"
+                style={{ 
+                  backgroundColor: 'var(--night)', 
+                  borderColor: 'rgba(249, 251, 252, 0.1)'
+                }}
+              >
+                {sessionLoading ? (
+                  <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--periwinkle)' }}>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-periwinkle border-t-transparent" />
+                    Carregando informações da sessão...
+                  </div>
+                ) : sessionError ? (
+                  <div className="text-sm" style={{ color: 'var(--red-400)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <AlertTriangle size={14} />
+                      Erro: {sessionError}
+                    </div>
+                  </div>
+                ) : sessionData ? (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold" style={{ color: 'var(--seasalt)' }}>
+                        {sessionData.sessionName}
+                      </div>
+                      <div className="text-xs" style={{ color: 'var(--periwinkle)' }}>
+                        {sessionData.companyName} • {sessionData.industry} • {sessionData.revenue}
+                      </div>
+                    </div>
+                    {(sessionData?.totalDuration > 0 || currentSessionDuration > 0) && (
+                      <span className="px-1.5 py-0.5 rounded bg-sgbus-green bg-opacity-20 text-xs" style={{ color: 'var(--sgbus-green)' }}>
+                        {Math.floor(((sessionData?.totalDuration || 0) + currentSessionDuration) / 60)}m {((sessionData?.totalDuration || 0) + currentSessionDuration) % 60}s
+                      </span>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            )}
             
             {/* HISTÓRICO DE ANÁLISES - EXPANSÍVEL */}
             <div className="flex-1 flex flex-col min-h-0 h-full">
@@ -1869,21 +1909,29 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                       {analysisHistory.length} análises
                     </span>
                     
-                    {/* Botão Tutorial */}
-                    <button
-                      onClick={() => setIsTutorialOpen(true)}
-                      aria-label="Abrir tutorial"
-                      className="w-[18px] h-[18px] rounded-full transition-all duration-200 inline-flex items-center justify-center hover:scale-110 focus-visible:outline-2 focus-visible:outline-[color:var(--periwinkle)] focus-visible:outline-offset-2"
-                      style={{
-                        backgroundColor: 'rgba(207, 198, 254, 0.1)',
-                        color: 'var(--periwinkle)',
-                        border: '1px solid rgba(207, 198, 254, 0.3)'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(207, 198, 254, 0.2)'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(207, 198, 254, 0.1)'}
-                    >
-                      <HelpCircle size={16} />
-                    </button>
+                    {/* Botão Tutorial com Tooltip */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setIsTutorialOpen(true)}
+                        aria-label="Abrir tutorial"
+                        className="w-[18px] h-[18px] rounded-full transition-all duration-200 inline-flex items-center justify-center hover:scale-110 focus-visible:outline-2 focus-visible:outline-[color:var(--periwinkle)] focus-visible:outline-offset-2"
+                        style={{
+                          backgroundColor: 'rgba(207, 198, 254, 0.1)',
+                          color: 'var(--periwinkle)',
+                          border: '1px solid rgba(207, 198, 254, 0.3)'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(207, 198, 254, 0.2)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(207, 198, 254, 0.1)'}
+                      >
+                        <HelpCircle size={16} />
+                      </button>
+                      
+                      {/* Tooltip Tutorial */}
+                      <TutorialTooltip 
+                        isVisible={isTooltipVisible}
+                        onClose={() => setIsTooltipVisible(false)}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -1891,7 +1939,9 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                   {analysisHistory.length === 0 && (
                     <div className="text-center pt-4 pb-8">
                       <p className="text-sm opacity-70" style={{ color: 'var(--seasalt)' }}>
-                        Use o botão 🧠 no menu de controles acima para analisar a transcrição
+                        Use o <strong>botão ANALISAR</strong> a esquerda para processar a transcrição:<br />
+                        • <strong style={{ color: 'var(--sgbus-green)' }}>Verde</strong>: análise ampla e detalhada do contexto<br />
+                        • <strong style={{ color: 'rgba(255, 193, 7, 1)' }}>Amarelo</strong>: análise rápida e concisa (com caixa marcada)
                       </p>
                     </div>
                   )}
@@ -1955,6 +2005,12 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
           if (isFirstVisit) {
             markAsVisited();
           }
+          // Mostrar tooltip após fechar o modal
+          setTimeout(() => {
+            setIsTooltipVisible(true);
+            // Auto-hide após 5 segundos
+            setTimeout(() => setIsTooltipVisible(false), 5000);
+          }, 500);
         }}
       />
 
