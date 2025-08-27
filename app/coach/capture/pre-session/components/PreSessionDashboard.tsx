@@ -252,7 +252,7 @@ export default function PreSessionDashboard() {
   };
 
   return (
-    <div className="mx-auto px-6 py-8 min-h-screen bg-night text-seasalt max-w-[1280px]">
+    <div className="mx-auto px-6 py-6 bg-night text-seasalt max-w-[1280px]">
       {/* Métricas Rápidas */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
@@ -363,13 +363,9 @@ export default function PreSessionDashboard() {
       </div>
 
       {/* Área Principal */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Configuração da Nova Sessão */}
         <div className="flex flex-col h-full">
-          <h3 className="text-xl font-semibold text-seasalt flex items-center gap-2 mb-3">
-            <Zap size={20} className="text-sgbus-green" />
-            Nova Sessão
-          </h3>
 
           {/* Container principal */}
           <div className="bg-eerie-black border border-seasalt/10 rounded-lg p-2 flex-1 flex flex-col space-y-3">
@@ -388,16 +384,14 @@ export default function PreSessionDashboard() {
                 className="w-full bg-sgbus-green hover:bg-sgbus-green/90 text-night font-semibold text-lg px-8 py-4 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg flex items-center justify-center gap-3"
               >
                 <Play size={24} />
-                <Target size={20} />
-                <span>COMEÇAR TRANSCRIÇÃO</span>
+                <span>CRIAR SESSÃO</span>
               </button>
               
-              <div className="flex items-center justify-center gap-3 text-sm text-periwinkle">
-                <Mic size={16} />
-                <span>Microfone</span>
-                <span>+</span>
-                <MonitorSpeaker size={16} />
-                <span>Áudio da Tela</span>
+              <div className="text-center text-sm text-periwinkle space-y-1">
+                <p>Ao clicar em <span className="text-sgbus-green font-medium">Criar Sessão</span>, você:</p>
+                <p>1. Preencherá um formulário de configuração</p>
+                <p>2. Entrará na sala da sessão criada</p>
+                <p>3. Poderá iniciar a transcrição em tempo real</p>
               </div>
             </div>
             </div>
@@ -468,15 +462,11 @@ export default function PreSessionDashboard() {
 
         {/* Sessões Recentes */}
         <div className="flex flex-col h-full">
-          <h3 className="text-xl font-semibold text-seasalt flex items-center gap-2 mb-3">
-            <ScrollText size={20} className="text-sgbus-green" />
-            Sessões Recentes
-          </h3>
 
           {/* Container com scroll - altura controlada */}
           <div className="bg-eerie-black border border-seasalt/10 rounded-lg p-2 flex-1 overflow-hidden">
             <div 
-              className="space-y-3 max-h-[400px] overflow-y-auto thin-scrollbar" 
+              className="space-y-3 max-h-[510px] overflow-y-auto thin-scrollbar" 
               data-testid="sessions-list"
               role="list" 
               aria-label="Lista de sessões de transcrição"
@@ -565,45 +555,6 @@ export default function PreSessionDashboard() {
         </div>
       </div>
 
-      {/* Instruções da Sessão */}
-      <div className="bg-eerie-black border border-seasalt/10 rounded-lg p-6">
-        <h3 className="text-xl font-semibold text-seasalt mb-4 flex items-center gap-2">
-          <BarChart3 size={20} className="text-sgbus-green" />
-          Instruções para Sessão
-        </h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center p-4">
-            <div className="w-12 h-12 bg-sgbus-green/20 rounded-lg flex items-center justify-center mx-auto mb-3">
-              <Mic className="text-sgbus-green" size={24} />
-            </div>
-            <h4 className="font-semibold text-seasalt mb-2">1. Prepare o Microfone</h4>
-            <p className="text-sm text-periwinkle">
-              Certifique-se de que seu microfone está funcionando e posicionado corretamente.
-            </p>
-          </div>
-          
-          <div className="text-center p-4">
-            <div className="w-12 h-12 bg-sgbus-green/20 rounded-lg flex items-center justify-center mx-auto mb-3">
-              <Settings className="text-sgbus-green" size={24} />
-            </div>
-            <h4 className="font-semibold text-seasalt mb-2">2. Configure as Opções</h4>
-            <p className="text-sm text-periwinkle">
-              Selecione o idioma e tipo de sessão nas configurações acima.
-            </p>
-          </div>
-          
-          <div className="text-center p-4">
-            <div className="w-12 h-12 bg-sgbus-green/20 rounded-lg flex items-center justify-center mx-auto mb-3">
-              <Target className="text-sgbus-green" size={24} />
-            </div>
-            <h4 className="font-semibold text-seasalt mb-2">3. Inicie a Transcrição</h4>
-            <p className="text-sm text-periwinkle">
-              Clique no botão verde acima para começar sua sessão de transcrição.
-            </p>
-          </div>
-        </div>
-      </div>
 
       {/* Sales Agent Configuration Modal */}
       <SalesAgentConfigModal
