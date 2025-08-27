@@ -14,8 +14,10 @@ import {
   Menu,
   X,
   FileCheck,
-  Shield
+  Shield,
+  Headphones
 } from "lucide-react";
+import { getPermissionsForStatus, Modalidade } from "@/types/permissions";
 
 interface MenuItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -23,6 +25,7 @@ interface MenuItem {
   href: string;
   disabled?: boolean;
   adminOnly?: boolean;
+  modalidade?: Modalidade;
 }
 
 const menuItems: MenuItem[] = [
@@ -35,16 +38,19 @@ const menuItems: MenuItem[] = [
     icon: Users,
     label: "Clientes",
     href: "/clientes",
+    modalidade: 'clientes',
   },
   {
     icon: FileText,
     label: "Planejamentos",
     href: "/planejamentos",
+    modalidade: 'planejamentos',
   },
   {
     icon: FileCheck,
     label: "Propostas",
     href: "/propostas",
+    modalidade: 'propostas',
   },
   {
     icon: Shield,
@@ -53,10 +59,10 @@ const menuItems: MenuItem[] = [
     adminOnly: true,
   },
   {
-    icon: BarChart2,
-    label: "Vendas",
-    href: "/vendas",
-    disabled: true,
+    icon: Headphones,
+    label: "Vendas/Coaching",
+    href: "/coach/capture/pre-session",
+    modalidade: 'vendas',
   },
 ];
 
@@ -65,15 +71,37 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useUser();
 
-  // Verificar se é admin
-  const isAdmin = user?.publicMetadata?.role === 'ADMIN' || 
-                 user?.publicMetadata?.role === 'SUPER_ADMIN';
+  // Get user permissions
+  const publicMetadata = user?.publicMetadata as any;
+  const userStatus = publicMetadata?.approvalStatus || 'PENDING';
+  const userRole = publicMetadata?.role || 'USER';
+  const permissions = getPermissionsForStatus(userStatus, userRole);
+  const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
 
-  // Filtrar itens do menu baseado no role do usuário
+  // PLAN-010: Filter menu items based on user permissions
   const filteredMenuItems = menuItems.filter(item => {
+    // Admin items
     if (item.adminOnly) {
       return isAdmin;
     }
+    
+    // Check modalidade permissions
+    if (item.modalidade) {
+      switch (item.modalidade) {
+        case 'vendas':
+          return permissions.canAccessSales;
+        case 'clientes':
+          return permissions.canAccessClients;
+        case 'planejamentos':
+          return permissions.canAccessPlanning;
+        case 'propostas':
+          return permissions.canAccessProposals;
+        default:
+          return false;
+      }
+    }
+    
+    // Always show items without modalidade (like Home)
     return true;
   });
 
@@ -122,32 +150,37 @@ export default function Sidebar() {
         <nav className="flex-1 px-6 py-4 overflow-y-auto">
           {filteredMenuItems.map((item) => (
             <div key={item.label}>
-                      {item.disabled ? (
-                        <div className="flex items-center my-2 rounded-lg text-seasalt/50 cursor-not-allowed opacity-50" style={{ padding: "0.875rem 1rem" }}>
-                          <item.icon className="h-5 w-5 flex-shrink-0 mr-5" />
-                          <span className="whitespace-nowrap">{item.label}</span>
-                        </div>
-                      ) : (
-                        <Link
-                          href={item.href}
-                          className={`sidebar-nav-item flex items-center my-2 rounded-lg ${
-                            isActive(item.href)
-                              ? "active bg-sgbus-green text-night font-medium"
-                              : item.adminOnly
-                              ? "admin bg-sgbus-green/10 text-sgbus-green"
-                              : "text-periwinkle"
-                          }`}
-                          style={{ 
-                            padding: "0.875rem 1rem"
-                          }}
-                        >
-                          <item.icon className="h-5 w-5 flex-shrink-0 mr-5" />
-                          <span className="whitespace-nowrap">
-                            {item.label}
-                            {item.adminOnly && " ADMIN"}
-                          </span>
-                        </Link>
-                      )}
+              {item.disabled ? (
+                <div className="flex items-center my-2 rounded-lg text-seasalt/50 cursor-not-allowed opacity-50" style={{ padding: "0.875rem 1rem" }}>
+                  <item.icon className="h-5 w-5 flex-shrink-0 mr-5" />
+                  <span className="whitespace-nowrap">{item.label}</span>
+                </div>
+              ) : (
+                <Link
+                  href={item.href}
+                  className={`sidebar-nav-item flex items-center my-2 rounded-lg ${
+                    isActive(item.href)
+                      ? "active bg-sgbus-green text-night font-medium"
+                      : item.adminOnly
+                      ? "admin bg-sgbus-green/10 text-sgbus-green"
+                      : item.modalidade === 'vendas' && userStatus === 'PENDING'
+                      ? "text-sgbus-green hover:bg-sgbus-green/10"
+                      : "text-periwinkle"
+                  }`}
+                  style={{ 
+                    padding: "0.875rem 1rem"
+                  }}
+                >
+                  <item.icon className="h-5 w-5 flex-shrink-0 mr-5" />
+                  <span className="whitespace-nowrap">
+                    {item.label}
+                    {item.adminOnly && " ADMIN"}
+                    {item.modalidade === 'vendas' && userStatus === 'PENDING' && (
+                      <span className="ml-2 text-xs bg-sgbus-green/20 text-sgbus-green px-2 py-0.5 rounded-full">LIBERADO</span>
+                    )}
+                  </span>
+                </Link>
+              )}
             </div>
           ))}
         </nav>
