@@ -27,6 +27,7 @@
     "production-monitoring": "node scripts/production-monitoring.js",
     "setup-external-api": "node scripts/setup-external-api.js",
     "apply-rls-policies": "node scripts/apply-rls-policies-prisma-fixed.js",
+    "apply-coaching-rls": "node scripts/apply-coaching-rls.js",
     "speech-server": "node server/speech-server.js",
     "speech-server-https": "node server/speech-server-https.js",
     "speech-server-ultra-fast": "node server/speech-server-advanced.js ULTRA_FAST",

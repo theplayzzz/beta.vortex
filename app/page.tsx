@@ -8,12 +8,25 @@ import ClientFlowModal from "@/components/shared/client-flow-modal";
 import { useClientFlow } from "../hooks/use-client-flow";
 import { useClientsCount } from "@/lib/react-query";
 import type { Client } from "@/lib/react-query";
+import { useUser } from "@clerk/nextjs";
+import { useFirstVisitHighlight } from "@/hooks/useFirstVisitHighlight";
+import { HighlightBadge } from "@/components/ui/highlight-badge";
+import { getPermissionsForStatus } from "@/types/permissions";
 
 export default function HomePage() {
   const { user, isLoading, isSignedIn } = useCurrentUser();
+  const { user: clerkUser } = useUser();
+  const { shouldHighlight, markAsInteracted } = useFirstVisitHighlight();
   
   // TanStack Query hook para contagem de clientes
   const { data: clientsCount = 0, refetch: refetchClientsCount } = useClientsCount();
+  
+  // Get user permissions
+  const publicMetadata = clerkUser?.publicMetadata as any;
+  const userStatus = publicMetadata?.approvalStatus || 'PENDING';
+  const userRole = publicMetadata?.role || 'USER';
+  const permissions = getPermissionsForStatus(userStatus, userRole);
+  const isPendingUser = userStatus === 'PENDING';
 
   const clientFlow = useClientFlow({
     title: "Novo Cliente",
@@ -123,20 +136,39 @@ export default function HomePage() {
       <div className="bg-eerie-black rounded-lg p-6 border border-accent/20 mb-8">
         <h3 className="text-lg font-semibold text-seasalt mb-4">Ações Rápidas</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link href="/planejamentos/novo" className="p-4 bg-sgbus-green/10 hover:bg-sgbus-green/20 rounded-lg border border-sgbus-green/20 transition-colors group">
-            <div className="text-sgbus-green text-2xl mb-2">📋</div>
-            <div className="text-seasalt font-medium">Novo Planejamento</div>
-            <div className="text-seasalt/70 text-sm mt-1">Criar estratégia com IA</div>
-          </Link>
+          {permissions.canAccessPlanning ? (
+            <Link href="/planejamentos/novo" className="p-4 bg-sgbus-green/10 hover:bg-sgbus-green/20 rounded-lg border border-sgbus-green/20 transition-colors group">
+              <div className="text-sgbus-green text-2xl mb-2">📋</div>
+              <div className="text-seasalt font-medium">Novo Planejamento</div>
+              <div className="text-seasalt/70 text-sm mt-1">Criar estratégia com IA</div>
+            </Link>
+          ) : (
+            <button disabled className="p-4 bg-sgbus-green/10 rounded-lg border border-sgbus-green/20 transition-colors group opacity-50 cursor-not-allowed">
+              <div className="text-sgbus-green text-2xl mb-2">📋</div>
+              <div className="text-seasalt font-medium">Novo Planejamento</div>
+              <div className="text-seasalt/70 text-sm mt-1">Criar estratégia com IA</div>
+            </button>
+          )}
           
-          <button 
-            onClick={clientFlow.openModal}
-            className="p-4 bg-periwinkle/10 hover:bg-periwinkle/20 rounded-lg border border-periwinkle/20 transition-colors group"
-          >
-            <div className="text-periwinkle text-2xl mb-2">👥</div>
-            <div className="text-seasalt font-medium">Novo Cliente</div>
-            <div className="text-seasalt/70 text-sm mt-1">Cadastrar cliente</div>
-          </button>
+          {permissions.canAccessClients ? (
+            <button 
+              onClick={clientFlow.openModal}
+              className="p-4 bg-periwinkle/10 hover:bg-periwinkle/20 rounded-lg border border-periwinkle/20 transition-colors group"
+            >
+              <div className="text-periwinkle text-2xl mb-2">👥</div>
+              <div className="text-seasalt font-medium">Novo Cliente</div>
+              <div className="text-seasalt/70 text-sm mt-1">Cadastrar cliente</div>
+            </button>
+          ) : (
+            <button 
+              disabled
+              className="p-4 bg-periwinkle/10 rounded-lg border border-periwinkle/20 transition-colors group opacity-50 cursor-not-allowed"
+            >
+              <div className="text-periwinkle text-2xl mb-2">👥</div>
+              <div className="text-seasalt font-medium">Novo Cliente</div>
+              <div className="text-seasalt/70 text-sm mt-1">Cadastrar cliente</div>
+            </button>
+          )}
           
           <button 
             disabled 
@@ -148,11 +180,32 @@ export default function HomePage() {
             <div className="text-seasalt/70 text-sm mt-1">Conversar com assistente</div>
           </button>
           
-          <button className="p-4 bg-periwinkle/10 hover:bg-periwinkle/20 rounded-lg border border-periwinkle/20 transition-colors group opacity-50 cursor-not-allowed">
-            <div className="text-periwinkle text-2xl mb-2">📊</div>
-            <div className="text-seasalt font-medium">Vendas</div>
-            <div className="text-seasalt/70 text-sm mt-1">Em breve</div>
-          </button>
+          {/* PLAN-010: Sales button enabled for PENDING users with highlight */}
+          <HighlightBadge
+            isHighlighted={isPendingUser && shouldHighlight}
+            onInteraction={markAsInteracted}
+            badgeText="LIBERADO"
+          >
+            {permissions.canAccessSales ? (
+              <Link 
+                href="/coach/capture/pre-session"
+                className="block p-4 bg-periwinkle/10 hover:bg-periwinkle/20 rounded-lg border border-periwinkle/20 transition-colors group"
+              >
+                <div className="text-periwinkle text-2xl mb-2">📊</div>
+                <div className="text-seasalt font-medium">Vendas</div>
+                <div className="text-seasalt/70 text-sm mt-1">Módulo de coaching</div>
+              </Link>
+            ) : (
+              <button 
+                disabled
+                className="p-4 bg-periwinkle/10 rounded-lg border border-periwinkle/20 transition-colors group opacity-50 cursor-not-allowed"
+              >
+                <div className="text-periwinkle text-2xl mb-2">📊</div>
+                <div className="text-seasalt font-medium">Vendas</div>
+                <div className="text-seasalt/70 text-sm mt-1">Em breve</div>
+              </button>
+            )}
+          </HighlightBadge>
         </div>
       </div>
 
