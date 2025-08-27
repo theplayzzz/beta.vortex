@@ -1,0 +1,47 @@
+/**
+ * Custom styles for PreSessionDashboard component
+ * Implements ETAPA 6 animation requirements from plan-009
+ */
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+.animate-fade-out {
+  animation: fade-out 0.3s ease-out forwards;
+}
+
+/* Improved scrollbar for sessions list */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Focus indicators for better accessibility */
+.focus\:ring-sgbus-green\/20:focus {
+  --tw-ring-color: rgb(101 183 113 / 0.2);
+}
+
+.focus\:ring-red-400\/20:focus {
+  --tw-ring-color: rgb(248 113 113 / 0.2);
+}

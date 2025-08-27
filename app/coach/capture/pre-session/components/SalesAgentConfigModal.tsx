@@ -86,7 +86,7 @@ export default function SalesAgentConfigModal({ isOpen, onClose, onSubmit, isLoa
     'Situação Atual',
     'Problemas e Dores',
     'Consequências',
-    'Solução Desejada'
+    'Seu Produto/Solução'
   ];
   
   const stepIcons = [
@@ -147,7 +147,7 @@ export default function SalesAgentConfigModal({ isOpen, onClose, onSubmit, isLoa
 
       case 5:
         if (!formData.solutionNeed.trim()) {
-          newErrors.solutionNeed = 'Descreva a transformação desejada';
+          newErrors.solutionNeed = 'Descreva seu produto/solução';
         } else if (formData.solutionNeed.length > 500) {
           newErrors.solutionNeed = 'Máximo de 500 caracteres';
         }
@@ -199,7 +199,7 @@ export default function SalesAgentConfigModal({ isOpen, onClose, onSubmit, isLoa
             <div className="text-center mb-8">
               <StepIcon size={32} className="text-sgbus-green mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-seasalt">{stepTitles[0]}</h3>
-              <p className="text-sm text-periwinkle mt-2">Vamos começar com as informações básicas da empresa</p>
+              <p className="text-sm text-periwinkle mt-2">Colete as informações básicas do cliente para personalizar a transcrição e análise da reunião</p>
             </div>
 
             {/* Company Name */}
@@ -377,20 +377,25 @@ export default function SalesAgentConfigModal({ isOpen, onClose, onSubmit, isLoa
             <div className="text-center mb-8">
               <StepIcon size={32} className="text-sgbus-green mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-seasalt">{stepTitles[4]}</h3>
-              <p className="text-sm text-periwinkle mt-2">Qual transformação o cliente busca alcançar?</p>
+              <p className="text-sm text-periwinkle mt-2">Descreva detalhadamente seu produto/solução e como ele resolve os problemas do cliente</p>
+              <div className="bg-night/30 rounded-lg p-3 mt-4 text-left">
+                <p className="text-xs text-periwinkle leading-relaxed">
+                  <span className="text-sgbus-green font-medium">Importante:</span> Explique o que seu produto faz, seus principais diferenciais, como ele funciona e especificamente como resolve as necessidades que o cliente descreveu nas etapas anteriores. Seja detalhado - essas informações serão usadas para personalizar a transcrição da reunião.
+                </p>
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-seasalt mb-3">
-                Solução Desejada
+                Seu Produto/Solução e Benefícios
               </label>
               <p className="text-xs text-periwinkle mb-3 italic">
-                Exemplo: &quot;Reduzir custos operacionais em 30% e conseguir gerenciar 10 lojas com a mesma equipe&quot;
+                Exemplo: &quot;Nossa plataforma SaaS automatiza controle de estoque em tempo real, integra com PDV, reduz erros em 95% e permite gerenciar múltiplas lojas remotamente&quot;
               </p>
               <textarea
                 value={formData.solutionNeed}
                 onChange={(e) => handleInputChange('solutionNeed', e.target.value)}
-                placeholder="Qual é a transformação principal que seu cliente busca alcançar ao resolver esses problemas?"
+                placeholder="Descreva seu produto/solução, principais funcionalidades, diferenciais e como resolve especificamente os problemas do cliente..."
                 className="w-full px-4 py-3 bg-night text-seasalt border border-seasalt/20 rounded-lg focus:border-sgbus-green focus:outline-none resize-none"
                 rows={8}
                 maxLength={500}
@@ -417,7 +422,7 @@ export default function SalesAgentConfigModal({ isOpen, onClose, onSubmit, isLoa
         <div className="flex items-center justify-between p-6 border-b border-seasalt/10">
           <h2 className="text-xl font-bold text-seasalt flex items-center gap-3">
             <Target size={20} className="text-sgbus-green" />
-            Configuração do Agente de Vendas
+            Alimentar Informações do seu Cliente
           </h2>
           <button
             onClick={onClose}

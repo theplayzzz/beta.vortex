@@ -150,3 +150,46 @@ export async function PATCH(
     }, { status: 500 })
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const userId = await getUserIdFromClerk()
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    // Await params to get the actual values
+    const { id } = await params
+
+    // Verify ownership and that session is not already deleted
+    const existingSession = await prisma.transcriptionSession.findFirst({
+      where: { 
+        id, 
+        userId, 
+        deletedAt: null 
+      }
+    })
+
+    if (!existingSession) {
+      return NextResponse.json({ error: 'Sessão não encontrada' }, { status: 404 })
+    }
+
+    // Perform soft delete by setting deletedAt timestamp
+    await prisma.transcriptionSession.update({
+      where: { id },
+      data: { deletedAt: new Date() }
+    })
+
+    return NextResponse.json({ message: 'Sessão excluída com sucesso' })
+
+  } catch (error) {
+    console.error('Erro ao excluir sessão de transcrição:', error)
+    return NextResponse.json({ 
+      error: 'Erro interno do servidor' 
+    }, { status: 500 })
+  }
+}
