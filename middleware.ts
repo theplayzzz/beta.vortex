@@ -41,18 +41,7 @@ const isAdminRoute = createRouteMatcher([
   '/api/admin(.*)'  // Incluir APIs de admin também
 ])
 
-// PLAN-010: Rotas permitidas para usuários PENDING (vendas/coaching)
-const isPendingAllowedRoute = createRouteMatcher([
-  '/',
-  '/coach/capture(.*)',
-  '/api/transcription-sessions(.*)',
-  '/api/daily(.*)',
-  '/api/user/approval-status',  // Allow status checks for PENDING users
-  '/api/auth/status',  // Allow auth status checks
-  '/pending-approval',
-  '/account-rejected',
-  '/account-suspended'
-])
+// PLAN-010: Usuários PENDING agora têm acesso completo ao sistema (não precisam mais de lista restritiva)
 
 // 🆕 PLAN-028: Fallback otimizado com retry e cache inteligente
 async function getApprovalStatusDirect(userId: string): Promise<{ approvalStatus: string; role: string; isAdmin: boolean }> {
@@ -306,26 +295,13 @@ export default clerkMiddleware(async (auth, req) => {
 
         case 'PENDING':
         default:
-          // PLAN-010: Usuários PENDING podem acessar módulo de vendas/coaching
-          if (isPendingAllowedRoute(req)) {
-            console.log('[MIDDLEWARE] Usuário PENDING acessando rota permitida:', { 
-              userId, 
-              currentPath,
-              isAllowed: true 
-            })
-            break
-          }
-          
-          // Para rotas não permitidas, redirecionar para pending-approval
-          if (currentPath !== '/pending-approval') {
-            console.log('[MIDDLEWARE] Redirecionando usuário PENDING de rota não permitida:', { 
-              userId, 
-              approvalStatus, 
-              currentPath,
-              publicMetadata 
-            })
-            return NextResponse.redirect(new URL('/pending-approval', req.url))
-          }
+          // PLAN-010: Usuários PENDING agora têm acesso à home e módulo de vendas/coaching
+          // Não redirecionar mais para /pending-approval
+          console.log('[MIDDLEWARE] Usuário PENDING acessando sistema:', { 
+            userId, 
+            currentPath,
+            approvalStatus 
+          })
           break
       }
     }
