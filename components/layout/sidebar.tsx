@@ -60,7 +60,7 @@ const menuItems: MenuItem[] = [
   },
   {
     icon: Headphones,
-    label: "Vendas/Coaching",
+    label: "Spalla Ai",
     href: "/coach/capture/pre-session",
     modalidade: 'vendas',
   },

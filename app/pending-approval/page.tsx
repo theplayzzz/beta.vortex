@@ -21,11 +21,11 @@ export default function PendingApprovalPage() {
     if (statusData?.approvalStatus === 'APPROVED') {
       session?.touch()
         .then(() => {
-          router.push('/planejamentos');
+          router.push('/');
         })
         .catch(err => {
           console.error("Failed to update session, retrying redirect:", err);
-          router.push('/planejamentos'); // Attempt redirect even if touch fails
+          router.push('/'); // Attempt redirect even if touch fails
         });
     } else if (statusData?.approvalStatus === 'REJECTED' || statusData?.approvalStatus === 'SUSPENDED') {
       session?.touch()

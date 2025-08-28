@@ -47,7 +47,7 @@ export function HighlightBadge({
       <AnimatePresence>
         {isHighlighted && (
           <>
-            {/* Glowing border effect */}
+            {/* Subtle glowing border effect following design rules */}
             <motion.div
               className="absolute inset-0 rounded-lg"
               initial={{ opacity: 0 }}
@@ -55,8 +55,8 @@ export function HighlightBadge({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-sgbus-green via-periwinkle to-sgbus-green animate-pulse opacity-75" />
-              <div className="absolute inset-[-2px] rounded-lg bg-gradient-to-r from-sgbus-green via-periwinkle to-sgbus-green blur-md animate-pulse opacity-50" />
+              <div className="absolute inset-0 rounded-lg border-2 border-sgbus-green/40 bg-sgbus-green/5" />
+              <div className="absolute inset-[-1px] rounded-lg border border-sgbus-green/20 shadow-lg shadow-sgbus-green/10" />
             </motion.div>
 
             {/* Badge */}
@@ -72,11 +72,8 @@ export function HighlightBadge({
                   damping: 20 
                 }}
               >
-                <div className="relative">
-                  <div className="bg-sgbus-green text-eerie-black px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                    {badgeText}
-                  </div>
-                  <div className="absolute inset-0 bg-sgbus-green rounded-full animate-ping opacity-75" />
+                <div className="bg-sgbus-green text-night px-3 py-1 rounded-full text-xs font-bold shadow-lg shadow-sgbus-green/20 border border-sgbus-green/30">
+                  {badgeText}
                 </div>
               </motion.div>
             )}
@@ -90,14 +87,14 @@ export function HighlightBadge({
                 exit={{ opacity: 0, y: 10 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="bg-eerie-black border border-sgbus-green/50 rounded-lg px-4 py-2 shadow-xl">
+                <div className="bg-eerie-black border border-sgbus-green/30 rounded-lg px-4 py-2 shadow-xl shadow-sgbus-green/10">
                   <p className="text-seasalt text-sm whitespace-nowrap">
-                    Esta seção está liberada para você! 🎉
+                    Esta seção está liberada para você! ✨
                   </p>
                   <div className="absolute bottom-[-5px] left-1/2 transform -translate-x-1/2 w-0 h-0 
                     border-l-[5px] border-l-transparent
                     border-r-[5px] border-r-transparent
-                    border-t-[5px] border-t-sgbus-green/50" />
+                    border-t-[5px] border-t-sgbus-green/30" />
                 </div>
               </motion.div>
             )}
