@@ -213,4 +213,4 @@ New session management system with comprehensive features:
 #### Testing & Development
 - **Test URL**: Use https://5.161.64.137:3003/ for all testing instead of localhost
 - **Multiple Speech Servers**: Different performance profiles for various use cases
-- **AI Guards Integration**: CLI tool and MCP server for enhanced development workflow
+- **AI Guards Integration**: CLI tool and MCP server for enhanced development workflow.
