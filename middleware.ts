@@ -41,6 +41,8 @@ const isAdminRoute = createRouteMatcher([
   '/api/admin(.*)'  // Incluir APIs de admin também
 ])
 
+// PLAN-010: Usuários PENDING agora têm acesso completo ao sistema (não precisam mais de lista restritiva)
+
 // 🆕 PLAN-028: Fallback otimizado com retry e cache inteligente
 async function getApprovalStatusDirect(userId: string): Promise<{ approvalStatus: string; role: string; isAdmin: boolean }> {
   try {
@@ -293,16 +295,13 @@ export default clerkMiddleware(async (auth, req) => {
 
         case 'PENDING':
         default:
-          // Usuários pending ou sem status: redirecionar para pending-approval
-          if (currentPath !== '/pending-approval') {
-            console.log('[MIDDLEWARE] Redirecionando usuário pendente para pending-approval:', { 
-              userId, 
-              approvalStatus, 
-              currentPath,
-              publicMetadata 
-            })
-            return NextResponse.redirect(new URL('/pending-approval', req.url))
-          }
+          // PLAN-010: Usuários PENDING agora têm acesso à home e módulo de vendas/coaching
+          // Não redirecionar mais para /pending-approval
+          console.log('[MIDDLEWARE] Usuário PENDING acessando sistema:', { 
+            userId, 
+            currentPath,
+            approvalStatus 
+          })
           break
       }
     }

@@ -11,16 +11,21 @@ export default function PendingApprovalPage() {
   const { statusData, isLoading, isError } = useApprovalStatusPolling({
     pollingInterval: 5000, // Check every 5 seconds
   });
+  
+  // PLAN-010: PENDING users can now access sales module
+  const handleGoToHome = () => {
+    router.push('/');
+  };
 
   useEffect(() => {
     if (statusData?.approvalStatus === 'APPROVED') {
       session?.touch()
         .then(() => {
-          router.push('/planejamentos');
+          router.push('/');
         })
         .catch(err => {
           console.error("Failed to update session, retrying redirect:", err);
-          router.push('/planejamentos'); // Attempt redirect even if touch fails
+          router.push('/'); // Attempt redirect even if touch fails
         });
     } else if (statusData?.approvalStatus === 'REJECTED' || statusData?.approvalStatus === 'SUSPENDED') {
       session?.touch()
@@ -40,8 +45,10 @@ export default function PendingApprovalPage() {
         <div className="flex flex-col items-center justify-center space-y-4 px-4 py-6 pt-8 text-center sm:px-16">
           <h3 className="text-xl font-semibold" style={{ color: 'var(--seasalt)' }}>Aprovação Pendente</h3>
           <p className="text-sm" style={{ color: 'var(--periwinkle)' }}>
-            Sua conta está aguardando aprovação de um administrador. Você será
-            redirecionado automaticamente assim que sua conta for revisada.
+            Sua conta está aguardando aprovação completa. Enquanto isso, você tem acesso ao módulo de vendas/coaching.
+          </p>
+          <p className="text-xs mt-2" style={{ color: 'var(--periwinkle)', opacity: 0.7 }}>
+            Você será redirecionado automaticamente assim que sua conta for totalmente aprovada.
           </p>
           <div className="mt-4 h-6">
             {isLoading && (
@@ -55,9 +62,16 @@ export default function PendingApprovalPage() {
               </p>
             )}
           </div>
-          <div className="w-full pt-4">
+          <div className="w-full pt-4 space-y-2">
+            <button 
+              onClick={handleGoToHome}
+              className="w-full rounded-md py-2 px-4 text-sm font-medium transition-colors hover:opacity-90" 
+              style={{ backgroundColor: 'var(--sgbus-green)', color: 'var(--night)' }}
+            >
+              Acessar Sistema (Módulo Limitado)
+            </button>
             <SignOutButton redirectUrl="/sign-in">
-                <button className="w-full rounded-md py-2 px-4 text-sm font-medium transition-colors" style={{ backgroundColor: 'var(--sgbus-green)', color: 'var(--night)' }}>
+                <button className="w-full rounded-md py-2 px-4 text-sm font-medium transition-colors border" style={{ borderColor: 'var(--accent)', color: 'var(--periwinkle)' }}>
                     Sair
                 </button>
             </SignOutButton>
