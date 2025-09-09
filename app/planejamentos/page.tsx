@@ -7,6 +7,7 @@ import { Plus, Star } from "lucide-react";
 import { usePlannings } from "@/lib/react-query/hooks/usePlannings";
 import { useClients } from "@/lib/react-query/hooks/useClients";
 import { PlanningList, PlanningFilters } from "@/components/planning";
+import { RouteGuard } from "@/components/auth/route-guard";
 
 interface FilterState {
   search: string;
@@ -78,7 +79,8 @@ export default function PlanejamentosPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <RouteGuard requiredModalidade="planejamentos">
+      <div className="container mx-auto px-4 py-8">
       {/* Header da Página - Layout Responsivo */}
       <div className="mb-8">
         {/* Mobile Layout (≤768px): Empilhado */}
@@ -220,6 +222,7 @@ export default function PlanejamentosPage() {
           </button>
         </div>
       )}
-    </div>
+      </div>
+    </RouteGuard>
   );
 } 

@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react";
 import ClientListWithFilters from "@/components/client/client-list-with-filters";
 import ClientFlowModal from "@/components/shared/client-flow-modal";
+import { RouteGuard } from "@/components/auth/route-guard";
 import { useClientFlow } from "../../hooks/use-client-flow";
 import type { Client } from "@/lib/react-query";
 
@@ -17,7 +18,8 @@ export default function ClientesPage() {
   });
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <RouteGuard requiredModalidade="clientes">
+      <div className="container mx-auto px-4 py-8">
       {/* Header da Página - Layout Responsivo */}
       <div className="mb-8">
         {/* Mobile Layout (≤768px): Empilhado */}
@@ -62,6 +64,7 @@ export default function ClientesPage() {
 
       {/* Modal de criação de cliente */}
       <ClientFlowModal {...clientFlow.modalProps} />
-    </div>
+      </div>
+    </RouteGuard>
   );
 } 

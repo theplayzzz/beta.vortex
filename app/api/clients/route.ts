@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserIdFromClerk } from '@/lib/auth/auth-wrapper'
+import { requirePermission } from '@/lib/auth/api-permission-check'
 import { prisma } from '@/lib/prisma/client'
 import { z } from 'zod'
 
@@ -28,11 +29,8 @@ const ClientFiltersSchema = z.object({
 // GET /api/clients - Listar clientes com filtros
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getUserIdFromClerk()
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-    }
+    // Verificar permissão para acessar clientes
+    const userId = await requirePermission('clientes');
 
     // Extrair parâmetros da URL
     const { searchParams } = new URL(request.url)
@@ -234,11 +232,8 @@ export async function GET(request: NextRequest) {
 // POST /api/clients - Criar novo cliente
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getUserIdFromClerk()
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-    }
+    // Verificar permissão para criar clientes
+    const userId = await requirePermission('clientes');
 
     const body = await request.json()
 

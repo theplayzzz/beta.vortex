@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { requirePermission } from '@/lib/auth/api-permission-check';
 import { prisma } from '@/lib/prisma/client';
 import { z } from 'zod';
 import { webhookService } from '@/lib/planning/webhookService';
@@ -27,13 +28,9 @@ export async function GET(request: NextRequest) {
   try {
     console.log('🔍 [API] GET /api/plannings iniciado');
     
-    const { userId } = await auth();
-    console.log('🔍 [API] Auth resultado:', { userId: userId || 'NULL' });
-    
-    if (!userId) {
-      console.log('❌ [API] Usuário não autenticado');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Verificar permissão para acessar planejamentos
+    const userId = await requirePermission('planejamentos');
+    console.log('🔍 [API] Auth resultado:', { userId });
 
     // Buscar usuário no banco
     console.log('🔍 [API] Buscando usuário no banco...');
@@ -144,11 +141,8 @@ export async function GET(request: NextRequest) {
 // POST /api/plannings - Criar novo planejamento
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Verificar permissão para criar planejamentos
+    const userId = await requirePermission('planejamentos');
 
     // Buscar usuário no banco
     const user = await prisma.user.findUnique({

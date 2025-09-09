@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { requirePermission } from '@/lib/auth/api-permission-check';
 import { prisma } from '@/lib/prisma/client';
 import { z } from 'zod';
 
@@ -48,13 +49,10 @@ const CreateProposalSchema = z.object({
 // GET /api/proposals - Listar propostas do usuário
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    // Verificar permissão para acessar propostas
+    const userId = await requirePermission('propostas');
     
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Buscar usuário no banco
+    // Buscar usuário no banco  
     const user = await prisma.user.findUnique({
       where: { clerkId: userId },
       select: { id: true, email: true, firstName: true, lastName: true }
@@ -142,11 +140,8 @@ export async function GET(request: NextRequest) {
 // POST /api/proposals - Criar nova proposta (rascunho inicial)
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Verificar permissão para criar propostas
+    const userId = await requirePermission('propostas');
 
     // Buscar usuário no banco
     const user = await prisma.user.findUnique({
