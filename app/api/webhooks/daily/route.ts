@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     // Permitir requests de verificação do Daily.co sem assinatura
     if (!signature && body.length < 50) {
       console.log('📋 Daily.co webhook verification request');
-      return NextResponse.json({ status: 'ok', message: 'Webhook endpoint is ready' });
+      return new NextResponse('OK', { status: 200 });
     }
     
     if (!validateDailySignature(signature, body)) {
