@@ -170,7 +170,7 @@ node scripts/check-daily-rooms.js
 
 ### **Teste Real Executado**
 - **Sala Criada**: `test-room-test_1757383519196_wbo7n7xyw`
-- **URL Gerada**: `https://gruporugido.daily.co/test-room-test_1757383519196_wbo7n7xyw`
+- **URL Gerada**: `https://seu_subdominio.daily.co/test-room-test_1757383519196_wbo7n7xyw`
 - **Status no Painel**: ✅ Visível e acessível
 - **Webhook participant.joined**: ✅ Status 200, processado
 - **Webhook participant.left**: ✅ Status 200, duração capturada (187 segundos)
@@ -180,9 +180,9 @@ node scripts/check-daily-rooms.js
 
 ### **Variáveis de Ambiente (.env.local)**
 ```env
-DAILY_API_KEY=f272f8c854e3af5039137825ee3362677c6836cf19c825459b985ba4f8beff7b
-DAILY_WEBHOOK_SECRET=f0c9b68f470048c5ab75834a0b3d2ddfcbbc3b14e6e6994abc598cc888748156  
-NEXT_PUBLIC_DAILY_DOMAIN=gruporugido.daily.co
+DAILY_API_KEY=seu_daily_api_key_aqui
+DAILY_WEBHOOK_SECRET=seu_webhook_secret_aqui  
+NEXT_PUBLIC_DAILY_DOMAIN=seu_subdominio.daily.co
 ```
 
 ### **Headers HTTP Necessários**
