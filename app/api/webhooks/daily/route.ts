@@ -8,6 +8,12 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get('x-webhook-signature') || '';
     const body = await request.text();
     
+    // Permitir requests de verificação do Daily.co sem assinatura
+    if (!signature && body.length < 50) {
+      console.log('📋 Daily.co webhook verification request');
+      return NextResponse.json({ status: 'ok', message: 'Webhook endpoint is ready' });
+    }
+    
     if (!validateDailySignature(signature, body)) {
       console.error('❌ Webhook signature validation failed');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -27,17 +33,26 @@ export async function POST(request: NextRequest) {
       if (user_id && user_id.startsWith('session_')) {
         const transcriptionSessionId = user_id.replace('session_', '');
         
-        await prisma.transcriptionSession.update({
-          where: { id: transcriptionSessionId },
-          data: {
-            connectTime: new Date(joined_at * 1000),
-            isActive: true,
-            activeParticipantId: session_id,
-            connectionCount: { increment: 1 }
+        try {
+          // Para sessões de teste, apenas loggar (não tentar atualizar banco)
+          if (transcriptionSessionId.startsWith('test_')) {
+            console.log('✅ Teste - Participante conectado:', { sessionId: transcriptionSessionId, participantId: session_id });
+          } else {
+            await prisma.transcriptionSession.update({
+              where: { id: transcriptionSessionId },
+              data: {
+                connectTime: new Date(joined_at * 1000),
+                isActive: true,
+                activeParticipantId: session_id,
+                connectionCount: { increment: 1 }
+              }
+            });
+            console.log('✅ Participante conectado:', { sessionId: transcriptionSessionId, participantId: session_id });
           }
-        });
-        
-        console.log('✅ Participante conectado:', { sessionId: transcriptionSessionId, participantId: session_id });
+        } catch (error) {
+          console.error('❌ Erro ao processar participant.joined:', error);
+          // Não falhar o webhook por erro de banco
+        }
       }
     }
 
@@ -49,23 +64,37 @@ export async function POST(request: NextRequest) {
         const transcriptionSessionId = user_id.replace('session_', '');
         const durationSeconds = Math.max(duration || 0, 0);
         
-        // IMPORTANTE: increment adiciona à duração existente (somatório)
-        // Se usuário reconectar, o tempo será somado, não substituído
-        await prisma.transcriptionSession.update({
-          where: { id: transcriptionSessionId },
-          data: {
-            totalDuration: { increment: durationSeconds }, // SOMATÓRIO CUMULATIVO
-            isActive: false,
-            activeParticipantId: null,
-            lastDisconnectAt: new Date()
+        try {
+          // Para sessões de teste, apenas loggar (não tentar atualizar banco)
+          if (transcriptionSessionId.startsWith('test_')) {
+            console.log('✅ Teste - Tempo registrado:', { 
+              sessionId: transcriptionSessionId, 
+              tempoSessao: durationSeconds,
+              timestamp: new Date().toISOString()
+            });
+          } else {
+            // IMPORTANTE: increment adiciona à duração existente (somatório)
+            // Se usuário reconectar, o tempo será somado, não substituído
+            await prisma.transcriptionSession.update({
+              where: { id: transcriptionSessionId },
+              data: {
+                totalDuration: { increment: durationSeconds }, // SOMATÓRIO CUMULATIVO
+                isActive: false,
+                activeParticipantId: null,
+                lastDisconnectAt: new Date()
+              }
+            });
+            
+            console.log('✅ Tempo adicionado ao banco:', { 
+              sessionId: transcriptionSessionId, 
+              tempoAdicional: durationSeconds,
+              timestamp: new Date().toISOString()
+            });
           }
-        });
-        
-        console.log('✅ Tempo adicionado ao banco:', { 
-          sessionId: transcriptionSessionId, 
-          tempoAdicional: durationSeconds,
-          timestamp: new Date().toISOString()
-        });
+        } catch (error) {
+          console.error('❌ Erro ao processar participant.left:', error);
+          // Não falhar o webhook por erro de banco
+        }
       }
     }
 
