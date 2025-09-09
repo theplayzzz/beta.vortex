@@ -42,7 +42,6 @@ if (fs.existsSync(envLocalPath)) {
 
 // URLs dos webhooks conforme solicitado pelo usuário
 const WEBHOOK_URLS = [
-  'https://5.161.64.137:3003/api/webhooks/daily',
   'https://beta-vortex.gruporugido.com/api/webhooks/daily'
 ];
 
@@ -68,7 +67,7 @@ async function createWebhook(url) {
       },
       body: JSON.stringify({
         url: url,
-        event_types: [
+        eventTypes: [
           'participant.joined',
           'participant.left'
         ]

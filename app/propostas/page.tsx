@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { ProposalsList } from '@/components/proposals/ProposalsList';
 import { useProposals, useProposalStats } from '@/hooks/use-proposals';
+import { RouteGuard } from '@/components/auth/route-guard';
 
 export default function PropostasPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,7 +71,8 @@ export default function PropostasPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <RouteGuard requiredModalidade="propostas">
+      <div className="container mx-auto px-4 py-8">
       {/* Header da Página - Layout Responsivo */}
       <div className="mb-8">
         {/* Mobile Layout (≤768px): Empilhado */}
@@ -346,6 +348,7 @@ export default function PropostasPage() {
           </button>
         </div>
       )}
-    </div>
+      </div>
+    </RouteGuard>
   );
 } 

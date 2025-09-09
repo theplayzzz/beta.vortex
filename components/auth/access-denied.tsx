@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, Home, Headphones } from 'lucide-react';
+import { AlertCircle, Home, Headphones, Mail, MessageCircle } from 'lucide-react';
 
 interface AccessDeniedProps {
   userStatus?: string;
@@ -38,21 +38,49 @@ export function AccessDenied({
 
           {/* Sub-message for PENDING users */}
           {userStatus === 'PENDING' && (
-            <p className="text-seasalt/50 text-sm mb-6">
-              No momento, você tem acesso apenas ao módulo de vendas/coaching
-            </p>
+            <div className="text-seasalt/70 text-sm mb-6 space-y-2">
+              <p>
+                No momento, você tem acesso apenas ao módulo de <strong>vendas/coaching</strong>.
+              </p>
+              <p className="text-seasalt/50">
+                Já comprou seu plano? Entre em contato com o suporte para liberar seu acesso completo.
+              </p>
+            </div>
           )}
 
           {/* Action Buttons */}
           <div className="space-y-3">
             {userStatus === 'PENDING' && (
-              <Link
-                href="/coach/capture/pre-session"
-                className="flex items-center justify-center w-full px-4 py-3 bg-sgbus-green text-night font-medium rounded-lg hover:bg-sgbus-green/90 transition-colors"
-              >
-                <Headphones className="w-5 h-5 mr-2" />
-                Ir para Vendas
-              </Link>
+              <>
+                <Link
+                  href="/coach/capture/pre-session"
+                  className="flex items-center justify-center w-full px-4 py-3 bg-sgbus-green text-night font-medium rounded-lg hover:bg-sgbus-green/90 transition-colors"
+                >
+                  <Headphones className="w-5 h-5 mr-2" />
+                  Acessar Módulo de Vendas
+                </Link>
+                
+                {/* Contato com Suporte */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <a
+                    href="mailto:suporte@exemplo.com"
+                    className="flex items-center justify-center px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Email Suporte
+                  </a>
+                  
+                  <a
+                    href="https://wa.me/5511999999999"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center px-4 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors text-sm"
+                  >
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    WhatsApp
+                  </a>
+                </div>
+              </>
             )}
 
             <button

@@ -47,7 +47,8 @@
       "mcp__playwright__browser_navigate",
       "mcp__playwright__browser_install",
       "Bash(npx playwright:*)",
-      "mcp__playwright__browser_snapshot"
+      "mcp__playwright__browser_snapshot",
+      "WebFetch(domain:webhook.site)"
     ],
     "deny": []
   }

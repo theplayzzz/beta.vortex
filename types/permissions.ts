@@ -32,7 +32,11 @@ export const PENDING_ALLOWED_ROUTES = [
   '/pending-approval',
   '/account-rejected',
   '/account-suspended',
-  ...MODALIDADE_ROUTES.vendas
+  '/acesso-negado',
+  ...MODALIDADE_ROUTES.vendas,
+  // APIs do módulo de vendas/coaching que PENDING pode acessar
+  '/api/transcription-sessions',
+  '/api/daily'
 ];
 
 export function getPermissionsForStatus(status: UserApprovalStatus, role: UserRole): UserPermissions {
