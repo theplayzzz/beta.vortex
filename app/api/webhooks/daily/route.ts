@@ -13,8 +13,20 @@ export async function POST(request: NextRequest) {
     
     // Permitir requests de verificação do Daily.co sem assinatura
     if (!signature && body.length < 50) {
-      console.log('📋 Daily.co webhook verification request');
-      return new NextResponse('OK', { status: 200 });
+      console.log('📋 Daily.co webhook verification request:', { body, headers: Object.fromEntries(request.headers.entries()) });
+      return NextResponse.json({ 
+        status: 'ok', 
+        message: 'Webhook verification successful',
+        timestamp: new Date().toISOString()
+      }, { 
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': '*'
+        }
+      });
     }
     
     if (!validateDailySignature(signature, body)) {
