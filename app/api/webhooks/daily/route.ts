@@ -5,7 +5,9 @@ import crypto from 'crypto'
 export async function POST(request: NextRequest) {
   try {
     // 1. Validar assinatura HMAC (CRÍTICO para segurança)
-    const signature = request.headers.get('x-webhook-signature') || '';
+    const signature = request.headers.get('x-webhook-signature') || 
+                      request.headers.get('X-Daily-Signature') || 
+                      request.headers.get('x-daily-signature') || '';
     const body = await request.text();
     
     // Permitir requests de verificação do Daily.co sem assinatura
@@ -26,6 +28,14 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString()
     });
 
+    // Registrar evento para auditoria
+    const eventLog = {
+      id: event.id,
+      type: event.type,
+      timestamp: new Date().toISOString(),
+      payload: event.payload
+    };
+
     // 2. Processar participant.joined
     if (event.type === 'participant.joined') {
       const { user_id, joined_at, session_id } = event.payload;
@@ -44,7 +54,8 @@ export async function POST(request: NextRequest) {
                 connectTime: new Date(joined_at * 1000),
                 isActive: true,
                 activeParticipantId: session_id,
-                connectionCount: { increment: 1 }
+                connectionCount: { increment: 1 },
+                webhookEvents: { push: eventLog }
               }
             });
             console.log('✅ Participante conectado:', { sessionId: transcriptionSessionId, participantId: session_id });
@@ -81,7 +92,8 @@ export async function POST(request: NextRequest) {
                 totalDuration: { increment: durationSeconds }, // SOMATÓRIO CUMULATIVO
                 isActive: false,
                 activeParticipantId: null,
-                lastDisconnectAt: new Date()
+                lastDisconnectAt: new Date(),
+                webhookEvents: { push: eventLog }
               }
             });
             
