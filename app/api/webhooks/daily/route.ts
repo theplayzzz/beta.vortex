@@ -7,7 +7,8 @@ export async function POST(request: NextRequest) {
     // 1. Validar assinatura HMAC (CRÍTICO para segurança)
     const signature = request.headers.get('x-webhook-signature') || 
                       request.headers.get('X-Daily-Signature') || 
-                      request.headers.get('x-daily-signature') || '';
+                      request.headers.get('x-daily-signature') || 
+                      request.headers.get('X-Webhook-Signature') || '';
     const body = await request.text();
     
     // Permitir requests de verificação do Daily.co sem assinatura
