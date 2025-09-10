@@ -431,6 +431,10 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     checkTooltipShow();
   }, [isTutorialOpen]);
 
+  // Estado para contador visual em tempo real
+  const [displayDuration, setDisplayDuration] = useState(0)
+  const [realtimeTimer, setRealtimeTimer] = useState<NodeJS.Timeout | null>(null)
+
   // Calcular sessionDuration localmente (Etapa 5 - Sistema Único)
   const localSessionDuration = sessionStartTime 
     ? Math.floor((Date.now() - sessionStartTime) / 1000)
@@ -1240,6 +1244,18 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
           setSessionStartTime(Date.now())
           setIsTrackingActive(true)
           
+          // 🎯 INICIAR contador visual em tempo real
+          const baseTime = sessionData?.totalDuration || 0
+          setDisplayDuration(baseTime)
+          
+          const sessionStart = Date.now()
+          const visualTimer = setInterval(() => {
+            const currentSessionTime = Math.floor((Date.now() - sessionStart) / 1000)
+            setDisplayDuration(baseTime + currentSessionTime)
+          }, 1000)
+          
+          setRealtimeTimer(visualTimer)
+          
           return true
           
         } catch (error) {
@@ -1247,6 +1263,7 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
           return false
         }
       }
+      
       
       // Timer de 15 segundos com retry automático
       const startIncrementTimer = () => {        
@@ -1327,6 +1344,16 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     if (!isConnected && isTrackingActive) {
       console.log('🔴 Parando tracking incremental')
       
+      // 🎯 PARAR contador visual em tempo real
+      if (realtimeTimer) {
+        clearInterval(realtimeTimer)
+        setRealtimeTimer(null)
+      }
+      // Manter o último valor do banco quando parar
+      if (sessionData?.totalDuration) {
+        setDisplayDuration(sessionData.totalDuration)
+      }
+      
       if (incrementTimer) {
         clearInterval(incrementTimer)
         setIncrementTimer(null)
@@ -1365,6 +1392,12 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
       if (incrementTimer && isTrackingActive) {
         console.log('🧹 Cleanup do tracking ao desmontar componente')
         clearInterval(incrementTimer)
+        
+        // 🎯 Limpeza do timer visual
+        if (realtimeTimer) {
+          clearInterval(realtimeTimer)
+          setRealtimeTimer(null)
+        }
         
         // Salvar tempo restante se possível
         if (sessionStartTime && sessionId) {
@@ -2056,12 +2089,14 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                         {sessionData.companyName} • {sessionData.industry} • {sessionData.revenue}
                       </div>
                     </div>
-                    {(sessionData?.totalDuration > 0 || localSessionDuration > 0) && (
+                    {(displayDuration > 0 || sessionData?.totalDuration > 0) && (
                       <span className="px-1.5 py-0.5 rounded bg-sgbus-green bg-opacity-20 text-xs" style={{ color: 'var(--sgbus-green)' }}>
-                        {/* Mostrar tempo do banco (totalDuration) se disponível, senão tempo local */}
-                        {sessionData?.totalDuration 
-                          ? `${Math.floor(sessionData.totalDuration / 60)}m ${sessionData.totalDuration % 60}s (BD)`
-                          : `${Math.floor(localSessionDuration / 60)}m ${localSessionDuration % 60}s (Local)`
+                        {/* Contador visual em tempo real quando tracking ativo, senão valor do banco */}
+                        {isTrackingActive 
+                          ? `${Math.floor(displayDuration / 60)}m ${displayDuration % 60}s`
+                          : sessionData?.totalDuration 
+                            ? `${Math.floor(sessionData.totalDuration / 60)}m ${sessionData.totalDuration % 60}s`
+                            : `${Math.floor(displayDuration / 60)}m ${displayDuration % 60}s`
                         }
                       </span>
                     )}
