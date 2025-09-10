@@ -434,6 +434,10 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
   // Estado para contador visual em tempo real
   const [displayDuration, setDisplayDuration] = useState(0)
   const [realtimeTimer, setRealtimeTimer] = useState<NodeJS.Timeout | null>(null)
+  
+  // 🛡️ Estados para proteções contra conflitos
+  const [lastRequestTime, setLastRequestTime] = useState<number>(0)
+  const [isRequestPending, setIsRequestPending] = useState(false)
 
   // Calcular sessionDuration localmente (Etapa 5 - Sistema Único)
   const localSessionDuration = sessionStartTime 
@@ -1213,6 +1217,12 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     if (isConnected && !isTrackingActive && sessionId) {
       console.log('🟢 Iniciando tracking incremental de 15s')
       
+      // 🛡️ PROTEÇÃO: Verificar se não há timer ativo (previne múltiplos timers)
+      if (incrementTimer) {
+        console.warn('⚠️ Timer já ativo - cancelando inicialização duplicada')
+        return
+      }
+      
       // SOLUÇÃO ROBUSTA: Garantir ativação da sessão ANTES de qualquer timer
       const initializeTracking = async () => {
         try {
@@ -1268,6 +1278,16 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
       // Timer de 15 segundos com retry automático
       const startIncrementTimer = () => {        
         return setInterval(async () => {
+          // 🛡️ DEBOUNCE: Prevenir múltiplas requisições simultâneas
+          const now = Date.now()
+          if (isRequestPending || (now - lastRequestTime) < 10000) { // 10s debounce
+            console.log('🛡️ Requisição ignorada por debounce/pending')
+            return
+          }
+          
+          setIsRequestPending(true)
+          setLastRequestTime(now)
+          
           try {
             const response = await fetch(`/api/transcription-sessions/${sessionId}/increment-time`, {
               method: 'POST',
@@ -1322,6 +1342,8 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
             
           } catch (error) {
             console.error('❌ Erro no incremento:', error)
+          } finally {
+            setIsRequestPending(false)
           }
         }, 15000) // 15 segundos
       }
@@ -1418,6 +1440,29 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
       }
     }
   }, [isConnected, sessionId, isTrackingActive, incrementTimer, sessionStartTime, updateSessionData])
+
+  // 🔄 FALLBACK: Detectar reconexão e sincronizar estado
+  useEffect(() => {
+    if (isConnected && isTrackingActive && sessionId) {
+      // Sincronizar com banco após reconexão (se necessário)
+      const syncWithDatabase = async () => {
+        try {
+          const response = await fetch(`/api/transcription-sessions/${sessionId}`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.session?.totalDuration) {
+              console.log('🔄 Sincronizando com banco após reconexão:', data.session.totalDuration)
+              // Atualizar display se necessário
+            }
+          }
+        } catch (error) {
+          console.error('❌ Falha na sincronização:', error)
+        }
+      }
+      
+      syncWithDatabase()
+    }
+  }, [isConnected, sessionId]) // Executa quando isConnected muda
 
   // Hook para expor função de incremento de análise para uso externo
   useEffect(() => {
