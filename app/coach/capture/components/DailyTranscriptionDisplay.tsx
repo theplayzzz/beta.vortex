@@ -1213,11 +1213,12 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
       // Configurar timer de 15 segundos
       const timer = setInterval(async () => {
         try {
-          const response = await fetch(`/api/transcription-sessions/${sessionId}`, {
-            method: 'PATCH',
+          const response = await fetch(`/api/transcription-sessions/${sessionId}/increment-time`, {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-              totalDuration: Math.floor((Date.now() - (sessionStartTime || Date.now())) / 1000)
+              increment: 15,
+              source: 'client-15s-timer'
             })
           })
           
@@ -1227,7 +1228,7 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
           }
           
           const data = await response.json()
-          console.log('✅ Tempo atualizado:', data.session?.totalDuration || 'N/A')
+          console.log('✅ Tempo incrementado:', `+${data.data?.lastIncrement || 15}s → ${data.data?.totalDuration || 'N/A'}s total`)
           
           // Atualizar estado local (opcional)
           setLastIncrementTime(Date.now())
@@ -1252,11 +1253,25 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
       }
       setIsTrackingActive(false)
       
-      // Calcular e salvar tempo final
+      // Calcular tempo restante (< 15s desde último incremento) e salvar
       if (sessionStartTime && sessionId) {
-        const finalDuration = Math.floor((Date.now() - sessionStartTime) / 1000)
+        const totalElapsed = Math.floor((Date.now() - sessionStartTime) / 1000)
+        const remainingTime = totalElapsed % 15 // Tempo desde último incremento de 15s
+        
+        if (remainingTime > 0) {
+          // Enviar incremento final para tempo restante
+          fetch(`/api/transcription-sessions/${sessionId}/increment-time`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              increment: remainingTime,
+              source: 'client-disconnect-final'
+            })
+          }).catch(console.error)
+        }
+        
+        // Marcar sessão como inativa
         updateSessionData({ 
-          totalDuration: finalDuration,
           isActive: false, 
           lastDisconnectAt: new Date().toISOString() 
         })
@@ -1271,18 +1286,21 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
         console.log('🧹 Cleanup do tracking ao desmontar componente')
         clearInterval(incrementTimer)
         
-        // Salvar tempo final se possível
+        // Salvar tempo restante se possível
         if (sessionStartTime && sessionId) {
-          const finalDuration = Math.floor((Date.now() - sessionStartTime) / 1000)
-          fetch(`/api/transcription-sessions/${sessionId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              totalDuration: finalDuration,
-              isActive: false,
-              lastDisconnectAt: new Date().toISOString() 
-            })
-          }).catch(console.error)
+          const totalElapsed = Math.floor((Date.now() - sessionStartTime) / 1000)
+          const remainingTime = totalElapsed % 15
+          
+          if (remainingTime > 0) {
+            fetch(`/api/transcription-sessions/${sessionId}/increment-time`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                increment: remainingTime,
+                source: 'client-unmount-final'
+              })
+            }).catch(console.error)
+          }
         }
       }
     }
@@ -1308,37 +1326,57 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
       if (isTrackingActive && sessionStartTime && sessionId) {
         console.log('🚨 Detectado fechamento abrupto - salvando tempo final')
         
-        // Calcular tempo final
-        const finalDuration = Math.floor((Date.now() - sessionStartTime) / 1000)
+        // Calcular tempo restante desde último incremento
+        const totalElapsed = Math.floor((Date.now() - sessionStartTime) / 1000)
+        const remainingTime = totalElapsed % 15
         
-        // Usar navigator.sendBeacon para garantir envio mesmo com fechamento abrupto
-        const payload = JSON.stringify({ 
-          totalDuration: finalDuration,
+        // Enviar incremento final se há tempo restante
+        if (remainingTime > 0) {
+          const incrementPayload = JSON.stringify({ 
+            increment: remainingTime,
+            source: 'client-beforeunload-final'
+          })
+          
+          // Tentar sendBeacon primeiro (mais confiável para beforeunload)
+          if (navigator.sendBeacon) {
+            const formData = new FormData()
+            formData.append('data', incrementPayload)
+            
+            navigator.sendBeacon(`/api/transcription-sessions/${sessionId}/increment-time`, formData)
+            console.log('✅ Incremento final enviado via sendBeacon:', remainingTime + 's')
+          } else {
+            // Fallback para fetch síncrono
+            try {
+              fetch(`/api/transcription-sessions/${sessionId}/increment-time`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: incrementPayload,
+                keepalive: true
+              }).catch(console.error)
+            } catch (error) {
+              console.error('❌ Falha no fallback fetch:', error)
+            }
+          }
+        }
+        
+        // Marcar sessão como inativa separadamente
+        const statusPayload = JSON.stringify({ 
           isActive: false,
           lastDisconnectAt: new Date().toISOString(),
           disconnectReason: 'beforeunload'
         })
         
-        // Tentar sendBeacon primeiro (mais confiável para beforeunload)
         if (navigator.sendBeacon) {
-          const formData = new FormData()
-          formData.append('data', payload)
-          
-          // Usar sendBeacon com FormData para máxima compatibilidade
-          navigator.sendBeacon(`/api/transcription-sessions/${sessionId}?method=PATCH`, formData)
-          console.log('✅ Tempo final enviado via sendBeacon')
+          const statusFormData = new FormData()
+          statusFormData.append('data', statusPayload)
+          navigator.sendBeacon(`/api/transcription-sessions/${sessionId}?method=PATCH`, statusFormData)
         } else {
-          // Fallback para fetch síncrono (menos confiável)
-          try {
-            fetch(`/api/transcription-sessions/${sessionId}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: payload,
-              keepalive: true
-            }).catch(console.error)
-          } catch (error) {
-            console.error('❌ Falha no fallback fetch:', error)
-          }
+          fetch(`/api/transcription-sessions/${sessionId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: statusPayload,
+            keepalive: true
+          }).catch(console.error)
         }
       }
     }
