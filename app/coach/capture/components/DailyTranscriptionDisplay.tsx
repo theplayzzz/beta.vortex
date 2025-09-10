@@ -124,7 +124,12 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
   const [sessionLoading, setSessionLoading] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
 
-  // Estado removido - tracking agora é 100% server-side via webhooks Daily.co
+  // Estados para sistema incremental de 15 segundos
+  const [incrementTimer, setIncrementTimer] = useState<NodeJS.Timeout | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+  const [lastIncrementTime, setLastIncrementTime] = useState<number>(0);
+  const [isTrackingActive, setIsTrackingActive] = useState(false);
+  
   const lastUpdateRef = useRef<number>(0);
 
   // Função para atualizar dados da sessão (fire-and-forget com retry e throttling)
@@ -1194,7 +1199,94 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [canAnalyze, handleAnalyze]);
 
-  // REMOVIDO: Tracking de conexão da sessão - agora feito 100% server-side via webhooks Daily.co
+  // Sistema de Tracking Incremental de 15 segundos
+  useEffect(() => {
+    if (isConnected && !isTrackingActive && sessionId) {
+      console.log('🟢 Iniciando tracking incremental de 15s')
+      
+      // Marcar sessão como ativa no banco
+      updateSessionData({ 
+        isActive: true, 
+        connectTime: new Date().toISOString() 
+      })
+      
+      // Configurar timer de 15 segundos
+      const timer = setInterval(async () => {
+        try {
+          const response = await fetch(`/api/transcription-sessions/${sessionId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              totalDuration: Math.floor((Date.now() - (sessionStartTime || Date.now())) / 1000)
+            })
+          })
+          
+          if (!response.ok) {
+            console.error('❌ Falha ao incrementar tempo:', response.statusText)
+            return
+          }
+          
+          const data = await response.json()
+          console.log('✅ Tempo atualizado:', data.session?.totalDuration || 'N/A')
+          
+          // Atualizar estado local (opcional)
+          setLastIncrementTime(Date.now())
+          
+        } catch (error) {
+          console.error('❌ Erro na requisição de incremento:', error)
+        }
+      }, 15000) // 15 segundos
+      
+      setIncrementTimer(timer)
+      setSessionStartTime(Date.now())
+      setIsTrackingActive(true)
+    }
+    
+    // Cleanup ao desconectar
+    if (!isConnected && isTrackingActive) {
+      console.log('🔴 Parando tracking incremental')
+      
+      if (incrementTimer) {
+        clearInterval(incrementTimer)
+        setIncrementTimer(null)
+      }
+      setIsTrackingActive(false)
+      
+      // Calcular e salvar tempo final
+      if (sessionStartTime && sessionId) {
+        const finalDuration = Math.floor((Date.now() - sessionStartTime) / 1000)
+        updateSessionData({ 
+          totalDuration: finalDuration,
+          isActive: false, 
+          lastDisconnectAt: new Date().toISOString() 
+        })
+      }
+      
+      setSessionStartTime(null)
+    }
+    
+    return () => {
+      // Cleanup em caso de desmontagem do componente
+      if (incrementTimer && isTrackingActive) {
+        console.log('🧹 Cleanup do tracking ao desmontar componente')
+        clearInterval(incrementTimer)
+        
+        // Salvar tempo final se possível
+        if (sessionStartTime && sessionId) {
+          const finalDuration = Math.floor((Date.now() - sessionStartTime) / 1000)
+          fetch(`/api/transcription-sessions/${sessionId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              totalDuration: finalDuration,
+              isActive: false,
+              lastDisconnectAt: new Date().toISOString() 
+            })
+          }).catch(console.error)
+        }
+      }
+    }
+  }, [isConnected, sessionId, isTrackingActive, incrementTimer, sessionStartTime, updateSessionData])
 
   // Hook para expor função de incremento de análise para uso externo
   useEffect(() => {
@@ -1210,11 +1302,56 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     };
   }, [incrementAnalysisCount, sessionId]);
 
-  // REMOVIDO: Handler para salvar duração ao fechar/atualizar página
-  // Agora o Daily.co detecta automaticamente via webhooks quando usuário desconecta
-
-  // REMOVIDO: Timer para atualizar duração atual em tempo real
-  // Duração agora é calculada server-side via webhooks Daily.co
+  // Sistema de cleanup com navigator.sendBeacon para fechamento abrupto
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (isTrackingActive && sessionStartTime && sessionId) {
+        console.log('🚨 Detectado fechamento abrupto - salvando tempo final')
+        
+        // Calcular tempo final
+        const finalDuration = Math.floor((Date.now() - sessionStartTime) / 1000)
+        
+        // Usar navigator.sendBeacon para garantir envio mesmo com fechamento abrupto
+        const payload = JSON.stringify({ 
+          totalDuration: finalDuration,
+          isActive: false,
+          lastDisconnectAt: new Date().toISOString(),
+          disconnectReason: 'beforeunload'
+        })
+        
+        // Tentar sendBeacon primeiro (mais confiável para beforeunload)
+        if (navigator.sendBeacon) {
+          const formData = new FormData()
+          formData.append('data', payload)
+          
+          // Usar sendBeacon com FormData para máxima compatibilidade
+          navigator.sendBeacon(`/api/transcription-sessions/${sessionId}?method=PATCH`, formData)
+          console.log('✅ Tempo final enviado via sendBeacon')
+        } else {
+          // Fallback para fetch síncrono (menos confiável)
+          try {
+            fetch(`/api/transcription-sessions/${sessionId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: payload,
+              keepalive: true
+            }).catch(console.error)
+          } catch (error) {
+            console.error('❌ Falha no fallback fetch:', error)
+          }
+        }
+      }
+    }
+    
+    // Registrar listeners para diferentes tipos de fechamento
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    window.addEventListener('pagehide', handleBeforeUnload) // Para iOS Safari
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('pagehide', handleBeforeUnload)
+    }
+  }, [isTrackingActive, sessionId, sessionStartTime])
 
   // Mirror container render function
   const renderMirrorContainer = () => {
