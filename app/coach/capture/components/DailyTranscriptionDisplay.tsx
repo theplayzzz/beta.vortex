@@ -1204,43 +1204,73 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     if (isConnected && !isTrackingActive && sessionId) {
       console.log('🟢 Iniciando tracking incremental de 15s')
       
-      // Marcar sessão como ativa no banco
-      updateSessionData({ 
-        isActive: true, 
-        connectTime: new Date().toISOString() 
-      })
-      
-      // Configurar timer de 15 segundos
-      const timer = setInterval(async () => {
+      // Marcar sessão como ativa no banco ANTES de iniciar o timer
+      const initializeTracking = async () => {
         try {
-          const response = await fetch(`/api/transcription-sessions/${sessionId}/increment-time`, {
-            method: 'POST',
+          console.log('📝 Marcando sessão como ativa...')
+          const response = await fetch(`/api/transcription-sessions/${sessionId}`, {
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-              increment: 15,
-              source: 'client-15s-timer'
+              isActive: true, 
+              connectTime: new Date().toISOString() 
             })
           })
           
           if (!response.ok) {
-            console.error('❌ Falha ao incrementar tempo:', response.statusText)
-            return
+            console.error('❌ Falha ao marcar sessão como ativa:', response.status)
+            const errorText = await response.text()
+            console.error('❌ Detalhes:', errorText)
+            return // Não inicia timer se falhou ao ativar sessão
           }
           
-          const data = await response.json()
-          console.log('✅ Tempo incrementado:', `+${data.data?.lastIncrement || 15}s → ${data.data?.totalDuration || 'N/A'}s total`)
+          console.log('✅ Sessão marcada como ativa - iniciando timer')
           
-          // Atualizar estado local (opcional)
-          setLastIncrementTime(Date.now())
+          // Configurar timer de 15 segundos (somente após ativação bem-sucedida)
+          const timer = startIncrementTimer()
+          setIncrementTimer(timer)
+          setSessionStartTime(Date.now())
+          setIsTrackingActive(true)
           
         } catch (error) {
-          console.error('❌ Erro na requisição de incremento:', error)
+          console.error('❌ Erro ao ativar sessão:', error)
+          return // Não inicia timer se falhou ao ativar sessão
         }
-      }, 15000) // 15 segundos
+      }
       
-      setIncrementTimer(timer)
-      setSessionStartTime(Date.now())
-      setIsTrackingActive(true)
+      // Função para criar o timer
+      const startIncrementTimer = () => {
+        return setInterval(async () => {
+          try {
+            const response = await fetch(`/api/transcription-sessions/${sessionId}/increment-time`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                increment: 15,
+                source: 'client-15s-timer'
+              })
+            })
+            
+            if (!response.ok) {
+              const errorText = await response.text()
+              console.error('❌ Falha ao incrementar tempo:', response.status, response.statusText)
+              console.error('❌ Detalhes do erro:', errorText)
+              return
+            }
+            
+            const data = await response.json()
+            console.log('✅ Tempo incrementado:', `+${data.data?.lastIncrement || 15}s → ${data.data?.totalDuration || 'N/A'}s total`)
+            
+            // Atualizar estado local (opcional)
+            setLastIncrementTime(Date.now())
+            
+          } catch (error) {
+            console.error('❌ Erro na requisição de incremento:', error)
+          }
+        }, 15000) // 15 segundos
+      }
+      
+      initializeTracking()
     }
     
     // Cleanup ao desconectar
@@ -1270,7 +1300,7 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
           }).catch(console.error)
         }
         
-        // Marcar sessão como inativa
+        // Marcar sessão como inativa (fire-and-forget é OK para desconexão)
         updateSessionData({ 
           isActive: false, 
           lastDisconnectAt: new Date().toISOString() 

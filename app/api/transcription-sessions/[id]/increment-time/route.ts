@@ -13,34 +13,67 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  console.log(`[DEBUG] 🚀 Endpoint increment-time chamado`)
+  
   try {
+    console.log(`[DEBUG] 🔐 Verificando autenticação...`)
+    console.log(`[DEBUG] 🍪 Cookies:`, request.headers.get('cookie') ? 'PRESENTES' : 'AUSENTES')
+    console.log(`[DEBUG] 🔑 Authorization:`, request.headers.get('authorization') ? 'PRESENTE' : 'AUSENTE')
+    
     const userId = await getUserIdFromClerk()
+    console.log(`[DEBUG] 👤 UserId:`, userId ? `ENCONTRADO (${userId.substring(0, 8)}...)` : 'NÃO ENCONTRADO')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      console.log(`[DEBUG] ❌ Falha na autenticação - retornando 401`)
+      console.log(`[DEBUG] 🔍 Headers disponíveis:`, Array.from(request.headers.keys()).join(', '))
+      return NextResponse.json({ 
+        error: 'Não autorizado',
+        debug: {
+          hasCookies: !!request.headers.get('cookie'),
+          hasAuth: !!request.headers.get('authorization'),
+          clerkReason: 'getUserIdFromClerk returned null'
+        }
+      }, { status: 401 })
     }
 
     // Await params to get the actual values
     const { id } = await params
 
-    // Suporte para JSON e FormData (sendBeacon)
+    // Suporte para JSON e FormData (sendBeacon) com debug melhorado
     let body
     const contentType = request.headers.get('content-type') || ''
     
-    if (contentType.includes('multipart/form-data')) {
-      // FormData do sendBeacon
-      const formData = await request.formData()
-      const dataString = formData.get('data') as string
-      body = JSON.parse(dataString)
-    } else {
-      // JSON normal
-      body = await request.json()
+    console.log(`[DEBUG] Content-Type recebido: "${contentType}"`)
+    
+    try {
+      if (contentType.includes('multipart/form-data')) {
+        // FormData do sendBeacon
+        console.log(`[DEBUG] Processando FormData...`)
+        const formData = await request.formData()
+        const dataString = formData.get('data') as string
+        console.log(`[DEBUG] FormData data field:`, dataString)
+        body = JSON.parse(dataString)
+        console.log(`[DEBUG] FormData parsed:`, body)
+      } else {
+        // JSON normal
+        console.log(`[DEBUG] Processando JSON...`)
+        body = await request.json()
+        console.log(`[DEBUG] JSON parsed:`, body)
+      }
+    } catch (parseError) {
+      console.error(`[ERROR] Falha ao fazer parse do body:`, parseError)
+      return NextResponse.json({ 
+        error: 'Formato de dados inválido',
+        contentType,
+        parseError: parseError instanceof Error ? parseError.message : String(parseError)
+      }, { status: 400 })
     }
     
     const validatedData = IncrementTimeSchema.parse(body)
     const { increment, source, metadata } = validatedData
 
-    console.log(`[AUDIT] Incrementando ${increment}s na sessão ${id} (fonte: ${source})`)
+    console.log(`[AUDIT] ✅ Autenticação OK - Iniciando incremento: ${increment}s na sessão ${id} (fonte: ${source})`)
+    console.log(`[DEBUG] 📋 Payload recebido:`, { increment, source, metadata })
 
     // Validação de segurança - verificar se sessão existe e pertence ao usuário
     const session = await prisma.transcriptionSession.findFirst({
@@ -70,22 +103,23 @@ export async function POST(
       }, { status: 400 })
     }
 
-    // Rate limiting simples - máximo 1 incremento por 10 segundos para prevenir spam
-    const tenSecondsAgo = new Date(Date.now() - 10000)
+    // Rate limiting mais permissivo - máximo 1 incremento por 5 segundos para prevenir spam
+    const fiveSecondsAgo = new Date(Date.now() - 5000)
     const recentIncrement = await prisma.transcriptionSession.findFirst({
       where: {
         id,
         updatedAt: {
-          gte: tenSecondsAgo
+          gte: fiveSecondsAgo
         }
       }
     })
 
     if (recentIncrement && source === 'client-15s-timer') {
-      console.warn(`[AUDIT] Rate limit: incremento muito recente na sessão ${id}`)
+      console.warn(`[AUDIT] Rate limit: incremento muito recente na sessão ${id} (${source})`)
       return NextResponse.json({ 
         error: 'Rate limit: aguarde alguns segundos antes do próximo incremento',
-        rateLimited: true 
+        rateLimited: true,
+        lastUpdate: recentIncrement.updatedAt
       }, { status: 429 })
     }
     
@@ -96,7 +130,7 @@ export async function POST(
         totalDuration: {
           increment: increment
         },
-        lastUpdateAt: new Date(),
+        // lastUpdateAt removido - usando updatedAt automático do Prisma
         updatedAt: new Date()
       },
       select: {
@@ -131,11 +165,18 @@ export async function POST(
 
   } catch (error) {
     console.error(`[ERROR] Falha ao incrementar tempo na sessão:`, error)
+    console.error(`[DEBUG] Request details:`, {
+      contentType: request.headers.get('content-type'),
+      method: request.method,
+      url: request.url
+    })
     
     if (error instanceof z.ZodError) {
+      console.error(`[VALIDATION ERROR] Schema validation failed:`, error.errors)
       return NextResponse.json({ 
         error: 'Dados de incremento inválidos', 
-        details: error.errors 
+        details: error.errors,
+        timestamp: new Date().toISOString()
       }, { status: 400 })
     }
 
@@ -173,8 +214,7 @@ export async function GET(
         totalDuration: true,
         isActive: true,
         createdAt: true,
-        updatedAt: true,
-        lastUpdateAt: true
+        updatedAt: true
       }
     })
 
@@ -186,7 +226,7 @@ export async function GET(
       debug: true,
       session,
       incrementEndpoint: `/api/transcription-sessions/${id}/increment-time`,
-      lastUpdate: session.lastUpdateAt || session.updatedAt
+      lastUpdate: session.updatedAt
     })
 
   } catch (error) {
