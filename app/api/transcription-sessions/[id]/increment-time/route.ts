@@ -74,6 +74,7 @@ export async function POST(
 
     console.log(`[AUDIT] ✅ Autenticação OK - Iniciando incremento: ${increment}s na sessão ${id} (fonte: ${source})`)
     console.log(`[DEBUG] 📋 Payload recebido:`, { increment, source, metadata })
+    console.log(`[DEBUG] 🔍 Verificando estado da sessão ANTES do incremento...`)
 
     // Validação de segurança - verificar se sessão existe e pertence ao usuário
     const session = await prisma.transcriptionSession.findFirst({
@@ -85,9 +86,24 @@ export async function POST(
         id: true,
         isActive: true, 
         totalDuration: true,
-        sessionName: true
+        sessionName: true,
+        updatedAt: true,
+        createdAt: true
       }
     })
+    
+    console.log(`[DEBUG] 📊 Sessão encontrada:`, {
+      id: session?.id,
+      sessionName: session?.sessionName,
+      isActive: session?.isActive,
+      totalDuration: session?.totalDuration,
+      updatedAt: session?.updatedAt
+    })
+    
+    // LOG ADICIONAL: Verificar se há concorrência/timing issues
+    console.log(`[DEBUG] 🕐 Timestamp do incremento:`, new Date().toISOString())
+    console.log(`[DEBUG] 🔍 Fonte do incremento:`, source)
+    console.log(`[DEBUG] ⏱️ Valor do incremento:`, increment)
     
     if (!session) {
       console.warn(`[AUDIT] Tentativa de incremento em sessão inexistente/não autorizada: ${id} por usuário ${userId}`)
@@ -96,10 +112,48 @@ export async function POST(
     
     // Validação de estado - sessão deve estar ativa para aceitar incrementos
     if (!session.isActive) {
-      console.warn(`[AUDIT] Tentativa de incremento em sessão inativa: ${id}`)
+      console.error(`[CRITICAL] 🚨 SESSÃO INATIVA DETECTADA NO ENDPOINT`)
+      console.error(`[CRITICAL] 📋 Detalhes completos da sessão:`, {
+        id: session.id,
+        sessionName: session.sessionName,
+        isActive: session.isActive,
+        totalDuration: session.totalDuration,
+        lastUpdate: session.updatedAt,
+        createdAt: session.createdAt,
+        requestTimestamp: new Date().toISOString(),
+        requestSource: source,
+        incrementValue: increment
+      })
+      console.error(`[CRITICAL] 🔍 Usuário: ${userId}`)
+      console.error(`[CRITICAL] ⚠️ POSSÍVEL CAUSA: Race condition, múltiplas abas, ou falha na ativação`)
+      
+      // INVESTIGAÇÃO: Verificar se há outras sessões ativas para este usuário
+      const otherSessions = await prisma.transcriptionSession.findMany({
+        where: { 
+          userId,
+          isActive: true,
+          id: { not: id } // Excluir a sessão atual
+        },
+        select: { id: true, sessionName: true, totalDuration: true, updatedAt: true }
+      })
+      
+      if (otherSessions.length > 0) {
+        console.warn(`[INVESTIGATION] 🔍 Outras sessões ATIVAS encontradas para este usuário:`, otherSessions)
+      }
+      
       return NextResponse.json({ 
         error: 'Sessão não está ativa - incrementos não são permitidos',
-        sessionState: 'inactive' 
+        sessionState: 'inactive',
+        debug: {
+          sessionId: session.id,
+          sessionName: session.sessionName,
+          totalDuration: session.totalDuration,
+          lastUpdate: session.updatedAt || session.createdAt,
+          requestTimestamp: new Date().toISOString(),
+          requestSource: source,
+          otherActiveSessions: otherSessions.length,
+          diagnosis: 'Session activation failed, race condition, or multiple tabs interference'
+        }
       }, { status: 400 })
     }
 

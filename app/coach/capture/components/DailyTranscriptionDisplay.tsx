@@ -431,12 +431,17 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     checkTooltipShow();
   }, [isTutorialOpen]);
 
+  // Calcular sessionDuration localmente (Etapa 5 - Sistema Único)
+  const localSessionDuration = sessionStartTime 
+    ? Math.floor((Date.now() - sessionStartTime) / 1000)
+    : sessionDuration; // Fallback para compatibilidade
+
   // Simulação de stats para Daily.co (compatibilidade com interface Deepgram)
   const stats = {
     finalResults: transcript.split(' ').length,
     interimResults: interimTranscript ? interimTranscript.split(' ').length : 0,
     totalWords: wordsTranscribed,
-    sessionTime: Math.floor(sessionDuration / 60) + 'm'
+    sessionTime: Math.floor(localSessionDuration / 60) + 'm'
   };
 
   // Injetar estilos CSS para renderização de HTML (mantido idêntico)
@@ -1204,10 +1209,11 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     if (isConnected && !isTrackingActive && sessionId) {
       console.log('🟢 Iniciando tracking incremental de 15s')
       
-      // Marcar sessão como ativa no banco ANTES de iniciar o timer
+      // SOLUÇÃO ROBUSTA: Garantir ativação da sessão ANTES de qualquer timer
       const initializeTracking = async () => {
         try {
-          console.log('📝 Marcando sessão como ativa...')
+          console.log('📝 [CRITICAL] Marcando sessão como ativa - AGUARDANDO confirmação...')
+          
           const response = await fetch(`/api/transcription-sessions/${sessionId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -1218,29 +1224,64 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
           })
           
           if (!response.ok) {
-            console.error('❌ Falha ao marcar sessão como ativa:', response.status)
             const errorText = await response.text()
-            console.error('❌ Detalhes:', errorText)
-            return // Não inicia timer se falhou ao ativar sessão
+            console.error('❌ [CRITICAL] FALHA FATAL ao marcar sessão como ativa:', response.status)
+            console.error('❌ [CRITICAL] Detalhes completos:', errorText)
+            console.error('❌ [CRITICAL] TIMER NÃO SERÁ INICIADO - Sistema abortado')
+            return false // Retorno explícito de falha
           }
           
-          console.log('✅ Sessão marcada como ativa - iniciando timer')
+          // AGUARDAR tempo suficiente para confirmação no banco (aumentado para 1.5s)
+          await new Promise(resolve => setTimeout(resolve, 1500))
           
-          // Configurar timer de 15 segundos (somente após ativação bem-sucedida)
+          // VERIFICAR se a ativação foi realmente aplicada (usando endpoint de debug)
+          console.log('🔍 [CRITICAL] Verificando se sessão foi realmente ativada...')
+          const verifyResponse = await fetch(`/api/transcription-sessions/${sessionId}/debug`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+          })
+          
+          if (verifyResponse.ok) {
+            const debugData = await verifyResponse.json()
+            console.log('📊 [CRITICAL] Estado completo da sessão:', debugData.data)
+            
+            if (!debugData.data?.session?.isActive) {
+              console.error('❌ [CRITICAL] SESSÃO AINDA INATIVA APÓS ATIVAÇÃO!')
+              console.error('🔍 [CRITICAL] Debug completo:', debugData.data)
+              return false
+            }
+            
+            if (debugData.data.otherActiveSessions?.length > 0) {
+              console.warn('⚠️ [CRITICAL] MÚLTIPLAS SESSÕES ATIVAS DETECTADAS:', debugData.data.otherActiveSessions)
+            }
+          } else {
+            console.error('❌ [CRITICAL] Falha na verificação pós-ativação:', verifyResponse.status)
+          }
+          
+          console.log('✅ [CRITICAL] Sessão CONFIRMADAMENTE ativa - Iniciando timer com segurança')
+          
+          // Configurar timer de 15 segundos (100% após ativação)
           const timer = startIncrementTimer()
           setIncrementTimer(timer)
           setSessionStartTime(Date.now())
           setIsTrackingActive(true)
           
+          return true // Sucesso confirmado
+          
         } catch (error) {
-          console.error('❌ Erro ao ativar sessão:', error)
-          return // Não inicia timer se falhou ao ativar sessão
+          console.error('❌ [CRITICAL] ERRO FATAL na ativação da sessão:', error)
+          console.error('❌ [CRITICAL] Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
+          return false // Falha crítica
         }
       }
       
-      // Função para criar o timer
+      // Função para criar o timer COM proteções adicionais
       const startIncrementTimer = () => {
+        console.log('🔄 [TIMER] Criando interval de 15s - PRIMEIRA execução em 15s')
+        
         return setInterval(async () => {
+          console.log('⏰ [TIMER] Executando incremento de 15s...')
+          
           try {
             const response = await fetch(`/api/transcription-sessions/${sessionId}/increment-time`, {
               method: 'POST',
@@ -1253,24 +1294,85 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
             
             if (!response.ok) {
               const errorText = await response.text()
-              console.error('❌ Falha ao incrementar tempo:', response.status, response.statusText)
-              console.error('❌ Detalhes do erro:', errorText)
+              console.error('❌ [TIMER] FALHA no incremento:', response.status, response.statusText)
+              console.error('❌ [TIMER] Resposta completa:', errorText)
+              
+              // Se sessão inativa, REATIVAR + RETRY imediato
+              if (errorText.includes('não está ativa')) {
+                console.warn('🔄 [TIMER] SESSÃO INATIVA DETECTADA - Iniciando reativação + retry...')
+                try {
+                  // 1. Reativar sessão
+                  const reactivateResponse = await fetch(`/api/transcription-sessions/${sessionId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ isActive: true })
+                  })
+                  
+                  if (!reactivateResponse.ok) {
+                    console.error('❌ [TIMER] FALHA na reativação - Status:', reactivateResponse.status)
+                    const reactivateError = await reactivateResponse.text()
+                    console.error('❌ [TIMER] Detalhes da falha:', reactivateError)
+                    return
+                  }
+                  
+                  console.log('✅ [TIMER] Sessão reativada com sucesso - Aguardando 1s...')
+                  
+                  // 2. Aguardar 1 segundo para garantir que o banco foi atualizado
+                  await new Promise(resolve => setTimeout(resolve, 1000))
+                  
+                  // 3. RETRY do incremento imediatamente
+                  console.log('🔄 [TIMER] RETRY - Tentando incremento novamente...')
+                  const retryResponse = await fetch(`/api/transcription-sessions/${sessionId}/increment-time`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                      increment: 15,
+                      source: 'client-15s-timer-retry'
+                    })
+                  })
+                  
+                  if (retryResponse.ok) {
+                    const retryData = await retryResponse.json()
+                    console.log('🎉 [TIMER] RETRY SUCESSO:', `+${retryData.data?.lastIncrement || 15}s → ${retryData.data?.totalDuration || 'N/A'}s total`)
+                    setLastIncrementTime(Date.now())
+                  } else {
+                    const retryError = await retryResponse.text()
+                    console.error('❌ [TIMER] RETRY FALHOU ainda:', retryResponse.status, retryError)
+                  }
+                  
+                } catch (reactivateError) {
+                  console.error('❌ [TIMER] ERRO FATAL na reativação:', reactivateError)
+                }
+              }
               return
             }
             
             const data = await response.json()
-            console.log('✅ Tempo incrementado:', `+${data.data?.lastIncrement || 15}s → ${data.data?.totalDuration || 'N/A'}s total`)
+            console.log('✅ [TIMER] Incremento OK:', `+${data.data?.lastIncrement || 15}s → ${data.data?.totalDuration || 'N/A'}s total`)
             
-            // Atualizar estado local (opcional)
+            // Atualizar estado local
             setLastIncrementTime(Date.now())
             
           } catch (error) {
-            console.error('❌ Erro na requisição de incremento:', error)
+            console.error('❌ [TIMER] Erro na requisição de incremento:', error)
+            console.error('❌ [TIMER] Stack:', error instanceof Error ? error.stack : 'No stack trace')
           }
         }, 15000) // 15 segundos
       }
       
+      // AGUARDAR inicialização completa com feedback detalhado
       initializeTracking()
+        .then(success => {
+          if (success) {
+            console.log('🎉 [SUCCESS] Sistema de tracking 15s ATIVO com sucesso!')
+          } else {
+            console.error('💀 [FATAL] Sistema de tracking FALHOU - Sessão permanece sem tracking')
+          }
+        })
+        .catch(error => {
+          console.error('💀 [FATAL] Erro crítico na inicialização do tracking:', error)
+          console.error('💀 [FATAL] Sessão SEM tracking de tempo - INTERVENÇÃO NECESSÁRIA')
+        })
     }
     
     // Cleanup ao desconectar
@@ -1356,9 +1458,11 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
       if (isTrackingActive && sessionStartTime && sessionId) {
         console.log('🚨 Detectado fechamento abrupto - salvando tempo final')
         
-        // Calcular tempo restante desde último incremento
+        // Calcular tempo restante desde último incremento (Etapa 5 - Lógica Completa)
         const totalElapsed = Math.floor((Date.now() - sessionStartTime) / 1000)
         const remainingTime = totalElapsed % 15
+        
+        console.log(`🚨 [BEFOREUNLOAD] Tempo total: ${totalElapsed}s, Restante: ${remainingTime}s`)
         
         // Enviar incremento final se há tempo restante
         if (remainingTime > 0) {
@@ -1372,8 +1476,8 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
             const formData = new FormData()
             formData.append('data', incrementPayload)
             
-            navigator.sendBeacon(`/api/transcription-sessions/${sessionId}/increment-time`, formData)
-            console.log('✅ Incremento final enviado via sendBeacon:', remainingTime + 's')
+            const beaconSuccess = navigator.sendBeacon(`/api/transcription-sessions/${sessionId}/increment-time`, formData)
+            console.log(`✅ [BEFOREUNLOAD] SendBeacon ${beaconSuccess ? 'SUCESSO' : 'FALHOU'}: ${remainingTime}s`)
           } else {
             // Fallback para fetch síncrono
             try {
@@ -2004,9 +2108,13 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                         {sessionData.companyName} • {sessionData.industry} • {sessionData.revenue}
                       </div>
                     </div>
-                    {sessionData?.totalDuration > 0 && (
+                    {(sessionData?.totalDuration > 0 || localSessionDuration > 0) && (
                       <span className="px-1.5 py-0.5 rounded bg-sgbus-green bg-opacity-20 text-xs" style={{ color: 'var(--sgbus-green)' }}>
-                        {Math.floor((sessionData.totalDuration) / 60)}m {(sessionData.totalDuration) % 60}s
+                        {/* Mostrar tempo do banco (totalDuration) se disponível, senão tempo local */}
+                        {sessionData?.totalDuration 
+                          ? `${Math.floor(sessionData.totalDuration / 60)}m ${sessionData.totalDuration % 60}s (BD)`
+                          : `${Math.floor(localSessionDuration / 60)}m ${localSessionDuration % 60}s (Local)`
+                        }
                       </span>
                     )}
                   </div>

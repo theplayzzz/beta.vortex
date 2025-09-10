@@ -6,6 +6,7 @@ import { z } from 'zod'
 const UpdateTranscriptionSessionSchema = z.object({
   connectTime: z.string().datetime().optional(),
   totalDuration: z.number().min(0).optional(),
+  isActive: z.boolean().optional(), // ADICIONADO: necessário para sistema de ativação
   analysisCount: z.number().min(0).optional(),
   analyses: z.array(z.object({
     timestamp: z.string().datetime(),
@@ -116,6 +117,12 @@ export async function PATCH(
       updateData.totalDuration = validatedData.totalDuration
     }
     
+    // LOG CRÍTICO: Verificar se isActive está sendo definido
+    if (validatedData.isActive !== undefined) {
+      console.log(`[CRITICAL] 🔄 Alterando isActive para:`, validatedData.isActive)
+      updateData.isActive = validatedData.isActive
+    }
+    
     if (validatedData.analysisCount !== undefined) {
       updateData.analysisCount = validatedData.analysisCount
     }
@@ -124,11 +131,21 @@ export async function PATCH(
       updateData.analyses = validatedData.analyses
     }
 
+    console.log(`[CRITICAL] 📝 Dados a serem atualizados:`, updateData)
+    
     const updatedSession = await prisma.transcriptionSession.update({
       where: {
         id: id
       },
       data: updateData
+    })
+    
+    console.log(`[CRITICAL] ✅ Sessão atualizada com sucesso:`, {
+      id: updatedSession.id,
+      sessionName: updatedSession.sessionName,
+      isActive: updatedSession.isActive,
+      totalDuration: updatedSession.totalDuration,
+      updatedAt: updatedSession.updatedAt
     })
 
     return NextResponse.json({ 
