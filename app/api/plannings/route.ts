@@ -30,20 +30,10 @@ export async function GET(request: NextRequest) {
     
     // Verificar permissão para acessar planejamentos
     const userId = await requirePermission('planejamentos');
-    console.log('🔍 [API] Auth resultado:', { userId });
+    console.log('🔍 [API] Auth resultado - userId (DB ID):', { userId });
 
-    // Buscar usuário no banco
-    console.log('🔍 [API] Buscando usuário no banco...');
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { id: true }
-    });
-    console.log('🔍 [API] Usuário encontrado:', user ? `ID: ${user.id}` : 'NULL');
-
-    if (!user) {
-      console.log('❌ [API] Usuário não encontrado no banco');
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+    // ✅ CORREÇÃO: requirePermission já retorna o ID do banco de dados
+    // Não precisamos fazer busca adicional, userId já é o ID correto
 
     // Parse query parameters
     const { searchParams } = new URL(request.url);
@@ -57,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const where: any = {
-      userId: user.id,
+      userId: userId,
     };
 
     if (filters.status) {
@@ -144,15 +134,7 @@ export async function POST(request: NextRequest) {
     // Verificar permissão para criar planejamentos
     const userId = await requirePermission('planejamentos');
 
-    // Buscar usuário no banco
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { id: true }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+    // ✅ CORREÇÃO: requirePermission já retorna o ID do banco de dados
 
     // Parse request body
     const body = await request.json();
@@ -162,7 +144,7 @@ export async function POST(request: NextRequest) {
     const client = await prisma.client.findFirst({
       where: {
         id: data.clientId,
-        userId: user.id,
+        userId: userId,
       },
     });
 
@@ -180,7 +162,7 @@ export async function POST(request: NextRequest) {
         title: data.title,
         description: data.description,
         clientId: data.clientId,
-        userId: user.id,
+        userId: userId,
         formDataJSON: data.formDataJSON,
         clientSnapshot: data.clientSnapshot || client,
         status: 'DRAFT',
@@ -210,7 +192,7 @@ export async function POST(request: NextRequest) {
       planning.id,
       client,
       data.formDataJSON,
-      user.id
+      userId
     );
 
     // Atualizar status após iniciar webhook (não aguarda conclusão)

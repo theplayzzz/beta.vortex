@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { requirePermission } from '@/lib/auth/api-permission-check';
 import { prisma } from '@/lib/prisma/client';
 import { z } from 'zod';
@@ -50,17 +49,8 @@ const CreateProposalSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     // Verificar permissão para acessar propostas
+    // Note: requirePermission returns the database user ID directly, not clerkId
     const userId = await requirePermission('propostas');
-    
-    // Buscar usuário no banco  
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { id: true, email: true, firstName: true, lastName: true }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
 
     // Parse query parameters
     const { searchParams } = new URL(request.url);
@@ -74,7 +64,7 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const where: any = {
-      userId: user.id,
+      userId: userId,
     };
 
     if (filters.status) {
@@ -141,17 +131,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Verificar permissão para criar propostas
+    // Note: requirePermission returns the database user ID directly, not clerkId
     const userId = await requirePermission('propostas');
-
-    // Buscar usuário no banco
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { id: true }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
 
     // Parse request body
     const body = await request.json();
@@ -161,7 +142,7 @@ export async function POST(request: NextRequest) {
     const client = await prisma.client.findFirst({
       where: {
         id: data.clientId,
-        userId: user.id,
+        userId: userId,
       },
     });
 
@@ -177,7 +158,7 @@ export async function POST(request: NextRequest) {
       data: {
         title: data.titulo_proposta,
         clientId: data.clientId,
-        userId: user.id,
+        userId: userId,
         status: 'DRAFT',
         updatedAt: new Date(),
         // Dados do formulário como JSON - salvos no generatedContent temporariamente
