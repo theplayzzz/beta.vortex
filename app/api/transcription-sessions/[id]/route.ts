@@ -21,9 +21,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log('[TRANSCRIPTION-SESSION-GET] Iniciando busca de sessão...')
     const userId = await getUserIdFromClerk()
+    console.log('[TRANSCRIPTION-SESSION-GET] UserId obtido:', userId)
     
     if (!userId) {
+      console.error('[TRANSCRIPTION-SESSION-GET] UserId não encontrado - retornando 401')
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
