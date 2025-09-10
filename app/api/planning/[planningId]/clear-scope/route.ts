@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getCurrentUserId } from '@/lib/auth/current-user';
 import { prisma } from '@/lib/prisma/client';
 
 // POST /api/planning/[planningId]/clear-scope - Limpar scope do planejamento
@@ -8,7 +8,7 @@ export async function POST(
   context: { params: Promise<{ planningId: string }> }
 ) {
   try {
-    const { userId } = await auth();
+    const userId = await getCurrentUserId();
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

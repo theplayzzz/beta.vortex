@@ -261,22 +261,14 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     sessionId: sessionId, // 🆕 PLAN-007: Passar sessionId para tracking via webhooks
     mirrorCallbacks: {
       onTrackAvailable: () => {
-        console.log('🎉 Mirror: Track disponível via evento - tentando criar mirror...');
-        // ETAPA 8: Validação de segurança e isolamento
-        console.log('🔍 [VALIDATION] Mirror callback - verificando isolamento da transcrição');
-        
         const videoTrack = getScreenVideoTrack();
         if (videoTrack) {
           const stream = new MediaStream([videoTrack]);
           setMirrorVideoStream(stream);
           setMirrorState('active');
-          console.log('✅ Mirror: Stream criado e definido via evento');
-          console.log('✅ [VALIDATION] Mirror ATIVO - transcrição deve continuar funcionando normalmente');
         }
       },
       onTrackUnavailable: () => {
-        console.log('📴 Mirror: Track não disponível via evento - removendo mirror...');
-        console.log('🔍 [VALIDATION] Mirror removido - transcrição deve continuar intacta');
         setMirrorVideoStream(null);
         setMirrorState('waiting');
       }
@@ -366,34 +358,6 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     };
   }, []);
 
-  // ETAPA 8: Função de validação completa do sistema
-  const validateMirrorIntegration = useCallback(() => {
-    const validation = {
-      timestamp: new Date().toISOString(),
-      mirrorState,
-      isListening,
-      isScreenAudioCaptured,
-      hasVideoStream: !!mirrorVideoStream,
-      hasVideoElement: !!mirrorVideoRef.current,
-      transcriptionWorking: !!transcript || !!interimTranscript,
-      audioControlsWorking: typeof toggleMicrophone === 'function' && typeof toggleScreenAudio === 'function',
-      uiIntact: true, // Verificamos se a UI não quebrou
-    };
-
-    console.log('🧪 [INTEGRATION TEST] Validação completa do mirror:', validation);
-    
-    // Testes de segurança
-    const securityTests = {
-      noInterferenceWithTranscription: validation.transcriptionWorking,
-      audioControlsUnaffected: validation.audioControlsWorking,
-      cleanStateManagement: validation.mirrorState !== undefined,
-      properCleanup: !validation.hasVideoStream || validation.hasVideoElement
-    };
-    
-    console.log('🔒 [SECURITY VALIDATION] Testes de isolamento:', securityTests);
-    
-    return { validation, securityTests };
-  }, [mirrorState, isListening, isScreenAudioCaptured, mirrorVideoStream, transcript, interimTranscript, toggleMicrophone, toggleScreenAudio]);
 
   // Abrir modal automaticamente na primeira visita
   useEffect(() => {
@@ -591,34 +555,19 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
   // Mirror state control based on session status
   useEffect(() => {
     // ETAPA 8: Logs de validação para testes de integração
-    console.log('🔍 [VALIDATION] Mirror state transition:', {
-      isListening,
-      isScreenAudioCaptured,
-      currentMirrorState: mirrorState,
-      hasVideoStream: !!mirrorVideoStream
-    });
-
     // Evitar mudanças de estado desnecessárias que podem remover o vídeo do DOM
     if (isListening && isScreenAudioCaptured && mirrorState !== 'active' && mirrorState !== 'waiting') {
       setMirrorState('waiting');
-      console.log('✅ [VALIDATION] Transição para WAITING - Screen share detectado');
     } else if (isListening && !isScreenAudioCaptured && mirrorState !== 'waiting') {
       setMirrorState('waiting');
-      console.log('⏳ [VALIDATION] Transição para WAITING - Aguardando screen share');
     } else if (!isListening && mirrorState !== 'hidden') {
       setMirrorState('hidden');
       setMirrorVideoStream(null);
-      console.log('🔒 [VALIDATION] Transição para HIDDEN - Sessão parada');
     }
   }, [isListening, isScreenAudioCaptured, mirrorState, mirrorVideoStream]);
 
   // ETAPA 5: useEffect para gerenciar mirror baseado na sequência do Daily.co (fallback)
   useEffect(() => {
-    console.log('🔄 Mirror: Verificando condições:', {
-      isListening,
-      isScreenAudioCaptured,
-      mirrorState
-    });
 
     if (isListening && isScreenAudioCaptured && mirrorState === 'waiting' && !mirrorVideoStream) {
       // Fallback: Tentar criar mirror se eventos não funcionaram
@@ -629,9 +578,7 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
           const stream = new MediaStream([videoTrack]);
           setMirrorVideoStream(stream);
           setMirrorState('active');
-          console.log('✅ Mirror: Stream criado via fallback');
         } else {
-          console.log('⏳ Mirror: Track ainda não disponível, mantendo waiting');
         }
       }, 1000);
 
@@ -641,27 +588,13 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
 
   // Event-driven mirror management (substituiu o retry system)
   useEffect(() => {
-    console.log('📡 Mirror: Sistema de eventos ativo - aguardando eventos de track...');
-  }, []); // Apenas log informativo - os eventos são gerenciados pelos callbacks
+    // Os eventos são gerenciados pelos callbacks
+  }, []);
 
   // Aplicar stream ao elemento de vídeo quando disponível
   useEffect(() => {
     if (mirrorVideoRef.current && mirrorVideoStream) {
-      console.log('🎥 Mirror: Aplicando stream ao elemento de vídeo...');
       const videoElement = mirrorVideoRef.current;
-      
-      // Informações sobre o stream
-      console.log('📊 Mirror: Detalhes do stream:', {
-        id: mirrorVideoStream.id,
-        active: mirrorVideoStream.active,
-        tracks: mirrorVideoStream.getTracks().length,
-        videoTracks: mirrorVideoStream.getVideoTracks().length,
-        firstVideoTrack: mirrorVideoStream.getVideoTracks()[0] ? {
-          enabled: mirrorVideoStream.getVideoTracks()[0].enabled,
-          readyState: mirrorVideoStream.getVideoTracks()[0].readyState,
-          muted: mirrorVideoStream.getVideoTracks()[0].muted
-        } : null
-      });
       
       // Aplicar stream apenas se não já estiver aplicado
       if (videoElement.srcObject !== mirrorVideoStream) {
@@ -672,30 +605,23 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
           const videoWidth = videoElement.videoWidth;
           const videoHeight = videoElement.videoHeight;
           
-          console.log('🎬 Mirror: Video metadata carregado', {
-            videoWidth,
-            videoHeight,
-            duration: videoElement.duration,
-            readyState: videoElement.readyState
-          });
-          
           // Armazenar dimensões para cálculos responsivos
           setVideoDimensions({ width: videoWidth, height: videoHeight });
           
           // Tentar reproduzir após metadata carregado
           setTimeout(() => {
             videoElement.play().catch(error => {
-              console.log('ℹ️ Mirror: Video play falhou:', error.message);
+              // Video play falhou silenciosamente
             });
           }, 100);
         };
         
         const handleCanPlay = () => {
-          console.log('▶️ Mirror: Video pode reproduzir');
+          // Video pode reproduzir
         };
         
         const handlePlaying = () => {
-          console.log('🎮 Mirror: Video está reproduzindo - SUCESSO!');
+          // Video está reproduzindo
         };
         
         // Aplicar listeners
@@ -704,21 +630,12 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
         videoElement.addEventListener('playing', handlePlaying, { once: true });
       }
       
-      console.log('✅ Mirror: Stream aplicado com sucesso');
     }
   }, [mirrorVideoStream]);
 
-  // Debug: Monitorar quando o ref do vídeo estiver disponível
+  // Monitorar quando o ref do vídeo estiver disponível
   useEffect(() => {
-    if (mirrorVideoRef.current) {
-      console.log('🎯 Mirror: Elemento de vídeo ref está disponível');
-      console.log('📐 Mirror: Dimensões do elemento:', {
-        width: mirrorVideoRef.current.offsetWidth,
-        height: mirrorVideoRef.current.offsetHeight,
-        display: typeof window !== 'undefined' ? window.getComputedStyle(mirrorVideoRef.current).display : 'unknown',
-        visibility: typeof window !== 'undefined' ? window.getComputedStyle(mirrorVideoRef.current).visibility : 'unknown'
-      });
-    }
+    // Ref do vídeo está disponível
   }, [mirrorState, mirrorVideoStream]);
 
   // Cleanup do stream quando componente é desmontado ou stream é removido
@@ -726,7 +643,6 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     return () => {
       if (mirrorVideoStream) {
         mirrorVideoStream.getTracks().forEach(track => track.stop());
-        console.log('🧹 Mirror: Cleanup do stream ao desmontar componente');
       }
     };
   }, [mirrorVideoStream]);
@@ -742,7 +658,6 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
       }
       
       if (mirrorVideoStream && mirrorVideoRef.current && videoDimensions) {
-        console.log('📱 Mirror: Redimensionando para nova tela');
         
         // Aplicar novas dimensões usando função helper com dimensões reais do vídeo
         const video = mirrorVideoRef.current;
@@ -753,7 +668,6 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
         video.style.maxWidth = dimensions.maxWidth;
         video.style.maxHeight = dimensions.maxHeight;
         
-        console.log('✅ Mirror: Redimensionado com sucesso:', dimensions);
       }
     };
     
@@ -769,7 +683,6 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     }
     
     if (mirrorVideoRef.current && videoDimensions) {
-      console.log('🔧 Mirror: Atualizando dimensões do vídeo baseado na tela compartilhada');
       
       const video = mirrorVideoRef.current;
       const dimensions = getResponsiveMirrorDimensions(videoDimensions.width, videoDimensions.height);
@@ -779,7 +692,6 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
       video.style.maxWidth = dimensions.maxWidth;
       video.style.maxHeight = dimensions.maxHeight;
       
-      console.log('📏 Mirror: Dimensões aplicadas:', dimensions);
     }
   }, [videoDimensions, mirrorState, getResponsiveMirrorDimensions]);
 
@@ -791,7 +703,6 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
         const videoTrack = getScreenVideoTrack();
         if (!videoTrack) {
           setMirrorState('error');
-          console.log('❌ Mirror: Timeout - track não disponível após 10 segundos');
         }
       }, 10000); // 10 segundos timeout
       
@@ -799,23 +710,7 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     }
   }, [mirrorState, isScreenAudioCaptured, getScreenVideoTrack]);
 
-  // ETAPA 8: Validação contínua quando mirror está ativo
-  useEffect(() => {
-    if (mirrorState === 'active' && mirrorVideoStream) {
-      // Executar validação inicial
-      setTimeout(() => {
-        validateMirrorIntegration();
-      }, 1000); // Aguardar 1s para estabilizar
-
-      // Validação periódica a cada 30 segundos
-      const validationInterval = setInterval(() => {
-        console.log('🔄 [PERIODIC VALIDATION] Executando validação periódica...');
-        validateMirrorIntegration();
-      }, 30000);
-
-      return () => clearInterval(validationInterval);
-    }
-  }, [mirrorState, mirrorVideoStream, validateMirrorIntegration]);
+  // Mirror está ativo - sem necessidade de validação contínua
 
 
   // Função para ativar scroll automático
@@ -1637,10 +1532,10 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                     display: 'block'
                   }}
                   onLoadedMetadata={() => {
-                    console.log('🎥 Mirror: Video metadata carregado, video deve estar visível');
+                    // Video metadata carregado
                   }}
                   onError={(e) => {
-                    console.error('❌ Mirror: Erro no elemento de vídeo:', e);
+                    // Erro no elemento de vídeo
                   }}
                 />
             )}

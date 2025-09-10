@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getCurrentUserId } from '@/lib/auth/current-user';
 import { prisma } from '@/lib/prisma/client';
 import { z } from 'zod';
 
@@ -22,7 +22,7 @@ export async function POST(
   try {
     console.log('🚀 [APPROVE-TASKS] Início da requisição');
     
-    const { userId } = await auth();
+    const userId = await getCurrentUserId();
     
     if (!userId) {
       console.log('❌ [APPROVE-TASKS] Usuário não autenticado');

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth/auth-wrapper'
+import { getCurrentUserId } from '@/lib/auth/current-user'
 import { prisma } from '@/lib/prisma/client'
 import { z } from 'zod'
 
@@ -28,7 +28,7 @@ interface SearchResult {
 // GET /api/search - Busca global
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth()
+    const userId = await getCurrentUserId()
     
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })

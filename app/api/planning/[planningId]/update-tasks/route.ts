@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getCurrentUserId } from '@/lib/auth/current-user';
 import { prisma } from '@/lib/prisma/client';
 import { z } from 'zod';
 
@@ -26,7 +26,7 @@ export async function PUT(
   context: { params: Promise<{ planningId: string }> }
 ) {
   try {
-    const { userId } = await auth();
+    const userId = await getCurrentUserId();
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { getCurrentUserId } from '@/lib/auth/current-user'
 import { createClient } from '@supabase/supabase-js'
 import { prisma } from '@/lib/prisma/client'
 import { generateUUID } from '@/lib/utils/uuid'
@@ -11,7 +11,7 @@ export async function GET(
   { params }: { params: Promise<{ clientId: string }> }
 ) {
   try {
-    const { userId } = await auth()
+    const userId = await getCurrentUserId()
     
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -67,7 +67,7 @@ export async function POST(
   { params }: { params: Promise<{ clientId: string }> }
 ) {
   try {
-    const { userId } = await auth()
+    const userId = await getCurrentUserId()
     
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })

@@ -1360,7 +1360,6 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
   // Função para acessar o screen video track (ISOLADA - não afeta transcrição)
   const getScreenVideoTrack = useCallback(() => {
     if (!callObjectRef.current) {
-      console.warn('🚫 Mirror: CallObject não disponível');
       return null;
     }
     
@@ -1370,7 +1369,6 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
       
       // ✅ VALIDAÇÃO: Verificar se screen share está ativo
       if (!localParticipant?.tracks?.screenVideo) {
-        console.warn('🚫 Mirror: Screen video track não encontrado');
         return null;
       }
       
@@ -1379,22 +1377,14 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
       // ✅ SEGURANÇA: Verificar se o track está disponível e ativo
       // Aceitar estados "sendable" ou "playable" - ambos indicam que o track está funcional
       if (!screenVideoTrack.track || (screenVideoTrack.state !== 'sendable' && screenVideoTrack.state !== 'playable')) {
-        console.warn('🚫 Mirror: Screen video track não está ativo:', screenVideoTrack.state);
         return null;
       }
       
-      console.log('✅ Mirror: Screen video track encontrado:', {
-        kind: screenVideoTrack.track.kind,
-        enabled: screenVideoTrack.track.enabled,
-        readyState: screenVideoTrack.track.readyState,
-        state: screenVideoTrack.state
-      });
       
       // ✅ GARANTIA: Retorna APENAS o track de vídeo da tela compartilhada
       return screenVideoTrack.track;
       
     } catch (error) {
-      console.error('❌ Mirror: Erro ao acessar screen video track:', error);
       return null;
     }
   }, []);
@@ -1436,7 +1426,6 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
       transition: all 0.3s ease;
     `;
     
-    console.log('✅ Mirror: Elemento de vídeo criado:', { width: mirrorWidth, height: mirrorHeight });
     return videoElement;
   }, []);
 
@@ -1445,11 +1434,9 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
     const videoTrack = getScreenVideoTrack();
     
     if (videoTrack && state.isScreenAudioCaptured) {
-      console.log('🎥 Mirror: Criando mirror com track disponível');
       const mirrorElement = createScreenMirror(videoTrack);
       return mirrorElement;
     } else {
-      console.log('🚫 Mirror: Condições não atendidas para criar mirror');
       return null;
     }
   }, [getScreenVideoTrack, createScreenMirror, state.isScreenAudioCaptured]);
@@ -1462,7 +1449,6 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
       // ✅ FILTRO ESPECÍFICO: Apenas screenVideo tracks locais
       if (event.track?.kind === 'video' && 
           event.participant?.local) {
-        console.log('🖥️ Mirror: Screen video track iniciado:', event);
         
         // ✅ ATUALIZAR ESTADO IMEDIATAMENTE: Compartilhamento confirmado (para mirror funcionar)
         setState(prev => ({ 
@@ -1470,7 +1456,6 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
           isScreenAudioCaptured: true,
           isScreenAudioEnabled: true  // Inicialmente true, será corrigido pela detecção
         }));
-        console.log('✅ Compartilhamento de tela confirmado!');
         
         // ✅ DETECTAR PRESENÇA DE ÁUDIO DA TELA (com delay para dar tempo dos tracks carregarem)
         setTimeout(() => {
@@ -1512,7 +1497,6 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
       // ✅ FILTRO ESPECÍFICO: Apenas screenVideo tracks locais
       if (event.track?.kind === 'video' && 
           event.participant?.local) {
-        console.log('🖥️ Mirror: Screen video track parou:', event);
         
         // ✅ ATUALIZAR ESTADO: Compartilhamento realmente parado
         setState(prev => ({ 
@@ -1521,7 +1505,6 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
           isScreenAudioEnabled: false,
           hasScreenAudio: false
         }));
-        console.log('✅ Compartilhamento de tela parado!');
         
         // Notificar componente que track não está mais disponível
         if (config?.mirrorCallbacks?.onTrackUnavailable) {
@@ -1557,7 +1540,6 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
     
     const checkInterval = setInterval(() => {
       const videoTrack = getScreenVideoTrack();
-      console.log('🔄 Mirror: Verificação periódica - track disponível:', !!videoTrack);
     }, 5000); // Verificar a cada 5 segundos
     
     return () => clearInterval(checkInterval);
