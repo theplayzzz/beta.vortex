@@ -101,24 +101,83 @@ export async function syncUserWithDatabase(clerkId: string): Promise<string | nu
 
       // 🛡️ CORREÇÃO: SEMPRE atualizar clerkId, mesmo se não for nulo
       console.log(`${logPrefix} 🔄 Atualizando clerkId para usuário existente`)
-      const updatedUser = await prisma.user.update({
-        where: { 
-          id: existingUserByEmail.id,
-          version: existingUserByEmail.version // Optimistic locking
-        },
-        data: { 
-          clerkId,
-          // Preservar dados pessoais existentes, mas permitir atualização se novos dados estão disponíveis
-          firstName: clerkUser.firstName || existingUserByEmail.firstName,
-          lastName: clerkUser.lastName || existingUserByEmail.lastName,
-          profileImageUrl: clerkUser.imageUrl || undefined,
-          version: existingUserByEmail.version + 1,
-          updatedAt: new Date()
+      
+      // Usar transação para garantir consistência e tentar com fallback
+      let updatedUser
+      try {
+        updatedUser = await prisma.user.update({
+          where: { 
+            id: existingUserByEmail.id,
+            version: existingUserByEmail.version // Optimistic locking
+          },
+          data: { 
+            clerkId,
+            // Preservar dados pessoais existentes, mas permitir atualização se novos dados estão disponíveis
+            firstName: clerkUser.firstName || existingUserByEmail.firstName,
+            lastName: clerkUser.lastName || existingUserByEmail.lastName,
+            profileImageUrl: clerkUser.imageUrl || undefined,
+            version: existingUserByEmail.version + 1,
+            updatedAt: new Date()
+          }
+        })
+      } catch (updateError: any) {
+        // Se falhou por record não encontrado (P2025), tentar sem optimistic locking
+        if (updateError?.code === 'P2025') {
+          console.log(`${logPrefix} ⚠️ Optimistic locking failed (P2025), retrying without version check`)
+          console.log(`${logPrefix} 🔍 Original version: ${existingUserByEmail.version}, UserID: ${existingUserByEmail.id}`)
+          
+          // Buscar novamente para obter dados atualizados
+          const refreshedUser = await prisma.user.findUnique({
+            where: { id: existingUserByEmail.id },
+            select: { 
+              id: true, 
+              version: true,
+              firstName: true,
+              lastName: true,
+              clerkId: true,
+              email: true
+            }
+          })
+          
+          if (!refreshedUser) {
+            console.error(`${logPrefix} ❌ User ${existingUserByEmail.id} was deleted during sync process`)
+            throw new Error(`User ${existingUserByEmail.id} was deleted during sync process`)
+          }
+          
+          console.log(`${logPrefix} 🔄 Found refreshed user - Version: ${refreshedUser.version}, ClerkId: ${refreshedUser.clerkId}`)
+          
+          // Se o clerkId já foi atualizado por outro processo, não precisamos fazer nada
+          if (refreshedUser.clerkId === clerkId) {
+            console.log(`${logPrefix} ✅ ClerkId already updated by another process, sync complete`)
+            updatedUser = refreshedUser
+          } else {
+            // Tentar update novamente apenas com ID
+            console.log(`${logPrefix} 🔄 Retrying update without optimistic locking`)
+            updatedUser = await prisma.user.update({
+              where: { 
+                id: existingUserByEmail.id
+              },
+              data: { 
+                clerkId,
+                // Usar dados atualizados do banco
+                firstName: clerkUser.firstName || refreshedUser.firstName,
+                lastName: clerkUser.lastName || refreshedUser.lastName,
+                profileImageUrl: clerkUser.imageUrl || undefined,
+                version: refreshedUser.version + 1,
+                updatedAt: new Date()
+              }
+            })
+          }
+        } else {
+          // Log do erro e re-throw outros tipos de erro
+          console.error(`${logPrefix} ❌ Unexpected error during user update:`, updateError)
+          throw updateError
         }
-      })
+      }
 
       // 📝 Atualizar metadados no Clerk com dados preservados
       const metadata = clerkUser.publicMetadata as any
+      
       await clerkClient.users.updateUserMetadata(clerkId, {
         publicMetadata: {
           ...metadata,

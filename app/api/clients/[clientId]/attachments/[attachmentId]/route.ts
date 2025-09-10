@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { getCurrentUserId } from '@/lib/auth/current-user'
 import { prisma } from '@/lib/prisma/client'
 import { supabase, STORAGE_BUCKET } from '@/lib/supabase/client'
 
@@ -9,7 +9,7 @@ export async function DELETE(
   { params }: { params: Promise<{ clientId: string; attachmentId: string }> }
 ) {
   try {
-    const { userId } = await auth()
+    const userId = await getCurrentUserId()
     
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
