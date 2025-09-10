@@ -48,7 +48,10 @@
       "mcp__playwright__browser_install",
       "Bash(npx playwright:*)",
       "mcp__playwright__browser_snapshot",
-      "WebFetch(domain:webhook.site)"
+      "WebFetch(domain:webhook.site)",
+      "mcp__supabase__list_tables",
+      "Bash(npx ts-node:*)",
+      "mcp__supabase__apply_migration"
     ],
     "deny": []
   }
