@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import ClientFlowModal from "@/components/shared/client-flow-modal";
 import { useClientFlow } from "../hooks/use-client-flow";
-import { useClientsCount } from "@/lib/react-query";
+import { useClientsCount, usePlanningsCount } from "@/lib/react-query";
 import type { Client } from "@/lib/react-query";
 import { useUser } from "@clerk/nextjs";
 import { useFirstVisitHighlight } from "@/hooks/useFirstVisitHighlight";
@@ -26,8 +26,9 @@ export default function HomePage() {
   const { user: clerkUser } = useUser();
   const { shouldHighlight, markAsInteracted } = useFirstVisitHighlight();
   
-  // TanStack Query hook para contagem de clientes
+  // TanStack Query hooks para contagem de clientes e planejamentos
   const { data: clientsCount = 0, refetch: refetchClientsCount } = useClientsCount();
+  const { data: planningsCount = 0, refetch: refetchPlanningsCount } = usePlanningsCount();
   
   // Get user permissions
   const publicMetadata = clerkUser?.publicMetadata as any;
@@ -42,6 +43,8 @@ export default function HomePage() {
     onClientSelected: (client: Client) => {
       // Atualizar contagem após criação
       refetchClientsCount();
+      // Também atualizar planejamentos caso sejam criados junto
+      refetchPlanningsCount();
     }
   });
 
@@ -88,7 +91,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="space-y-2">
-            <div className="text-2xl font-bold text-seasalt">0</div>
+            <div className="text-2xl font-bold text-seasalt">{planningsCount}</div>
             <div className="text-sm text-seasalt/70">Planejamentos ativos</div>
           </div>
           <div className="mt-4 pt-4 border-t border-accent/20">

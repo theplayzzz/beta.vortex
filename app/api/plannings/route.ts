@@ -41,8 +41,8 @@ export async function GET(request: NextRequest) {
       status: searchParams.get('status'),
       clientId: searchParams.get('clientId'),
       search: searchParams.get('search'),
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit'),
+      page: searchParams.get('page') || '1', // ✅ CORREÇÃO: Valor padrão quando null
+      limit: searchParams.get('limit') || '10', // ✅ CORREÇÃO: Valor padrão quando null
     });
 
     // Build where clause

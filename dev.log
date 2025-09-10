@@ -1,0 +1,81 @@
+
+> precedent@0.2.0 dev:https
+> node server-https.js
+
+> Servidor HTTPS rodando na porta 3003
+> Acesse localmente: https://localhost:3003
+> Acesse via IP: https://5.161.64.137:3003
+> Transcrição: https://localhost:3003/coach/capture
+> Transcrição via IP: https://5.161.64.137:3003/coach/capture
+ ○ Compiling /api/health ...
+ ✓ Compiled /api/health in 1742ms (366 modules)
+ GET /api/health 200 in 3646ms
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 1009ms (255 modules)
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+Error: Route "/" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis {
+  
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Miss para usuário: user_2xcFWfxqWjHinbasVVVL1j4e4aB
+[MIDDLEWARE FALLBACK] Direct Clerk query successful: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  cached: false,
+  timestamp: '2025-09-10T18:32:42.702Z'
+}
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  currentPath: '/api/plannings/cmfea0wdn0005kz043pna2i0n'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB',
+  currentPath: '/api/plannings/cmfea0wdn0005kz043pna2i0n',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'APPROVED',
+  userRole: 'ADMIN',
+  isAdmin: true,
+  usedFallback: true,
+  timestamp: '2025-09-10T18:32:42.703Z'
+}
+ ○ Compiling /api/plannings/[id] ...
+ ✓ Compiled /api/plannings/[id] in 1117ms (488 modules)
+🔍 API GET /api/plannings/[id] chamada
+Error: Route "/api/plannings/[id]" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at GET (webpack-internal:///(rsc)/./app/api/plannings/[id]/route.ts:38:86)
+🔐 Auth resultado: { userId: 'user_2xcFWfxqWjHinbasVVVL1j4e4aB' }
+📋 Parâmetros: { planningId: 'cmfea0wdn0005kz043pna2i0n' }
+👤 Usuário no banco: ID: cmbmazoja000909yox6gv567p
+🔍 Buscando planejamento...
+📋 Planejamento encontrado: ID: cmfea0wdn0005kz043pna2i0n, Status: PENDING_AI_REFINED_LIST
+✅ Retornando planejamento com sucesso
+ GET /api/plannings/cmfea0wdn0005kz043pna2i0n?t=1757529159529 200 in 3858ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 4.6s (2238 modules)
+[Error: Route "/_not-found" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+[Error: Route "/_not-found" used `headers().get('Content-Security-Policy')`. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+[Error: Route "/_not-found" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+[Error: Route "/_not-found" used `headers().get('Content-Security-Policy')`. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+[Error: Route "/_not-found" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+[Error: Route "/_not-found" used `headers().get('Content-Security-Policy')`. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+[Error: Route "/_not-found" used `...headers()` or similar iteration. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+[Error: Route "/_not-found" used `headers().get('Content-Security-Policy')`. `headers()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis]
+ GET /_next/static/css/app/planejamentos/%5Bid%5D/page.css?v=1757527082425 404 in 5305ms
+ GET /_next/static/css/app/planejamentos/page.css?v=1757526759255 404 in 5175ms
+ GET /_next/static/css/app/layout.css?v=1757527082425 404 in 5054ms
+ GET /_next/static/css/app/planejamentos/novo/page.css?v=1757526556467 404 in 5302ms
+ ✓ Compiled in 4.1s (973 modules)
+ ✓ Compiled in 975ms (973 modules)
+ ✓ Compiled in 611ms (975 modules)
+Terminated

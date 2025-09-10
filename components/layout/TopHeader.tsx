@@ -3,6 +3,7 @@
 import { Menu, Bell, Search, User } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import GlobalSearch from "@/components/global-search";
+import MaintenanceBanner from "@/components/ui/maintenance-banner";
 import { useSidebar } from "../../contexts/SidebarContext";
 
 export default function TopHeader() {
@@ -46,11 +47,16 @@ export default function TopHeader() {
         </button>
 
         {/* Notifications Button */}
-        <button className="relative p-2 text-seasalt/70 hover:text-seasalt hover:bg-white/5 rounded-lg transition-colors">
-          <Bell className="h-5 w-5" />
-          {/* Notification Badge - Hidden for now */}
-          {/* <span className="absolute -top-1 -right-1 h-3 w-3 bg-sgbus-green rounded-full"></span> */}
-        </button>
+        <div className="relative">
+          <button className="relative p-2 text-seasalt/70 hover:text-seasalt hover:bg-white/5 rounded-lg transition-colors">
+            <Bell className="h-5 w-5" />
+            {/* Notification Badge - Hidden for now */}
+            {/* <span className="absolute -top-1 -right-1 h-3 w-3 bg-sgbus-green rounded-full"></span> */}
+          </button>
+          
+          {/* Maintenance Banner */}
+          <MaintenanceBanner />
+        </div>
 
         {/* User Menu - Show skeleton while loading */}
         {isLoaded && isSignedIn ? (

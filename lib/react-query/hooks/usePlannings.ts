@@ -122,4 +122,23 @@ export function usePlanning(id: string) {
     refetchOnMount: true, // ✅ CORREÇÃO: Sempre refetch ao montar
     refetchOnWindowFocus: true, // ✅ CORREÇÃO: Refetch ao focar janela
   });
+}
+
+// Hook para contagem de planejamentos
+export function usePlanningsCount() {
+  return useQuery({
+    queryKey: queryKeys.plannings.stats(),
+    queryFn: async () => {
+      const response = await fetch('/api/plannings?limit=1');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch plannings count');
+      }
+      
+      const data = await response.json();
+      return data.pagination?.total || 0;
+    },
+    staleTime: 5 * 60 * 1000,  // 5 minutos
+    gcTime: 10 * 60 * 1000,    // 10 minutos
+  });
 } 

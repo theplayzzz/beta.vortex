@@ -6,7 +6,7 @@ export { queryKeys } from './queryKeys';
 export type { PlanningFilters, ClientFilters } from './queryKeys';
 
 // Hooks de Planejamentos
-export { usePlannings, usePlanning } from './hooks/usePlannings';
+export { usePlannings, usePlanning, usePlanningsCount } from './hooks/usePlannings';
 export type { PlanningWithClient, PlanningsResponse } from './hooks/usePlannings';
 
 export { 

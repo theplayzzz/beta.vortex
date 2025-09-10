@@ -223,3 +223,5 @@
 2025-05-26 02:18:02 +00:00:  ⚠ Invalid next.config.js options detected: 
 2025-05-26 02:18:02 +00:00:  ⚠     Unrecognized key(s) in object: 'swcMinify'
 2025-05-26 02:18:02 +00:00:  ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+2025-09-10 18:30:41 +00:00:  ERROR  Failed to switch pnpm to v9.3.0. Looks like pnpm CLI is missing at "/root/.local/share/pnpm/.tools/pnpm/9.3.0/bin" or is incorrect
+2025-09-10 18:30:41 +00:00: spawnSync /root/.local/share/pnpm/.tools/pnpm/9.3.0/bin/pnpm ENOENT

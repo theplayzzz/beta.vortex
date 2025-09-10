@@ -29,24 +29,13 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    console.log('✅ [APPROVE-TASKS] Usuário autenticado:', userId);
+    console.log('✅ [APPROVE-TASKS] Usuário autenticado - Database ID:', userId);
 
     const params = await context.params;
     const planningId = params.planningId;
     console.log('📋 [APPROVE-TASKS] Planning ID:', planningId);
 
-    // Buscar usuário no banco
-    console.log('🔍 [APPROVE-TASKS] Buscando usuário no banco...');
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { id: true }
-    });
-
-    if (!user) {
-      console.log('❌ [APPROVE-TASKS] Usuário não encontrado no banco');
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-    console.log('✅ [APPROVE-TASKS] Usuário encontrado:', user.id);
+    // getCurrentUserId já retorna o ID do banco, não precisa buscar novamente
 
     // Parse request body
     console.log('📥 [APPROVE-TASKS] Parseando request body...');
@@ -61,7 +50,7 @@ export async function POST(
     const planning = await prisma.strategicPlanning.findFirst({
       where: {
         id: planningId,
-        userId: user.id,
+        userId: userId,
       },
       include: {
         Client: {
@@ -107,7 +96,7 @@ export async function POST(
         description: 'Projeto gerado a partir do planejamento',
         status: 'pending',
         priority: 'high',
-        userId: user.id,
+        userId: userId,
         backlogId: planningId,
         tarefaId: planningId,
         planejamentoInformacoes: null,
