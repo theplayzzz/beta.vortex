@@ -5,7 +5,8 @@ import { z } from 'zod'
 
 const UpdateTranscriptionSessionSchema = z.object({
   connectTime: z.string().datetime().optional(),
-  // totalDuration REMOVIDO - agora controlado 100% via webhooks Daily.co
+  totalDuration: z.number().min(0).optional(),
+  isActive: z.boolean().optional(), // ADICIONADO: necessário para sistema de ativação
   analysisCount: z.number().min(0).optional(),
   analyses: z.array(z.object({
     timestamp: z.string().datetime(),
@@ -111,8 +112,14 @@ export async function PATCH(
       updateData.connectTime = new Date(validatedData.connectTime)
     }
     
-    // REMOVIDO: totalDuration agora é controlado 100% server-side via webhooks Daily.co
-    // Frontend não pode mais atualizar manualmente este campo
+    // totalDuration pode ser atualizado por webhooks OU por sistema incremental de 15s
+    if (validatedData.totalDuration !== undefined) {
+      updateData.totalDuration = validatedData.totalDuration
+    }
+    
+    if (validatedData.isActive !== undefined) {
+      updateData.isActive = validatedData.isActive
+    }
     
     if (validatedData.analysisCount !== undefined) {
       updateData.analysisCount = validatedData.analysisCount
@@ -128,6 +135,8 @@ export async function PATCH(
       },
       data: updateData
     })
+    
+    console.log(`[PATCH] Sessão ${id} atualizada com sucesso`)
 
     return NextResponse.json({ 
       success: true, 

@@ -298,21 +298,12 @@ export const useDailyTranscription = (config?: DailyTranscriptionConfig & { mirr
     };
   }, [state.isScreenAudioCaptured]);
 
-  // Atualizar duração da sessão
+  // ⚠️ REMOVIDO: Timer de sessionDuration (conforme plan-012/plan-013)
+  // Tracking de tempo agora é feito EXCLUSIVAMENTE no componente via sistema incremental de 15s
+  // sessionDuration será calculado localmente quando necessário, sem timer interno
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (state.isListening && startTimeRef.current) {
-      interval = setInterval(() => {
-        const now = new Date();
-        const duration = Math.floor((now.getTime() - startTimeRef.current!.getTime()) / 1000);
-        setState(prev => ({ ...prev, sessionDuration: duration }));
-      }, 1000);
-    }
-    
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    // Timer removido - evita conflitos com sistema de tracking incremental
+    // O componente DailyTranscriptionDisplay agora gerencia o tempo completamente
   }, [state.isListening]);
 
   // Função para obter permissões de mídia

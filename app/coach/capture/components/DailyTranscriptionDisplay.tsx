@@ -124,7 +124,12 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
   const [sessionLoading, setSessionLoading] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
 
-  // Estado removido - tracking agora é 100% server-side via webhooks Daily.co
+  // Estados para sistema incremental de 15 segundos
+  const [incrementTimer, setIncrementTimer] = useState<NodeJS.Timeout | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+  const [lastIncrementTime, setLastIncrementTime] = useState<number>(0);
+  const [isTrackingActive, setIsTrackingActive] = useState(false);
+  
   const lastUpdateRef = useRef<number>(0);
 
   // Função para atualizar dados da sessão (fire-and-forget com retry e throttling)
@@ -426,12 +431,25 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     checkTooltipShow();
   }, [isTutorialOpen]);
 
+  // Estado para contador visual em tempo real
+  const [displayDuration, setDisplayDuration] = useState(0)
+  const [realtimeTimer, setRealtimeTimer] = useState<NodeJS.Timeout | null>(null)
+  
+  // 🛡️ Estados para proteções contra conflitos
+  const [lastRequestTime, setLastRequestTime] = useState<number>(0)
+  const [isRequestPending, setIsRequestPending] = useState(false)
+
+  // Calcular sessionDuration localmente (Etapa 5 - Sistema Único)
+  const localSessionDuration = sessionStartTime 
+    ? Math.floor((Date.now() - sessionStartTime) / 1000)
+    : sessionDuration; // Fallback para compatibilidade
+
   // Simulação de stats para Daily.co (compatibilidade com interface Deepgram)
   const stats = {
     finalResults: transcript.split(' ').length,
     interimResults: interimTranscript ? interimTranscript.split(' ').length : 0,
     totalWords: wordsTranscribed,
-    sessionTime: Math.floor(sessionDuration / 60) + 'm'
+    sessionTime: Math.floor(localSessionDuration / 60) + 'm'
   };
 
   // Injetar estilos CSS para renderização de HTML (mantido idêntico)
@@ -1194,7 +1212,257 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [canAnalyze, handleAnalyze]);
 
-  // REMOVIDO: Tracking de conexão da sessão - agora feito 100% server-side via webhooks Daily.co
+  // Sistema de Tracking Incremental de 15 segundos
+  useEffect(() => {
+    if (isConnected && !isTrackingActive && sessionId) {
+      console.log('🟢 Iniciando tracking incremental de 15s')
+      
+      // 🛡️ PROTEÇÃO: Verificar se não há timer ativo (previne múltiplos timers)
+      if (incrementTimer) {
+        console.warn('⚠️ Timer já ativo - cancelando inicialização duplicada')
+        return
+      }
+      
+      // SOLUÇÃO ROBUSTA: Garantir ativação da sessão ANTES de qualquer timer
+      const initializeTracking = async () => {
+        try {
+          console.log('🔄 Ativando sessão para tracking...')
+          
+          const response = await fetch(`/api/transcription-sessions/${sessionId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              isActive: true, 
+              connectTime: new Date().toISOString() 
+            })
+          })
+          
+          if (!response.ok) {
+            const errorText = await response.text()
+            console.error('❌ Falha ao ativar sessão:', response.status, errorText)
+            return false
+          }
+          
+          // Aguardar confirmação da ativação no banco (otimizado)
+          await new Promise(resolve => setTimeout(resolve, 500))
+          
+          console.log('✅ Sessão ativada - Iniciando timer de 15s')
+          
+          // Configurar timer de 15 segundos
+          const timer = startIncrementTimer()
+          setIncrementTimer(timer)
+          setSessionStartTime(Date.now())
+          setIsTrackingActive(true)
+          
+          // 🎯 INICIAR contador visual em tempo real
+          const baseTime = sessionData?.totalDuration || 0
+          setDisplayDuration(baseTime)
+          
+          const sessionStart = Date.now()
+          const visualTimer = setInterval(() => {
+            const currentSessionTime = Math.floor((Date.now() - sessionStart) / 1000)
+            setDisplayDuration(baseTime + currentSessionTime)
+          }, 1000)
+          
+          setRealtimeTimer(visualTimer)
+          
+          return true
+          
+        } catch (error) {
+          console.error('❌ Erro na ativação da sessão:', error)
+          return false
+        }
+      }
+      
+      
+      // Timer de 15 segundos com retry automático
+      const startIncrementTimer = () => {        
+        return setInterval(async () => {
+          // 🛡️ DEBOUNCE: Prevenir múltiplas requisições simultâneas
+          const now = Date.now()
+          if (isRequestPending || (now - lastRequestTime) < 10000) { // 10s debounce
+            console.log('🛡️ Requisição ignorada por debounce/pending')
+            return
+          }
+          
+          setIsRequestPending(true)
+          setLastRequestTime(now)
+          
+          try {
+            const response = await fetch(`/api/transcription-sessions/${sessionId}/increment-time`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                increment: 15,
+                source: 'client-15s-timer'
+              })
+            })
+            
+            if (!response.ok) {
+              const errorText = await response.text()
+              
+              // Auto-reativação se sessão inativa (mantém estabilidade)
+              if (errorText.includes('não está ativa')) {
+                console.warn('🔄 Sessão inativa - tentando reativar...')
+                try {
+                  await fetch(`/api/transcription-sessions/${sessionId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ isActive: true })
+                  })
+                  
+                  await new Promise(resolve => setTimeout(resolve, 500))
+                  
+                  // Retry do incremento
+                  const retryResponse = await fetch(`/api/transcription-sessions/${sessionId}/increment-time`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                      increment: 15,
+                      source: 'client-15s-timer-retry'
+                    })
+                  })
+                  
+                  if (retryResponse.ok) {
+                    const retryData = await retryResponse.json()
+                    console.log('✅ Incremento (retry):', `+${retryData.data?.lastIncrement || 15}s → ${retryData.data?.totalDuration || 'N/A'}s total`)
+                    setLastIncrementTime(Date.now())
+                  }
+                  
+                } catch (retryError) {
+                  console.error('❌ Erro no retry:', retryError)
+                }
+              }
+              return
+            }
+            
+            const data = await response.json()
+            console.log('✅ Incremento:', `+${data.data?.lastIncrement || 15}s → ${data.data?.totalDuration || 'N/A'}s total`)
+            setLastIncrementTime(Date.now())
+            
+          } catch (error) {
+            console.error('❌ Erro no incremento:', error)
+          } finally {
+            setIsRequestPending(false)
+          }
+        }, 15000) // 15 segundos
+      }
+      
+      // Inicializar tracking
+      initializeTracking()
+        .then(success => {
+          if (success) {
+            console.log('✅ Sistema de tracking 15s ativo')
+          } else {
+            console.error('❌ Falha na inicialização do tracking')
+          }
+        })
+        .catch(error => {
+          console.error('❌ Erro na inicialização:', error)
+        })
+    }
+    
+    // Cleanup ao desconectar
+    if (!isConnected && isTrackingActive) {
+      console.log('🔴 Parando tracking incremental')
+      
+      // 🎯 PARAR contador visual em tempo real
+      if (realtimeTimer) {
+        clearInterval(realtimeTimer)
+        setRealtimeTimer(null)
+      }
+      // Manter o último valor do banco quando parar
+      if (sessionData?.totalDuration) {
+        setDisplayDuration(sessionData.totalDuration)
+      }
+      
+      if (incrementTimer) {
+        clearInterval(incrementTimer)
+        setIncrementTimer(null)
+      }
+      setIsTrackingActive(false)
+      
+      // Calcular tempo restante (< 15s desde último incremento) e salvar
+      if (sessionStartTime && sessionId) {
+        const totalElapsed = Math.floor((Date.now() - sessionStartTime) / 1000)
+        const remainingTime = totalElapsed % 15 // Tempo desde último incremento de 15s
+        
+        if (remainingTime > 0) {
+          // Enviar incremento final para tempo restante
+          fetch(`/api/transcription-sessions/${sessionId}/increment-time`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              increment: remainingTime,
+              source: 'client-disconnect-final'
+            })
+          }).catch(console.error)
+        }
+        
+        // Marcar sessão como inativa (fire-and-forget é OK para desconexão)
+        updateSessionData({ 
+          isActive: false, 
+          lastDisconnectAt: new Date().toISOString() 
+        })
+      }
+      
+      setSessionStartTime(null)
+    }
+    
+    return () => {
+      // Cleanup em caso de desmontagem do componente
+      if (incrementTimer && isTrackingActive) {
+        console.log('🧹 Cleanup do tracking ao desmontar componente')
+        clearInterval(incrementTimer)
+        
+        // 🎯 Limpeza do timer visual
+        if (realtimeTimer) {
+          clearInterval(realtimeTimer)
+          setRealtimeTimer(null)
+        }
+        
+        // Salvar tempo restante se possível
+        if (sessionStartTime && sessionId) {
+          const totalElapsed = Math.floor((Date.now() - sessionStartTime) / 1000)
+          const remainingTime = totalElapsed % 15
+          
+          if (remainingTime > 0) {
+            fetch(`/api/transcription-sessions/${sessionId}/increment-time`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                increment: remainingTime,
+                source: 'client-unmount-final'
+              })
+            }).catch(console.error)
+          }
+        }
+      }
+    }
+  }, [isConnected, sessionId, isTrackingActive, incrementTimer, sessionStartTime, updateSessionData])
+
+  // 🔄 FALLBACK: Detectar reconexão e sincronizar estado
+  useEffect(() => {
+    if (isConnected && isTrackingActive && sessionId) {
+      // Sincronizar com banco após reconexão (se necessário)
+      const syncWithDatabase = async () => {
+        try {
+          const response = await fetch(`/api/transcription-sessions/${sessionId}`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.session?.totalDuration) {
+              console.log('🔄 Sincronizando com banco após reconexão:', data.session.totalDuration)
+              // Atualizar display se necessário
+            }
+          }
+        } catch (error) {
+          console.error('❌ Falha na sincronização:', error)
+        }
+      }
+      
+      syncWithDatabase()
+    }
+  }, [isConnected, sessionId]) // Executa quando isConnected muda
 
   // Hook para expor função de incremento de análise para uso externo
   useEffect(() => {
@@ -1210,11 +1478,78 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     };
   }, [incrementAnalysisCount, sessionId]);
 
-  // REMOVIDO: Handler para salvar duração ao fechar/atualizar página
-  // Agora o Daily.co detecta automaticamente via webhooks quando usuário desconecta
-
-  // REMOVIDO: Timer para atualizar duração atual em tempo real
-  // Duração agora é calculada server-side via webhooks Daily.co
+  // Sistema de cleanup com navigator.sendBeacon para fechamento abrupto
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (isTrackingActive && sessionStartTime && sessionId) {
+        console.log('🚨 Detectado fechamento abrupto - salvando tempo final')
+        
+        // Calcular tempo restante desde último incremento (Etapa 5 - Lógica Completa)
+        const totalElapsed = Math.floor((Date.now() - sessionStartTime) / 1000)
+        const remainingTime = totalElapsed % 15
+        
+        console.log(`🚨 [BEFOREUNLOAD] Tempo total: ${totalElapsed}s, Restante: ${remainingTime}s`)
+        
+        // Enviar incremento final se há tempo restante
+        if (remainingTime > 0) {
+          const incrementPayload = JSON.stringify({ 
+            increment: remainingTime,
+            source: 'client-beforeunload-final'
+          })
+          
+          // Tentar sendBeacon primeiro (mais confiável para beforeunload)
+          if (navigator.sendBeacon) {
+            const formData = new FormData()
+            formData.append('data', incrementPayload)
+            
+            const beaconSuccess = navigator.sendBeacon(`/api/transcription-sessions/${sessionId}/increment-time`, formData)
+            console.log(`✅ [BEFOREUNLOAD] SendBeacon ${beaconSuccess ? 'SUCESSO' : 'FALHOU'}: ${remainingTime}s`)
+          } else {
+            // Fallback para fetch síncrono
+            try {
+              fetch(`/api/transcription-sessions/${sessionId}/increment-time`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: incrementPayload,
+                keepalive: true
+              }).catch(console.error)
+            } catch (error) {
+              console.error('❌ Falha no fallback fetch:', error)
+            }
+          }
+        }
+        
+        // Marcar sessão como inativa separadamente
+        const statusPayload = JSON.stringify({ 
+          isActive: false,
+          lastDisconnectAt: new Date().toISOString(),
+          disconnectReason: 'beforeunload'
+        })
+        
+        if (navigator.sendBeacon) {
+          const statusFormData = new FormData()
+          statusFormData.append('data', statusPayload)
+          navigator.sendBeacon(`/api/transcription-sessions/${sessionId}?method=PATCH`, statusFormData)
+        } else {
+          fetch(`/api/transcription-sessions/${sessionId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: statusPayload,
+            keepalive: true
+          }).catch(console.error)
+        }
+      }
+    }
+    
+    // Registrar listeners para diferentes tipos de fechamento
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    window.addEventListener('pagehide', handleBeforeUnload) // Para iOS Safari
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('pagehide', handleBeforeUnload)
+    }
+  }, [isTrackingActive, sessionId, sessionStartTime])
 
   // Mirror container render function
   const renderMirrorContainer = () => {
@@ -1799,9 +2134,15 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                         {sessionData.companyName} • {sessionData.industry} • {sessionData.revenue}
                       </div>
                     </div>
-                    {sessionData?.totalDuration > 0 && (
+                    {(displayDuration > 0 || sessionData?.totalDuration > 0) && (
                       <span className="px-1.5 py-0.5 rounded bg-sgbus-green bg-opacity-20 text-xs" style={{ color: 'var(--sgbus-green)' }}>
-                        {Math.floor((sessionData.totalDuration) / 60)}m {(sessionData.totalDuration) % 60}s
+                        {/* Contador visual em tempo real quando tracking ativo, senão valor do banco */}
+                        {isTrackingActive 
+                          ? `${Math.floor(displayDuration / 60)}m ${displayDuration % 60}s`
+                          : sessionData?.totalDuration 
+                            ? `${Math.floor(sessionData.totalDuration / 60)}m ${sessionData.totalDuration % 60}s`
+                            : `${Math.floor(displayDuration / 60)}m ${displayDuration % 60}s`
+                        }
                       </span>
                     )}
                   </div>
