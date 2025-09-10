@@ -27,6 +27,14 @@ export async function GET(
   try {
     const userId = await getCurrentUserId();
 
+    // Verificar se o usuário está autenticado
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     // Aguardar resolução dos parâmetros
     const { id } = await params;
 
