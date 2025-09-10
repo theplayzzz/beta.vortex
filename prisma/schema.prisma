@@ -72,9 +72,9 @@ model Client {
 
   @@index([deletedAt])
   @@index([userId])
-  @@index([userId, deletedAt, createdAt(sort: Desc)], name: "Client_userId_deletedAt_createdAt_idx")
-  @@index([userId, name], name: "Client_userId_name_idx")
-  @@index([userId, industry, richnessScore], name: "Client_userId_industry_richnessScore_idx")
+  @@index([userId, deletedAt, createdAt(sort: Desc)])
+  @@index([userId, name])
+  @@index([userId, industry, richnessScore])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -111,32 +111,27 @@ model ClientNote {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model CommercialProposal {
-  id               String         @id @default(cuid())
-  title            String
-  generatedContent String?
-  status           ProposalStatus @default(DRAFT)
-  version          Int            @default(1)
-  clientId         String?
-  userId           String
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime
-  
-  // 🆕 NOVOS CAMPOS PARA CONTEÚDO DA IA
-  aiGeneratedContent Json?        // Estrutura completa da resposta da IA
-  proposalHtml       String?      // HTML formatado da proposta
-  proposalMarkdown   String?      // Markdown da proposta para edição
-  aiMetadata         Json?        // Metadados da geração (tokens, modelo, etc)
-  
-  // 🆕 DADOS DO FORMULÁRIO DE PROPOSTA
-  formDataJSON       Json?        // Dados completos do formulário de proposta
-  clientSnapshot     Json?        // Snapshot dos dados do cliente no momento da criação
-  
-  Client           Client?        @relation(fields: [clientId], references: [id])
-  User             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String         @id @default(cuid())
+  title              String
+  generatedContent   String?
+  status             ProposalStatus @default(DRAFT)
+  version            Int            @default(1)
+  clientId           String?
+  userId             String
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime
+  aiGeneratedContent Json?
+  aiMetadata         Json?
+  clientSnapshot     Json?
+  formDataJSON       Json?
+  proposalHtml       String?
+  proposalMarkdown   String?
+  Client             Client?        @relation(fields: [clientId], references: [id])
+  User               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([userId])
-  @@index([userId, status])      // 🆕 Índice para filtros por status
+  @@index([userId, status])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -219,19 +214,16 @@ model StrategicPlanning {
   userId             String
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
-  
-  // 🆕 NOVOS CAMPOS PARA PLAN-005
-  formDataJSON       Json?          // Dados completos do formulário (4 abas)
-  clientSnapshot     Json?          // Snapshot dos dados do cliente
-  
+  clientSnapshot     Json?
+  formDataJSON       Json?
   PlanningTask       PlanningTask[]
   Client             Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
   User               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([userId])
-  @@index([userId, clientId])    // 🆕 Índice otimizado
-  @@index([userId, status])      // 🆕 Índice para filtros
+  @@index([userId, clientId])
+  @@index([userId, status])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -268,111 +260,99 @@ model TaskComment {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model User {
-  id                                         String               @id @default(cuid())
-  clerkId                                    String               @unique
-  email                                      String               @unique
+  id                                         String                 @id @default(cuid())
+  clerkId                                    String                 @unique
+  email                                      String                 @unique
   firstName                                  String?
   lastName                                   String?
   profileImageUrl                            String?
-  creditBalance                              Int                  @default(0)
-  createdAt                                  DateTime             @default(now())
+  creditBalance                              Int                    @default(0)
+  createdAt                                  DateTime               @default(now())
   updatedAt                                  DateTime
-  
-  // 🆕 CAMPOS DO SISTEMA DE APROVAÇÃO (Plan-018)
-  role                                       UserRole             @default(USER)
-  approvalStatus                             ApprovalStatus       @default(PENDING)
+  approvalStatus                             ApprovalStatus         @default(PENDING)
   approvedAt                                 DateTime?
-  approvedBy                                 String?              // clerkId do admin que aprovou
+  approvedBy                                 String?
   rejectedAt                                 DateTime?
-  rejectedBy                                 String?              // clerkId do admin que rejeitou
+  rejectedBy                                 String?
   rejectionReason                            String?
-  version                                    Int                  @default(0)       // Para optimistic concurrency control
+  version                                    Int                    @default(0)
+  role                                       UserRole               @default(USER)
   AgentInteraction                           AgentInteraction[]
   Client                                     Client[]
   ClientAttachment                           ClientAttachment[]
   ClientNote                                 ClientNote[]
   CommercialProposal                         CommercialProposal[]
   CreditTransaction                          CreditTransaction[]
-  PlanningTask_PlanningTask_assigneeIdToUser PlanningTask[]       @relation("PlanningTask_assigneeIdToUser")
-  PlanningTask_PlanningTask_ownerIdToUser    PlanningTask[]       @relation("PlanningTask_ownerIdToUser")
+  PlanningTask_PlanningTask_assigneeIdToUser PlanningTask[]         @relation("PlanningTask_assigneeIdToUser")
+  PlanningTask_PlanningTask_ownerIdToUser    PlanningTask[]         @relation("PlanningTask_ownerIdToUser")
   SalesArgument                              SalesArgument[]
   StrategicPlanning                          StrategicPlanning[]
   TaskAttachment                             TaskAttachment[]
   TaskComment                                TaskComment[]
   TranscriptionSession                       TranscriptionSession[]
-  
-  // 🆕 RELACIONAMENTOS PARA AUDIT TRAIL (Plan-018)
-  ModeratedUsers                             UserModerationLog[] @relation("UserModerationLog_userId")
-  ModerationActions                          UserModerationLog[] @relation("UserModerationLog_moderatorId")
+  ModerationActions                          UserModerationLog[]    @relation("UserModerationLog_moderatorId")
+  ModeratedUsers                             UserModerationLog[]    @relation("UserModerationLog_userId")
 
-  // 🆕 ÍNDICES PARA SISTEMA DE APROVAÇÃO (Plan-018)
-  @@index([approvalStatus])                  // Para filtrar por status
-  @@index([approvalStatus, createdAt])       // Para paginação de usuários pendentes
-  @@index([approvedBy])                      // Para auditoria por moderador
-  @@index([rejectedBy])                      // Para auditoria por moderador
+  @@index([approvalStatus])
+  @@index([approvalStatus, createdAt])
+  @@index([approvedBy])
+  @@index([rejectedBy])
 }
 
 /// 🆕 MODELO PARA AUDIT TRAIL DO SISTEMA DE APROVAÇÃO (Plan-018)
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model UserModerationLog {
-  id                String             @id @default(cuid())
-  userId            String             // Usuário que foi moderado
-  moderatorId       String             // Admin que fez a ação
-  action            ModerationAction   // APPROVE, REJECT, SUSPEND, etc
-  previousStatus    ApprovalStatus     // Status anterior
-  newStatus         ApprovalStatus     // Novo status
-  reason            String?            // Motivo da ação
-  metadata          Json?              // Dados adicionais (IP, user agent, etc)
-  createdAt         DateTime           @default(now())
-  
-  // Relacionamentos
-  User              User               @relation("UserModerationLog_userId", fields: [userId], references: [id], onDelete: Cascade)
-  Moderator         User               @relation("UserModerationLog_moderatorId", fields: [moderatorId], references: [id], onDelete: Cascade)
+  id             String           @id @default(cuid())
+  userId         String
+  moderatorId    String
+  action         ModerationAction
+  previousStatus ApprovalStatus
+  newStatus      ApprovalStatus
+  reason         String?
+  metadata       Json?
+  createdAt      DateTime         @default(now())
+  Moderator      User             @relation("UserModerationLog_moderatorId", fields: [moderatorId], references: [id], onDelete: Cascade)
+  User           User             @relation("UserModerationLog_userId", fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])                    // Para histórico de um usuário
-  @@index([moderatorId])               // Para ações de um moderador  
-  @@index([action])                    // Para filtrar por tipo de ação
-  @@index([createdAt])                 // Para ordenação temporal
+  @@index([userId])
+  @@index([moderatorId])
+  @@index([action])
+  @@index([createdAt])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model TranscriptionSession {
-  id                    String    @id @default(cuid())
-  sessionName           String
-  companyName           String
-  industry              String
-  customIndustry        String?
-  revenue               String?
-  agentType             AgentType // Tipo de agente: GENERALISTA ou ESPECIALISTA
-  spinQuestions         Json?     // Armazenar situation, problem, implication, solutionNeed
-  connectTime           DateTime? // Timestamp quando usuário conecta para transcrição
-  totalDuration         Int       @default(0) // Duração total CUMULATIVA da sessão em segundos
-  analysisCount         Int       @default(0) // Número de análises solicitadas
-  analyses              Json?     // Histórico de todas as análises feitas na sessão
-  
-  // 🆕 CAMPOS PARA WEBHOOK TRACKING (Plan-007)
-  isActive              Boolean   @default(false)    // Se há participante ativo na sala
-  activeParticipantId   String?                      // ID do participante Daily.co ativo
-  connectionCount       Int       @default(0)        // Número total de conexões (para debug)
-  lastDisconnectAt      DateTime?                    // Timestamp da última desconexão
-  webhookEvents         Json      @default("[]")     // Log de todos os eventos webhook recebidos
-  
-  userId                String
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  deletedAt             DateTime? // Soft delete timestamp
-  
-  // Relacionamentos
-  User                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String    @id @default(cuid())
+  sessionName         String
+  companyName         String
+  industry            String
+  customIndustry      String?
+  revenue             String?
+  agentType           AgentType
+  spinQuestions       Json?
+  connectTime         DateTime?
+  totalDuration       Int       @default(0)
+  analysisCount       Int       @default(0)
+  analyses            Json?
+  userId              String
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  activeParticipantId String?
+  connectionCount     Int       @default(0)
+  isActive            Boolean   @default(false)
+  lastDisconnectAt    DateTime?
+  webhookEvents       Json      @default("[]")
+  deletedAt           DateTime?
+  User                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([deletedAt])
   @@index([userId])
-  @@index([userId, deletedAt, createdAt(sort: Desc)]) // Para listar sessões do usuário ordenadas por data
-  @@index([sessionName])                   // Para busca por nome da sessão
-  @@index([agentType])                     // Para filtros por tipo de agente
-  @@index([userId, agentType])             // Para filtros combinados usuário + tipo agente
-  @@index([isActive])                      // Para encontrar sessões ativas
-  @@index([activeParticipantId])           // Para lookups rápidos por participante
+  @@index([userId, deletedAt, createdAt(sort: Desc)])
+  @@index([sessionName])
+  @@index([agentType])
+  @@index([userId, agentType])
+  @@index([isActive])
+  @@index([activeParticipantId])
 }
 
 enum CreditTransactionType {
@@ -395,22 +375,17 @@ enum MessageRole {
 }
 
 enum PlanningStatus {
-  // ✅ Status básicos (para novos planejamentos)
+  AWAITING_APPROVAL
+  GENERATING_REFINED
+  REFINED_COMPLETED
   DRAFT
   ACTIVE
   COMPLETED
   ARCHIVED
-  
-  // ✅ Status reais existentes no banco (249 planejamentos)
-  AWAITING_APPROVAL               // 83 planejamentos - Aguardando aprovação manual
-  GENERATING_REFINED              // 12 planejamentos - Gerando refinamento
-  REFINED_COMPLETED               // 154 planejamentos - Refinamento concluído
-  
-  // ✅ Status de IA (reservados para futuro)
-  PENDING_AI_BACKLOG_GENERATION   // Aguardando geração IA
-  AI_BACKLOG_VISIBLE              // Backlog IA visível
-  PENDING_AI_REFINED_LIST         // Aguardando lista refinada
-  AI_REFINED_LIST_VISIBLE         // Lista refinada visível
+  PENDING_AI_BACKLOG_GENERATION
+  AI_BACKLOG_VISIBLE
+  PENDING_AI_REFINED_LIST
+  AI_REFINED_LIST_VISIBLE
 }
 
 enum ProposalStatus {
@@ -438,7 +413,6 @@ enum TaskStatus {
   BLOCKED
 }
 
-// 🆕 ENUMS PARA SISTEMA DE APROVAÇÃO (Plan-018)
 enum UserRole {
   USER
   ADMIN
@@ -457,9 +431,9 @@ enum ModerationAction {
   REJECT
   SUSPEND
   UNSUSPEND
+  RESET_TO_PENDING
   UNSUSPEND_TO_APPROVED
   UNSUSPEND_TO_PENDING
-  RESET_TO_PENDING
 }
 
 enum AgentType {

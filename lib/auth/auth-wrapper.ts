@@ -7,7 +7,7 @@ import { getUserIdFromClerkWithSync } from './user-sync'
  */
 export async function auth() {
   try {
-    const clerkResult = clerkAuth()
+    const clerkResult = await clerkAuth()
     return clerkResult
   } catch (error) {
     // Se houver erro relacionado a APIs dinâmicas, retornar estado não autenticado
