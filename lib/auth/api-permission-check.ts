@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { createClerkClient } from '@clerk/backend';
 import { Modalidade, getPermissionsForStatus } from '@/types/permissions';
+import { getUserIdFromClerkWithSync } from '@/lib/auth/user-sync';
 
 export interface ApiPermissionResult {
   allowed: boolean;
@@ -14,13 +15,24 @@ export interface ApiPermissionResult {
 export async function checkApiPermissions(requiredModalidade: Modalidade): Promise<ApiPermissionResult> {
   try {
     // Verificar autenticação
-    const { userId } = auth();
+    const { userId: clerkId } = await auth();
     
-    if (!userId) {
+    if (!clerkId) {
       return {
         allowed: false,
         userId: null,
         error: 'Usuário não autenticado'
+      };
+    }
+
+    // Obter o ID do usuário no banco de dados (com sincronização automática)
+    const dbUserId = await getUserIdFromClerkWithSync();
+    
+    if (!dbUserId) {
+      return {
+        allowed: false,
+        userId: null,
+        error: 'Usuário não encontrado no banco de dados'
       };
     }
 
@@ -29,7 +41,7 @@ export async function checkApiPermissions(requiredModalidade: Modalidade): Promi
       secretKey: process.env.CLERK_SECRET_KEY! 
     });
     
-    const user = await clerkClient.users.getUser(userId);
+    const user = await clerkClient.users.getUser(clerkId);
     const metadata = user.publicMetadata as any;
     
     const userStatus = metadata?.approvalStatus || 'PENDING';
@@ -39,7 +51,7 @@ export async function checkApiPermissions(requiredModalidade: Modalidade): Promi
     if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
       return {
         allowed: true,
-        userId
+        userId: dbUserId
       };
     }
     
@@ -68,14 +80,14 @@ export async function checkApiPermissions(requiredModalidade: Modalidade): Promi
     if (!hasAccess) {
       return {
         allowed: false,
-        userId,
+        userId: dbUserId,
         error: `Usuário ${userStatus} não tem acesso à modalidade ${requiredModalidade}`
       };
     }
     
     return {
       allowed: true,
-      userId
+      userId: dbUserId
     };
     
   } catch (error) {

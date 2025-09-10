@@ -289,7 +289,7 @@ export async function getUserIdFromClerkWithSync(): Promise<string | null> {
   try {
     // Importar auth dinamicamente para evitar problemas de edge runtime
     const { auth } = await import('@clerk/nextjs/server')
-    const { userId: clerkId } = auth()
+    const { userId: clerkId } = await auth()
     
     if (!clerkId) {
       return null
