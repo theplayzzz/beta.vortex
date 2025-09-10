@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { X, AlertTriangle } from "lucide-react";
 
 interface MaintenanceBannerProps {
@@ -10,27 +11,31 @@ interface MaintenanceBannerProps {
 export default function MaintenanceBanner({ className = "" }: MaintenanceBannerProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const pathname = usePathname();
 
-  // Verifica se deve mostrar o banner ao carregar a página
+  // Banner sempre aparece quando a página carrega ou quando troca de rota
   useEffect(() => {
-    const hasSeenBanner = sessionStorage.getItem('maintenance-banner-closed');
-    if (!hasSeenBanner) {
-      // Pequeno delay para uma animação mais suave
-      setTimeout(() => {
-        setIsVisible(true);
-        setIsAnimating(true);
-      }, 500);
-    }
-  }, []);
+    // Reset do estado quando a rota muda
+    setIsVisible(false);
+    setIsAnimating(false);
+    
+    // Pequeno delay para uma animação mais suave
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+      setIsAnimating(true);
+    }, 500);
+
+    // Cleanup do timer se o componente for desmontado
+    return () => clearTimeout(timer);
+  }, [pathname]); // Dependência no pathname garante que execute a cada mudança de rota
 
   const handleClose = () => {
     setIsAnimating(false);
     // Adiciona um delay para a animação de saída antes de ocultar
     setTimeout(() => {
       setIsVisible(false);
-      // Armazena no sessionStorage para não mostrar novamente na mesma sessão da aba
-      // mas vai ressurgir em novas páginas/recarregamentos
-      sessionStorage.setItem('maintenance-banner-closed', 'true');
+      // Banner será fechado apenas temporariamente
+      // Ressurgirá SEMPRE em: recarregamento, mudança de página, navegação
     }, 200);
   };
 
@@ -67,8 +72,11 @@ export default function MaintenanceBanner({ className = "" }: MaintenanceBannerP
               <h3 className="text-sm font-medium text-seasalt mb-1">
                 Servidor em Manutenção
               </h3>
-              <p className="text-xs text-periwinkle leading-relaxed">
+              <p className="text-xs text-periwinkle leading-relaxed mb-2">
                 O servidor está passando por manutenção. Algumas funções podem não funcionar corretamente durante este período.
+              </p>
+              <p className="text-xs text-periwinkle/80 leading-relaxed">
+                Assim que tudo estiver funcionando normalmente, uma mensagem indicará a resolução.
               </p>
             </div>
 
@@ -83,9 +91,15 @@ export default function MaintenanceBanner({ className = "" }: MaintenanceBannerP
           </div>
         </div>
 
-        {/* Linha de status opcional */}
-        <div className="h-1 bg-amber-400/20 rounded-b-lg">
-          <div className="h-full w-3/4 bg-amber-400 rounded-bl-lg"></div>
+        {/* Barra de status de manutenção */}
+        <div className="px-4 pb-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-periwinkle/60">Status do Sistema</span>
+            <span className="text-xs text-amber-400 font-medium">Em Manutenção</span>
+          </div>
+          <div className="h-2 bg-eerie-black/50 rounded-full overflow-hidden">
+            <div className="h-full w-2/3 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full animate-pulse"></div>
+          </div>
         </div>
       </div>
     </div>

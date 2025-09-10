@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getCurrentUserId } from '@/lib/auth/current-user';
 import { prisma } from '@/lib/prisma/client';
 import { z } from 'zod';
 
@@ -16,11 +16,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await getCurrentUserId();
 
     // Await params to get the actual values
     const { id } = await params;
@@ -28,21 +24,11 @@ export async function GET(
     // 🔥 LOG PARA CONFIRMAR BUSCA FRESCA
     console.log(`🔄 [API] Buscando proposta ${id} - dados frescos do banco de dados (${new Date().toISOString()})`);
 
-    // Buscar usuário no banco
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { id: true }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
     // Buscar proposta
     const proposal = await prisma.commercialProposal.findFirst({
       where: {
         id: id,
-        userId: user.id,
+        userId: userId,
       },
       include: {
         Client: {
@@ -98,24 +84,10 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await getCurrentUserId();
 
     // Await params to get the actual values
     const { id } = await params;
-
-    // Buscar usuário no banco
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { id: true }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
 
     // Parse request body
     const body = await request.json();
@@ -125,7 +97,7 @@ export async function PUT(
     const existingProposal = await prisma.commercialProposal.findFirst({
       where: {
         id: id,
-        userId: user.id,
+        userId: userId,
       },
     });
 
@@ -184,30 +156,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await getCurrentUserId();
 
     // Await params to get the actual values
     const { id } = await params;
-
-    // Buscar usuário no banco
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { id: true }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
 
     // Verificar se a proposta existe e pertence ao usuário
     const existingProposal = await prisma.commercialProposal.findFirst({
       where: {
         id: id,
-        userId: user.id,
+        userId: userId,
       },
     });
 

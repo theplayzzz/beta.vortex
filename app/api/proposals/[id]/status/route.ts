@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getCurrentUserId } from '@/lib/auth/current-user';
 import { prisma } from '@/lib/prisma/client';
 
 interface ErrorDetails {
@@ -25,29 +25,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await getCurrentUserId();
 
     // Aguardar resolução dos parâmetros
     const { id } = await params;
-
-    // Buscar usuário no banco
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
 
     // Buscar proposta específica
     const proposal = await prisma.commercialProposal.findFirst({
       where: {
         id: id,
-        userId: user.id,
+        userId: userId,
       },
       include: {
         Client: {
