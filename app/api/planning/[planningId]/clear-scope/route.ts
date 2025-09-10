@@ -17,21 +17,13 @@ export async function POST(
     const params = await context.params;
     const planningId = params.planningId;
 
-    // Buscar usuário no banco
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: { id: true }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+    // getCurrentUserId já retorna o ID do banco, não precisa buscar novamente
 
     // Verificar se o planejamento existe e pertence ao usuário
     const planning = await prisma.strategicPlanning.findFirst({
       where: {
         id: planningId,
-        userId: user.id,
+        userId: userId,
       },
     });
 
