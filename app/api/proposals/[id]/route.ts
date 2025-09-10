@@ -18,6 +18,14 @@ export async function GET(
   try {
     const userId = await getCurrentUserId();
 
+    // Verificar se o usuário está autenticado
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     // Await params to get the actual values
     const { id } = await params;
 
@@ -85,6 +93,14 @@ export async function PUT(
 ) {
   try {
     const userId = await getCurrentUserId();
+
+    // Verificar se o usuário está autenticado
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
     // Await params to get the actual values
     const { id } = await params;
@@ -157,6 +173,14 @@ export async function DELETE(
 ) {
   try {
     const userId = await getCurrentUserId();
+
+    // Verificar se o usuário está autenticado
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
     // Await params to get the actual values
     const { id } = await params;
