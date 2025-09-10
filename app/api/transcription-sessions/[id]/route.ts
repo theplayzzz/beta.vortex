@@ -117,9 +117,7 @@ export async function PATCH(
       updateData.totalDuration = validatedData.totalDuration
     }
     
-    // LOG CRÍTICO: Verificar se isActive está sendo definido
     if (validatedData.isActive !== undefined) {
-      console.log(`[CRITICAL] 🔄 Alterando isActive para:`, validatedData.isActive)
       updateData.isActive = validatedData.isActive
     }
     
@@ -131,8 +129,6 @@ export async function PATCH(
       updateData.analyses = validatedData.analyses
     }
 
-    console.log(`[CRITICAL] 📝 Dados a serem atualizados:`, updateData)
-    
     const updatedSession = await prisma.transcriptionSession.update({
       where: {
         id: id
@@ -140,13 +136,7 @@ export async function PATCH(
       data: updateData
     })
     
-    console.log(`[CRITICAL] ✅ Sessão atualizada com sucesso:`, {
-      id: updatedSession.id,
-      sessionName: updatedSession.sessionName,
-      isActive: updatedSession.isActive,
-      totalDuration: updatedSession.totalDuration,
-      updatedAt: updatedSession.updatedAt
-    })
+    console.log(`[PATCH] Sessão ${id} atualizada com sucesso`)
 
     return NextResponse.json({ 
       success: true, 

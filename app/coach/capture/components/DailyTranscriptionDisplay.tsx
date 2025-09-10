@@ -1212,7 +1212,7 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
       // SOLUÇÃO ROBUSTA: Garantir ativação da sessão ANTES de qualquer timer
       const initializeTracking = async () => {
         try {
-          console.log('📝 [CRITICAL] Marcando sessão como ativa - AGUARDANDO confirmação...')
+          console.log('🔄 Ativando sessão para tracking...')
           
           const response = await fetch(`/api/transcription-sessions/${sessionId}`, {
             method: 'PATCH',
@@ -1225,63 +1225,32 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
           
           if (!response.ok) {
             const errorText = await response.text()
-            console.error('❌ [CRITICAL] FALHA FATAL ao marcar sessão como ativa:', response.status)
-            console.error('❌ [CRITICAL] Detalhes completos:', errorText)
-            console.error('❌ [CRITICAL] TIMER NÃO SERÁ INICIADO - Sistema abortado')
-            return false // Retorno explícito de falha
+            console.error('❌ Falha ao ativar sessão:', response.status, errorText)
+            return false
           }
           
-          // AGUARDAR tempo suficiente para confirmação no banco (aumentado para 1.5s)
-          await new Promise(resolve => setTimeout(resolve, 1500))
+          // Aguardar confirmação da ativação no banco (otimizado)
+          await new Promise(resolve => setTimeout(resolve, 500))
           
-          // VERIFICAR se a ativação foi realmente aplicada (usando endpoint de debug)
-          console.log('🔍 [CRITICAL] Verificando se sessão foi realmente ativada...')
-          const verifyResponse = await fetch(`/api/transcription-sessions/${sessionId}/debug`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-          })
+          console.log('✅ Sessão ativada - Iniciando timer de 15s')
           
-          if (verifyResponse.ok) {
-            const debugData = await verifyResponse.json()
-            console.log('📊 [CRITICAL] Estado completo da sessão:', debugData.data)
-            
-            if (!debugData.data?.session?.isActive) {
-              console.error('❌ [CRITICAL] SESSÃO AINDA INATIVA APÓS ATIVAÇÃO!')
-              console.error('🔍 [CRITICAL] Debug completo:', debugData.data)
-              return false
-            }
-            
-            if (debugData.data.otherActiveSessions?.length > 0) {
-              console.warn('⚠️ [CRITICAL] MÚLTIPLAS SESSÕES ATIVAS DETECTADAS:', debugData.data.otherActiveSessions)
-            }
-          } else {
-            console.error('❌ [CRITICAL] Falha na verificação pós-ativação:', verifyResponse.status)
-          }
-          
-          console.log('✅ [CRITICAL] Sessão CONFIRMADAMENTE ativa - Iniciando timer com segurança')
-          
-          // Configurar timer de 15 segundos (100% após ativação)
+          // Configurar timer de 15 segundos
           const timer = startIncrementTimer()
           setIncrementTimer(timer)
           setSessionStartTime(Date.now())
           setIsTrackingActive(true)
           
-          return true // Sucesso confirmado
+          return true
           
         } catch (error) {
-          console.error('❌ [CRITICAL] ERRO FATAL na ativação da sessão:', error)
-          console.error('❌ [CRITICAL] Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
-          return false // Falha crítica
+          console.error('❌ Erro na ativação da sessão:', error)
+          return false
         }
       }
       
-      // Função para criar o timer COM proteções adicionais
-      const startIncrementTimer = () => {
-        console.log('🔄 [TIMER] Criando interval de 15s - PRIMEIRA execução em 15s')
-        
+      // Timer de 15 segundos com retry automático
+      const startIncrementTimer = () => {        
         return setInterval(async () => {
-          console.log('⏰ [TIMER] Executando incremento de 15s...')
-          
           try {
             const response = await fetch(`/api/transcription-sessions/${sessionId}/increment-time`, {
               method: 'POST',
@@ -1294,34 +1263,20 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
             
             if (!response.ok) {
               const errorText = await response.text()
-              console.error('❌ [TIMER] FALHA no incremento:', response.status, response.statusText)
-              console.error('❌ [TIMER] Resposta completa:', errorText)
               
-              // Se sessão inativa, REATIVAR + RETRY imediato
+              // Auto-reativação se sessão inativa (mantém estabilidade)
               if (errorText.includes('não está ativa')) {
-                console.warn('🔄 [TIMER] SESSÃO INATIVA DETECTADA - Iniciando reativação + retry...')
+                console.warn('🔄 Sessão inativa - tentando reativar...')
                 try {
-                  // 1. Reativar sessão
-                  const reactivateResponse = await fetch(`/api/transcription-sessions/${sessionId}`, {
+                  await fetch(`/api/transcription-sessions/${sessionId}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ isActive: true })
                   })
                   
-                  if (!reactivateResponse.ok) {
-                    console.error('❌ [TIMER] FALHA na reativação - Status:', reactivateResponse.status)
-                    const reactivateError = await reactivateResponse.text()
-                    console.error('❌ [TIMER] Detalhes da falha:', reactivateError)
-                    return
-                  }
+                  await new Promise(resolve => setTimeout(resolve, 500))
                   
-                  console.log('✅ [TIMER] Sessão reativada com sucesso - Aguardando 1s...')
-                  
-                  // 2. Aguardar 1 segundo para garantir que o banco foi atualizado
-                  await new Promise(resolve => setTimeout(resolve, 1000))
-                  
-                  // 3. RETRY do incremento imediatamente
-                  console.log('🔄 [TIMER] RETRY - Tentando incremento novamente...')
+                  // Retry do incremento
                   const retryResponse = await fetch(`/api/transcription-sessions/${sessionId}/increment-time`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1333,45 +1288,38 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
                   
                   if (retryResponse.ok) {
                     const retryData = await retryResponse.json()
-                    console.log('🎉 [TIMER] RETRY SUCESSO:', `+${retryData.data?.lastIncrement || 15}s → ${retryData.data?.totalDuration || 'N/A'}s total`)
+                    console.log('✅ Incremento (retry):', `+${retryData.data?.lastIncrement || 15}s → ${retryData.data?.totalDuration || 'N/A'}s total`)
                     setLastIncrementTime(Date.now())
-                  } else {
-                    const retryError = await retryResponse.text()
-                    console.error('❌ [TIMER] RETRY FALHOU ainda:', retryResponse.status, retryError)
                   }
                   
-                } catch (reactivateError) {
-                  console.error('❌ [TIMER] ERRO FATAL na reativação:', reactivateError)
+                } catch (retryError) {
+                  console.error('❌ Erro no retry:', retryError)
                 }
               }
               return
             }
             
             const data = await response.json()
-            console.log('✅ [TIMER] Incremento OK:', `+${data.data?.lastIncrement || 15}s → ${data.data?.totalDuration || 'N/A'}s total`)
-            
-            // Atualizar estado local
+            console.log('✅ Incremento:', `+${data.data?.lastIncrement || 15}s → ${data.data?.totalDuration || 'N/A'}s total`)
             setLastIncrementTime(Date.now())
             
           } catch (error) {
-            console.error('❌ [TIMER] Erro na requisição de incremento:', error)
-            console.error('❌ [TIMER] Stack:', error instanceof Error ? error.stack : 'No stack trace')
+            console.error('❌ Erro no incremento:', error)
           }
         }, 15000) // 15 segundos
       }
       
-      // AGUARDAR inicialização completa com feedback detalhado
+      // Inicializar tracking
       initializeTracking()
         .then(success => {
           if (success) {
-            console.log('🎉 [SUCCESS] Sistema de tracking 15s ATIVO com sucesso!')
+            console.log('✅ Sistema de tracking 15s ativo')
           } else {
-            console.error('💀 [FATAL] Sistema de tracking FALHOU - Sessão permanece sem tracking')
+            console.error('❌ Falha na inicialização do tracking')
           }
         })
         .catch(error => {
-          console.error('💀 [FATAL] Erro crítico na inicialização do tracking:', error)
-          console.error('💀 [FATAL] Sessão SEM tracking de tempo - INTERVENÇÃO NECESSÁRIA')
+          console.error('❌ Erro na inicialização:', error)
         })
     }
     
