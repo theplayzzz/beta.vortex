@@ -8,6 +8,7 @@ import ClientFlowModal from "@/components/shared/client-flow-modal";
 import { useClientFlow } from "../hooks/use-client-flow";
 import { useClientsCount, usePlanningsCount } from "@/lib/react-query";
 import { useProposalStats } from "@/hooks/use-proposals";
+import { useSessionStats } from "@/hooks/use-session-stats";
 import type { Client } from "@/lib/react-query";
 import { useUser } from "@clerk/nextjs";
 import { getPermissionsForStatus } from "@/types/permissions";
@@ -16,6 +17,7 @@ import {
   CheckCircle, 
   Users, 
   FileText, 
+  Clock,
   Bot, 
   PenTool 
 } from "lucide-react";
@@ -30,6 +32,9 @@ export default function HomePage() {
   
   // Hook para estatísticas de propostas
   const { data: proposalStats } = useProposalStats();
+  
+  // Hook para estatísticas de sessões
+  const { data: sessionStats } = useSessionStats();
   
   // Get user permissions
   const publicMetadata = clerkUser?.publicMetadata as any;
@@ -73,7 +78,7 @@ export default function HomePage() {
       </div>
 
       {/* Grid de Widgets */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Widget Planejamentos */}
         <div className="bg-eerie-black rounded-lg p-6 border border-accent/20">
           <div className="flex items-center justify-between mb-4">
@@ -89,6 +94,25 @@ export default function HomePage() {
           <div className="mt-4 pt-4 border-t border-accent/20">
             <Link href="/planejamentos" className="text-sgbus-green text-sm hover:underline">
               Ver todos →
+            </Link>
+          </div>
+        </div>
+
+        {/* Widget Clientes */}
+        <div className="bg-eerie-black rounded-lg p-6 border border-accent/20">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-seasalt">Clientes</h3>
+            <div className="w-8 h-8 bg-periwinkle/20 rounded-lg flex items-center justify-center">
+              <Users className="w-5 h-5 text-periwinkle" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="text-2xl font-bold text-seasalt">{clientsCount}</div>
+            <div className="text-sm text-seasalt/70">Clientes cadastrados</div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-accent/20">
+            <Link href="/clientes" className="text-periwinkle text-sm hover:underline">
+              Gerenciar →
             </Link>
           </div>
         </div>
@@ -112,21 +136,21 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Widget Clientes */}
+        {/* Widget Sessões */}
         <div className="bg-eerie-black rounded-lg p-6 border border-accent/20">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-seasalt">Clientes</h3>
-            <div className="w-8 h-8 bg-sgbus-green/20 rounded-lg flex items-center justify-center">
-              <Users className="w-5 h-5 text-sgbus-green" />
+            <h3 className="text-lg font-semibold text-seasalt">Sessões</h3>
+            <div className="w-8 h-8 bg-periwinkle/20 rounded-lg flex items-center justify-center">
+              <Clock className="w-5 h-5 text-periwinkle" />
             </div>
           </div>
           <div className="space-y-2">
-            <div className="text-2xl font-bold text-seasalt">{clientsCount}</div>
-            <div className="text-sm text-seasalt/70">Clientes cadastrados</div>
+            <div className="text-2xl font-bold text-seasalt">{sessionStats?.transcriptionTime || '0min'}</div>
+            <div className="text-sm text-seasalt/70">Horas em sessões</div>
           </div>
           <div className="mt-4 pt-4 border-t border-accent/20">
-            <Link href="/clientes" className="text-sgbus-green text-sm hover:underline">
-              Gerenciar →
+            <Link href="/coach/capture/pre-session" className="text-periwinkle text-sm hover:underline">
+              Ver todas →
             </Link>
           </div>
         </div>
@@ -179,14 +203,14 @@ export default function HomePage() {
           )}
           
           <Link 
-            href="/propostas"
+            href="/propostas/nova"
             className="p-4 bg-sgbus-green/10 hover:bg-sgbus-green/20 rounded-lg border border-sgbus-green/20 transition-colors group text-center"
           >
             <div className="flex items-center justify-center w-8 h-8 text-sgbus-green mb-2 mx-auto">
               <FileText className="w-6 h-6" />
             </div>
-            <div className="text-seasalt font-medium">Propostas</div>
-            <div className="text-seasalt/70 text-sm mt-1">Gerenciar propostas</div>
+            <div className="text-seasalt font-medium">Nova Proposta</div>
+            <div className="text-seasalt/70 text-sm mt-1">Criar proposta comercial</div>
           </Link>
           
           {/* PLAN-010: Sales button enabled for PENDING users */}
