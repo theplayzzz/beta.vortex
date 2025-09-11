@@ -13,6 +13,8 @@ import {
   MODERATION_ACTION,
   logApprovalAction 
 } from './approval-system'
+// 🆕 FASE 2: Import plan assignment function
+import { assignDefaultPlan } from './plan-assignment'
 
 // ==========================================
 // CONFIGURAÇÃO DINÂMICA DE WEBHOOKS
@@ -201,6 +203,28 @@ export async function updateUserApprovalStatus(
         }
       }
     })
+
+    // 🆕 FASE 2: Atribuição automática de plano quando muda para APPROVED
+    if (newStatus === APPROVAL_STATUS.APPROVED && previousStatus === 'PENDING') {
+      try {
+        const hasActivePlan = await prisma.userPlan.findFirst({
+          where: { userId, isActive: true }
+        })
+        if (!hasActivePlan) {
+          const planResult = await assignDefaultPlan(userId, 'APPROVED', 'USER')
+          if (planResult.success) {
+            console.log(`[CLERK_INTEGRATION_PLAN_ASSIGNMENT] ✅ Plano atribuído após aprovação: ${userId} → ${planResult.planName}`)
+          } else {
+            console.error(`[CLERK_INTEGRATION_PLAN_ASSIGNMENT] ❌ Erro na atribuição: ${planResult.error}`)
+          }
+        } else {
+          console.log(`[CLERK_INTEGRATION_PLAN_ASSIGNMENT] ✅ Usuário já possui plano ativo`)
+        }
+      } catch (planError: any) {
+        console.error(`[CLERK_INTEGRATION_PLAN_ASSIGNMENT] ❌ Erro na atribuição de plano:`, planError)
+        // Não falhar aprovação por erro de plano
+      }
+    }
 
     return { success: true, user: updatedUser }
 
