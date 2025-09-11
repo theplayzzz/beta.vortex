@@ -83,8 +83,9 @@ export function UsageWidget({
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: delay + 0.5 }}
             >
-              {Math.round(percentage)}%
+              {formatValue(available)}
             </motion.div>
+            <div className="text-xs text-seasalt/50 mt-1">restantes</div>
           </div>
         </CircularProgress>
       </div>
@@ -98,13 +99,13 @@ export function UsageWidget({
           </span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-sm text-seasalt/70">Limite</span>
+          <span className="text-sm text-seasalt/70">Total disponível</span>
           <span className="text-base font-medium text-seasalt">
             {formatValue(limit)}
           </span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-sm text-seasalt/70">Disponível</span>
+          <span className="text-sm text-seasalt/70">Restantes</span>
           <span className={`text-base font-medium ${status === 'high' ? 'text-red-400' : 'text-sgbus-green'}`}>
             {formatValue(available)}
           </span>

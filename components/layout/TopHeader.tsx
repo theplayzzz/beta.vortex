@@ -4,7 +4,7 @@ import { Menu, Bell, Search, User } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import GlobalSearch from "@/components/global-search";
-import MaintenanceBanner from "@/components/ui/maintenance-banner";
+import PromoNotification from "@/components/ui/maintenance-banner";
 import { useSidebar } from "../../contexts/SidebarContext";
 
 export default function TopHeader() {
@@ -55,8 +55,8 @@ export default function TopHeader() {
             {/* <span className="absolute -top-1 -right-1 h-3 w-3 bg-sgbus-green rounded-full"></span> */}
           </button>
           
-          {/* Maintenance Banner */}
-          <MaintenanceBanner />
+          {/* Promo Notification */}
+          <PromoNotification />
         </div>
 
         {/* User Menu - Show skeleton while loading */}

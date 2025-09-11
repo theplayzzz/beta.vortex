@@ -109,7 +109,10 @@ export async function GET() {
           usedTranscriptionMinutes: 0,
           limitSnapshotPlannings: planLimits.maxPlanningsMonth,
           limitSnapshotProposals: planLimits.maxProposalsMonth,
-          limitSnapshotTranscriptionMinutes: planLimits.maxTranscriptionMinMonth
+          limitSnapshotTranscriptionMinutes: planLimits.maxTranscriptionMinMonth,
+          bonusPlannings: 0,
+          bonusProposals: 0,
+          bonusTranscriptionMinutes: 0
         }
       })
     }
@@ -130,9 +133,9 @@ export async function GET() {
     }
 
     const stats: UsageStats = {
-      plannings: calculateStats(usage.usedPlannings, planLimits.maxPlanningsMonth),
-      proposals: calculateStats(usage.usedProposals, planLimits.maxProposalsMonth),
-      transcriptionMinutes: calculateStats(usage.usedTranscriptionMinutes, planLimits.maxTranscriptionMinMonth),
+      plannings: calculateStats(usage.usedPlannings, planLimits.maxPlanningsMonth + (usage.bonusPlannings || 0)),
+      proposals: calculateStats(usage.usedProposals, planLimits.maxProposalsMonth + (usage.bonusProposals || 0)),
+      transcriptionMinutes: calculateStats(usage.usedTranscriptionMinutes, planLimits.maxTranscriptionMinMonth + (usage.bonusTranscriptionMinutes || 0)),
       clients: {
         total: clientsCount
       },

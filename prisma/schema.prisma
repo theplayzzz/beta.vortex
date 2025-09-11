@@ -299,6 +299,7 @@ model User {
   UsageEvent                                 UsageEvent[]
   ModerationActions                          UserModerationLog[]    @relation("UserModerationLog_moderatorId")
   ModeratedUsers                             UserModerationLog[]    @relation("UserModerationLog_userId")
+  UserBonusClaims                            UserBonusClaims[]
 
   @@index([approvalStatus])
   @@index([approvalStatus, createdAt])
@@ -325,6 +326,21 @@ model UserModerationLog {
   @@index([moderatorId])
   @@index([action])
   @@index([createdAt])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model UserBonusClaims {
+  id         String    @id @default(cuid())
+  userId     String
+  bonusType  BonusType
+  amount     Int
+  claimedAt  DateTime  @default(now())
+  User       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bonusType], name: "unique_user_bonus_type")
+  @@index([userId])
+  @@index([bonusType])
+  @@index([claimedAt])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -467,6 +483,10 @@ enum FeatureType {
   PLANNING
   TRANSCRIPTION
   PROPOSAL
+}
+
+enum BonusType {
+  PLANNING_PROMO
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
