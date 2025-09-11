@@ -155,7 +155,7 @@ export async function POST(req: NextRequest) {
     })
   } catch (error) {
     console.error('[WEBHOOK_DEBUG] ❌ ERRO CRÍTICO no processamento:', error)
-    console.error('[WEBHOOK_DEBUG] 📊 Stack trace:', error.stack)
+    console.error('[WEBHOOK_DEBUG] 📊 Stack trace:', error instanceof Error ? error.stack : 'Stack não disponível')
     console.error('[WEBHOOK_DEBUG] 📋 Evento tipo:', type)
     console.error('[WEBHOOK_DEBUG] 👤 User ID:', data.id)
     return new Response('Error processing webhook', { status: 500 })
