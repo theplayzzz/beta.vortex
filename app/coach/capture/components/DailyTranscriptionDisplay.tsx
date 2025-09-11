@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { useUsageStats } from '@/hooks/use-usage-stats';
+import Link from 'next/link';
 import { useDailyTranscription } from '../lib/useDailyTranscription';
-import { Play, Square, Mic, MicOff, ScreenShare, Trash2, Brain, HelpCircle, Zap, AlertTriangle, Clock, ChevronDown, Monitor, User, Settings } from 'lucide-react';
+import { Play, Square, Mic, MicOff, ScreenShare, Trash2, Brain, HelpCircle, Zap, AlertTriangle, Clock, ChevronDown, Monitor, User, Settings, Lock, Home } from 'lucide-react';
 import TutorialModal from './TutorialModal';
 import TutorialTooltip from './TutorialTooltip';
 import { useFirstVisit } from '../lib/useFirstVisit';
@@ -119,6 +121,9 @@ interface DailyTranscriptionDisplayProps {
 }
 
 const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ sessionId }) => {
+  // Hook para verificar se é usuário NoUser (deve vir primeiro)
+  const { data: usageStats, isLoading: isUsageLoading } = useUsageStats();
+
   // Estado para dados da sessão
   const [sessionData, setSessionData] = useState<any>(null);
   const [sessionLoading, setSessionLoading] = useState(false);
@@ -1566,6 +1571,37 @@ const DailyTranscriptionDisplay: React.FC<DailyTranscriptionDisplayProps> = ({ s
     }
   };
 
+  // Se usuário tem plano NoUser, mostrar bloqueio
+  if (!isUsageLoading && usageStats?.planInfo?.isNoUserPlan) {
+    return (
+      <div className="h-full min-h-0 pt-[18px] px-6 pb-6 flex items-center justify-center" style={{ backgroundColor: 'var(--raisin-black)' }}>
+        <div className="max-w-md mx-auto bg-eerie-black border border-seasalt/10 rounded-lg p-8 text-center">
+          <div className="mb-6">
+            <Lock size={64} className="mx-auto text-periwinkle mb-4" />
+            <h2 className="text-2xl font-bold text-seasalt mb-2">
+              Copiloto Spalla
+            </h2>
+            <p className="text-periwinkle">
+              Upgrade necessário para acessar esta funcionalidade
+            </p>
+          </div>
+          <div className="space-y-4">
+            <p className="text-seasalt/70 text-sm">
+              O Copiloto Spalla está disponível apenas para planos pagos. 
+              Faça upgrade do seu plano para começar a usar esta ferramenta.
+            </p>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-sgbus-green hover:bg-sgbus-green/90 text-night font-semibold rounded-lg transition-all duration-200 hover:scale-105"
+            >
+              <Home size={20} />
+              Voltar ao Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full min-h-0 pt-[18px] px-6 pb-6">

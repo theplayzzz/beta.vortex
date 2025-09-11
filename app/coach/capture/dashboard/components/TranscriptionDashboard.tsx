@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from 'react';
+import { useUsageStats } from '@/hooks/use-usage-stats';
+import Link from 'next/link';
 import { 
   Mic, 
   MonitorSpeaker, 
@@ -23,7 +25,9 @@ import {
   CheckCircle,
   AlertCircle,
   Clock3,
-  TrendingUp
+  TrendingUp,
+  Lock,
+  Home
 } from 'lucide-react';
 
 // Design System Colors - seguindo regras-design-moderno-v1.mdc
@@ -173,6 +177,9 @@ const languages = [
 ];
 
 export default function TranscriptionDashboard() {
+  // Hook para verificar se é usuário NoUser (deve vir primeiro)
+  const { data: usageStats, isLoading: isUsageLoading } = useUsageStats();
+
   const [selectedPeriod, setSelectedPeriod] = useState('thisWeek');
   const [selectedLanguage, setSelectedLanguage] = useState('pt');
   const [selectedSessionType, setSelectedSessionType] = useState('live');
@@ -195,6 +202,92 @@ export default function TranscriptionDashboard() {
   const handleStartSession = () => {
     window.location.href = '/coach/capture/pre-session';
   };
+
+  // Se usuário tem plano NoUser, mostrar bloqueio
+  if (!isUsageLoading && usageStats?.planInfo?.isNoUserPlan) {
+    return (
+      <div style={{
+        padding: '1.5rem',
+        maxWidth: '1200px',
+        margin: '0 auto',
+        backgroundColor: designColors.background,
+        color: designColors.foreground,
+        minHeight: '60vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{
+          backgroundColor: '#222327',
+          border: '1px solid rgba(240, 240, 240, 0.1)',
+          borderRadius: '12px',
+          padding: '2rem',
+          textAlign: 'center',
+          maxWidth: '400px'
+        }}>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <Lock size={64} style={{ 
+              margin: '0 auto 1rem',
+              color: '#8c5cff',
+              display: 'block'
+            }} />
+            <h2 style={{
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              color: designColors.foreground,
+              marginBottom: '0.5rem'
+            }}>
+              Copiloto Spalla
+            </h2>
+            <p style={{ color: '#8c5cff' }}>
+              Upgrade necessário para acessar esta funcionalidade
+            </p>
+          </div>
+          <div style={{ 
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem'
+          }}>
+            <p style={{
+              color: 'rgba(240, 240, 240, 0.7)',
+              fontSize: '0.875rem'
+            }}>
+              O Copiloto Spalla está disponível apenas para planos pagos. 
+              Faça upgrade do seu plano para começar a usar esta ferramenta.
+            </p>
+            <Link
+              href="/"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#4ade80',
+                color: '#1a1b1e',
+                fontWeight: '600',
+                borderRadius: '12px',
+                textDecoration: 'none',
+                transition: 'all 0.2s',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLElement).style.backgroundColor = 'rgba(74, 222, 128, 0.9)';
+                (e.target as HTMLElement).style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLElement).style.backgroundColor = '#4ade80';
+                (e.target as HTMLElement).style.transform = 'scale(1)';
+              }}
+            >
+              <Home size={20} />
+              Voltar ao Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
