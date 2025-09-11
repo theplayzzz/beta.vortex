@@ -179,3 +179,141 @@ export async function assignDefaultPlan(
     };
   }
 }
+
+/**
+ * Upgrade user plan from NoUser to Basic when approved
+ * 
+ * @param userId - User ID to upgrade plan for
+ * @returns Promise<PlanAssignmentResult>
+ */
+export async function upgradePlanOnApproval(userId: string): Promise<PlanAssignmentResult> {
+  const logPrefix = '[PLAN_UPGRADE]';
+  
+  try {
+    console.log(`${logPrefix} Starting plan upgrade for approved user: ${userId}`);
+    
+    // Check current active plan
+    const currentPlan = await withDatabaseRetry(async () => {
+      return prisma.userPlan.findFirst({
+        where: { 
+          userId, 
+          isActive: true 
+        },
+        include: { Plan: true }
+      });
+    }, 'check current plan');
+    
+    if (!currentPlan) {
+      console.log(`${logPrefix} ⚠️ User ${userId} has no active plan, assigning basic plan`);
+      // If no plan, assign basic plan directly
+      return await assignDefaultPlan(userId, 'APPROVED', 'USER');
+    }
+    
+    // If already has basic plan or better, don't change
+    if (currentPlan.Plan.name.includes('Básico') || 
+        currentPlan.Plan.name.includes('Admin') || 
+        currentPlan.Plan.name.includes('Ilimitado')) {
+      console.log(`${logPrefix} ✅ User ${userId} already has adequate plan: ${currentPlan.Plan.name}`);
+      return {
+        success: true,
+        planId: currentPlan.planId,
+        planName: currentPlan.Plan.name
+      };
+    }
+    
+    console.log(`${logPrefix} Current plan: ${currentPlan.Plan.name}, upgrading to Basic`);
+    
+    // Find target basic plan
+    const targetPlan = await withDatabaseRetry(async () => {
+      // Try exact name match first
+      let plan = await prisma.plan.findFirst({
+        where: { 
+          name: 'Plano Básico - 12 meses',
+          isActive: true 
+        }
+      });
+      
+      // Fallback to any basic plan
+      if (!plan) {
+        console.log(`${logPrefix} ⚠️ Exact basic plan not found, trying fallbacks`);
+        plan = await prisma.plan.findFirst({
+          where: { 
+            OR: [
+              { name: { contains: 'Básico', mode: 'insensitive' } },
+              { name: { contains: 'Basic', mode: 'insensitive' } }
+            ],
+            isActive: true 
+          },
+          orderBy: { displayOrder: 'asc' }
+        });
+      }
+      
+      return plan;
+    }, 'find target basic plan');
+    
+    if (!targetPlan) {
+      const errorMsg = 'Basic plan not found';
+      console.error(`${logPrefix} ❌ ${errorMsg}`);
+      return {
+        success: false,
+        error: errorMsg
+      };
+    }
+    
+    console.log(`${logPrefix} Target basic plan: ${targetPlan.name} (${targetPlan.id})`);
+    
+    // Use transaction to ensure atomicity
+    const result = await withDatabaseRetry(async () => {
+      return await prisma.$transaction(async (tx) => {
+        // Deactivate current plan
+        await tx.userPlan.update({
+          where: { id: currentPlan.id },
+          data: { 
+            isActive: false,
+            canceledAt: new Date(),
+            cancelReason: 'Upgraded to basic plan after approval'
+          }
+        });
+        
+        // Calculate end date for new plan
+        const startDate = new Date();
+        const endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + targetPlan.durationMonths);
+        
+        // Create new plan
+        const newUserPlan = await tx.userPlan.create({
+          data: {
+            userId,
+            planId: targetPlan.id,
+            startsAt: startDate,
+            endsAt: endDate,
+            isActive: true
+          },
+          include: { Plan: true }
+        });
+        
+        return newUserPlan;
+      });
+    }, 'upgrade plan transaction');
+    
+    console.log(`${logPrefix} ✅ Successfully upgraded plan for user ${userId}: ${currentPlan.Plan.name} → ${result.Plan.name}`);
+    
+    return {
+      success: true,
+      planId: result.planId,
+      planName: result.Plan.name
+    };
+    
+  } catch (error: any) {
+    console.error(`${logPrefix} ❌ Error upgrading plan for user ${userId}:`, {
+      error: error.message,
+      code: error.code,
+      timestamp: new Date().toISOString()
+    });
+    
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}

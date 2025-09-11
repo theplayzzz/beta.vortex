@@ -2,6 +2,7 @@
 
 import { Menu, Bell, Search, User } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
+import Link from "next/link";
 import GlobalSearch from "@/components/global-search";
 import MaintenanceBanner from "@/components/ui/maintenance-banner";
 import { useSidebar } from "../../contexts/SidebarContext";
@@ -24,12 +25,12 @@ export default function TopHeader() {
         </button>
         
         {/* Logo */}
-        <div className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <div className="w-8 h-8 bg-sgbus-green rounded-lg flex items-center justify-center">
-            <span className="text-night font-bold text-sm">V</span>
+            <span className="text-night font-bold text-sm">S</span>
           </div>
-          <h1 className="text-seasalt font-semibold text-lg">Vortex Vault</h1>
-        </div>
+          <h1 className="text-seasalt font-semibold text-lg">Spalla AI</h1>
+        </Link>
       </div>
 
       {/* Center Section - Global Search (hidden on mobile, search icon shown instead) */}

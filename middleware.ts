@@ -295,32 +295,8 @@ export default clerkMiddleware(async (auth, req) => {
 
         case 'PENDING':
         default:
-          // PLAN-010: Usuários PENDING têm acesso apenas ao módulo de vendas/coaching
-          // Verificar se a rota é permitida para PENDING
-          const { isRouteAllowedForPending } = await import('./lib/permissions');
-          
-          if (!isRouteAllowedForPending(currentPath)) {
-            console.log('[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada:', { 
-              userId, 
-              currentPath,
-              approvalStatus 
-            })
-            
-            // Para APIs, retornar erro JSON
-            if (isApiRoute(req)) {
-              return NextResponse.json(
-                { error: 'Acesso negado - Aguardando aprovação para acessar esta funcionalidade' },
-                { status: 403 }
-              )
-            }
-            
-            // Para páginas, redirecionar para página de acesso negado com informações
-            const accessDeniedUrl = new URL('/acesso-negado', req.url);
-            accessDeniedUrl.searchParams.set('path', currentPath);
-            return NextResponse.redirect(accessDeniedUrl)
-          }
-          
-          console.log('[MIDDLEWARE] Usuário PENDING acessando rota autorizada:', { 
+          // Usuários PENDING agora têm acesso completo - sem restrições de rota
+          console.log('[MIDDLEWARE] Usuário PENDING com acesso completo:', { 
             userId, 
             currentPath,
             approvalStatus 

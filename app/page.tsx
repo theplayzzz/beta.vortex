@@ -7,6 +7,7 @@ import Link from "next/link";
 import ClientFlowModal from "@/components/shared/client-flow-modal";
 import { useClientFlow } from "../hooks/use-client-flow";
 import { useClientsCount, usePlanningsCount } from "@/lib/react-query";
+import { useProposalStats } from "@/hooks/use-proposals";
 import type { Client } from "@/lib/react-query";
 import { useUser } from "@clerk/nextjs";
 import { useFirstVisitHighlight } from "@/hooks/useFirstVisitHighlight";
@@ -16,7 +17,7 @@ import {
   ClipboardList, 
   CheckCircle, 
   Users, 
-  MessageSquare, 
+  FileText, 
   Bot, 
   PenTool 
 } from "lucide-react";
@@ -29,6 +30,9 @@ export default function HomePage() {
   // TanStack Query hooks para contagem de clientes e planejamentos
   const { data: clientsCount = 0, refetch: refetchClientsCount } = useClientsCount();
   const { data: planningsCount = 0, refetch: refetchPlanningsCount } = usePlanningsCount();
+  
+  // Hook para estatísticas de propostas
+  const { data: proposalStats } = useProposalStats();
   
   // Get user permissions
   const publicMetadata = clerkUser?.publicMetadata as any;
@@ -101,25 +105,22 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Widget Tarefas */}
+        {/* Widget Propostas */}
         <div className="bg-eerie-black rounded-lg p-6 border border-accent/20">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-seasalt">Tarefas</h3>
-            <div className="w-8 h-8 bg-periwinkle/20 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-periwinkle" />
+            <h3 className="text-lg font-semibold text-seasalt">Propostas</h3>
+            <div className="w-8 h-8 bg-sgbus-green/20 rounded-lg flex items-center justify-center">
+              <FileText className="w-5 h-5 text-sgbus-green" />
             </div>
           </div>
           <div className="space-y-2">
-            <div className="text-2xl font-bold text-seasalt">0</div>
-            <div className="text-sm text-seasalt/70">Tarefas pendentes</div>
+            <div className="text-2xl font-bold text-seasalt">{proposalStats?.total || 0}</div>
+            <div className="text-sm text-seasalt/70">Propostas criadas</div>
           </div>
           <div className="mt-4 pt-4 border-t border-accent/20">
-            <span
-              aria-disabled="true"
-              className="text-periwinkle text-sm opacity-50 cursor-not-allowed"
-            >
-              Ver lista →
-            </span>
+            <Link href="/propostas" className="text-sgbus-green text-sm hover:underline">
+              Ver todas →
+            </Link>
           </div>
         </div>
 
@@ -189,17 +190,16 @@ export default function HomePage() {
             </button>
           )}
           
-          <button 
-            disabled 
-            aria-disabled="true"
-            className="p-4 bg-sgbus-green/10 rounded-lg border border-sgbus-green/20 transition-colors group opacity-50 cursor-not-allowed text-center"
+          <Link 
+            href="/propostas"
+            className="p-4 bg-sgbus-green/10 hover:bg-sgbus-green/20 rounded-lg border border-sgbus-green/20 transition-colors group text-center"
           >
             <div className="flex items-center justify-center w-8 h-8 text-sgbus-green mb-2 mx-auto">
-              <MessageSquare className="w-6 h-6" />
+              <FileText className="w-6 h-6" />
             </div>
-            <div className="text-seasalt font-medium">Chat IA</div>
-            <div className="text-seasalt/70 text-sm mt-1">Conversar com assistente</div>
-          </button>
+            <div className="text-seasalt font-medium">Propostas</div>
+            <div className="text-seasalt/70 text-sm mt-1">Gerenciar propostas</div>
+          </Link>
           
           {/* PLAN-010: Sales button enabled for PENDING users with highlight */}
           <HighlightBadge
@@ -215,7 +215,7 @@ export default function HomePage() {
                 <div className="flex items-center justify-center w-8 h-8 text-periwinkle mb-2 mx-auto">
                   <Bot className="w-6 h-6" />
                 </div>
-                <div className="text-seasalt font-medium">Spalla AI</div>
+                <div className="text-seasalt font-medium">copiloto spalla</div>
                 <div className="text-seasalt/70 text-sm mt-1">Copiloto de vendas</div>
               </Link>
             ) : (
@@ -226,7 +226,7 @@ export default function HomePage() {
                 <div className="flex items-center justify-center w-8 h-8 text-periwinkle mb-2 mx-auto">
                   <Bot className="w-6 h-6" />
                 </div>
-                <div className="text-seasalt font-medium">Spalla AI</div>
+                <div className="text-seasalt font-medium">copiloto spalla</div>
                 <div className="text-seasalt/70 text-sm mt-1">Em breve</div>
               </button>
             )}

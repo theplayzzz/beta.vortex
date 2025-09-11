@@ -70,38 +70,12 @@ export function ProtectedLink({
                   Acesso Negado
                 </h3>
                 <div className="mt-2 text-sm text-seasalt/70 space-y-1">
-                  {userStatus === 'PENDING' ? (
-                    <>
-                      <p>Você ainda não foi aprovado para acessar esta seção.</p>
-                      <p>No momento, apenas o módulo de <strong>vendas/coaching</strong> está disponível.</p>
-                      <p className="text-seasalt/50 text-xs">
-                        💡 Já comprou seu plano? Entre em contato com o suporte para liberar seu acesso.
-                      </p>
-                    </>
-                  ) : (
-                    <p>Você não tem permissão para acessar esta seção.</p>
-                  )}
+                  <p>Você não tem permissão para acessar esta seção.</p>
                 </div>
               </div>
             </div>
             
             <div className="flex flex-col space-y-3">
-              {userStatus === 'PENDING' && (
-                <div className="flex space-x-3">
-                  <Link
-                    href="/coach/capture/pre-session"
-                    className="flex-1 px-4 py-2 bg-sgbus-green text-night font-medium rounded-lg hover:bg-sgbus-green/90 transition-colors text-center"
-                  >
-                    Acessar Vendas
-                  </Link>
-                  <a
-                    href="mailto:suporte@exemplo.com"
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-center text-sm"
-                  >
-                    Suporte
-                  </a>
-                </div>
-              )}
               <button
                 onClick={() => setShowDeniedModal(false)}
                 className="px-4 py-2 bg-eerie-black border border-accent/20 text-periwinkle font-medium rounded-lg hover:bg-accent/10 transition-colors"

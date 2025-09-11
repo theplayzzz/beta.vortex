@@ -48,8 +48,12 @@ export const PENDING_ALLOWED_ROUTES = [
   '/pending-approval',
   '/account-rejected',
   '/account-suspended',
-  '/acesso-negado'
-  // Removidas: rotas de vendas/coaching - agora via plano
+  '/acesso-negado',
+  // Usuários PENDING agora têm acesso a todas as modalidades
+  ...MODALIDADE_ROUTES.vendas,
+  ...MODALIDADE_ROUTES.clientes,
+  ...MODALIDADE_ROUTES.planejamentos,
+  ...MODALIDADE_ROUTES.propostas
 ];
 
 export function getPermissionsForStatus(status: UserApprovalStatus, role: UserRole): UserPermissions {
@@ -92,10 +96,10 @@ export function getPermissionsForStatus(status: UserApprovalStatus, role: UserRo
     
     case 'PENDING':
       return {
-        canAccessSales: true, // PENDING users can access sales/coaching
-        canAccessClients: false,
-        canAccessPlanning: false,
-        canAccessProposals: false,
+        canAccessSales: true,
+        canAccessClients: true,
+        canAccessPlanning: true,
+        canAccessProposals: true,
         canAccessAdmin: false,
         status,
         role,
