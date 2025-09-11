@@ -15,6 +15,9 @@ module.exports = {
         'sgbus-green': '#6be94c',     // Primária, CTAs
         'seasalt': '#f9fbfc',         // Texto principal
         'periwinkle': '#cfc6fe',      // Secundária, acentos
+        // Cores de status para widgets
+        'warning': '#f59e0b',         // Cor de aviso (amarelo)
+        'danger': '#ef4444',          // Cor de perigo (vermelho)
         // Aliases para compatibilidade
         'background': '#0e0f0f',
         'foreground': '#f9fbfc',
