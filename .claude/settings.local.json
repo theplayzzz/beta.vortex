@@ -52,7 +52,10 @@
       "mcp__supabase__list_tables",
       "Bash(npx ts-node:*)",
       "mcp__supabase__apply_migration",
-      "mcp__supabase__execute_sql"
+      "mcp__supabase__execute_sql",
+      "Bash(CLERK_SECRET_KEY=sk_test_Hft6sPddyXw0Bfw7vaYJYQlKnr07dukEc6LIkeuG5O node debug-webhook.js)",
+      "Bash(CLERK_SECRET_KEY=sk_test_Hft6sPddyXw0Bfw7vaYJYQlKnr07dukEc6LIkeuG5O node analyze-oauth-patterns.js)",
+      "Bash(pm2 logs:*)"
     ],
     "deny": []
   }
