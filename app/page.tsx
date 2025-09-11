@@ -63,21 +63,13 @@ export default function HomePage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header da Página */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-seasalt">
-            Dashboard - Bem-vindo, {user.firstName || "Usuário"}!
-          </h1>
-          <p className="text-periwinkle mt-2">
-            Aqui está um resumo das suas atividades no Vortex Vault
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-seasalt/70">Créditos:</span>
-          <span className="text-lg font-semibold text-sgbus-green">
-            {user.creditBalance}
-          </span>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-seasalt">
+          Dashboard - Bem-vindo, {user.firstName || "Usuário"}!
+        </h1>
+        <p className="text-periwinkle mt-2">
+          Aqui está um resumo das suas atividades no Vortex Vault
+        </p>
       </div>
 
       {/* Grid de Widgets */}
