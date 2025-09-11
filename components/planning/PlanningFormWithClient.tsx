@@ -119,6 +119,7 @@ export function PlanningFormWithClient({
   const [sessionId] = useState(() => generateUUID());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const currentTabRef = useRef<(tab: number) => void>(() => {});
+  
 
   // Validar cliente antes de mostrar o formulário
   const clientValidation = validateClientForForm(client);
@@ -321,6 +322,7 @@ export function PlanningFormWithClient({
         </div>
       </div>
 
+
       {/* Layout Principal */}
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
         {/* Sidebar do Cliente (1/5 da largura em telas grandes) */}
@@ -355,6 +357,7 @@ export function PlanningFormWithClient({
               onSubmit={handleFormSubmit}
               onSaveDraft={handleSaveDraft}
               onTabChangeRef={currentTabRef}
+              isSubmitDisabled={isSubmitting}
             />
           </div>
         </div>

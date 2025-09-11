@@ -74,6 +74,8 @@ export async function POST(
     }
     console.log('✅ [APPROVE-TASKS] Planejamento encontrado:', planning.title);
 
+    // 📊 Validação de limite removida - apenas contabilização será feita ao final
+
     // Validar que existem tarefas selecionadas
     const selectedTasks = approvedTasks.filter(task => task.selecionada);
     
@@ -175,6 +177,17 @@ export async function POST(
     } else {
       console.log('⚠️ Webhook URL não configurada (ignorado)');
       webhookStatus = 'not_configured';
+    }
+
+    // 📊 TRACKING DE USO: Incrementar contador quando tarefas são aprovadas (momento correto de contabilização)
+    try {
+      console.log(`📊 [USAGE_TRACKER] Tarefas aprovadas - incrementando contador de planejamentos`);
+      await usageTracker.incrementPlanning(userId, planningId);
+      console.log(`✅ [USAGE_TRACKER] Contador de planejamentos incrementado com sucesso`);
+    } catch (trackingError) {
+      // Log do erro mas não falha a operação principal
+      console.error(`❌ [USAGE_TRACKER] Erro ao incrementar contador de planejamentos:`, trackingError);
+      // Continua a execução - tracking de uso não deve bloquear a funcionalidade principal
     }
 
     // ✅ SEMPRE retorna sucesso (polling garantido)

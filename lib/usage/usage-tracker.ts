@@ -266,11 +266,20 @@ export class UsageTracker {
 
     try {
       const [planningsCount, transcriptionSum] = await Promise.all([
-        // Contar planejamentos finalizados no período
+        // Contar planejamentos que passaram pela aprovação de tarefas no período
+        // Planejamentos são contabilizados quando status >= 'PENDING_AI_REFINED_LIST' (pós-aprovação)
         prisma.strategicPlanning.count({
           where: {
             userId,
-            status: 'COMPLETED',
+            status: {
+              in: [
+                'PENDING_AI_REFINED_LIST', 
+                'AI_REFINED_LIST_VISIBLE', 
+                'ACTIVE', 
+                'COMPLETED', 
+                'ARCHIVED'
+              ]
+            },
             createdAt: {
               gte: startOfMonth,
               lt: endOfMonth
