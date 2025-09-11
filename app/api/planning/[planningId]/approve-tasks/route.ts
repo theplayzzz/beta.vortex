@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUserId } from '@/lib/auth/current-user';
 import { prisma } from '@/lib/prisma/client';
 import { z } from 'zod';
+import { usageTracker } from '@/lib/usage/usage-tracker';
 
 // Schema para validação das tarefas aprovadas
 const ApproveTasksSchema = z.object({

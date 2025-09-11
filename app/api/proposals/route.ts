@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/lib/auth/api-permission-check';
 import { prisma } from '@/lib/prisma/client';
 import { z } from 'zod';
+import { usageTracker } from '@/lib/usage/usage-tracker';
 
 // Schema para validação de filtros
 const FiltersSchema = z.object({
@@ -138,6 +139,29 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = CreateProposalSchema.parse(body);
 
+    // 📊 VALIDAÇÃO DE LIMITE: Verificar se pode criar nova proposta
+    try {
+      const limitCheck = await usageTracker.checkLimit(userId, 'proposals', 1)
+      if (!limitCheck.canConsume) {
+        console.warn(`⚠️ [CREATE_PROPOSAL] Limite de propostas excedido - atual: ${limitCheck.currentUsage}, limite: ${limitCheck.limit}`)
+        return NextResponse.json(
+          { 
+            error: 'Limite de propostas excedido para o plano atual',
+            details: {
+              currentUsage: limitCheck.currentUsage,
+              limit: limitCheck.limit,
+              available: limitCheck.limit - limitCheck.currentUsage
+            }
+          },
+          { status: 402 } // 402 Payment Required
+        )
+      }
+      console.log(`✅ [CREATE_PROPOSAL] Validação de limite OK - pode criar proposta`)
+    } catch (limitError) {
+      console.error(`❌ [CREATE_PROPOSAL] Erro ao verificar limite:`, limitError)
+      // Em caso de erro na validação, prossegue (falback gracioso)
+    }
+
     // Verificar se o cliente existe e pertence ao usuário
     const client = await prisma.client.findFirst({
       where: {
@@ -195,6 +219,17 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // 📊 TRACKING DE USO: Incrementar contador de propostas criadas
+    try {
+      console.log(`📊 [USAGE_TRACKER] Proposta criada - incrementando contador de uso`)
+      await usageTracker.incrementProposal(userId, proposal.id)
+      console.log(`✅ [USAGE_TRACKER] Contador de propostas incrementado com sucesso`)
+    } catch (trackingError) {
+      // Log do erro mas não falha a operação principal
+      console.error(`❌ [USAGE_TRACKER] Erro ao incrementar contador de propostas:`, trackingError)
+      // Continua a execução - tracking de uso não deve bloquear a funcionalidade principal
+    }
 
     return NextResponse.json(proposal, { status: 201 });
 

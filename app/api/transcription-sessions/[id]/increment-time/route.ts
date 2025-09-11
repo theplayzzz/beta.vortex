@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserIdFromClerk } from '@/lib/auth/auth-wrapper'
 import { prisma } from '@/lib/prisma/client'
 import { z } from 'zod'
+import { usageTracker } from '@/lib/usage/usage-tracker'
 
 const IncrementTimeSchema = z.object({
   increment: z.number().min(1).max(300).default(15), // Entre 1s e 5min, padrão 15s
@@ -110,6 +111,33 @@ export async function POST(
       }, { status: 400 })
     }
 
+    // 📊 VALIDAÇÃO DE LIMITE: Verificar se pode adicionar mais minutos de transcrição
+    const minutesToAdd = Math.floor(increment / 60)
+    if (minutesToAdd > 0) {
+      try {
+        const limitCheck = await usageTracker.checkLimit(userId, 'transcription', minutesToAdd)
+        if (!limitCheck.canConsume) {
+          console.warn(`⚠️ [INCREMENT] Limite de transcrição excedido - atual: ${limitCheck.currentUsage}, limite: ${limitCheck.limit}, tentando adicionar: ${minutesToAdd}`)
+          return NextResponse.json(
+            { 
+              error: 'Limite de minutos de transcrição excedido para o plano atual',
+              details: {
+                currentUsage: limitCheck.currentUsage,
+                limit: limitCheck.limit,
+                available: limitCheck.limit - limitCheck.currentUsage,
+                requestedMinutes: minutesToAdd
+              }
+            },
+            { status: 402 } // 402 Payment Required
+          )
+        }
+        console.log(`✅ [INCREMENT] Validação de limite OK - pode adicionar ${minutesToAdd} minutos`)
+      } catch (limitError) {
+        console.error(`❌ [INCREMENT] Erro ao verificar limite:`, limitError)
+        // Em caso de erro na validação, prossegue (falback gracioso)
+      }
+    }
+
     // Rate limiting mais permissivo - máximo 1 incremento por 5 segundos para prevenir spam
     const fiveSecondsAgo = new Date(Date.now() - 5000)
     const recentIncrement = await prisma.transcriptionSession.findFirst({
@@ -155,6 +183,22 @@ export async function POST(
     // Log de metadata se fornecido
     if (metadata) {
       console.log(`[AUDIT] Metadata do incremento:`, metadata)
+    }
+
+    // 📊 TRACKING DE USO: Incrementar minutos de transcrição utilizados
+    const trackingMinutesToAdd = Math.floor(increment / 60)
+    if (trackingMinutesToAdd > 0) {
+      try {
+        console.log(`📊 [USAGE_TRACKER] Incrementando ${trackingMinutesToAdd} minutos de transcrição`)
+        await usageTracker.incrementTranscriptionMinutes(userId, trackingMinutesToAdd, id)
+        console.log(`✅ [USAGE_TRACKER] Minutos de transcrição incrementados com sucesso`)
+      } catch (trackingError) {
+        // Log do erro mas não falha a operação principal
+        console.error(`❌ [USAGE_TRACKER] Erro ao incrementar minutos de transcrição:`, trackingError)
+        // Continua a execução - tracking de uso não deve bloquear a funcionalidade principal
+      }
+    } else {
+      console.log(`📊 [USAGE_TRACKER] Incremento de ${increment}s não gera minutos completos - não atualizado`)
     }
     
     return NextResponse.json({ 

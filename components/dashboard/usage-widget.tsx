@@ -123,7 +123,7 @@ export function UsageWidget({
 
       {/* Status Badge */}
       <div className="flex items-center justify-between mb-4">
-        <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+        <div className={`px-2 py-1 rounded-full text-xs font-medium invisible ${
           status === 'low' ? 'bg-sgbus-green/20 text-sgbus-green' :
           status === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
           'bg-red-500/20 text-red-400'
