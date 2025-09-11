@@ -7,7 +7,7 @@ import { EditTaskModal } from './EditTaskModal';
 import { AddContextModal } from './AddContextModal';
 import { ConfirmationModal } from '../ui/ConfirmationModal';
 import { useRefinedPlanning } from '../../contexts/RefinedPlanningContext';
-import { useRawUsage } from '@/hooks/use-raw-usage';
+import { usePlanningLimit } from '@/components/shared/PlanningLimitCheck';
 import type { TarefaAI, Planning } from '@/types/planning';
 
 interface TaskRefinementInterfaceProps {
@@ -33,28 +33,8 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
   // Hook do Context para gerenciar estado da aba refinada
   const { handleApproval, setTabState, error, clearError, startPolling, stopPolling, resetLocalState } = useRefinedPlanning();
   
-  // Hook para verificar limites de uso
-  const { data: rawUsage, isLoading: isRawUsageLoading } = useRawUsage();
-
-  // Função para verificar se excedeu o limite de planejamentos
-  const checkPlanningLimit = () => {
-    if (!rawUsage) return { exceeded: false, used: 0, limit: 0 };
-    
-    const currentUsed = rawUsage.usedPlannings;
-    const limitSnapshot = rawUsage.limitSnapshotPlannings;
-    const bonusLimit = rawUsage.bonusPlannings;
-    const totalLimit = limitSnapshot + bonusLimit;
-    
-    return {
-      exceeded: currentUsed >= totalLimit,
-      used: currentUsed,
-      limit: totalLimit,
-      baseLimit: limitSnapshot,
-      bonusLimit: bonusLimit
-    };
-  };
-
-  const planningLimitInfo = checkPlanningLimit();
+  // Hook para verificar limites de uso usando o componente compartilhado
+  const planningLimitInfo = usePlanningLimit();
 
   // Extrair tarefas do specificObjectives
   useEffect(() => {

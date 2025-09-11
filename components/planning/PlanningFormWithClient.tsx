@@ -18,6 +18,7 @@ import { useCreatePlanning } from '@/lib/react-query/hooks/usePlanningMutations'
 import { generateUUID } from '@/lib/utils/uuid';
 import { ArrowLeft, AlertTriangle, User, Building, BarChart3, Calendar } from 'lucide-react';
 import { useToast, toast } from '@/components/ui/toast';
+import { usePlanningLimit, PlanningLimitBlocker } from '@/components/shared/PlanningLimitCheck';
 
 interface PlanningFormWithClientProps {
   client: Client;
@@ -120,6 +121,8 @@ export function PlanningFormWithClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const currentTabRef = useRef<(tab: number) => void>(() => {});
   
+  // Hook para verificar limites de uso
+  const planningLimitInfo = usePlanningLimit();
 
   // Validar cliente antes de mostrar o formulário
   const clientValidation = validateClientForForm(client);
@@ -159,6 +162,19 @@ export function PlanningFormWithClient({
           </ul>
         </div>
       </div>
+    );
+  }
+
+  // ✅ VALIDAÇÃO DE LIMITE DE PLANEJAMENTOS - ENTRADA NO FORMULÁRIO
+  if (planningLimitInfo.exceeded) {
+    return (
+      <PlanningLimitBlocker
+        title="Limite de planejamentos excedido"
+        description="Não é possível criar novos planejamentos no momento"
+        limitInfo={planningLimitInfo}
+        showHomeButton={true}
+        onBack={onBack}
+      />
     );
   }
 
