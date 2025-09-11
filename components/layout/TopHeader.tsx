@@ -29,7 +29,7 @@ export default function TopHeader() {
           <div className="w-8 h-8 bg-sgbus-green rounded-lg flex items-center justify-center">
             <span className="text-night font-bold text-sm">S</span>
           </div>
-          <h1 className="text-seasalt font-semibold text-lg">Spalla AI</h1>
+          <h1 className="text-seasalt font-semibold text-lg">Copiloto Spalla</h1>
         </Link>
       </div>
 

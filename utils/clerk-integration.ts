@@ -14,7 +14,7 @@ import {
   logApprovalAction 
 } from './approval-system'
 // 🆕 FASE 2: Import plan assignment function
-import { assignDefaultPlan } from './plan-assignment'
+import { assignDefaultPlan, upgradePlanOnApproval } from './plan-assignment'
 
 // ==========================================
 // CONFIGURAÇÃO DINÂMICA DE WEBHOOKS
@@ -204,24 +204,17 @@ export async function updateUserApprovalStatus(
       }
     })
 
-    // 🆕 FASE 2: Atribuição automática de plano quando muda para APPROVED
+    // 🆕 FASE 2: Upgrade plano quando muda para APPROVED
     if (newStatus === APPROVAL_STATUS.APPROVED && previousStatus === 'PENDING') {
       try {
-        const hasActivePlan = await prisma.userPlan.findFirst({
-          where: { userId, isActive: true }
-        })
-        if (!hasActivePlan) {
-          const planResult = await assignDefaultPlan(userId, 'APPROVED', 'USER')
-          if (planResult.success) {
-            console.log(`[CLERK_INTEGRATION_PLAN_ASSIGNMENT] ✅ Plano atribuído após aprovação: ${userId} → ${planResult.planName}`)
-          } else {
-            console.error(`[CLERK_INTEGRATION_PLAN_ASSIGNMENT] ❌ Erro na atribuição: ${planResult.error}`)
-          }
+        const planResult = await upgradePlanOnApproval(userId)
+        if (planResult.success) {
+          console.log(`[CLERK_INTEGRATION_PLAN_UPGRADE] ✅ Plano atualizado após aprovação: ${userId} → ${planResult.planName}`)
         } else {
-          console.log(`[CLERK_INTEGRATION_PLAN_ASSIGNMENT] ✅ Usuário já possui plano ativo`)
+          console.error(`[CLERK_INTEGRATION_PLAN_UPGRADE] ❌ Erro no upgrade de plano: ${planResult.error}`)
         }
       } catch (planError: any) {
-        console.error(`[CLERK_INTEGRATION_PLAN_ASSIGNMENT] ❌ Erro na atribuição de plano:`, planError)
+        console.error(`[CLERK_INTEGRATION_PLAN_UPGRADE] ❌ Erro no upgrade de plano:`, planError)
         // Não falhar aprovação por erro de plano
       }
     }

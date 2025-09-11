@@ -15,8 +15,8 @@ import { clerkClient } from '@clerk/nextjs/server'
 import { checkAutoApproval } from '@/utils/auto-approval-webhook'
 // 🆕 PLAN-028: Importar retry mechanisms
 import { withDatabaseRetry } from '@/utils/retry-mechanism'
-// 🆕 FASE 2: Import plan assignment function
-import { assignDefaultPlan } from '@/utils/plan-assignment'
+// 🆕 FASE 2: Import plan assignment functions
+import { assignDefaultPlan, upgradePlanOnApproval } from '@/utils/plan-assignment'
 
 // 🆕 PLAN-025: Função para detectar tipo de cadastro
 function getSignupType(data: ClerkWebhookEvent['data']) {
@@ -460,6 +460,21 @@ async function handleUserUpdated(data: ClerkWebhookEvent['data']) {
           creditsGranted: shouldUpdateCredits
         }
       })
+
+      // Upgrade plan when status changes to APPROVED
+      if (newApprovalStatus === APPROVAL_STATUS.APPROVED && currentUser.approvalStatus === 'PENDING') {
+        try {
+          const planResult = await upgradePlanOnApproval(updatedUser.id);
+          if (planResult.success) {
+            console.log(`[WEBHOOK_USER_UPDATE_PLAN] ✅ Plan upgraded after approval: ${updatedUser.id} → ${planResult.planName}`);
+          } else {
+            console.error(`[WEBHOOK_USER_UPDATE_PLAN] ❌ Plan upgrade failed: ${planResult.error}`);
+          }
+        } catch (planError: any) {
+          console.error(`[WEBHOOK_USER_UPDATE_PLAN] ❌ Plan upgrade error (non-blocking):`, planError);
+          // Don't fail webhook due to plan error
+        }
+      }
     }
 
     console.log(`[USER_UPDATED] User updated successfully: ${data.id}`)

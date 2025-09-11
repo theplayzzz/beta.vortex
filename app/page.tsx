@@ -215,7 +215,7 @@ export default function HomePage() {
                 <div className="flex items-center justify-center w-8 h-8 text-periwinkle mb-2 mx-auto">
                   <Bot className="w-6 h-6" />
                 </div>
-                <div className="text-seasalt font-medium">copiloto spalla</div>
+                <div className="text-seasalt font-medium">Copiloto Spalla</div>
                 <div className="text-seasalt/70 text-sm mt-1">Copiloto de vendas</div>
               </Link>
             ) : (
@@ -226,7 +226,7 @@ export default function HomePage() {
                 <div className="flex items-center justify-center w-8 h-8 text-periwinkle mb-2 mx-auto">
                   <Bot className="w-6 h-6" />
                 </div>
-                <div className="text-seasalt font-medium">copiloto spalla</div>
+                <div className="text-seasalt font-medium">Copiloto Spalla</div>
                 <div className="text-seasalt/70 text-sm mt-1">Em breve</div>
               </button>
             )}

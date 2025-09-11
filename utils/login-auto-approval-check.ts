@@ -7,8 +7,8 @@ import { checkAutoApproval } from './auto-approval-webhook'
 import { prisma } from '@/lib/prisma/client'
 import { clerkClient } from '@clerk/nextjs/server'
 import { getEnvironment } from './approval-system'
-// 🆕 FASE 2: Import plan assignment function
-import { assignDefaultPlan } from './plan-assignment'
+// 🆕 FASE 2: Import plan assignment functions
+import { assignDefaultPlan, upgradePlanOnApproval } from './plan-assignment'
 
 /**
  * Verifica se um usuário pendente deve ser aprovado automaticamente durante o login
@@ -96,23 +96,16 @@ export async function checkPendingUserAutoApproval(clerkId: string): Promise<voi
 
         console.log(`[LOGIN_AUTO_APPROVAL] User successfully approved and credits granted: ${user.email}`)
 
-        // 🆕 FASE 2: Atribuição automática de plano após aprovação automática
+        // 🆕 FASE 2: Upgrade de plano após aprovação automática
         try {
-          const hasActivePlan = await prisma.userPlan.findFirst({
-            where: { userId: user.id, isActive: true }
-          })
-          if (!hasActivePlan) {
-            const planResult = await assignDefaultPlan(user.id, 'APPROVED', 'USER')
-            if (planResult.success) {
-              console.log(`[LOGIN_AUTO_APPROVAL_PLAN_ASSIGNMENT] ✅ Plano atribuído após aprovação automática: ${planResult.planName}`)
-            } else {
-              console.error(`[LOGIN_AUTO_APPROVAL_PLAN_ASSIGNMENT] ❌ Erro na atribuição: ${planResult.error}`)
-            }
+          const planResult = await upgradePlanOnApproval(user.id)
+          if (planResult.success) {
+            console.log(`[LOGIN_AUTO_APPROVAL_PLAN_UPGRADE] ✅ Plano atualizado após aprovação automática: ${planResult.planName}`)
           } else {
-            console.log(`[LOGIN_AUTO_APPROVAL_PLAN_ASSIGNMENT] ✅ Usuário já possui plano ativo`)
+            console.error(`[LOGIN_AUTO_APPROVAL_PLAN_UPGRADE] ❌ Erro no upgrade de plano: ${planResult.error}`)
           }
         } catch (planError: any) {
-          console.error(`[LOGIN_AUTO_APPROVAL_PLAN_ASSIGNMENT] ❌ Não falhar aprovação:`, planError)
+          console.error(`[LOGIN_AUTO_APPROVAL_PLAN_UPGRADE] ❌ Não falhar aprovação:`, planError)
           // Não falhar o processo de aprovação por erro de plano
         }
 

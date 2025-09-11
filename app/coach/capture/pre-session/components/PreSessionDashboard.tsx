@@ -258,7 +258,7 @@ export default function PreSessionDashboard() {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-4xl font-bold text-seasalt flex items-center gap-3">
             <Target size={32} className="text-sgbus-green" />
-            Spalla AI
+            Copiloto Spalla
           </h1>
           
           {/* Seletor de Período */}
