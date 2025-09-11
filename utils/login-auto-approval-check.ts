@@ -7,6 +7,8 @@ import { checkAutoApproval } from './auto-approval-webhook'
 import { prisma } from '@/lib/prisma/client'
 import { clerkClient } from '@clerk/nextjs/server'
 import { getEnvironment } from './approval-system'
+// 🆕 FASE 2: Import plan assignment functions
+import { assignDefaultPlan, upgradePlanOnApproval } from './plan-assignment'
 
 /**
  * Verifica se um usuário pendente deve ser aprovado automaticamente durante o login
@@ -93,6 +95,19 @@ export async function checkPendingUserAutoApproval(clerkId: string): Promise<voi
         })
 
         console.log(`[LOGIN_AUTO_APPROVAL] User successfully approved and credits granted: ${user.email}`)
+
+        // 🆕 FASE 2: Upgrade de plano após aprovação automática
+        try {
+          const planResult = await upgradePlanOnApproval(user.id)
+          if (planResult.success) {
+            console.log(`[LOGIN_AUTO_APPROVAL_PLAN_UPGRADE] ✅ Plano atualizado após aprovação automática: ${planResult.planName}`)
+          } else {
+            console.error(`[LOGIN_AUTO_APPROVAL_PLAN_UPGRADE] ❌ Erro no upgrade de plano: ${planResult.error}`)
+          }
+        } catch (planError: any) {
+          console.error(`[LOGIN_AUTO_APPROVAL_PLAN_UPGRADE] ❌ Não falhar aprovação:`, planError)
+          // Não falhar o processo de aprovação por erro de plano
+        }
 
       } catch (updateError) {
         // 🛡️ CONFLITO: Provavelmente outro processo já atualizou

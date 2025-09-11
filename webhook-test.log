@@ -1,0 +1,1748 @@
+
+> precedent@0.2.0 dev:https
+> node server-https.js
+
+> Servidor HTTPS rodando na porta 3003
+> Acesse localmente: https://localhost:3003
+> Acesse via IP: https://5.161.64.137:3003
+> Transcrição: https://localhost:3003/coach/capture
+> Transcrição via IP: https://5.161.64.137:3003/coach/capture
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 854ms (256 modules)
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Miss para usuário: user_32XCdZnBxU5ASLLLo5HYCPr6U3v
+[MIDDLEWARE FALLBACK] Direct Clerk query successful: {
+  userId: 'user_32XCdZnBxU5ASLLLo5HYCPr6U3v',
+  cached: false,
+  timestamp: '2025-09-11T02:41:04.939Z'
+}
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XCdZnBxU5ASLLLo5HYCPr6U3v',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/acesso-negado'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XCdZnBxU5ASLLLo5HYCPr6U3v',
+  currentPath: '/acesso-negado',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:41:04.940Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XCdZnBxU5ASLLLo5HYCPr6U3v',
+  approvalStatus: 'PENDING',
+  currentPath: '/acesso-negado',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING acessando rota autorizada: {
+  userId: 'user_32XCdZnBxU5ASLLLo5HYCPr6U3v',
+  currentPath: '/acesso-negado',
+  approvalStatus: 'PENDING'
+}
+ ○ Compiling /acesso-negado ...
+ ✓ Compiled /acesso-negado in 5.3s (2217 modules)
+ POST /acesso-negado?path=%2Fcoach%2Fcapture%2Fpre-session 200 in 5776ms
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XCdZnBxU5ASLLLo5HYCPr6U3v
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XCdZnBxU5ASLLLo5HYCPr6U3v',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/coach/capture/pre-session'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XCdZnBxU5ASLLLo5HYCPr6U3v',
+  currentPath: '/coach/capture/pre-session',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:41:11.059Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XCdZnBxU5ASLLLo5HYCPr6U3v',
+  approvalStatus: 'PENDING',
+  currentPath: '/coach/capture/pre-session',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XCdZnBxU5ASLLLo5HYCPr6U3v',
+  currentPath: '/coach/capture/pre-session',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XCdZnBxU5ASLLLo5HYCPr6U3v
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XCdZnBxU5ASLLLo5HYCPr6U3v',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/acesso-negado'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XCdZnBxU5ASLLLo5HYCPr6U3v',
+  currentPath: '/acesso-negado',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:41:11.219Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XCdZnBxU5ASLLLo5HYCPr6U3v',
+  approvalStatus: 'PENDING',
+  currentPath: '/acesso-negado',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING acessando rota autorizada: {
+  userId: 'user_32XCdZnBxU5ASLLLo5HYCPr6U3v',
+  currentPath: '/acesso-negado',
+  approvalStatus: 'PENDING'
+}
+ GET /acesso-negado?path=%2Fcoach%2Fcapture%2Fpre-session 200 in 61ms
+ ○ Compiling /sign-in/[[...sign-in]] ...
+ ✓ Compiled /sign-in/[[...sign-in]] in 1397ms (2238 modules)
+ GET /sign-in?redirect_url=https%3A%2F%2F0.0.0.0%3A3003%2F 200 in 2311ms
+ GET /sign-in?redirect_url=https%3A%2F%2F0.0.0.0%3A3003%2F 200 in 74ms
+ GET /sign-in/SignIn_clerk_catchall_check_1757558474393 200 in 366ms
+ GET /sign-in?redirect_url=https%3A%2F%2F0.0.0.0%3A3003%2F 200 in 335ms
+ GET /sign-in/sso-callback?sign_up_fallback_redirect_url=https%3A%2F%2F5.161.64.137%3A3003%2Fclientes&sign_in_fallback_redirect_url=https%3A%2F%2F5.161.64.137%3A3003%2Fclientes&after_sign_in_url=https%3A%2F%2F5.161.64.137%3A3003%2F&after_sign_up_url=https%3A%2F%2F5.161.64.137%3A3003%2F&redirect_url=https%3A%2F%2F5.161.64.137%3A3003%2F 200 in 209ms
+ GET /sign-in/sso-callback/SignIn_clerk_catchall_check_1757558552304 200 in 139ms
+ ○ Compiling /sign-up/[[...sign-up]] ...
+ ✓ Compiled /sign-up/[[...sign-up]] in 1103ms (2231 modules)
+ GET /sign-up 200 in 2052ms
+ GET /sign-up/continue?sign_up_fallback_redirect_url=https%3A%2F%2F5.161.64.137%3A3003%2Fclientes&sign_in_fallback_redirect_url=https%3A%2F%2F5.161.64.137%3A3003%2Fclientes&after_sign_in_url=https%3A%2F%2F5.161.64.137%3A3003%2F&after_sign_up_url=https%3A%2F%2F5.161.64.137%3A3003%2F&redirect_url=https%3A%2F%2F5.161.64.137%3A3003%2F 200 in 63ms
+ GET /sign-up/SignUp_clerk_catchall_check_1757558562133 200 in 326ms
+ GET /sign-up/continue?sign_up_fallback_redirect_url=https%3A%2F%2F5.161.64.137%3A3003%2Fclientes&sign_in_fallback_redirect_url=https%3A%2F%2F5.161.64.137%3A3003%2Fclientes&after_sign_in_url=https%3A%2F%2F5.161.64.137%3A3003%2F&after_sign_up_url=https%3A%2F%2F5.161.64.137%3A3003%2F&redirect_url=https%3A%2F%2F5.161.64.137%3A3003%2F 200 in 35ms
+ GET /sign-up/continue/SignUp_clerk_catchall_check_1757558562809 200 in 148ms
+ POST /sign-up/continue?sign_up_fallback_redirect_url=https%3A%2F%2F5.161.64.137%3A3003%2Fclientes&sign_in_fallback_redirect_url=https%3A%2F%2F5.161.64.137%3A3003%2Fclientes&after_sign_in_url=https%3A%2F%2F5.161.64.137%3A3003%2F&after_sign_up_url=https%3A%2F%2F5.161.64.137%3A3003%2F&redirect_url=https%3A%2F%2F5.161.64.137%3A3003%2F 200 in 116ms
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Miss para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE FALLBACK] Direct Clerk query successful: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  cached: false,
+  timestamp: '2025-09-11T02:43:10.090Z'
+}
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:43:10.091Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING acessando rota autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/',
+  approvalStatus: 'PENDING'
+}
+ ○ Compiling / ...
+ ✓ Compiled / in 1980ms (2390 modules)
+ GET / 200 in 2195ms
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/plannings'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/plannings',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:43:13.682Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/plannings',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/plannings',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:43:13.686Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:43:13.712Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING acessando rota autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/',
+  approvalStatus: 'PENDING'
+}
+ GET / 200 in 55ms
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:43:13.851Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/plannings'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/plannings',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:43:14.853Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/plannings',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/plannings',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:43:14.865Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:43:15.020Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Miss para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Miss para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Miss para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE FALLBACK] Direct Clerk query successful: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  cached: false,
+  timestamp: '2025-09-11T02:44:20.899Z'
+}
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:44:20.899Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE FALLBACK] Direct Clerk query successful: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  cached: false,
+  timestamp: '2025-09-11T02:44:20.912Z'
+}
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/plannings'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/plannings',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:44:20.912Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/plannings',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/plannings',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE FALLBACK] Direct Clerk query successful: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  cached: false,
+  timestamp: '2025-09-11T02:44:20.929Z'
+}
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:44:20.930Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:44:25.078Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/plannings'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/plannings',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:44:25.110Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/plannings',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/plannings',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:44:25.114Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/coach/capture/pre-session'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/coach/capture/pre-session',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:44:36.916Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/coach/capture/pre-session',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/coach/capture/pre-session',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/acesso-negado'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/acesso-negado',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:44:37.084Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/acesso-negado',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING acessando rota autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/acesso-negado',
+  approvalStatus: 'PENDING'
+}
+ ○ Compiling /acesso-negado ...
+ ✓ Compiled /acesso-negado in 718ms (1348 modules)
+ GET /acesso-negado?path=%2Fcoach%2Fcapture%2Fpre-session 200 in 904ms
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:44:44.606Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING acessando rota autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/',
+  approvalStatus: 'PENDING'
+}
+ GET / 200 in 44ms
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:44:44.849Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:44:45.006Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/plannings'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/plannings',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:44:45.166Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/plannings',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/plannings',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:44:46.007Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:44:46.162Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/plannings'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/plannings',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:44:46.318Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/plannings',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/plannings',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Miss para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Miss para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE FALLBACK] Direct Clerk query successful: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  cached: false,
+  timestamp: '2025-09-11T02:45:31.600Z'
+}
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/plannings'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/plannings',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:45:31.600Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/plannings',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/plannings',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE FALLBACK] Direct Clerk query successful: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  cached: false,
+  timestamp: '2025-09-11T02:45:31.606Z'
+}
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:45:31.607Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:45:31.767Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:45:46.273Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/plannings'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/plannings',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:45:46.436Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/plannings',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/plannings',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:45:46.593Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XEbWaQn9A0EEY0L06zx3tNfYj
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:45:49.505Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  approvalStatus: 'PENDING',
+  currentPath: '/',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING acessando rota autorizada: {
+  userId: 'user_32XEbWaQn9A0EEY0L06zx3tNfYj',
+  currentPath: '/',
+  approvalStatus: 'PENDING'
+}
+ POST / 200 in 101ms
+ GET /sign-in?redirect_url=https%3A%2F%2F0.0.0.0%3A3003%2F 200 in 66ms
+ GET /sign-in?redirect_url=https%3A%2F%2F0.0.0.0%3A3003%2F 200 in 77ms
+ GET /sign-in/SignIn_clerk_catchall_check_1757558750474 200 in 366ms
+ GET /sign-in?redirect_url=https%3A%2F%2F0.0.0.0%3A3003%2F 200 in 47ms
+ GET /sign-in/factor-one?redirect_url=https%3A%2F%2F0.0.0.0%3A3003%2F 200 in 52ms
+ GET /sign-in/factor-one/SignIn_clerk_catchall_check_1757558754030 200 in 115ms
+ GET /sign-up 200 in 73ms
+ GET /sign-up/SignUp_clerk_catchall_check_1757558772257 200 in 139ms
+ GET /sign-up/verify-email-address 200 in 54ms
+ GET /sign-up/verify-email-address/SignUp_clerk_catchall_check_1757558847196 200 in 134ms
+ POST /sign-up/verify-email-address 200 in 71ms
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Miss para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE FALLBACK] Direct Clerk query successful: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  cached: false,
+  timestamp: '2025-09-11T02:47:44.030Z'
+}
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/clientes'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/clientes',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:47:44.030Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/clientes',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/clientes',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/acesso-negado'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/acesso-negado',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:47:44.192Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/acesso-negado',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING acessando rota autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/acesso-negado',
+  approvalStatus: 'PENDING'
+}
+ GET /acesso-negado?path=%2Fclientes 200 in 30ms
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/acesso-negado'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/acesso-negado',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:47:44.437Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/acesso-negado',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING acessando rota autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/acesso-negado',
+  approvalStatus: 'PENDING'
+}
+ GET /acesso-negado?path=%2Fclientes 200 in 40ms
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/clientes'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/clientes',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:47:44.649Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/clientes',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/clientes',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/acesso-negado'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/acesso-negado',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:47:44.805Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/acesso-negado',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING acessando rota autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/acesso-negado',
+  approvalStatus: 'PENDING'
+}
+ GET /acesso-negado?path=%2Fclientes 200 in 37ms
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:47:49.614Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING acessando rota autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/',
+  approvalStatus: 'PENDING'
+}
+ GET / 200 in 34ms
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:47:49.871Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:47:50.027Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/plannings'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/plannings',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:47:50.184Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/plannings',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/plannings',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:47:51.034Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:47:51.186Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/plannings'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/plannings',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:47:51.348Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/plannings',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/plannings',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:47:53.918Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:47:53.946Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Hit para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/plannings'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/plannings',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:47:53.949Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/plannings',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/plannings',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Miss para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Miss para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE] sessionClaims vazios, usando fallback direto ao Clerk
+[MIDDLEWARE CACHE] Miss para usuário: user_32XF9tCsvv7dngyTmI86b334ghx
+[MIDDLEWARE FALLBACK] Direct Clerk query successful: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  cached: false,
+  timestamp: '2025-09-11T02:48:16.078Z'
+}
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:48:16.078Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE FALLBACK] Direct Clerk query successful: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  cached: false,
+  timestamp: '2025-09-11T02:48:16.123Z'
+}
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/clients'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/clients',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:48:16.123Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/clients',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/clients',
+  approvalStatus: 'PENDING'
+}
+[MIDDLEWARE FALLBACK] Direct Clerk query successful: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  cached: false,
+  timestamp: '2025-09-11T02:48:16.148Z'
+}
+[MIDDLEWARE] Fallback result: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  currentPath: '/api/plannings'
+}
+[MIDDLEWARE DEBUG] {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/plannings',
+  hasSessionClaims: true,
+  publicMetadata: {},
+  approvalStatus: 'PENDING',
+  userRole: 'USER',
+  isAdmin: false,
+  usedFallback: true,
+  timestamp: '2025-09-11T02:48:16.148Z'
+}
+[MIDDLEWARE] Verificando status de aprovação: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  approvalStatus: 'PENDING',
+  currentPath: '/api/plannings',
+  isPublicRoute: false
+}
+[MIDDLEWARE] Usuário PENDING tentando acessar rota não autorizada: {
+  userId: 'user_32XF9tCsvv7dngyTmI86b334ghx',
+  currentPath: '/api/plannings',
+  approvalStatus: 'PENDING'
+}
+ ○ Compiling /api/webhooks/clerk ...
+ ✓ Compiled /api/webhooks/clerk in 3.9s (2612 modules)
+[WEBHOOK_DEBUG] 🎯 Webhook recebido em: 2025-09-11T02:51:27.056Z
+[WEBHOOK_DEBUG] 📍 URL: https://0.0.0.0:3003/api/webhooks/clerk
+[WEBHOOK_DEBUG] 🔗 Method: POST
+[APPROVAL_SYSTEM_DEBUG] {
+  environment: 'development',
+  baseUrl: 'https://5.161.64.137:3003',
+  webhookUrl: 'https://5.161.64.137:3003/api/webhooks/clerk',
+  approvalRequired: true,
+  defaultStatus: 'PENDING',
+  adminCount: 1
+}
+[WEBHOOK_DEBUG] 📦 Payload recebido (519 chars)
+[WEBHOOK_DEBUG] 🔍 Evento tipo: user.created
+[WEBHOOK_DEBUG] 👤 User ID: user_oauth_google_test_001
+[WEBHOOK_DEBUG] 🔐 Verificando assinatura...
+[WEBHOOK_DEBUG] ✅ Assinatura verificada com sucesso
+[WEBHOOK] user.created - User: user_oauth_google_test_001 - Environment: development
+[WEBHOOK_DEBUG] 🚀 Processando evento: user.created
+[WEBHOOK_DEBUG] 👤 Iniciando handleUserCreated para: user_oauth_google_test_001
+[USER_CREATED] 🔄 Processando usuário: test.google.oauth@gmail.com (ID: user_oauth_google_test_001)
+[USER_SYNC_SAFE] 🔄 Iniciando sincronização segura para clerkId: user_oauth_google_test_001
+[USER_CREATED] ⚠️ Sincronização segura retornou null, continuando com criação normal
+[USER_CREATED] 📝 Tipo de cadastro: oauth (google) para email: test.google.oauth@gmail.com
+[WEBHOOK_AUTO_APPROVAL] 🔍 Verificando aprovação automática para: test.google.oauth@gmail.com
+[WEBHOOK_AUTO_APPROVAL] Status: 200, Should approve: false, Email: test.google.oauth@gmail.com
+[WEBHOOK_AUTO_APPROVAL] ❌ Usuário não pré-aprovado: test.google.oauth@gmail.com
+[USER_CREATED] 🆕 Criando novo usuário com status: PENDING
+[CREDITS] ⏸️ Créditos retidos - usuário pendente de aprovação: cmfetaxmh000009qyjy8rhct9
+[APPROVAL_SYSTEM] {"action":"USER_CREATED","userId":"cmfetaxmh000009qyjy8rhct9","moderatorId":"SYSTEM","environment":"development","timestamp":"2025-09-11T02:51:31.301Z","metadata":{"clerkId":"user_oauth_google_test_001","email":"test.google.oauth@gmail.com","initialStatus":"PENDING","approvalRequired":true,"autoApproval":false,"signupType":"oauth","signupProvider":"google"}}
+[PLAN_ASSIGNMENT] Starting plan assignment for user: cmfetaxmh000009qyjy8rhct9, status: PENDING, role: USER
+[PLAN_ASSIGNMENT] Target plan for user cmfetaxmh000009qyjy8rhct9: NoUser
+[PLAN_ASSIGNMENT] ⚠️ Exact plan name not found: NoUser, trying fallbacks
+[PLAN_ASSIGNMENT] Found target plan: Plano NoUser (cmfeex8sy000009maudwigpzg)
+[PLAN_ASSIGNMENT] ✅ Successfully assigned plan to user cmfetaxmh000009qyjy8rhct9: Plano NoUser
+[WEBHOOK_PLAN_ASSIGNMENT] ✅ Plano atribuído: cmfetaxmh000009qyjy8rhct9 → PENDING → Plano NoUser
+[USER_CREATED] ✅ Usuário criado com sucesso: user_oauth_google_test_001 (PENDING)
+[WEBHOOK_DEBUG] ✅ handleUserCreated concluído para: user_oauth_google_test_001
+[WEBHOOK_DEBUG] ✅ Webhook processado com sucesso: user.created
+ POST /api/webhooks/clerk 200 in 11314ms
+[WEBHOOK_DEBUG] 🎯 Webhook recebido em: 2025-09-11T02:54:44.986Z
+[WEBHOOK_DEBUG] 📍 URL: https://0.0.0.0:3003/api/webhooks/clerk
+[WEBHOOK_DEBUG] 🔗 Method: POST
+[APPROVAL_SYSTEM_DEBUG] {
+  environment: 'development',
+  baseUrl: 'https://5.161.64.137:3003',
+  webhookUrl: 'https://5.161.64.137:3003/api/webhooks/clerk',
+  approvalRequired: true,
+  defaultStatus: 'PENDING',
+  adminCount: 1
+}
+[WEBHOOK_DEBUG] 📦 Payload recebido (497 chars)
+[WEBHOOK_DEBUG] 🔍 Evento tipo: user.created
+[WEBHOOK_DEBUG] 👤 User ID: user_oauth_discord_test_002
+[WEBHOOK_DEBUG] 🔐 Verificando assinatura...
+ POST /api/webhooks/clerk 400 in 33ms

@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Target, CheckSquare, Square, MoreVertical, Edit3, MessageSquare, Loader2 } from 'lucide-react';
+import { Target, CheckSquare, Square, MoreVertical, Edit3, MessageSquare, Loader2, AlertTriangle } from 'lucide-react';
 import { TaskRefinementList } from './TaskRefinementList';
 import { EditTaskModal } from './EditTaskModal';
 import { AddContextModal } from './AddContextModal';
 import { ConfirmationModal } from '../ui/ConfirmationModal';
 import { useRefinedPlanning } from '../../contexts/RefinedPlanningContext';
+import { usePlanningLimit } from '@/components/shared/PlanningLimitCheck';
 import type { TarefaAI, Planning } from '@/types/planning';
 
 interface TaskRefinementInterfaceProps {
@@ -26,8 +27,14 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [buttonsDisabled, setButtonsDisabled] = useState(false);
 
+  // Estados para validação de limite
+  const [limitErrorMessage, setLimitErrorMessage] = useState<string | null>(null);
+
   // Hook do Context para gerenciar estado da aba refinada
   const { handleApproval, setTabState, error, clearError, startPolling, stopPolling, resetLocalState } = useRefinedPlanning();
+  
+  // Hook para verificar limites de uso usando o componente compartilhado
+  const planningLimitInfo = usePlanningLimit();
 
   // Extrair tarefas do specificObjectives
   useEffect(() => {
@@ -130,13 +137,27 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
     }
   };
 
-  // Handler para clicar no botão de aprovação (abre modal)
+  // Handler para clicar no botão de aprovação (validação ANTES do modal)
   const handleApprovalClick = () => {
+    // Limpar mensagem de erro anterior
+    setLimitErrorMessage(null);
+
     if (selectedTasks.size === 0) {
       alert('Selecione pelo menos uma tarefa para aprovar.');
       return;
     }
 
+    // ✅ VALIDAÇÃO DE LIMITE DE PLANEJAMENTOS - ANTES DO MODAL
+    if (planningLimitInfo.exceeded) {
+      console.log('❌ Limite de planejamentos excedido:', planningLimitInfo);
+      
+      const errorMsg = `Limite de planejamentos excedido. Você já usou ${planningLimitInfo.used} de ${planningLimitInfo.limit} planejamentos disponíveis este mês (${planningLimitInfo.baseLimit} do plano + ${planningLimitInfo.bonusLimit} bônus). Para aprovar mais planejamentos, considere atualizar seu plano ou aguarde o próximo mês.`;
+      
+      setLimitErrorMessage(errorMsg);
+      return; // Parar execução - NÃO abrir modal
+    }
+
+    // Se passou na validação, abrir modal normalmente
     setIsModalOpen(true);
     setButtonsDisabled(true);
   };
@@ -206,6 +227,27 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
 
   return (
     <div className="space-y-6">
+      {/* Exibir erro de limite ANTES do modal */}
+      {limitErrorMessage && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+          <div className="flex items-center gap-3 mb-2">
+            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
+            <h3 className="text-lg font-semibold text-red-400">
+              Limite de planejamentos excedido
+            </h3>
+          </div>
+          <p className="text-red-300 text-sm mb-4">
+            {limitErrorMessage}
+          </p>
+          <button
+            onClick={() => setLimitErrorMessage(null)}
+            className="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            Entendi
+          </button>
+        </div>
+      )}
+
       {/* Exibir erro se houver */}
       {error && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4">
@@ -254,8 +296,9 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
           
           <button
             onClick={handleApprovalClick}
-            disabled={selectedCount === 0 || buttonsDisabled}
+            disabled={selectedCount === 0 || buttonsDisabled || planningLimitInfo.exceeded}
             className="flex items-center gap-2 px-6 py-2 bg-sgbus-green text-night rounded-lg hover:bg-sgbus-green/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            title={planningLimitInfo.exceeded ? 'Limite de planejamentos excedido' : undefined}
           >
             ✅ Aprovar selecionadas
           </button>
@@ -289,8 +332,9 @@ export function TaskRefinementInterface({ planning, onUpdate, onCreateRefinedTab
           
           <button
             onClick={handleApprovalClick}
-            disabled={selectedCount === 0 || buttonsDisabled}
+            disabled={selectedCount === 0 || buttonsDisabled || planningLimitInfo.exceeded}
             className="flex items-center gap-2 px-6 py-2 bg-sgbus-green text-night rounded-lg hover:bg-sgbus-green/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            title={planningLimitInfo.exceeded ? 'Limite de planejamentos excedido' : undefined}
           >
             ✅ Aprovar selecionadas
           </button>

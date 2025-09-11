@@ -13,9 +13,6 @@ export default function AccessDeniedPage() {
   const userStatus = (user?.publicMetadata as any)?.approvalStatus || 'PENDING';
   
   const getMessage = () => {
-    if (userStatus === 'PENDING') {
-      return `Você tentou acessar ${requestedPath} mas ainda não foi aprovado para esta funcionalidade.`;
-    }
     return `Você não tem permissão para acessar ${requestedPath}.`;
   };
 

@@ -136,6 +136,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    // 🚫 VALIDAÇÃO NOUSER: Verificar se usuário tem plano NoUser (bloqueado para Copiloto Spalla)
+    const userPlan = await prisma.userPlan.findFirst({
+      where: {
+        userId,
+        isActive: true
+      },
+      include: {
+        Plan: true
+      }
+    });
+
+    if (userPlan && userPlan.Plan.name.toLowerCase().includes('nouser')) {
+      console.warn(`🚫 [CREATE_TRANSCRIPTION] Usuário com plano NoUser tentou criar sessão de transcrição - userId: ${userId}`);
+      return NextResponse.json(
+        { 
+          error: 'Upgrade necessário para acessar o Copiloto Spalla',
+          details: {
+            currentPlan: userPlan.Plan.name,
+            requiredFeature: 'Copiloto Spalla',
+            action: 'upgrade_required'
+          }
+        },
+        { status: 403 } // 403 Forbidden
+      );
+    }
+
     const body = await request.json()
     const validatedData = CreateTranscriptionSessionSchema.parse(body)
 

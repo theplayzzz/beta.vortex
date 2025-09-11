@@ -2,6 +2,7 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma/client';
 import { ApprovalStatus, ModerationAction } from '@prisma/client';
+import { upgradePlanOnApproval } from '@/utils/plan-assignment';
 
 interface ModerationRequest {
   action: 'APPROVE' | 'REJECT' | 'SUSPEND' | 'UNSUSPEND_TO_APPROVED' | 'UNSUSPEND_TO_PENDING';
@@ -192,6 +193,21 @@ export async function POST(
             version: newMetadata.version
           }
         });
+
+        // Upgrade plan when user is approved
+        if ((action === 'APPROVE' || action === 'UNSUSPEND_TO_APPROVED') && targetDbUser) {
+          try {
+            const planResult = await upgradePlanOnApproval(targetDbUser.id);
+            if (planResult.success) {
+              console.log(`[MODERATE_PLAN_UPGRADE] ✅ Plan upgraded after approval: ${targetDbUser.id} → ${planResult.planName}`);
+            } else {
+              console.error(`[MODERATE_PLAN_UPGRADE] ❌ Plan upgrade failed: ${planResult.error}`);
+            }
+          } catch (planError: any) {
+            console.error(`[MODERATE_PLAN_UPGRADE] ❌ Plan upgrade error (non-blocking):`, planError);
+            // Don't fail moderation due to plan error
+          }
+        }
       }
 
     } catch (supabaseError) {

@@ -13,6 +13,8 @@ import {
   MODERATION_ACTION,
   logApprovalAction 
 } from './approval-system'
+// 🆕 FASE 2: Import plan assignment function
+import { assignDefaultPlan, upgradePlanOnApproval } from './plan-assignment'
 
 // ==========================================
 // CONFIGURAÇÃO DINÂMICA DE WEBHOOKS
@@ -201,6 +203,21 @@ export async function updateUserApprovalStatus(
         }
       }
     })
+
+    // 🆕 FASE 2: Upgrade plano quando muda para APPROVED
+    if (newStatus === APPROVAL_STATUS.APPROVED && previousStatus === 'PENDING') {
+      try {
+        const planResult = await upgradePlanOnApproval(userId)
+        if (planResult.success) {
+          console.log(`[CLERK_INTEGRATION_PLAN_UPGRADE] ✅ Plano atualizado após aprovação: ${userId} → ${planResult.planName}`)
+        } else {
+          console.error(`[CLERK_INTEGRATION_PLAN_UPGRADE] ❌ Erro no upgrade de plano: ${planResult.error}`)
+        }
+      } catch (planError: any) {
+        console.error(`[CLERK_INTEGRATION_PLAN_UPGRADE] ❌ Erro no upgrade de plano:`, planError)
+        // Não falhar aprovação por erro de plano
+      }
+    }
 
     return { success: true, user: updatedUser }
 

@@ -126,6 +126,7 @@ model CommercialProposal {
   formDataJSON       Json?
   proposalHtml       String?
   proposalMarkdown   String?
+  usedPlanAllowance  Boolean        @default(false)
   Client             Client?        @relation(fields: [clientId], references: [id])
   User               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -216,6 +217,7 @@ model StrategicPlanning {
   updatedAt          DateTime       @updatedAt
   clientSnapshot     Json?
   formDataJSON       Json?
+  usedPlanAllowance  Boolean        @default(false)
   PlanningTask       PlanningTask[]
   Client             Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
   User               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -290,8 +292,14 @@ model User {
   TaskAttachment                             TaskAttachment[]
   TaskComment                                TaskComment[]
   TranscriptionSession                       TranscriptionSession[]
+  UserPlan                                   UserPlan[]
+  UsageMonthly                               UsageMonthly[]
+  UsageOverride                              UsageOverride[]
+  UsageOverrideGranted                       UsageOverride[]        @relation("UsageOverride_grantedBy")
+  UsageEvent                                 UsageEvent[]
   ModerationActions                          UserModerationLog[]    @relation("UserModerationLog_moderatorId")
   ModeratedUsers                             UserModerationLog[]    @relation("UserModerationLog_userId")
+  UserBonusClaims                            UserBonusClaims[]
 
   @@index([approvalStatus])
   @@index([approvalStatus, createdAt])
@@ -321,6 +329,21 @@ model UserModerationLog {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model UserBonusClaims {
+  id         String    @id @default(cuid())
+  userId     String
+  bonusType  BonusType
+  amount     Int
+  claimedAt  DateTime  @default(now())
+  User       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bonusType], name: "unique_user_bonus_type")
+  @@index([userId])
+  @@index([bonusType])
+  @@index([claimedAt])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model TranscriptionSession {
   id                  String    @id @default(cuid())
   sessionName         String
@@ -343,6 +366,7 @@ model TranscriptionSession {
   lastDisconnectAt    DateTime?
   webhookEvents       Json      @default("[]")
   deletedAt           DateTime?
+  usedPlanAllowance   Boolean   @default(false)
   User                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([deletedAt])
@@ -439,4 +463,141 @@ enum ModerationAction {
 enum AgentType {
   GENERALISTA
   ESPECIALISTA
+}
+
+enum PlanType {
+  MONTHLY
+  QUARTERLY
+  SEMIANNUAL
+  ANNUAL
+}
+
+enum OverrideType {
+  BONUS
+  PENALTY
+  ADMIN_ADJUSTMENT
+  PROMOTION
+}
+
+enum FeatureType {
+  PLANNING
+  TRANSCRIPTION
+  PROPOSAL
+}
+
+enum BonusType {
+  PLANNING_PROMO
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Plan {
+  id                      String   @id @default(cuid())
+  name                    String
+  description             String?
+  maxPlanningsMonth       Int
+  maxTranscriptionMinMonth Int
+  maxProposalsMonth       Int
+  planType                PlanType @default(MONTHLY)
+  durationMonths          Int      @default(1)
+  isActive                Boolean  @default(true)
+  displayOrder            Int      @default(0)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  UserPlan                UserPlan[]
+
+  @@index([isActive])
+  @@index([displayOrder])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model UserPlan {
+  id           String    @id @default(cuid())
+  userId       String
+  planId       String
+  startsAt     DateTime  @default(now())
+  endsAt       DateTime?
+  canceledAt   DateTime?
+  cancelReason String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  User         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Plan         Plan      @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, isActive], name: "one_active_plan_per_user")
+  @@index([userId])
+  @@index([planId])
+  @@index([isActive])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model UsageMonthly {
+  id                              String   @id @default(cuid())
+  userId                          String
+  periodMonth                     String   // "2024-09"
+  usedPlannings                   Int      @default(0)
+  limitSnapshotPlannings          Int      @default(0)
+  usedTranscriptionMinutes        Int      @default(0)
+  limitSnapshotTranscriptionMinutes Int    @default(0)
+  usedProposals                   Int      @default(0)
+  limitSnapshotProposals          Int      @default(0)
+  bonusPlannings                  Int      @default(0)
+  bonusTranscriptionMinutes       Int      @default(0)
+  bonusProposals                  Int      @default(0)
+  createdAt                       DateTime @default(now())
+  updatedAt                       DateTime @updatedAt
+  User                            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, periodMonth])
+  @@index([userId])
+  @@index([periodMonth])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model UsageOverride {
+  id                        String       @id @default(cuid())
+  userId                    String
+  periodMonth               String       // "2024-09"
+  overrideType              OverrideType
+  reason                    String?
+  extraPlannings            Int          @default(0)
+  extraTranscriptionMinutes Int          @default(0)
+  extraProposals            Int          @default(0)
+  grantedBy                 String
+  expiresAt                 DateTime?
+  isActive                  Boolean      @default(true)
+  createdAt                 DateTime     @default(now())
+  updatedAt                 DateTime     @updatedAt
+  User                      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  GrantedBy                 User         @relation("UsageOverride_grantedBy", fields: [grantedBy], references: [id])
+
+  @@index([userId])
+  @@index([periodMonth])
+  @@index([overrideType])
+  @@index([isActive])
+  @@index([expiresAt])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model UsageEvent {
+  id                 String      @id @default(cuid())
+  userId             String
+  featureType        FeatureType
+  amount             Int
+  periodMonth        String      // "2024-09"
+  limitAtTime        Int
+  usedBeforeEvent    Int
+  wasBlocked         Boolean     @default(false)
+  relatedEntityId    String?
+  relatedEntityType  String?
+  metadata           Json?
+  createdAt          DateTime    @default(now())
+  User               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([featureType])
+  @@index([periodMonth])
+  @@index([createdAt])
+  @@index([wasBlocked])
+  @@index([relatedEntityId])
 }

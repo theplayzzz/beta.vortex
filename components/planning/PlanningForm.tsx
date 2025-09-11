@@ -25,6 +25,7 @@ interface PlanningFormProps {
   onSubmit: (data: PlanningFormData) => void;
   onSaveDraft: (data: PlanningFormData) => void;
   onTabChangeRef?: React.MutableRefObject<(tab: number) => void>;
+  isSubmitDisabled?: boolean;
 }
 
 interface Tab {
@@ -71,7 +72,13 @@ const normalizeTabIndex = (index: any): number => {
   return numIndex;
 };
 
-export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: PlanningFormProps) {
+export function PlanningForm({ 
+  client, 
+  onSubmit, 
+  onSaveDraft, 
+  onTabChangeRef, 
+  isSubmitDisabled = false
+}: PlanningFormProps) {
   console.log('🚀 PlanningForm inicializando com cliente:', client);
 
   // Inicializar com 0 e garantir que sempre seja um número válido
@@ -636,7 +643,8 @@ export function PlanningForm({ client, onSubmit, onSaveDraft, onTabChangeRef }: 
               ) : (
                 <Button 
                   type="submit"
-                  className="bg-sgbus-green text-night hover:bg-sgbus-green/90"
+                  disabled={isSubmitDisabled}
+                  className="bg-sgbus-green text-night hover:bg-sgbus-green/90 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   🚀 Finalizar Planejamento
                 </Button>

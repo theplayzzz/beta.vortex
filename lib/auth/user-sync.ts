@@ -1,5 +1,7 @@
 import { clerkClient } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma/client'
+// 🆕 FASE 2: Import plan assignment function
+import { assignDefaultPlan } from '@/utils/plan-assignment'
 
 /**
  * 🔒 SINCRONIZAÇÃO SEGURA E INDIVIDUAL DE USUÁRIOS
@@ -195,6 +197,27 @@ export async function syncUserWithDatabase(clerkId: string): Promise<string | nu
       })
 
       // 📊 Log de auditoria detalhado
+      // 🆕 FASE 2: Verificar se usuário existente tem plano ativo e atribuir se necessário
+      try {
+        const hasActivePlan = await prisma.userPlan.findFirst({
+          where: { userId: existingUserByEmail.id, isActive: true }
+        })
+        if (!hasActivePlan) {
+          console.log(`${logPrefix} 🔍 Usuário existente sem plano ativo, atribuindo plano padrão`)
+          const planResult = await assignDefaultPlan(existingUserByEmail.id, existingUserByEmail.approvalStatus, 'USER')
+          if (planResult.success) {
+            console.log(`${logPrefix} ✅ Plano atribuído ao usuário existente: ${existingUserByEmail.id} → ${planResult.planName}`)
+          } else {
+            console.error(`${logPrefix} ❌ Erro na atribuição de plano: ${planResult.error}`)
+          }
+        } else {
+          console.log(`${logPrefix} ✅ Usuário existente já possui plano ativo`)
+        }
+      } catch (planError: any) {
+        console.error(`${logPrefix} ❌ Erro ao verificar/atribuir plano:`, planError)
+        // Não falhar sincronização por erro de plano
+      }
+
       console.log(`${logPrefix} ✅ SINCRONIZAÇÃO CONCLUÍDA COM SUCESSO:`)
       console.log(`${logPrefix} 🆔 ID do usuário: ${existingUserByEmail.id}`)
       console.log(`${logPrefix} 📧 Email: ${userEmail}`)
@@ -314,6 +337,19 @@ export async function syncUserWithDatabase(clerkId: string): Promise<string | nu
         })
       }
     })
+
+    // 🆕 FASE 2: Atribuição automática de plano para usuário recém-criado
+    try {
+      const planResult = await assignDefaultPlan(newUser.id, initialStatus, 'USER')
+      if (planResult.success) {
+        console.log(`${logPrefix} ✅ Plano atribuído ao novo usuário: ${newUser.id} → ${planResult.planName}`)
+      } else {
+        console.error(`${logPrefix} ❌ Erro na atribuição de plano: ${planResult.error}`)
+      }
+    } catch (planError: any) {
+      console.error(`${logPrefix} ❌ Erro na atribuição de plano:`, planError)
+      // Não falhar sincronização por erro de plano
+    }
 
     console.log(`${logPrefix} ✅ NOVO USUÁRIO CRIADO COM SUCESSO:`)
     console.log(`${logPrefix} 🆔 ID do usuário: ${newUser.id}`)

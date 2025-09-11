@@ -2,6 +2,20 @@ export type UserApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDE
 export type UserRole = 'USER' | 'ADMIN' | 'SUPER_ADMIN';
 export type Modalidade = 'vendas' | 'clientes' | 'planejamentos' | 'propostas';
 
+export interface PlanLimits {
+  maxPlanningsMonth: number;
+  maxTranscriptionMinMonth: number;
+  maxProposalsMonth: number;
+  planName: string;
+  planId: string;
+}
+
+export interface UserPlanAccess {
+  hasActivePlan: boolean;
+  planLimits: PlanLimits | null;
+  isNoUserPlan: boolean;
+}
+
 export interface UserPermissions {
   canAccessSales: boolean;
   canAccessClients: boolean;
@@ -10,6 +24,8 @@ export interface UserPermissions {
   canAccessAdmin: boolean;
   status: UserApprovalStatus;
   role: UserRole;
+  planAccess: UserPlanAccess;
+  planLimits: PlanLimits | null;
 }
 
 export interface PermissionsContextType {
@@ -33,14 +49,22 @@ export const PENDING_ALLOWED_ROUTES = [
   '/account-rejected',
   '/account-suspended',
   '/acesso-negado',
+  // Usuários PENDING agora têm acesso a todas as modalidades
   ...MODALIDADE_ROUTES.vendas,
-  // APIs do módulo de vendas/coaching que PENDING pode acessar
-  '/api/transcription-sessions',
-  '/api/daily'
+  ...MODALIDADE_ROUTES.clientes,
+  ...MODALIDADE_ROUTES.planejamentos,
+  ...MODALIDADE_ROUTES.propostas
 ];
 
 export function getPermissionsForStatus(status: UserApprovalStatus, role: UserRole): UserPermissions {
   const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
+  
+  // Default plan access for compatibility
+  const defaultPlanAccess: UserPlanAccess = {
+    hasActivePlan: false,
+    planLimits: null,
+    isNoUserPlan: false
+  };
   
   if (isAdmin) {
     return {
@@ -50,7 +74,9 @@ export function getPermissionsForStatus(status: UserApprovalStatus, role: UserRo
       canAccessProposals: true,
       canAccessAdmin: true,
       status,
-      role
+      role,
+      planAccess: defaultPlanAccess,
+      planLimits: null
     };
   }
   
@@ -63,18 +89,22 @@ export function getPermissionsForStatus(status: UserApprovalStatus, role: UserRo
         canAccessProposals: true,
         canAccessAdmin: false,
         status,
-        role
+        role,
+        planAccess: defaultPlanAccess,
+        planLimits: null
       };
     
     case 'PENDING':
       return {
-        canAccessSales: true, // PENDING users can access sales/coaching
-        canAccessClients: false,
-        canAccessPlanning: false,
-        canAccessProposals: false,
+        canAccessSales: true,
+        canAccessClients: true,
+        canAccessPlanning: true,
+        canAccessProposals: true,
         canAccessAdmin: false,
         status,
-        role
+        role,
+        planAccess: defaultPlanAccess,
+        planLimits: null
       };
     
     case 'REJECTED':
@@ -87,7 +117,106 @@ export function getPermissionsForStatus(status: UserApprovalStatus, role: UserRo
         canAccessProposals: false,
         canAccessAdmin: false,
         status,
-        role
+        role,
+        planAccess: defaultPlanAccess,
+        planLimits: null
       };
   }
+}
+
+export function getPermissionsForStatusAndPlan(
+  status: UserApprovalStatus, 
+  role: UserRole, 
+  planAccess: UserPlanAccess
+): UserPermissions {
+  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
+  
+  // Admins have total access regardless of plan
+  if (isAdmin) {
+    return {
+      canAccessSales: true,
+      canAccessClients: true,
+      canAccessPlanning: true,
+      canAccessProposals: true,
+      canAccessAdmin: true,
+      status,
+      role,
+      planAccess,
+      planLimits: planAccess.planLimits
+    };
+  }
+  
+  // REJECTED/SUSPENDED blocks everything regardless of plan
+  if (status === 'REJECTED' || status === 'SUSPENDED') {
+    return {
+      canAccessSales: false,
+      canAccessClients: false,
+      canAccessPlanning: false,
+      canAccessProposals: false,
+      canAccessAdmin: false,
+      status,
+      role,
+      planAccess,
+      planLimits: planAccess.planLimits
+    };
+  }
+  
+  // APPROVED/PENDING + plan verification
+  // No active plan = no access to anything
+  if (!planAccess.hasActivePlan) {
+    return {
+      canAccessSales: false,
+      canAccessClients: false,
+      canAccessPlanning: false,
+      canAccessProposals: false,
+      canAccessAdmin: false,
+      status,
+      role,
+      planAccess,
+      planLimits: planAccess.planLimits
+    };
+  }
+  
+  // NoUser plan = no access to anything
+  if (planAccess.isNoUserPlan) {
+    return {
+      canAccessSales: false,
+      canAccessClients: false,
+      canAccessPlanning: false,
+      canAccessProposals: false,
+      canAccessAdmin: false,
+      status,
+      role,
+      planAccess,
+      planLimits: planAccess.planLimits
+    };
+  }
+  
+  // Other plans = access based on limits
+  const limits = planAccess.planLimits;
+  if (!limits) {
+    return {
+      canAccessSales: false,
+      canAccessClients: false,
+      canAccessPlanning: false,
+      canAccessProposals: false,
+      canAccessAdmin: false,
+      status,
+      role,
+      planAccess,
+      planLimits: planAccess.planLimits
+    };
+  }
+  
+  return {
+    canAccessSales: limits.maxTranscriptionMinMonth > 0,
+    canAccessClients: true, // Always true for active plans (except NoUser)
+    canAccessPlanning: limits.maxPlanningsMonth > 0,
+    canAccessProposals: limits.maxProposalsMonth > 0,
+    canAccessAdmin: false,
+    status,
+    role,
+    planAccess,
+    planLimits: planAccess.planLimits
+  };
 }

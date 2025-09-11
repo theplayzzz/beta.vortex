@@ -25,7 +25,7 @@ export async function POST(
 
     console.log(`🔄 [UPDATE_STATUS] Atualizando status do planejamento ${id} para: ${status}`);
 
-    // Buscar usuário no banco
+    // Buscar usuário no banco primeiro
     const user = await prisma.user.findUnique({
       where: { clerkId: userId },
       select: { id: true }
@@ -34,6 +34,7 @@ export async function POST(
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
+
 
     // Verificar se o planejamento existe e pertence ao usuário
     const existingPlanning = await prisma.strategicPlanning.findFirst({
@@ -70,6 +71,7 @@ export async function POST(
     });
 
     console.log(`✅ [UPDATE_STATUS] Status atualizado com sucesso para: ${status}`);
+
 
     return NextResponse.json({
       message: 'Status updated successfully',

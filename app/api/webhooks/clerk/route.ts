@@ -15,6 +15,8 @@ import { clerkClient } from '@clerk/nextjs/server'
 import { checkAutoApproval } from '@/utils/auto-approval-webhook'
 // 🆕 PLAN-028: Importar retry mechanisms
 import { withDatabaseRetry } from '@/utils/retry-mechanism'
+// 🆕 FASE 2: Import plan assignment functions
+import { assignDefaultPlan, upgradePlanOnApproval } from '@/utils/plan-assignment'
 
 // 🆕 PLAN-025: Função para detectar tipo de cadastro
 function getSignupType(data: ClerkWebhookEvent['data']) {
@@ -61,6 +63,11 @@ type ClerkWebhookEvent = {
 }
 
 export async function POST(req: NextRequest) {
+  // 🚨 DEBUG: Log de entrada do webhook
+  console.log(`[WEBHOOK_DEBUG] 🎯 Webhook recebido em: ${new Date().toISOString()}`)
+  console.log(`[WEBHOOK_DEBUG] 📍 URL: ${req.url}`)
+  console.log(`[WEBHOOK_DEBUG] 🔗 Method: ${req.method}`)
+  
   // 🆕 PHASE 3: Debug de configuração de ambiente
   if (process.env.NODE_ENV === 'development') {
     debugEnvironmentConfig()
@@ -87,7 +94,11 @@ export async function POST(req: NextRequest) {
 
   // Obter o body
   const payload = await req.text()
+  console.log(`[WEBHOOK_DEBUG] 📦 Payload recebido (${payload.length} chars)`)
+  
   const body = JSON.parse(payload)
+  console.log(`[WEBHOOK_DEBUG] 🔍 Evento tipo: ${body.type}`)
+  console.log(`[WEBHOOK_DEBUG] 👤 User ID: ${body.data?.id}`)
 
   // Criar nova instância do Svix com o secret
   const wh = new Webhook(WEBHOOK_SECRET)
@@ -96,13 +107,15 @@ export async function POST(req: NextRequest) {
 
   // Verificar o payload com os headers
   try {
+    console.log(`[WEBHOOK_DEBUG] 🔐 Verificando assinatura...`)
     evt = wh.verify(payload, {
       'svix-id': svix_id,
       'svix-timestamp': svix_timestamp,
       'svix-signature': svix_signature,
     }) as ClerkWebhookEvent
+    console.log(`[WEBHOOK_DEBUG] ✅ Assinatura verificada com sucesso`)
   } catch (err) {
-    console.error('Error verifying webhook:', err)
+    console.error('[WEBHOOK_DEBUG] ❌ Erro na verificação da assinatura:', err)
     return new Response('Error occured', {
       status: 400,
     })
@@ -115,9 +128,12 @@ export async function POST(req: NextRequest) {
   console.log(`[WEBHOOK] ${type} - User: ${data.id} - Environment: ${getEnvironment()}`)
 
   try {
+    console.log(`[WEBHOOK_DEBUG] 🚀 Processando evento: ${type}`)
     switch (type) {
       case 'user.created':
+        console.log(`[WEBHOOK_DEBUG] 👤 Iniciando handleUserCreated para: ${data.id}`)
         await handleUserCreated(data)
+        console.log(`[WEBHOOK_DEBUG] ✅ handleUserCreated concluído para: ${data.id}`)
         break
       case 'user.updated':
         await handleUserUpdated(data)
@@ -129,13 +145,19 @@ export async function POST(req: NextRequest) {
         console.log(`Unhandled webhook event type: ${type}`)
     }
 
+    console.log(`[WEBHOOK_DEBUG] ✅ Webhook processado com sucesso: ${type}`)
     return NextResponse.json({ 
       message: 'Webhook processed successfully',
+      type: type,
+      userId: data.id,
       environment: getEnvironment(),
       baseUrl: getBaseUrl()
     })
   } catch (error) {
-    console.error('Error processing webhook:', error)
+    console.error('[WEBHOOK_DEBUG] ❌ ERRO CRÍTICO no processamento:', error)
+    console.error('[WEBHOOK_DEBUG] 📊 Stack trace:', error instanceof Error ? error.stack : 'Stack não disponível')
+    console.error('[WEBHOOK_DEBUG] 📋 Evento tipo:', type)
+    console.error('[WEBHOOK_DEBUG] 👤 User ID:', data.id)
     return new Response('Error processing webhook', { status: 500 })
   }
 }
@@ -336,6 +358,21 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
     }
   })
 
+  // 🆕 FASE 2: Atribuição automática de plano APÓS verificação de aprovação
+  if (user.id && initialStatus) {
+    try {
+      const planResult = await assignDefaultPlan(user.id, initialStatus, 'USER')
+      if (planResult.success) {
+        console.log(`[WEBHOOK_PLAN_ASSIGNMENT] ✅ Plano atribuído: ${user.id} → ${initialStatus} → ${planResult.planName}`)
+      } else {
+        console.error(`[WEBHOOK_PLAN_ASSIGNMENT] ❌ Erro na atribuição: ${user.id} → ${planResult.error}`)
+      }
+    } catch (error: any) {
+      console.error(`[WEBHOOK_PLAN_ASSIGNMENT] ❌ Erro na atribuição de plano:`, error)
+      // Não falhar o webhook por erro de plano
+    }
+  }
+
   console.log(`[USER_CREATED] ✅ Usuário criado com sucesso: ${data.id} (${initialStatus})`)
 }
 
@@ -423,6 +460,21 @@ async function handleUserUpdated(data: ClerkWebhookEvent['data']) {
           creditsGranted: shouldUpdateCredits
         }
       })
+
+      // Upgrade plan when status changes to APPROVED
+      if (newApprovalStatus === APPROVAL_STATUS.APPROVED && currentUser.approvalStatus === 'PENDING') {
+        try {
+          const planResult = await upgradePlanOnApproval(updatedUser.id);
+          if (planResult.success) {
+            console.log(`[WEBHOOK_USER_UPDATE_PLAN] ✅ Plan upgraded after approval: ${updatedUser.id} → ${planResult.planName}`);
+          } else {
+            console.error(`[WEBHOOK_USER_UPDATE_PLAN] ❌ Plan upgrade failed: ${planResult.error}`);
+          }
+        } catch (planError: any) {
+          console.error(`[WEBHOOK_USER_UPDATE_PLAN] ❌ Plan upgrade error (non-blocking):`, planError);
+          // Don't fail webhook due to plan error
+        }
+      }
     }
 
     console.log(`[USER_UPDATED] User updated successfully: ${data.id}`)
