@@ -84,7 +84,7 @@ export default function HomePage() {
       </div>
 
       {/* Grid de Widgets e Ações Rápidas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {isUsageLoading ? (
           <>
             <WidgetSkeleton delay={0} />
@@ -189,11 +189,6 @@ export default function HomePage() {
           </>
         )}
 
-        {/* Título das Ações Rápidas - ocupa largura total */}
-        <div className="col-span-full">
-          <h3 className="text-lg font-semibold text-seasalt mb-4">Ações Rápidas</h3>
-        </div>
-
         {/* Ações Rápidas - Integradas na mesma grid */}
         {permissions.canAccessPlanning ? (
           <Link href="/planejamentos/novo" className="p-4 bg-sgbus-green/10 hover:bg-sgbus-green/20 rounded-lg border border-sgbus-green/20 transition-colors group text-center">
@@ -210,30 +205,6 @@ export default function HomePage() {
             </div>
             <div className="text-seasalt font-medium">Novo Planejamento</div>
             <div className="text-seasalt/70 text-sm mt-1">Criar estratégia com IA</div>
-          </button>
-        )}
-        
-        {permissions.canAccessClients ? (
-          <button 
-            onClick={clientFlow.openModal}
-            className="p-4 bg-periwinkle/10 hover:bg-periwinkle/20 rounded-lg border border-periwinkle/20 transition-colors group text-center"
-          >
-            <div className="flex items-center justify-center w-8 h-8 text-periwinkle mb-2 mx-auto">
-              <Users className="w-6 h-6" />
-            </div>
-            <div className="text-seasalt font-medium">Novo Cliente</div>
-            <div className="text-seasalt/70 text-sm mt-1">Cadastrar cliente</div>
-          </button>
-        ) : (
-          <button 
-            disabled
-            className="p-4 bg-periwinkle/10 rounded-lg border border-periwinkle/20 transition-colors group opacity-50 cursor-not-allowed text-center"
-          >
-            <div className="flex items-center justify-center w-8 h-8 text-periwinkle mb-2 mx-auto">
-              <Users className="w-6 h-6" />
-            </div>
-            <div className="text-seasalt font-medium">Novo Cliente</div>
-            <div className="text-seasalt/70 text-sm mt-1">Cadastrar cliente</div>
           </button>
         )}
         
@@ -270,6 +241,30 @@ export default function HomePage() {
             </div>
             <div className="text-seasalt font-medium">Copiloto Spalla</div>
             <div className="text-seasalt/70 text-sm mt-1">Em breve</div>
+          </button>
+        )}
+        
+        {permissions.canAccessClients ? (
+          <button 
+            onClick={clientFlow.openModal}
+            className="p-4 bg-periwinkle/10 hover:bg-periwinkle/20 rounded-lg border border-periwinkle/20 transition-colors group text-center"
+          >
+            <div className="flex items-center justify-center w-8 h-8 text-periwinkle mb-2 mx-auto">
+              <Users className="w-6 h-6" />
+            </div>
+            <div className="text-seasalt font-medium">Novo Cliente</div>
+            <div className="text-seasalt/70 text-sm mt-1">Cadastrar cliente</div>
+          </button>
+        ) : (
+          <button 
+            disabled
+            className="p-4 bg-periwinkle/10 rounded-lg border border-periwinkle/20 transition-colors group opacity-50 cursor-not-allowed text-center"
+          >
+            <div className="flex items-center justify-center w-8 h-8 text-periwinkle mb-2 mx-auto">
+              <Users className="w-6 h-6" />
+            </div>
+            <div className="text-seasalt font-medium">Novo Cliente</div>
+            <div className="text-seasalt/70 text-sm mt-1">Cadastrar cliente</div>
           </button>
         )}
       </div>

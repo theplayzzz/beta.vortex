@@ -78,7 +78,7 @@ export function UsageWidget({
         >
           <div className="text-center">
             <motion.div 
-              className="text-xl font-bold text-seasalt"
+              className="text-2xl font-bold text-seasalt"
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: delay + 0.5 }}
@@ -93,19 +93,19 @@ export function UsageWidget({
       <div className="space-y-3 mb-4">
         <div className="flex justify-between items-center">
           <span className="text-sm text-seasalt/70">Usado</span>
-          <span className="text-sm font-medium text-seasalt">
+          <span className="text-base font-medium text-seasalt">
             {formatValue(used)}
           </span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-sm text-seasalt/70">Limite</span>
-          <span className="text-sm font-medium text-seasalt">
+          <span className="text-base font-medium text-seasalt">
             {formatValue(limit)}
           </span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-sm text-seasalt/70">Disponível</span>
-          <span className={`text-sm font-medium ${status === 'high' ? 'text-red-400' : 'text-sgbus-green'}`}>
+          <span className={`text-base font-medium ${status === 'high' ? 'text-red-400' : 'text-sgbus-green'}`}>
             {formatValue(available)}
           </span>
         </div>
@@ -178,7 +178,7 @@ export function SimpleWidget({
       {/* Value */}
       <div className="space-y-2">
         <motion.div 
-          className="text-2xl font-bold text-seasalt"
+          className="text-3xl font-bold text-seasalt"
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: delay + 0.3 }}
