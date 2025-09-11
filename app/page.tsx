@@ -208,19 +208,33 @@ export default function HomePage() {
           </button>
         )}
         
-        <Link 
-          href="/propostas/nova"
-          className="p-4 bg-sgbus-green/10 hover:bg-sgbus-green/20 rounded-lg border border-sgbus-green/20 transition-colors group text-center"
-        >
-          <div className="flex items-center justify-center w-8 h-8 text-sgbus-green mb-2 mx-auto">
-            <FileText className="w-6 h-6" />
-          </div>
-          <div className="text-seasalt font-medium">Nova Proposta</div>
-          <div className="text-seasalt/70 text-sm mt-1">Criar proposta comercial</div>
-        </Link>
+        {!usageStats?.planInfo?.isNoUserPlan ? (
+          <Link 
+            href="/propostas/nova"
+            className="p-4 bg-sgbus-green/10 hover:bg-sgbus-green/20 rounded-lg border border-sgbus-green/20 transition-colors group text-center"
+          >
+            <div className="flex items-center justify-center w-8 h-8 text-sgbus-green mb-2 mx-auto">
+              <FileText className="w-6 h-6" />
+            </div>
+            <div className="text-seasalt font-medium">Nova Proposta</div>
+            <div className="text-seasalt/70 text-sm mt-1">Criar proposta comercial</div>
+          </Link>
+        ) : (
+          <button 
+            disabled
+            className="p-4 bg-gray-500/10 rounded-lg border border-gray-500/20 transition-colors group opacity-50 cursor-not-allowed text-center"
+            title="Upgrade necessário para acessar Propostas Comerciais"
+          >
+            <div className="flex items-center justify-center w-8 h-8 text-gray-400 mb-2 mx-auto">
+              <FileText className="w-6 h-6" />
+            </div>
+            <div className="text-gray-400 font-medium">Nova Proposta</div>
+            <div className="text-gray-500 text-sm mt-1">Upgrade necessário</div>
+          </button>
+        )}
         
         {/* PLAN-010: Sales button enabled for PENDING users */}
-        {permissions.canAccessSales ? (
+        {permissions.canAccessSales && !usageStats?.planInfo?.isNoUserPlan ? (
           <Link 
             href="/coach/capture/pre-session"
             className="block p-4 bg-periwinkle/10 hover:bg-periwinkle/20 rounded-lg border border-periwinkle/20 transition-colors group text-center"
@@ -234,13 +248,16 @@ export default function HomePage() {
         ) : (
           <button 
             disabled
-            className="p-4 bg-periwinkle/10 rounded-lg border border-periwinkle/20 transition-colors group opacity-50 cursor-not-allowed text-center"
+            className="p-4 bg-gray-500/10 rounded-lg border border-gray-500/20 transition-colors group opacity-50 cursor-not-allowed text-center"
+            title={usageStats?.planInfo?.isNoUserPlan ? "Upgrade necessário para acessar Copiloto Spalla" : "Funcionalidade em desenvolvimento"}
           >
-            <div className="flex items-center justify-center w-8 h-8 text-periwinkle mb-2 mx-auto">
+            <div className="flex items-center justify-center w-8 h-8 text-gray-400 mb-2 mx-auto">
               <Bot className="w-6 h-6" />
             </div>
-            <div className="text-seasalt font-medium">Copiloto Spalla</div>
-            <div className="text-seasalt/70 text-sm mt-1">Em breve</div>
+            <div className="text-gray-400 font-medium">Copiloto Spalla</div>
+            <div className="text-gray-500 text-sm mt-1">
+              {usageStats?.planInfo?.isNoUserPlan ? "Upgrade necessário" : "Em breve"}
+            </div>
           </button>
         )}
         

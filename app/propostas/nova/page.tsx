@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Users, Plus, X } from 'lucide-react';
+import { ArrowLeft, Users, Plus, X, Lock, Home } from 'lucide-react';
 import Link from 'next/link';
 import { useClientFlow } from '@/hooks/use-client-flow';
 import { ProposalForm } from '@/components/proposals/ProposalForm';
 import ClientFlowModal from '@/components/shared/client-flow-modal';
+import { useUsageStats } from '@/hooks/use-usage-stats';
 
 // Definir o tipo Client localmente
 interface Client {
@@ -22,8 +23,11 @@ export default function NovaPropostaPage() {
   const router = useRouter();
   const [step, setStep] = useState<'client' | 'form'>('client');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  
+  // Check if user has NoUser plan
+  const { data: usageStats, isLoading: isUsageLoading } = useUsageStats();
 
-  // Hook para gerenciar o modal de cliente
+  // Hook para gerenciar o modal de cliente (must be called before any early returns)
   const clientFlow = useClientFlow({
     title: "Selecionar Cliente para Proposta",
     description: "Escolha um cliente existente ou crie um novo para esta proposta comercial",
@@ -50,6 +54,40 @@ export default function NovaPropostaPage() {
   const handleCancel = () => {
     router.push('/propostas');
   };
+
+  // If user has NoUser plan, show restriction message
+  if (!isUsageLoading && usageStats?.planInfo?.isNoUserPlan) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="bg-eerie-black border border-seasalt/10 rounded-lg p-8 text-center max-w-md">
+            <div className="mb-6">
+              <Lock size={64} className="mx-auto text-periwinkle mb-4" />
+              <h2 className="text-2xl font-bold text-seasalt mb-2">
+                Propostas Comerciais
+              </h2>
+              <p className="text-periwinkle">
+                Upgrade necessário para acessar esta funcionalidade
+              </p>
+            </div>
+            <div className="space-y-4">
+              <p className="text-seasalt/70 text-sm">
+                As Propostas Comerciais estão disponíveis apenas para planos pagos. 
+                Faça upgrade do seu plano para começar a criar propostas profissionais.
+              </p>
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-sgbus-green hover:bg-sgbus-green/90 text-night font-semibold rounded-lg transition-all duration-200 hover:scale-105"
+              >
+                <Home size={20} />
+                Voltar ao Dashboard
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (step === 'form' && selectedClient) {
     return (

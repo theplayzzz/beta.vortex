@@ -8,6 +8,8 @@ import SessionSkeleton from './SessionSkeleton';
 import ErrorState from './ErrorState';
 import EmptyState from './EmptyState';
 import MetricsSkeleton from './MetricsSkeleton';
+import { useUsageStats } from '@/hooks/use-usage-stats';
+import Link from 'next/link';
 import { 
   Mic, 
   MonitorSpeaker, 
@@ -28,6 +30,8 @@ import {
   CheckCircle,
   AlertCircle,
   Clock3,
+  Home,
+  Lock,
 } from 'lucide-react';
 
 
@@ -43,6 +47,9 @@ const sessionTypes = [
 ];
 
 export default function PreSessionDashboard() {
+  // All hooks must be called first before any early returns
+  const { data: usageStats, isLoading: isUsageLoading } = useUsageStats();
+  
   const [selectedPeriod, setSelectedPeriod] = useState('thisWeek');
   const [selectedSessionType, setSelectedSessionType] = useState('live');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
@@ -250,6 +257,40 @@ export default function PreSessionDashboard() {
       setIsCreatingSession(false);
     }
   };
+
+  // If user has NoUser plan, show restriction message
+  if (!isUsageLoading && usageStats?.planInfo?.isNoUserPlan) {
+    return (
+      <div className="mx-auto px-6 py-6 bg-night text-seasalt max-w-[1280px]">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="bg-eerie-black border border-seasalt/10 rounded-lg p-8 text-center max-w-md">
+            <div className="mb-6">
+              <Lock size={64} className="mx-auto text-periwinkle mb-4" />
+              <h2 className="text-2xl font-bold text-seasalt mb-2">
+                Copiloto Spalla
+              </h2>
+              <p className="text-periwinkle">
+                Upgrade necessário para acessar esta funcionalidade
+              </p>
+            </div>
+            <div className="space-y-4">
+              <p className="text-seasalt/70 text-sm">
+                O Copiloto Spalla está disponível apenas para planos pagos. 
+                Faça upgrade do seu plano para começar a usar esta ferramenta.
+              </p>
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-sgbus-green hover:bg-sgbus-green/90 text-night font-semibold rounded-lg transition-all duration-200 hover:scale-105"
+              >
+                <Home size={20} />
+                Voltar ao Dashboard
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto px-6 py-6 bg-night text-seasalt max-w-[1280px]">

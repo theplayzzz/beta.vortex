@@ -36,6 +36,10 @@ export default function SignInPage() {
       identityPreviewEditButton: 'text-periwinkle hover:text-periwinkle/80',
       form: 'w-full',
       formField: 'w-full',
+      // Estilos específicos para campos OTP
+      otpCodeField: 'w-full flex justify-center',
+      otpCodeFieldInputContainer: 'flex gap-2 justify-center',
+      otpCodeFieldInput: 'bg-night border-seasalt/20 text-seasalt text-center font-mono text-lg focus:border-sgbus-green focus:ring-2 focus:ring-sgbus-green/20 w-12 h-12 rounded-lg',
     },
   };
 

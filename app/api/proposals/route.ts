@@ -135,6 +135,32 @@ export async function POST(request: NextRequest) {
     // Note: requirePermission returns the database user ID directly, not clerkId
     const userId = await requirePermission('propostas');
 
+    // 🚫 VALIDAÇÃO NOUSER: Verificar se usuário tem plano NoUser (bloqueado para propostas)
+    const userPlan = await prisma.userPlan.findFirst({
+      where: {
+        userId,
+        isActive: true
+      },
+      include: {
+        Plan: true
+      }
+    });
+
+    if (userPlan && userPlan.Plan.name.toLowerCase().includes('nouser')) {
+      console.warn(`🚫 [CREATE_PROPOSAL] Usuário com plano NoUser tentou criar proposta - userId: ${userId}`);
+      return NextResponse.json(
+        { 
+          error: 'Upgrade necessário para acessar Propostas Comerciais',
+          details: {
+            currentPlan: userPlan.Plan.name,
+            requiredFeature: 'Propostas Comerciais',
+            action: 'upgrade_required'
+          }
+        },
+        { status: 403 } // 403 Forbidden
+      );
+    }
+
     // Parse request body
     const body = await request.json();
     const data = CreateProposalSchema.parse(body);
