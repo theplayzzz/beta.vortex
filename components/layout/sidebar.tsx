@@ -163,9 +163,7 @@ export default function Sidebar() {
                       ? "active bg-sgbus-green text-night font-medium"
                       : item.adminOnly
                       ? "admin bg-sgbus-green/10 text-sgbus-green"
-                      : item.modalidade === 'vendas' && userStatus === 'PENDING'
-                      ? "text-sgbus-green hover:bg-sgbus-green/10"
-                      : "text-periwinkle"
+                      : "text-periwinkle hover:bg-periwinkle/10"
                   }`}
                   style={{ 
                     padding: "0.875rem 1rem"
@@ -175,9 +173,6 @@ export default function Sidebar() {
                   <span className="whitespace-nowrap">
                     {item.label}
                     {item.adminOnly && " ADMIN"}
-                    {item.modalidade === 'vendas' && userStatus === 'PENDING' && (
-                      <span className="ml-2 text-xs bg-sgbus-green/20 text-sgbus-green px-2 py-0.5 rounded-full">LIBERADO</span>
-                    )}
                   </span>
                 </Link>
               )}

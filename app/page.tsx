@@ -10,8 +10,6 @@ import { useClientsCount, usePlanningsCount } from "@/lib/react-query";
 import { useProposalStats } from "@/hooks/use-proposals";
 import type { Client } from "@/lib/react-query";
 import { useUser } from "@clerk/nextjs";
-import { useFirstVisitHighlight } from "@/hooks/useFirstVisitHighlight";
-import { HighlightBadge } from "@/components/ui/highlight-badge";
 import { getPermissionsForStatus } from "@/types/permissions";
 import { 
   ClipboardList, 
@@ -25,7 +23,6 @@ import {
 export default function HomePage() {
   const { user, isLoading, isSignedIn } = useCurrentUser();
   const { user: clerkUser } = useUser();
-  const { shouldHighlight, markAsInteracted } = useFirstVisitHighlight();
   
   // TanStack Query hooks para contagem de clientes e planejamentos
   const { data: clientsCount = 0, refetch: refetchClientsCount } = useClientsCount();
@@ -39,7 +36,6 @@ export default function HomePage() {
   const userStatus = publicMetadata?.approvalStatus || 'PENDING';
   const userRole = publicMetadata?.role || 'USER';
   const permissions = getPermissionsForStatus(userStatus, userRole);
-  const isPendingUser = userStatus === 'PENDING';
 
   const clientFlow = useClientFlow({
     title: "Novo Cliente",
@@ -201,36 +197,30 @@ export default function HomePage() {
             <div className="text-seasalt/70 text-sm mt-1">Gerenciar propostas</div>
           </Link>
           
-          {/* PLAN-010: Sales button enabled for PENDING users with highlight */}
-          <HighlightBadge
-            isHighlighted={isPendingUser && shouldHighlight}
-            onInteraction={markAsInteracted}
-            badgeText="LIBERADO"
-          >
-            {permissions.canAccessSales ? (
-              <Link 
-                href="/coach/capture/pre-session"
-                className="block p-4 bg-periwinkle/10 hover:bg-periwinkle/20 rounded-lg border border-periwinkle/20 transition-colors group text-center"
-              >
-                <div className="flex items-center justify-center w-8 h-8 text-periwinkle mb-2 mx-auto">
-                  <Bot className="w-6 h-6" />
-                </div>
-                <div className="text-seasalt font-medium">Copiloto Spalla</div>
-                <div className="text-seasalt/70 text-sm mt-1">Copiloto de vendas</div>
-              </Link>
-            ) : (
-              <button 
-                disabled
-                className="p-4 bg-periwinkle/10 rounded-lg border border-periwinkle/20 transition-colors group opacity-50 cursor-not-allowed text-center"
-              >
-                <div className="flex items-center justify-center w-8 h-8 text-periwinkle mb-2 mx-auto">
-                  <Bot className="w-6 h-6" />
-                </div>
-                <div className="text-seasalt font-medium">Copiloto Spalla</div>
-                <div className="text-seasalt/70 text-sm mt-1">Em breve</div>
-              </button>
-            )}
-          </HighlightBadge>
+          {/* PLAN-010: Sales button enabled for PENDING users */}
+          {permissions.canAccessSales ? (
+            <Link 
+              href="/coach/capture/pre-session"
+              className="block p-4 bg-periwinkle/10 hover:bg-periwinkle/20 rounded-lg border border-periwinkle/20 transition-colors group text-center"
+            >
+              <div className="flex items-center justify-center w-8 h-8 text-periwinkle mb-2 mx-auto">
+                <Bot className="w-6 h-6" />
+              </div>
+              <div className="text-seasalt font-medium">Copiloto Spalla</div>
+              <div className="text-seasalt/70 text-sm mt-1">Copiloto de vendas</div>
+            </Link>
+          ) : (
+            <button 
+              disabled
+              className="p-4 bg-periwinkle/10 rounded-lg border border-periwinkle/20 transition-colors group opacity-50 cursor-not-allowed text-center"
+            >
+              <div className="flex items-center justify-center w-8 h-8 text-periwinkle mb-2 mx-auto">
+                <Bot className="w-6 h-6" />
+              </div>
+              <div className="text-seasalt font-medium">Copiloto Spalla</div>
+              <div className="text-seasalt/70 text-sm mt-1">Em breve</div>
+            </button>
+          )}
         </div>
       </div>
 
